@@ -77,6 +77,12 @@
 	"aboutOptionsDonate": {
 		"message": "Support further RES development."
 	},
+	"disableSubredditStylesName": {
+		"message": "Disable Subreddit Styles"
+	},
+	"disableSubredditStylesDesc": {
+		"message": "Remove subreddit CSS on old Reddit so every subreddit keeps the standard old.reddit look."
+	},
 	"aboutOptionsBugsTitle": {
 		"message": "Bugs"
 	},
@@ -1274,6 +1280,12 @@
 	},
 	"nightModeName": {
 		"message": "Night Mode"
+	},
+	"classicFaviconName": {
+		"message": "Classic Reddit Favicon"
+	},
+	"classicFaviconDesc": {
+		"message": "Replace Reddit's current tab icon with the older orange reddit alien favicon."
 	},
 	"noPartName": {
 		"message": "No Participation"
