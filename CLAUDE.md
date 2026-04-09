@@ -10,9 +10,10 @@ Private fork of Reddit Enhancement Suite v5.24.8, stripped to comment tweaks and
 - Load unpacked from `dist/chrome/` in Chrome.
 
 ## Kept modules
-Comment: `hideChildComments`, `commentNavigator`, `commentPreview`, `commentTools`, `commentQuickCollapse`, `commentSortBy`, `commentStyle`, `commentDepth`, `commentHidePersistor`, `saveComments`, `hover`, `showParent`, `readComments`, `newCommentCount`, `spoilerTags`, `noParticipation`, `sourceSnudown`.
+Comment: `hideChildComments`, `commentNavigator`, `commentPreview`, `commentTools`, `commentQuickCollapse`, `commentSortBy`, `commentStyle`, `commentDepth`, `commentHidePersistor`, `saveComments`, `hover`, `showParent`, `readComments`, `newCommentCount`, `spoilerTags`, `noParticipation`, `sourceSnudown`, `context`.
 Media: `showImages` + all 87 `lib/modules/hosts/` handlers.
-Infra: `menu`, `notifications`, `settingsNavigation`, `selectedEntry`, `version`, `requestPermissions`, `troubleshooter`.
+Appearance: `nightMode` (minimal — just the body class toggle + FOUC guard; upstream sunrise/sunset/subreddit-whitelist stripped).
+Infra: `menu`, `notifications`, `settingsNavigation`, `selectedEntry`, `version`, `requestPermissions`, `search` (hidden via `module.hidden = true` so the sidebar entry is gone but the in-console search box still functions).
 
 ## Key files
 - `lib/modules/index.js` — single aggregator. Add/remove a module by toggling its import + export here.
@@ -34,3 +35,4 @@ Each host is one file in `lib/modules/hosts/` and one import+export line in `lib
 
 ## Version
 - v0.1.0 — initial fork
+- v0.2.0 — gear icon opens settings console directly; removed About/Search-RES-Settings sidebar entries; removed troubleshooter; restored minimal nightMode (dark theme) as default landing
