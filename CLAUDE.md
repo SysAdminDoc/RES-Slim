@@ -36,3 +36,4 @@ Each host is one file in `lib/modules/hosts/` and one import+export line in `lib
 ## Version
 - v0.1.0 — initial fork
 - v0.2.0 — gear icon opens settings console directly; removed About/Search-RES-Settings sidebar entries; removed troubleshooter; restored minimal nightMode (dark theme) as default landing
+- v0.3.0 — 16 new modules ported from the old.reddit userscript ecosystem: commentHighlights, autoExpand, nextTopComment, hideGifComments, absoluteTimestamps, reddEye, viewDeleted, fixImageLinks, fixProcessingImg, downloadButtons, restoreSubCounts, archiveLinks, infiniteScroll, markAllRead, userProfileSearch, subredditBlacklist. All fresh rewrites — AGPL sources used as reference only. Module count: 43.
