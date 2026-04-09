@@ -85,13 +85,8 @@
     "https://api.tumblr.com/v2/blog/*/posts",
     "https://xkcd.com/*/info.0.json",
     "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*",
-    "https://www.googleapis.com/drive/v3/*",
     "https://*.redd.it/*",
     "https://www.flickr.com/services/oembed",
-    "https://redditenhancementsuite.com/oauth",
-    "https://accounts.google.com/signin/oauth",
-    "https://www.dropbox.com/oauth2/authorize",
-    "https://login.live.com/oauth20_authorize.srf",
     "https://embed.bsky.app/oembed"
   ],
   "web_accessible_resources": [

@@ -69,7 +69,7 @@
 		"message": "Announcements"
 	},
 	"aboutOptionsAnnouncements": {
-		"message": "Read the latest at /r/RESAnnouncements."
+		"message": "Removed in RES-Slim."
 	},
 	"aboutOptionsDonateTitle": {
 		"message": "Donate"
@@ -105,7 +105,7 @@
 		"message": "Contributors"
 	},
 	"aboutOptionsContributors": {
-		"message": "[Steve Sobel](http://www.honestbleeps.com/) (/u/honestbleeps) and a slew of community members have contributed code, design and/or great ideas to RES."
+		"message": "Steve Sobel and a slew of community members have contributed code, design and/or great ideas to upstream RES."
 	},
 	"aboutOptionsPrivacyTitle": {
 		"message": "Privacy"
@@ -301,7 +301,7 @@
 		"message": "Donate and Contribute"
 	},
 	"contributeDesc": {
-		"message": "RES is entirely free - If you like our work, a contribution would be greatly appreciated.\n\nIf you would like to donate to RES, visit our [Contribution page](https://redditenhancementsuite.com/contribute/).\n\nCan't contribute a few bucks? How about a few lines of code? Our source code can be viewed on our [Github page](https://github.com/honestbleeps/Reddit-Enhancement-Suite/)."
+		"message": "Removed in RES-Slim."
 	},
 	"customTogglesName": {
 		"message": "Custom Toggles"
