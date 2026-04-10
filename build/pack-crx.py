@@ -31,7 +31,7 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 REPO = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO / "dist" / "chrome"
 KEY_PATH = REPO / "build" / "res-slim.pem"
-OUT_CRX = REPO / "dist" / "zip" / "res-slim-chrome-v0.3.3.crx"
+OUT_CRX = REPO / "dist" / "zip" / "res-slim-chrome-v0.3.4.crx"
 
 
 def varint(n: int) -> bytes:

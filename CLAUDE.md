@@ -40,3 +40,4 @@ Each host is one file in `lib/modules/hosts/` and one import+export line in `lib
 - v0.3.1 — settings console UX improvements: module enable/disable toggle with permission prompts, disabled-module scrim, category-panel navigation tweaks, search input tightening, console restyling.
 - v0.3.2 — two new appearance modules (classicFavicon, disableSubredditStyles) + stability fixes across the v0.3.0 ecosystem ports + substantial options.scss restyling pass. Module count: 45.
 - v0.3.3 — fresh extension icon set: minimalist RS monogram on dark charcoal circle with Reddit-orange accent bar. Toolbar action icons redesigned to match. New build/generate-icons.py (Pillow) regenerates the full set.
+- v0.3.4 — settings workspace UX refinement (Codex): ~500 lines of options.scss updates, templates.js and settingsConsole.js polish, search.js simplification, stage.js staging additions.
