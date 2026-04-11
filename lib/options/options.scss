@@ -482,6 +482,48 @@ li {
 	padding: 12px 14px;
 }
 
+// Shown when no modules match the current filter — gives the user a clear
+// reset path so the empty sidebar doesn't feel broken.
+.sidebarEmptyState {
+	display: grid;
+	gap: 10px;
+	justify-items: center;
+	padding: 24px 16px;
+	margin-top: 8px;
+	border: 1px dashed var(--options-border);
+	border-radius: 16px;
+	background: rgb(255 255 255 / 2%);
+	color: var(--options-text-muted);
+	text-align: center;
+
+	&[hidden] {
+		display: none;
+	}
+}
+
+.sidebarEmptyStateTitle {
+	margin: 0;
+	font-size: 12px;
+}
+
+.sidebarEmptyStateReset {
+	padding: 6px 14px;
+	border: 1px solid var(--options-border-strong);
+	border-radius: 999px;
+	background-color: rgb(255 255 255 / 3%);
+	color: var(--options-text-secondary);
+	font: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: border-color 0.18s ease, color 0.18s ease;
+
+	&:hover {
+		border-color: rgb(105 174 247 / 55%);
+		color: var(--options-text-primary);
+	}
+}
+
 .sidebarModules {
 	display: flex;
 	flex-direction: column;
@@ -701,7 +743,9 @@ li {
 }
 
 .moduleRowToggle.is-on .moduleRowToggleThumb {
-	margin-left: 16px;
+	// Track 34px, thumb 14px, off-state margin-left 2px → right gap 18px.
+	// On-state mirrors: margin-left 18px → right gap 2px. Symmetric.
+	margin-left: 18px;
 }
 
 .moduleRowLock {
@@ -1772,11 +1816,15 @@ a.RESConsoleButton {
 		justify-items: start;
 	}
 
-	.globalStageBar,
+	.globalStageBar {
+		width: 100%;
+		justify-content: center;
+	}
+
 	.globalSaveButton,
 	.globalDiscardButton {
 		width: 100%;
-		justify-content: center;
+		text-align: center;
 	}
 
 	.moduleName {
