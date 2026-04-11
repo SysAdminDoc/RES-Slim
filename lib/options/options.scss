@@ -198,7 +198,6 @@ li {
 	min-width: 0;
 }
 
-.consoleEyebrow,
 .sidebarSectionEyebrow {
 	font-size: 11px;
 	font-weight: 700;
@@ -214,12 +213,6 @@ li {
 	gap: 8px 10px;
 }
 
-.consoleSubtitle {
-	max-width: 52ch;
-	margin: 8px 0 0;
-	color: var(--options-text-secondary);
-}
-
 .consoleHeaderActions {
 	display: flex;
 	flex-wrap: wrap;
@@ -229,23 +222,90 @@ li {
 	margin-left: auto;
 }
 
-#RESConsoleSubredditLink {
+// Global stage status + save/discard lives in the top bar now. Unsaved changes
+// are always visible and actionable regardless of which module is open.
+.globalStageBar {
 	display: inline-flex;
 	align-items: center;
-	padding: 7px 12px;
+	gap: 8px;
+	padding: 7px 14px;
 	border: 1px solid var(--options-border);
 	border-radius: 999px;
-	background-color: rgb(255 255 255 / 2%);
-	color: #9ed0ff;
+	background-color: rgb(255 255 255 / 3%);
+	color: var(--options-text-secondary);
 	font-size: 12px;
 	font-weight: 600;
-	text-decoration: none;
-	transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+	transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 
-	&:hover {
-		border-color: var(--options-border-strong);
-		background-color: rgb(255 255 255 / 4%);
-		color: #d1e9ff;
+	&.is-dirty {
+		border-color: rgb(247 185 85 / 45%);
+		background-color: rgb(247 185 85 / 10%);
+		color: var(--options-warning);
+	}
+
+	&.is-saved {
+		border-color: var(--options-success-border);
+		background-color: rgb(30 97 58 / 18%);
+		color: var(--options-success-text);
+	}
+
+	&.is-saved-pulse {
+		animation: stageBarPulse 1.4s ease-out;
+	}
+}
+
+.globalStageIcon {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: currentcolor;
+	box-shadow: 0 0 0 3px rgb(255 255 255 / 4%);
+}
+
+@keyframes stageBarPulse {
+	0% { box-shadow: 0 0 0 0 rgb(30 200 120 / 55%); }
+	100% { box-shadow: 0 0 0 12px rgb(30 200 120 / 0%); }
+}
+
+.globalSaveButton {
+	padding: 8px 18px;
+	border: 1px solid rgb(105 174 247 / 38%);
+	border-radius: 999px;
+	background: linear-gradient(180deg, rgb(105 174 247 / 35%), rgb(105 174 247 / 18%));
+	color: var(--options-text-primary);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	transition: filter 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
+
+	&:hover:not(:disabled) {
+		filter: brightness(1.15);
+		border-color: rgb(105 174 247 / 65%);
+	}
+
+	&:disabled {
+		opacity: 0.42;
+		cursor: not-allowed;
+	}
+}
+
+.globalDiscardButton {
+	padding: 8px 14px;
+	border: 1px solid rgb(247 185 85 / 28%);
+	border-radius: 999px;
+	background: transparent;
+	color: var(--options-warning);
+	font: inherit;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 0.18s ease, border-color 0.18s ease;
+
+	&:hover:not(:disabled) {
+		background-color: rgb(247 185 85 / 10%);
+		border-color: rgb(247 185 85 / 55%);
 	}
 }
 
@@ -364,6 +424,64 @@ li {
 	color: var(--options-text-muted);
 }
 
+// Quick filter chip row — lets users see just Enabled / Disabled / Modified
+// modules at a glance without scrolling through the full 45-module list.
+.filterChips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 12px;
+}
+
+.filterChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 11px;
+	border: 1px solid var(--options-border);
+	border-radius: 999px;
+	background-color: rgb(255 255 255 / 3%);
+	color: var(--options-text-secondary);
+	cursor: pointer;
+	font: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+
+	&:hover {
+		border-color: var(--options-border-strong);
+		color: var(--options-text-primary);
+	}
+
+	&.is-active {
+		border-color: rgb(105 174 247 / 45%);
+		background: linear-gradient(180deg, rgb(105 174 247 / 22%), rgb(105 174 247 / 10%));
+		color: var(--options-text-primary);
+	}
+}
+
+.filterChipCount {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	padding: 0 5px;
+	border-radius: 999px;
+	background-color: rgb(255 255 255 / 6%);
+	color: var(--options-text-muted);
+	font-size: 10px;
+	font-variant-numeric: tabular-nums;
+}
+
+.filterChip.is-active .filterChipCount {
+	background-color: rgb(105 174 247 / 22%);
+	color: var(--options-accent-strong);
+}
+
+.sidebarFooter {
+	padding: 12px 14px;
+}
+
 .sidebarModules {
 	display: flex;
 	flex-direction: column;
@@ -400,12 +518,16 @@ li {
 }
 
 .RESConfigPanelCategory {
-	max-height: 54px;
+	// Categories are expanded by default now. Clicking the header toggles just
+	// its own collapsed state — siblings never collapse under the user.
 	overflow: hidden;
-	transition: max-height 0.24s ease;
 
-	&.active {
-		max-height: 1200px;
+	&:not(.is-expanded) > ul {
+		display: none;
+	}
+
+	&.is-filtered-out {
+		display: none;
 	}
 
 	+ .RESConfigPanelCategory {
@@ -420,9 +542,9 @@ li {
 .categoryButton {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	gap: 8px;
 	width: 100%;
-	padding: 14px 2px 12px;
+	padding: 12px 2px 10px;
 	border: 0;
 	background: transparent;
 	color: var(--options-text-secondary);
@@ -437,7 +559,24 @@ li {
 	}
 }
 
+.categoryButtonChevron {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-right: 2px solid currentcolor;
+	border-bottom: 2px solid currentcolor;
+	transform: rotate(45deg) translate(-1px, -1px);
+	transform-origin: center;
+	transition: transform 0.18s ease;
+	opacity: 0.7;
+}
+
+.RESConfigPanelCategory:not(.is-expanded) .categoryButtonChevron {
+	transform: rotate(-45deg) translate(2px, -2px);
+}
+
 .categoryButtonLabel {
+	flex: 1 1 auto;
 	min-width: 0;
 }
 
@@ -453,16 +592,36 @@ li {
 
 .RESConfigPanelCategory > ul {
 	display: grid;
-	gap: 4px;
-	padding: 0 0 12px;
+	gap: 2px;
+	padding: 0 0 10px;
+}
+
+// Each module now sits in a two-column row: the big button (navigate to
+// options) on the left, a compact inline toggle on the right. This kills the
+// two-click dance users hit when sweeping through modules.
+.moduleRow {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: stretch;
+	gap: 6px;
+	padding: 0 2px;
+	border-radius: 16px;
+
+	&.is-filtered-out {
+		display: none;
+	}
+
+	&:hover {
+		background: rgb(255 255 255 / 2%);
+	}
 }
 
 .moduleButton {
 	display: block;
 	width: 100%;
-	padding: 14px 16px 15px;
+	padding: 10px 14px 11px;
 	border: 1px solid transparent;
-	border-radius: 18px;
+	border-radius: 14px;
 	background: transparent;
 	color: var(--options-text-muted);
 	cursor: pointer;
@@ -471,15 +630,13 @@ li {
 	transition:
 		border-color 0.18s ease,
 		background-color 0.18s ease,
-		color 0.18s ease,
-		transform 0.18s ease;
+		color 0.18s ease;
 
 	&:hover {
 		border-color: rgb(255 255 255 / 6%);
 		background:
 			linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(255 255 255 / 2%));
 		color: var(--options-text-primary);
-		transform: none;
 	}
 
 	&.enabled {
@@ -494,18 +651,68 @@ li {
 			inset 3px 0 0 0 var(--options-accent),
 			inset 0 1px 0 rgb(255 255 255 / 5%);
 		color: var(--options-text-primary);
-		transform: none;
 	}
 
 	small {
-		display: -webkit-box;
-		margin-top: 6px;
+		display: block;
+		margin-top: 3px;
 		overflow: hidden;
 		color: var(--options-text-muted);
-		line-height: 1.45;
-		-webkit-box-orient: vertical;
-		-webkit-line-clamp: 2;
+		line-height: 1.4;
+		font-size: 11px;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
+}
+
+// Inline per-module toggle that sits in the sidebar row. Size is deliberately
+// smaller than the workspace toggleButton so it doesn't dominate the row.
+.moduleRowToggle {
+	flex-shrink: 0;
+	width: 34px;
+	height: 20px;
+	align-self: center;
+	padding: 0;
+	border: 1px solid var(--options-border);
+	border-radius: 999px;
+	background: rgb(255 255 255 / 4%);
+	cursor: pointer;
+	transition: background-color 0.18s ease, border-color 0.18s ease;
+
+	&:hover {
+		border-color: var(--options-border-strong);
+	}
+
+	&.is-on {
+		border-color: rgb(105 174 247 / 40%);
+		background: linear-gradient(180deg, rgb(105 174 247 / 55%), rgb(105 174 247 / 35%));
+	}
+}
+
+.moduleRowToggleThumb {
+	display: block;
+	width: 14px;
+	height: 14px;
+	margin-left: 2px;
+	border-radius: 50%;
+	background: var(--options-text-primary);
+	box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
+	transition: margin-left 0.18s ease, background-color 0.18s ease;
+}
+
+.moduleRowToggle.is-on .moduleRowToggleThumb {
+	margin-left: 16px;
+}
+
+.moduleRowLock {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 34px;
+	align-self: center;
+	color: var(--options-text-muted);
+	font-size: 18px;
+	line-height: 1;
 }
 
 .moduleButton:focus-visible {
@@ -583,9 +790,9 @@ li {
 	grid-template-columns: minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 14px;
-	margin-top: 14px;
-	padding-top: 14px;
-	border-top: 1px solid rgb(255 255 255 / 8%);
+	margin: 0;
+	padding: 0;
+	border-top: 0;
 }
 
 .advancedOptionsCopy {
@@ -681,14 +888,6 @@ li {
 	min-width: 0;
 }
 
-.moduleWorkspaceEyebrow {
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.16em;
-	text-transform: uppercase;
-	color: var(--options-text-muted);
-}
-
 .moduleMetaRow {
 	display: flex;
 	flex-wrap: wrap;
@@ -765,54 +964,6 @@ li {
 	justify-items: end;
 	gap: 14px;
 	align-self: start;
-}
-
-.workspaceStageStatus {
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
-	padding: 10px 14px;
-	border: 1px solid rgb(255 255 255 / 8%);
-	border-radius: 999px;
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
-	font-size: 12px;
-	font-weight: 600;
-
-	&::before {
-		content: '';
-		width: 8px;
-		height: 8px;
-		border-radius: 999px;
-		background-color: currentcolor;
-		box-shadow: 0 0 0 4px rgb(255 255 255 / 6%);
-	}
-
-	&.is-dirty {
-		border-color: rgb(105 174 247 / 28%);
-		background-color: rgb(105 174 247 / 10%);
-		color: var(--options-accent-strong);
-	}
-
-	&.is-saved {
-		border-color: rgb(66 182 117 / 22%);
-		background-color: rgb(30 97 58 / 16%);
-		color: #d6f6e3;
-	}
-
-	&.is-saved-pulse {
-		box-shadow:
-			0 0 0 1px rgb(66 182 117 / 18%),
-			0 10px 22px rgb(30 97 58 / 14%);
-	}
-}
-
-.moduleActionRow {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: flex-end;
-	gap: 12px;
 }
 
 .moduleToggle {
@@ -1303,57 +1454,9 @@ a.RESConsoleButton {
 	}
 }
 
-#moduleOptionsSave {
-	cursor: pointer;
-	min-height: 42px;
-	padding: 10px 16px;
-	margin: 0;
-	border: 1px solid rgb(105 174 247 / 26%);
-	border-radius: 999px;
-	background:
-		linear-gradient(180deg, rgb(105 174 247 / 92%), rgb(69 142 224 / 88%));
-	color: #031120;
-	font-size: 13px;
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	line-height: 1;
-	white-space: nowrap;
-	transition:
-		transform 0.18s ease,
-		box-shadow 0.18s ease,
-		opacity 0.18s ease;
-
-	&:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 12px 24px rgb(105 174 247 / 24%);
-	}
-
-	&::before {
-		content: '';
-		display: inline-block;
-		width: 8px;
-		height: 8px;
-		margin: 0 7px 0 0;
-		border-radius: 999px;
-		background: #f4fbff;
-		box-shadow: 0 0 0 4px rgb(255 255 255 / 18%);
-	}
-
-	&.optionsSaved::before {
-		background: #031120;
-		box-shadow: 0 0 0 4px rgb(3 17 32 / 20%);
-	}
-
-	&[disabled] {
-		cursor: default;
-		opacity: 0.72;
-		box-shadow: none;
-	}
-}
-
-.has-unsaved-options #moduleOptionsSave {
-	box-shadow: 0 12px 24px rgb(105 174 247 / 20%);
-}
+// #moduleOptionsSave was the old per-module workspace save button. It was
+// replaced in v0.3.6 by the global save button in the top bar
+// (.globalSaveButton). Kept no styles here.
 
 #SearchRES-results-container {
 	display: none;
@@ -1626,10 +1729,6 @@ a.RESConsoleButton {
 		justify-items: start;
 	}
 
-	.moduleActionRow {
-		justify-content: flex-start;
-	}
-
 	.optionContainer {
 		padding: 18px;
 	}
@@ -1662,10 +1761,6 @@ a.RESConsoleButton {
 		gap: 12px;
 	}
 
-	.consoleSubtitle {
-		font-size: 12px;
-	}
-
 	.sidebarSectionHeader,
 	.consoleHeaderActions {
 		flex-direction: column;
@@ -1677,13 +1772,11 @@ a.RESConsoleButton {
 		justify-items: start;
 	}
 
-	.workspaceStageStatus {
+	.globalStageBar,
+	.globalSaveButton,
+	.globalDiscardButton {
 		width: 100%;
 		justify-content: center;
-	}
-
-	.moduleActionRow {
-		width: 100%;
 	}
 
 	.moduleName {
@@ -1702,11 +1795,16 @@ a.RESConsoleButton {
 @media (prefers-reduced-motion: reduce) {
 	.RESConfigPanelCategory,
 	.moduleButton,
+	.moduleRowToggle,
+	.moduleRowToggleThumb,
 	.optionContainer,
 	.res-icon-button,
 	.RESConsoleButton,
 	.addRowButton,
-	#moduleOptionsSave,
+	.globalSaveButton,
+	.globalDiscardButton,
+	.globalStageBar,
+	.filterChip,
 	.toggleButton .toggleThumb,
 	.toggleButton .toggleThumb::before,
 	#SearchRES-results-container li,
