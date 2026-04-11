@@ -31,7 +31,13 @@ from cryptography.hazmat.primitives.asymmetric import padding, rsa
 REPO = Path(__file__).resolve().parent.parent
 SRC_DIR = REPO / "dist" / "chrome"
 KEY_PATH = REPO / "build" / "res-slim.pem"
-OUT_CRX = REPO / "dist" / "zip" / "res-slim-chrome-v0.3.4.crx"
+import json
+
+def _read_version() -> str:
+    with open(REPO / "package.json", "r", encoding="utf-8") as f:
+        return json.load(f)["version"]
+
+OUT_CRX = REPO / "dist" / "zip" / f"res-slim-chrome-v{_read_version()}.crx"
 
 
 def varint(n: int) -> bytes:
