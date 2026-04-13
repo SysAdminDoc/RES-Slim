@@ -19,22 +19,6 @@ const targets = {
 		browserMinVersion: '114.0',
 		manifest: './chrome/manifest.json',
 	},
-	chromebeta: {
-		browserName: 'chrome',
-		browserMinVersion: '114.0',
-		manifest: './chrome/beta/manifest.json',
-	},
-	edge: {
-		browserName: 'edge',
-		browserMinVersion: '114.0',
-		manifest: './chrome/manifest.json',
-	},
-	opera: {
-		browserName: 'opera',
-		browserMinVersion: '114.0',
-		manifest: './chrome/manifest.json',
-		noSourcemap: true,
-	},
 	firefox: {
 		browserName: 'firefox',
 		browserMinVersion: '115.0',
@@ -68,7 +52,7 @@ const homepageURL /*: string */ = packageInfo.homepage;
 // production builds uses version number to keep the build reproducible
 const buildToken = isProduction ? version : devBuildToken;
 
-async function buildForBrowser(targetName, { manifest, noSourceMap, browserName, browserMinVersion, browserMobileMinVersion }) {
+async function buildForBrowser(targetName, { manifest, noSourcemap, browserName, browserMinVersion, browserMobileMinVersion }) {
 	const context = {
 		entryPoints: {
 			'foreground.entry': './lib/foreground.entry.js',
@@ -79,7 +63,7 @@ async function buildForBrowser(targetName, { manifest, noSourceMap, browserName,
 			options: './lib/options/options.scss',
 			res: './lib/css/res.scss',
 		},
-		sourcemap: !isProduction || !noSourceMap,
+		sourcemap: !isProduction || !noSourcemap,
 		outdir: `./dist/${targetName}/`,
 		bundle: true,
 		format: 'iife',
@@ -148,7 +132,7 @@ async function buildForBrowser(targetName, { manifest, noSourceMap, browserName,
 							__homepage__: homepageURL,
 							__author__: author,
 							__browser_min_version__: browserMinVersion,
-							__browser_mobile_min_version__: browserMobileMinVersion,
+							__browser_mobile_min_version__: browserMobileMinVersion || '',
 						}
 						Object.keys(replace).forEach(v => {
 							text = text.replaceAll(v, replace[v]);
@@ -196,4 +180,4 @@ async function buildForBrowser(targetName, { manifest, noSourceMap, browserName,
 let buildTargets = options.browsers;
 // browser option `all` converts to all available targets
 buildTargets = [...new Set(buildTargets.replace('all', Object.keys(targets).join(',')).split(','))];
-buildTargets.map(v => buildForBrowser(v, targets[v]));
+await Promise.all(buildTargets.map(v => buildForBrowser(v, targets[v])));
