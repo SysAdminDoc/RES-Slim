@@ -1,59 +1,112 @@
-html {
+:root {
 	color-scheme: dark;
-	padding: clamp(6px, 1vw, 10px);
-	background:
-		radial-gradient(circle at top left, rgb(74 144 226 / 20%), transparent 34%),
-		radial-gradient(circle at top right, rgb(14 165 233 / 10%), transparent 28%),
-		#09111f;
 
-	--options-bg-page: #09111f;
-	--options-bg-shell: #020817;
-	--options-bg-panel: #0b1426;
-	--options-bg-panel-strong: #101b32;
-	--options-bg-elevated: #13203a;
-	--options-bg-elevated-strong: #1a2a49;
-	--options-bg-hover: #172841;
-	--options-bg-hover-strong: #1e3557;
-	--options-text-primary: #edf4ff;
-	--options-text-secondary: #bfd0e6;
-	--options-text-muted: #7b91ad;
-	--options-border: #233755;
-	--options-border-strong: #355179;
-	--options-accent: #69aef7;
-	--options-accent-strong: #8ec8ff;
-	--options-accent-soft: rgb(105 174 247 / 14%);
-	--options-success-bg: #10311f;
-	--options-success-border: #1e613a;
-	--options-success-text: #d7f5e4;
-	--options-warning: #f7b955;
-	--options-danger-bg: #3b1620;
-	--options-danger-border: #7d3142;
-	--options-danger-text: #ffccd5;
-	--options-shadow-lg: 0 28px 80px rgb(0 0 0 / 46%);
-	--options-shadow-md: 0 20px 46px rgb(0 0 0 / 30%);
+	--options-bg: #0d1117;
+	--options-panel: #161b22;
+	--options-panel-alt: #11161d;
+	--options-panel-raised: #1c2128;
+	--options-field: #0f141b;
+	--options-field-hover: #161c24;
+	--options-border: #27303a;
+	--options-border-strong: #36404a;
+	--options-text: #e6edf3;
+	--options-text-muted: #9ba7b4;
+	--options-text-soft: #7d8894;
+	--options-accent: #58a6ff;
+	--options-accent-soft: rgb(88 166 255 / 14%);
+	--options-accent-strong: #7cc0ff;
+	--options-success: #3fb950;
+	--options-warning: #d29922;
+	--options-danger: #f85149;
 }
+
+%badge-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 22px;
+	padding: 0 8px;
+	border: 1px solid var(--options-border);
+	border-radius: 999px;
+	background: var(--options-panel-alt);
+	color: var(--options-text-muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+%surface-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 36px;
+	padding: 0 14px;
+	border: 1px solid var(--options-border);
+	border-radius: 8px;
+	background: var(--options-panel-raised);
+	color: var(--options-text);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+%surface-button-hover {
+	border-color: var(--options-border-strong);
+	background: var(--options-field-hover);
+}
+
+%icon-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 1px solid var(--options-border);
+	border-radius: 8px;
+	background: var(--options-panel-raised);
+	color: var(--options-text-muted);
+	cursor: pointer;
+}
+
+%icon-button-hover {
+	border-color: var(--options-border-strong);
+	background: var(--options-field-hover);
+	color: var(--options-text);
+}
+
+html,
+body { height: 100%; }
+
+html { background: var(--options-bg); }
 
 body {
-	color: var(--options-text-primary);
-	font-family: 'Aptos', 'Segoe UI Variable Text', 'Segoe UI', arial, sans-serif;
-	font-size: 13px;
-	line-height: 1.5;
 	margin: 0;
-	width: 100%;
-	height: 100%;
-	min-height: calc(100vh - 20px);
-	box-sizing: border-box;
-	border-radius: 24px;
-	background:
-		linear-gradient(180deg, rgb(255 255 255 / 1.5%), transparent 28%),
-		var(--options-bg-shell);
-	box-shadow: var(--options-shadow-lg);
+	min-height: 100vh;
+	background: var(--options-bg);
+	color: var(--options-text);
+	font: 13px/1.5 'Segoe UI Variable Text', 'Segoe UI', arial, sans-serif;
 	overflow: hidden;
-	scrollbar-color: var(--options-border-strong) transparent;
 }
 
-* {
-	box-sizing: border-box;
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+button,
+input,
+select,
+textarea { font: inherit; }
+
+ul,
+li {
+	display: block;
+	margin: 0;
+	padding: 0;
+}
+
+::selection {
+	background: rgb(88 166 255 / 24%);
+	color: var(--options-text);
 }
 
 .srOnly {
@@ -68,189 +121,108 @@ body {
 	border: 0;
 }
 
-::selection {
-	background-color: rgb(105 174 247 / 24%);
-	color: var(--options-text-primary);
-}
-
-ul,
-li {
-	display: block;
-	margin: 0;
-	padding: 0;
-}
-
 #RESConsoleContainer {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	background:
-		linear-gradient(180deg, rgb(255 255 255 / 2%), transparent 22%),
-		var(--options-bg-shell);
-	min-height: calc(100vh - 20px);
-	border: 1px solid var(--options-border);
-	border-radius: 24px;
-	overflow: hidden;
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr);
+	height: 100vh;
+	min-height: 100vh;
+	background: var(--options-bg);
 
-	&::before {
-		content: '';
-		position: absolute;
-		inset: 0 0 auto;
-		height: 220px;
-		background: radial-gradient(circle at top left, rgb(142 200 255 / 14%), transparent 48%);
-		pointer-events: none;
-	}
-
-	&:not(.advanced-options-enabled) .advanced {
-		display: none;
-	}
+	&:not(.advanced-options-enabled) .advanced { display: none; }
 }
 
-#RESConsoleHeader,
-#RESConsoleContent {
-	position: relative;
-	z-index: 1;
+#RESConsoleHeader {
+	border-bottom: 1px solid var(--options-border);
+	background: var(--options-panel);
 }
 
-.RESDonateButton {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 11px 18px;
-	border: 1px solid rgb(255 140 92 / 38%);
-	border-radius: 999px;
-	background-color: rgb(255 94 0 / 12%);
-	color: #ffab86;
-	font-weight: 600;
-	text-decoration: none;
-	transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease;
-
-	&:hover {
-		border-color: rgb(255 167 129 / 58%);
-		background-color: rgb(255 94 0 / 18%);
-		color: #ffd3c0;
-	}
-}
-
-.donateOption {
-	margin-top: 25px;
-	text-align: center;
-	float: left;
-	width: 50%;
-	height: 150px;
-}
-
-.donateOption:last-child {
-	margin-right: 0;
-}
+#RESConsoleContainer [hidden] { display: none !important; }
 
 .RESDialogTopBar {
-	position: sticky;
-	top: 0;
-	left: 0;
-	right: 0;
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
-	gap: 18px;
-	padding: 18px 20px;
-	border-bottom: 1px solid rgb(255 255 255 / 6%);
-	background:
-		linear-gradient(180deg, rgb(15 23 42 / 95%), rgb(2 8 23 / 92%));
-	backdrop-filter: blur(16px);
-	box-sizing: border-box;
-	z-index: 4;
-}
-
-#RESConsoleTopBar {
-	overflow: visible;
-
-	h1 {
-		margin: 0;
-		font-family: 'Aptos Display', 'Segoe UI Variable Display', 'Segoe UI', arial, sans-serif;
-		font-size: clamp(1.32rem, 1vw + 1rem, 1.74rem);
-		font-weight: 700;
-		letter-spacing: -0.04em;
-		line-height: 1.1;
-		text-wrap: balance;
-	}
+	gap: 16px;
+	padding: 16px 20px;
 }
 
 .consoleBrandBlock {
 	display: flex;
-	align-items: flex-start;
-	gap: 16px;
+	align-items: center;
+	gap: 14px;
 	min-width: 0;
 }
 
 .res-logo {
-	flex-shrink: 0;
-	width: 60px;
-	height: 30px;
-	border-radius: 10px;
-	background-size: cover;
-	box-shadow:
-		0 12px 24px rgb(0 0 0 / 35%),
-		inset 0 0 0 1px rgb(255 255 255 / 10%);
+	flex: 0 0 auto;
+	width: 56px;
+	height: 28px;
+	border: 1px solid var(--options-border);
+	border-radius: 8px;
+	background: var(--options-panel-alt) center / cover no-repeat;
 }
 
-.consoleBrandText {
-	min-width: 0;
-}
-
-.sidebarSectionEyebrow {
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
-	color: var(--options-text-muted);
-}
+.consoleBrandText { min-width: 0; }
 
 .consoleTitleRow {
 	display: flex;
+	align-items: baseline;
 	flex-wrap: wrap;
-	align-items: center;
-	gap: 8px 10px;
+	gap: 8px;
+}
+
+#RESConsoleTopBar h1 {
+	margin: 0;
+	font-size: 1.25rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.consoleSubtitle {
+	margin: 4px 0 0;
+	color: var(--options-text-soft);
+	font-size: 12px;
+}
+
+#RESConsoleVersionDisplay,
+.sidebarCountBadge,
+.categoryCount,
+.moduleCategoryBadge,
+.moduleStateBadge,
+.moduleRowLock {
+	@extend %badge-pill;
 }
 
 .consoleHeaderActions {
 	display: flex;
-	flex-wrap: wrap;
 	align-items: center;
 	justify-content: flex-end;
+	flex-wrap: wrap;
 	gap: 10px;
-	margin-left: auto;
 }
 
-// Global stage status + save/discard lives in the top bar now. Unsaved changes
-// are always visible and actionable regardless of which module is open.
 .globalStageBar {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	padding: 7px 14px;
+	padding: 8px 12px;
 	border: 1px solid var(--options-border);
 	border-radius: 999px;
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
+	background: var(--options-panel-alt);
+	color: var(--options-text-muted);
 	font-size: 12px;
 	font-weight: 600;
-	transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 
 	&.is-dirty {
-		border-color: rgb(247 185 85 / 45%);
-		background-color: rgb(247 185 85 / 10%);
-		color: var(--options-warning);
+		border-color: rgb(210 153 34 / 40%);
+		background: rgb(210 153 34 / 12%);
+		color: #f6d47a;
 	}
 
 	&.is-saved {
-		border-color: var(--options-success-border);
-		background-color: rgb(30 97 58 / 18%);
-		color: var(--options-success-text);
-	}
-
-	&.is-saved-pulse {
-		animation: stageBarPulse 1.4s ease-out;
+		border-color: rgb(63 185 80 / 36%);
+		background: rgb(63 185 80 / 12%);
+		color: #b5f4bf;
 	}
 }
 
@@ -258,109 +230,104 @@ li {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background-color: currentcolor;
-	box-shadow: 0 0 0 3px rgb(255 255 255 / 4%);
+	background: currentcolor;
 }
 
-@keyframes stageBarPulse {
-	0% { box-shadow: 0 0 0 0 rgb(30 200 120 / 55%); }
-	100% { box-shadow: 0 0 0 12px rgb(30 200 120 / 0%); }
+.globalSaveButton,
+.globalDiscardButton,
+.sidebarToggleButton,
+.RESConsoleButton,
+.addRowButton,
+.sidebarEmptyStateReset,
+.RESDonateButton {
+	@extend %surface-button;
+}
+
+.globalSaveButton:hover,
+.globalDiscardButton:hover,
+.sidebarToggleButton:hover,
+.RESConsoleButton:hover,
+.addRowButton:hover,
+.sidebarEmptyStateReset:hover,
+.RESDonateButton:hover {
+	@extend %surface-button-hover;
 }
 
 .globalSaveButton {
-	padding: 8px 18px;
-	border: 1px solid rgb(105 174 247 / 38%);
-	border-radius: 999px;
-	background: linear-gradient(180deg, rgb(105 174 247 / 35%), rgb(105 174 247 / 18%));
-	color: var(--options-text-primary);
-	font: inherit;
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.02em;
-	cursor: pointer;
-	transition: filter 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
-
-	&:hover:not(:disabled) {
-		filter: brightness(1.15);
-		border-color: rgb(105 174 247 / 65%);
-	}
+	border-color: rgb(88 166 255 / 45%);
+	background: var(--options-accent-soft);
+	color: var(--options-accent-strong);
 
 	&:disabled {
-		opacity: 0.42;
-		cursor: not-allowed;
+		border-color: var(--options-border);
+		background: var(--options-panel-alt);
+		color: var(--options-text-soft);
+		cursor: default;
 	}
 }
 
-.globalDiscardButton {
-	padding: 8px 14px;
-	border: 1px solid rgb(247 185 85 / 28%);
-	border-radius: 999px;
+.globalDiscardButton { color: var(--options-text-muted); }
+
+.sidebarToggleButton { display: none; }
+
+#RESClose.RESCloseButtonTopRight { position: static; }
+
+#RESClose {
+	@extend %icon-button;
+
+	width: 36px;
+	height: 36px;
+	background: var(--options-panel-alt);
+}
+
+#RESClose::after {
+	width: auto;
+	height: auto;
+	line-height: 1;
+	border: 0;
 	background: transparent;
-	color: var(--options-warning);
-	font: inherit;
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-	transition: background-color 0.18s ease, border-color 0.18s ease;
-
-	&:hover:not(:disabled) {
-		background-color: rgb(247 185 85 / 10%);
-		border-color: rgb(247 185 85 / 55%);
-	}
+	color: var(--options-text-muted);
 }
 
-#RESConsoleVersionDisplay,
-.sidebarCountBadge,
-.categoryCount,
-.moduleKey {
-	font-variant-numeric: tabular-nums;
+#RESClose:hover {
+	@extend %icon-button-hover;
 }
 
-#RESConsoleVersionDisplay {
-	display: inline-flex;
-	align-items: center;
-	padding: 4px 10px;
-	border: 1px solid rgb(255 255 255 / 8%);
-	border-radius: 999px;
-	background-color: rgb(255 255 255 / 4%);
-	color: var(--options-text-secondary);
-	font-size: 11px;
-}
+#RESClose:hover::after { color: var(--options-text); }
 
 #RESConsoleContent {
 	display: grid;
-	grid-template-columns: minmax(296px, 340px) minmax(0, 1fr);
-	align-items: stretch;
-	flex: 1 1 auto;
+	grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+	height: 100%;
 	min-height: 0;
+	overflow: hidden;
 }
 
 #RESConfigPanelModulesPane {
-	display: flex;
-	flex-direction: column;
+	display: grid;
+	grid-template-rows: auto minmax(0, 1fr) auto;
 	min-width: 0;
 	min-height: 0;
-	padding: 18px;
-	border-right: 1px solid rgb(255 255 255 / 6%);
-	background:
-		linear-gradient(180deg, rgb(11 19 36 / 92%), rgb(5 12 24 / 98%));
+	overflow: hidden;
+	border-right: 1px solid var(--options-border);
+	background: var(--options-panel-alt);
 }
 
-.sidebarDeck {
+.sidebarSearchBlock,
+.sidebarListBlock { min-width: 0; }
+
+.sidebarSearchBlock {
+	padding: 16px;
+	border-bottom: 1px solid var(--options-border);
+}
+
+.sidebarListBlock {
 	display: grid;
-	gap: 14px;
-	flex: 1 1 auto;
+	grid-template-rows: auto auto minmax(0, 1fr);
 	min-height: 0;
-}
-
-.sidebarSection {
-	padding: 16px 16px 18px;
-	margin: 0;
-	border: 1px solid rgb(255 255 255 / 7%);
-	border-radius: 22px;
-	background:
-		linear-gradient(180deg, rgb(255 255 255 / 2.5%), rgb(255 255 255 / 1%));
-	box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+	overflow: hidden;
+	padding: 16px;
+	gap: 12px;
 }
 
 .sidebarSectionHeader {
@@ -368,68 +335,53 @@ li {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	margin-bottom: 14px;
 }
 
 .sidebarSectionHeaderCopy {
 	display: grid;
-	gap: 4px;
+	gap: 2px;
+	min-width: 0;
 }
 
-.sidebarSectionHint {
+.sidebarSectionTitle {
 	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	color: var(--options-text-muted);
 }
 
 .sidebarSectionMeta {
-	font-size: 12px;
-	color: var(--options-text-muted);
-}
-
-.sidebarSectionTitle {
-	font-size: 13px;
-	font-weight: 700;
-	color: var(--options-text-primary);
-	text-wrap: balance;
-}
-
-.sidebarCountBadge,
-.categoryCount,
-.moduleCategoryBadge,
-.moduleStateBadge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 24px;
-	padding: 0 10px;
-	border-radius: 999px;
-	border: 1px solid var(--options-border);
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
+	color: var(--options-text-soft);
 	font-size: 12px;
 }
 
-.sidebarTools {
-	padding-top: 18px;
+#SearchRES-input-container {
+	position: relative;
+	margin-top: 12px;
+
+	&::after {
+		position: absolute;
+		right: 12px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--options-text-soft);
+		font: normal 16px/1 Batch;
+		content: '\f094';
+		pointer-events: none;
+	}
 }
 
-.sidebarCommandDeck {
-	background:
-		linear-gradient(180deg, rgb(25 41 71 / 38%), rgb(8 16 30 / 74%));
+#SearchRES-input {
+	width: 100%;
+	min-height: 38px;
+	padding-right: 38px;
 }
 
-.sidebarSearchHint {
-	margin: 10px 0 0;
-	font-size: 12px;
-	color: var(--options-text-muted);
-}
-
-// Quick filter chip row — lets users see just Enabled / Disabled / Modified
-// modules at a glance without scrolling through the full 45-module list.
 .filterChips {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
+	gap: 8px;
 	margin-top: 12px;
 }
 
@@ -437,27 +389,24 @@ li {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	padding: 5px 11px;
+	min-height: 30px;
+	padding: 0 10px;
 	border: 1px solid var(--options-border);
 	border-radius: 999px;
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
+	background: var(--options-panel);
+	color: var(--options-text-muted);
 	cursor: pointer;
-	font: inherit;
-	font-size: 11px;
-	font-weight: 600;
-	transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
 
-	&:hover {
-		border-color: var(--options-border-strong);
-		color: var(--options-text-primary);
-	}
+.filterChip:hover {
+	border-color: var(--options-border-strong);
+	color: var(--options-text);
+}
 
-	&.is-active {
-		border-color: rgb(105 174 247 / 45%);
-		background: linear-gradient(180deg, rgb(105 174 247 / 22%), rgb(105 174 247 / 10%));
-		color: var(--options-text-primary);
-	}
+.filterChip.is-active {
+	border-color: rgb(88 166 255 / 42%);
+	background: var(--options-accent-soft);
+	color: var(--options-accent-strong);
 }
 
 .filterChipCount {
@@ -467,268 +416,152 @@ li {
 	min-width: 18px;
 	padding: 0 5px;
 	border-radius: 999px;
-	background-color: rgb(255 255 255 / 6%);
-	color: var(--options-text-muted);
-	font-size: 10px;
+	background: rgb(255 255 255 / 6%);
+	color: inherit;
+	font-size: 11px;
 	font-variant-numeric: tabular-nums;
 }
 
-.filterChip.is-active .filterChipCount {
-	background-color: rgb(105 174 247 / 22%);
-	color: var(--options-accent-strong);
-}
-
-.sidebarFooter {
-	padding: 12px 14px;
-}
-
-// Shown when no modules match the current filter — gives the user a clear
-// reset path so the empty sidebar doesn't feel broken.
-.sidebarEmptyState {
+#RESConfigPanelModulesEmpty {
 	display: grid;
 	gap: 10px;
-	justify-items: center;
-	padding: 24px 16px;
-	margin-top: 8px;
-	border: 1px dashed var(--options-border);
-	border-radius: 16px;
-	background: rgb(255 255 255 / 2%);
+	justify-items: start;
+	padding: 14px 0;
 	color: var(--options-text-muted);
-	text-align: center;
 
-	&[hidden] {
-		display: none;
-	}
+	&[hidden] { display: none; }
 }
 
-.sidebarEmptyStateTitle {
-	margin: 0;
-	font-size: 12px;
-}
-
-.sidebarEmptyStateReset {
-	padding: 6px 14px;
-	border: 1px solid var(--options-border-strong);
-	border-radius: 999px;
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
-	font: inherit;
-	font-size: 11px;
-	font-weight: 600;
-	cursor: pointer;
-	transition: border-color 0.18s ease, color 0.18s ease;
-
-	&:hover {
-		border-color: rgb(105 174 247 / 55%);
-		color: var(--options-text-primary);
-	}
-}
-
-.sidebarModules {
-	display: flex;
-	flex-direction: column;
-	flex: 1 1 auto;
-	min-height: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-}
-
-.sidebarModules .sidebarSectionHeader {
-	padding: 2px 2px 10px;
-	margin-bottom: 2px;
-}
+.sidebarEmptyStateTitle { margin: 0; }
 
 #RESConfigPanelModulesList {
-	color: var(--options-text-secondary);
-	height: auto;
 	min-height: 0;
-	flex: 1 1 auto;
 	overflow-y: auto;
 	overscroll-behavior: contain;
-	padding-top: 4px;
-	padding-right: 4px;
-	margin-right: -4px;
-
-	> ul {
-		margin: 0;
-		content-visibility: auto;
-		contain-intrinsic-size: 0 960px;
-	}
+	padding-right: 6px;
+	scrollbar-color: var(--options-border-strong) transparent;
 }
+
+.moduleCategoryGroups { display: grid; }
 
 .RESConfigPanelCategory {
-	// Categories are expanded by default now. Clicking the header toggles just
-	// its own collapsed state — siblings never collapse under the user.
-	overflow: hidden;
+	border-top: 1px solid var(--options-border);
 
-	&:not(.is-expanded) > ul {
-		display: none;
-	}
-
-	&.is-filtered-out {
-		display: none;
-	}
-
-	+ .RESConfigPanelCategory {
-		border-top: 1px solid rgb(255 255 255 / 6%);
-	}
-
-	h3 {
-		margin: 0;
-	}
+	&:first-child { border-top: 0; }
+	&.is-filtered-out { display: none; }
 }
 
-.categoryButton {
+.categoryHeading {
 	display: flex;
 	align-items: center;
-	gap: 8px;
-	width: 100%;
-	padding: 12px 2px 10px;
-	border: 0;
-	background: transparent;
-	color: var(--options-text-secondary);
-	cursor: pointer;
-	font: inherit;
+	justify-content: space-between;
+	gap: 12px;
+	margin: 0;
+	padding: 14px 0 8px;
+}
+
+.categoryHeadingLabel {
+	font-size: 12px;
 	font-weight: 700;
-	text-align: left;
-	transition: color 0.18s ease;
-
-	&:hover {
-		color: var(--options-text-primary);
-	}
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--options-text-muted);
 }
 
-.categoryButtonChevron {
-	flex-shrink: 0;
-	width: 10px;
-	height: 10px;
-	border-right: 2px solid currentcolor;
-	border-bottom: 2px solid currentcolor;
-	transform: rotate(45deg) translate(-1px, -1px);
-	transform-origin: center;
-	transition: transform 0.18s ease;
-	opacity: 0.7;
+.RESConfigPanelCategory.active .categoryHeadingLabel,
+.RESConfigPanelCategory.active .categoryCount {
+	color: var(--options-accent-strong);
+	border-color: rgb(88 166 255 / 42%);
 }
 
-.RESConfigPanelCategory:not(.is-expanded) .categoryButtonChevron {
-	transform: rotate(-45deg) translate(2px, -2px);
-}
-
-.categoryButtonLabel {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.RESConfigPanelCategory.active > h3 .categoryButton {
-	color: var(--options-text-primary);
-
-	.categoryCount {
-		border-color: rgb(105 174 247 / 32%);
-		background-color: var(--options-accent-soft);
-		color: var(--options-accent-strong);
-	}
-}
-
-.RESConfigPanelCategory > ul {
+.categoryModules {
 	display: grid;
 	gap: 2px;
-	padding: 0 0 10px;
+	padding-bottom: 12px;
 }
 
-// Each module now sits in a two-column row: the big button (navigate to
-// options) on the left, a compact inline toggle on the right. This kills the
-// two-click dance users hit when sweeping through modules.
 .moduleRow {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: stretch;
-	gap: 6px;
-	padding: 0 2px;
-	border-radius: 16px;
+	gap: 10px;
+	align-items: center;
 
-	&.is-filtered-out {
-		display: none;
-	}
-
-	&:hover {
-		background: rgb(255 255 255 / 2%);
-	}
+	&.is-filtered-out { display: none; }
 }
 
 .moduleButton {
-	display: block;
+	display: grid;
+	gap: 4px;
 	width: 100%;
-	padding: 10px 14px 11px;
-	border: 1px solid transparent;
-	border-radius: 14px;
+	min-width: 0;
+	padding: 8px 10px 8px 12px;
+	border: 0;
+	border-radius: 10px;
 	background: transparent;
 	color: var(--options-text-muted);
 	cursor: pointer;
-	font: inherit;
 	text-align: left;
-	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease,
-		color 0.18s ease;
-
-	&:hover {
-		border-color: rgb(255 255 255 / 6%);
-		background:
-			linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(255 255 255 / 2%));
-		color: var(--options-text-primary);
-	}
-
-	&.enabled {
-		color: var(--options-text-secondary);
-	}
-
-	&.active {
-		border-color: rgb(105 174 247 / 26%);
-		background:
-			linear-gradient(180deg, rgb(105 174 247 / 18%), rgb(105 174 247 / 8%));
-		box-shadow:
-			inset 3px 0 0 0 var(--options-accent),
-			inset 0 1px 0 rgb(255 255 255 / 5%);
-		color: var(--options-text-primary);
-	}
-
-	small {
-		display: block;
-		margin-top: 3px;
-		overflow: hidden;
-		color: var(--options-text-muted);
-		line-height: 1.4;
-		font-size: 11px;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
 }
 
-// Inline per-module toggle that sits in the sidebar row. Size is deliberately
-// smaller than the workspace toggleButton so it doesn't dominate the row.
+.moduleButton:hover {
+	background: var(--options-panel);
+	color: var(--options-text);
+}
+
+.moduleButton:focus-visible,
+.moduleButton.active {
+	background: var(--options-panel);
+	box-shadow: inset 2px 0 0 var(--options-accent);
+	color: var(--options-text);
+}
+
+.moduleButton.enabled { color: var(--options-text); }
+.moduleButton.has-staged-changes:not(.active) { background: rgb(88 166 255 / 7%); }
+
+.moduleButtonHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	min-width: 0;
+}
+
+.moduleButtonTitle {
+	min-width: 0;
+	font-weight: 600;
+}
+
+.moduleButtonStage {
+	@extend %badge-pill;
+
+	min-height: 20px;
+	padding: 0 6px;
+	border: 1px solid rgb(88 166 255 / 30%);
+	background: rgb(88 166 255 / 10%);
+	color: var(--options-accent-strong);
+	font-size: 10px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.moduleButton small {
+	display: block;
+	overflow: hidden;
+	color: var(--options-text-soft);
+	font-size: 12px;
+	line-height: 1.4;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .moduleRowToggle {
-	flex-shrink: 0;
 	width: 34px;
 	height: 20px;
-	align-self: center;
 	padding: 0;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-border-strong);
 	border-radius: 999px;
-	background: rgb(255 255 255 / 4%);
+	background: var(--options-field);
 	cursor: pointer;
-	transition: background-color 0.18s ease, border-color 0.18s ease;
-
-	&:hover {
-		border-color: var(--options-border-strong);
-	}
-
-	&.is-on {
-		border-color: rgb(105 174 247 / 40%);
-		background: linear-gradient(180deg, rgb(105 174 247 / 55%), rgb(105 174 247 / 35%));
-	}
 }
 
 .moduleRowToggleThumb {
@@ -737,794 +570,496 @@ li {
 	height: 14px;
 	margin-left: 2px;
 	border-radius: 50%;
-	background: var(--options-text-primary);
-	box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
-	transition: margin-left 0.18s ease, background-color 0.18s ease;
+	background: #fff;
+	transform: translateY(1px);
+	transition: margin-left 0.18s ease;
 }
 
-.moduleRowToggle.is-on .moduleRowToggleThumb {
-	// Track 34px, thumb 14px, off-state margin-left 2px → right gap 18px.
-	// On-state mirrors: margin-left 18px → right gap 2px. Symmetric.
-	margin-left: 18px;
+.moduleRowToggle.is-on {
+	border-color: rgb(88 166 255 / 45%);
+	background: var(--options-accent-soft);
 }
 
-.moduleRowLock {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 34px;
-	align-self: center;
-	color: var(--options-text-muted);
-	font-size: 18px;
-	line-height: 1;
-}
-
-.moduleButton:focus-visible {
-	border-color: rgb(105 174 247 / 30%);
-	background:
-		linear-gradient(180deg, rgb(105 174 247 / 16%), rgb(105 174 247 / 7%));
-	color: var(--options-text-primary);
-}
-
-.moduleButtonHeader {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 12px;
-}
-
-.moduleButtonStatusCluster {
-	display: inline-flex;
-	align-items: center;
-	gap: 8px;
-	flex-shrink: 0;
-}
-
-.moduleButtonStage {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 22px;
-	padding: 0 8px;
-	border: 1px solid rgb(105 174 247 / 20%);
-	border-radius: 999px;
-	background-color: rgb(105 174 247 / 10%);
-	color: var(--options-accent-strong);
-	font-size: 10px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-}
-
-.moduleButtonTitle {
-	min-width: 0;
-	font-weight: 600;
-}
-
-.moduleButtonStatus {
-	width: 8px;
-	height: 8px;
-	flex-shrink: 0;
-	border-radius: 999px;
-	background-color: rgb(255 255 255 / 12%);
-	box-shadow: 0 0 0 4px transparent;
-	transition: background-color 0.18s ease, box-shadow 0.18s ease;
-}
-
-.moduleButton.enabled .moduleButtonStatus {
-	background-color: var(--options-accent);
-	box-shadow: 0 0 0 4px rgb(105 174 247 / 12%);
-}
-
-.moduleButton.has-staged-changes:not(.active) {
-	border-color: rgb(105 174 247 / 12%);
-	background:
-		linear-gradient(180deg, rgb(105 174 247 / 7%), rgb(105 174 247 / 2%));
-}
-
-%warning-icon {
-	content: '\F15A';
-	margin-left: 6px;
-	color: var(--options-warning);
-	font: normal 11px Batch;
-}
+.moduleRowToggle.is-on .moduleRowToggleThumb { margin-left: 18px; }
+.moduleRowLock { min-width: 34px; }
 
 .advancedOptionsPanel {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: center;
-	gap: 14px;
-	margin: 0;
-	padding: 0;
-	border-top: 0;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 16px 16px;
+	border-top: 1px solid var(--options-border);
+	color: var(--options-text-muted);
 }
 
 .advancedOptionsCopy {
 	display: grid;
-	gap: 4px;
-	min-width: 0;
+	gap: 2px;
 
-	strong {
-		color: var(--options-text-primary);
-		font-size: 13px;
-
-		&::after {
-			@extend %warning-icon;
-		}
-	}
+	strong { color: var(--options-text); }
 
 	small {
-		color: var(--options-text-muted);
+		color: var(--options-text-soft);
 		font-size: 12px;
-		line-height: 1.4;
 	}
 }
 
-#RESAllOptionsSpan {
-	color: var(--options-text-secondary);
-	font-size: 11px;
+#RESAllOptions {
+	margin-top: 2px;
+	accent-color: var(--options-accent);
 }
 
 #RESConfigPanelOptions {
-	padding: 0;
+	min-width: 0;
 	min-height: 0;
 	overflow: auto;
 	overscroll-behavior: contain;
-	background:
-		linear-gradient(180deg, rgb(12 20 38 / 78%), rgb(3 10 22 / 94%));
+	background: var(--options-panel);
+	scrollbar-color: var(--options-border-strong) transparent;
 
-	p {
-		margin-bottom: 10px;
-	}
-}
-
-.workspaceScroll {
-	display: grid;
-	gap: 14px;
-	min-height: 100%;
-	padding: 22px clamp(20px, 2vw, 30px) 30px;
-	align-content: start;
+	p { margin: 0 0 10px; }
 }
 
 .workspaceShell {
-	max-width: 1180px;
-	border: 1px solid rgb(255 255 255 / 7%);
-	border-radius: 32px;
-	background:
-		linear-gradient(180deg, rgb(12 20 38 / 76%), rgb(6 12 24 / 94%));
-	box-shadow: var(--options-shadow-md);
-}
-
-.workspaceCanvas {
-	max-width: none;
-	border: 0;
-	border-radius: 0 0 32px 32px;
-	background: transparent;
-	box-shadow: none;
-	overflow: hidden;
+	display: grid;
+	align-content: start;
+	gap: 20px;
+	max-width: 1120px;
+	min-height: 100%;
+	margin: 0 auto;
+	padding: 24px 28px 32px;
 }
 
 .moduleHeader {
-	position: sticky;
-	top: 16px;
-	z-index: 3;
-	margin-bottom: 0;
-	padding: 28px 30px 24px;
-	border: 0;
-	border-bottom: 1px solid rgb(255 255 255 / 7%);
-	border-radius: 32px 32px 0 0;
-	background:
-		linear-gradient(180deg, rgb(23 39 68 / 78%), rgb(9 18 34 / 94%));
-	backdrop-filter: blur(18px);
-	box-shadow: none;
+	display: grid;
+	gap: 12px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--options-border);
+}
+
+.moduleMetaRow {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.moduleStateBadge.is-enabled {
+	border-color: rgb(63 185 80 / 34%);
+	color: #b5f4bf;
+}
+
+.moduleStateBadge.is-disabled {
+	border-color: rgb(248 81 73 / 34%);
+	color: #ffb7b1;
+}
+
+.moduleStateBadge.is-locked {
+	border-color: rgb(210 153 34 / 34%);
+	color: #f6d47a;
 }
 
 .moduleHeaderTopRow {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 16px;
 	align-items: start;
-	gap: 24px;
 }
 
-.moduleHeaderCopy {
-	display: grid;
-	gap: 8px;
-	min-width: 0;
-}
-
-.moduleMetaRow {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
-}
-
-.moduleCategoryBadge {
-	color: var(--options-text-secondary);
-}
-
-#RESConsoleContainer.is-search-workspace .moduleCategoryBadge {
-	border-color: rgb(105 174 247 / 24%);
-	background-color: rgb(105 174 247 / 12%);
-	color: var(--options-accent-strong);
-}
-
-.moduleStateBadge {
-	color: var(--options-text-secondary);
-
-	&.is-enabled {
-		border-color: rgb(66 182 117 / 34%);
-		background-color: rgb(23 73 45 / 46%);
-		color: #d5f7e1;
-	}
-
-	&.is-disabled {
-		border-color: rgb(255 121 145 / 28%);
-		background-color: rgb(59 22 32 / 56%);
-		color: #ffc5d0;
-	}
-
-	&.is-locked {
-		border-color: rgb(142 200 255 / 24%);
-		background-color: rgb(105 174 247 / 14%);
-		color: var(--options-accent-strong);
-	}
-}
+.moduleHeaderCopy { min-width: 0; }
 
 .moduleName {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 10px;
 	margin: 0;
-	font-family: 'Aptos Display', 'Segoe UI Variable Display', 'Segoe UI', arial, sans-serif;
-	font-size: clamp(1.7rem, 2vw, 2.4rem);
-	font-weight: 700;
-	letter-spacing: -0.045em;
-	line-height: 1.05;
+	font-size: 1.85rem;
+	line-height: 1.15;
 	text-wrap: balance;
 }
 
 .moduleKey {
 	display: inline-flex;
-	align-items: center;
-	padding: 5px 10px;
-	border: 1px solid rgb(255 255 255 / 8%);
+	margin-left: 10px;
+	padding: 2px 8px;
+	border: 1px solid var(--options-border);
 	border-radius: 999px;
-	background-color: rgb(255 255 255 / 4%);
-	color: var(--options-text-secondary);
-	font-size: 12px;
-	font-weight: 500;
-	letter-spacing: 0.04em;
+	background: var(--options-panel-alt);
+	color: var(--options-text-soft);
+	font: 12px consolas, 'SFMono-Regular', monospace;
+	vertical-align: middle;
 }
 
 .moduleOptionSummary {
-	color: var(--options-text-secondary);
-	font-size: 14px;
-	max-width: 58ch;
+	margin-top: 6px;
+	color: var(--options-text-muted);
 }
 
 .moduleHeaderUtility {
-	display: grid;
-	justify-items: end;
-	gap: 14px;
-	align-self: start;
-}
-
-.moduleToggle {
-	flex-shrink: 0;
-	align-self: center;
-}
-
-.moduleDescription,
-.workspaceEmptyState {
-	padding: 24px 30px 28px;
-	margin: 0;
-	border: 0;
-	color: var(--options-text-secondary);
-}
-
-.workspaceEmptyState {
-	display: none;
-	padding-top: 34px;
-	padding-bottom: 38px;
-	font-size: 14px;
-	text-align: center;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
 }
 
 .moduleDescription {
-	padding-bottom: 20px;
-	border-bottom: 1px solid rgb(255 255 255 / 7%);
-	background:
-		linear-gradient(180deg, rgb(255 255 255 / 2%), transparent 90%);
+	display: grid;
+	gap: 12px;
+	max-width: 76ch;
+	color: var(--options-text-muted);
 
-	&:empty {
-		display: none;
-		padding: 0;
-		border-bottom: 0;
-	}
-
-	p:last-child {
-		margin-bottom: 0;
-	}
-
-	ul {
-		padding-left: 20px;
-	}
+	ul { padding-left: 18px; }
 
 	li {
 		display: list-item;
-		margin: 8px 0;
+		margin: 6px 0;
 	}
 
-	> * {
-		max-width: 74ch;
-	}
+	> *:last-child { margin-bottom: 0; }
 }
 
-#RESConsoleContainer.is-search-workspace .moduleDescription {
-	padding-bottom: 28px;
-	border-bottom: 0;
+#RESConsoleContainer.is-search-workspace .moduleDescription { max-width: none; }
+#RESConsoleContainer.is-search-workspace .moduleDescription > :is(#SearchRES-results-container, #SearchRES-boilerplate) { max-width: none; }
+
+.workspaceCanvas {
+	position: relative;
+	display: grid;
+	align-content: start;
+	gap: 0;
 }
 
-#RESConsoleContainer.is-search-workspace .moduleDescription > :is(#SearchRES-results-container, #SearchRES-boilerplate) {
-	max-width: none;
+.workspaceEmptyState {
+	padding: 14px 0;
+	color: var(--options-text-muted);
 }
+
+#noOptions { display: none; }
 
 #allOptionsContainer {
 	position: relative;
-	max-width: none;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
-	overflow: visible;
+	display: grid;
+	gap: 0;
 }
 
 #moduleOptionsScrim {
 	display: none;
 	position: absolute;
-	inset: 0 0 0 0;
+	inset: 0;
 	z-index: 2;
-	background:
-		linear-gradient(180deg, rgb(2 8 23 / 34%), rgb(2 8 23 / 74%)),
-		rgb(2 8 23 / 72%);
-	backdrop-filter: blur(6px);
+	place-items: center;
+	padding: 16px;
+	border: 1px dashed var(--options-border-strong);
+	border-radius: 10px;
+	background: rgb(13 17 23 / 78%);
+	color: var(--options-text-muted);
+	text-align: center;
 
-	&.visible {
-		display: block;
-	}
+	&.visible { display: grid; }
 }
 
 .optionContainer {
 	display: grid;
-	grid-template-columns: minmax(0, 1.15fr) minmax(260px, 360px);
-	grid-template-areas:
-		'title setting'
-		'description setting';
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
 	align-items: start;
-	gap: 8px 30px;
-	margin: 0;
-	padding: 22px 30px;
-	border: 0;
-	border-top: 1px solid rgb(255 255 255 / 7%);
-	background-color: transparent;
-	clear: both;
-	overflow-x: auto;
-	scroll-margin-top: 148px;
-	transition: background-color 0.18s ease, box-shadow 0.18s ease;
+	gap: 10px 24px;
+	padding: 18px 0;
+	border-top: 1px solid var(--options-border);
+	scroll-margin-top: 24px;
 	content-visibility: auto;
 	contain-intrinsic-size: 0 120px;
 
 	&:first-child {
 		border-top: 0;
+		padding-top: 0;
 	}
 
-	&:hover {
-		background-color: rgb(255 255 255 / 2%);
+	&.dependsOnDisabledOptions { display: none; }
+
+	&.highlight {
+		background: rgb(88 166 255 / 7%);
+		box-shadow: inset 2px 0 0 var(--options-accent);
 	}
 
-	&:focus-within {
-		background:
-			linear-gradient(180deg, rgb(105 174 247 / 8%), rgb(105 174 247 / 2%));
-		box-shadow: inset 0 0 0 1px rgb(105 174 247 / 16%);
+	&.advanced .optionTitle::after {
+		content: 'Advanced';
+		display: inline-flex;
+		margin-left: 10px;
+		padding: 2px 7px;
+		border: 1px solid rgb(210 153 34 / 32%);
+		border-radius: 999px;
+		color: #f6d47a;
+		font-size: 10px;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		vertical-align: middle;
 	}
 
 	&.table,
-	&.specialOptionType {
-		display: block;
-		padding-top: 26px;
-	}
-
-	&.dependsOnDisabledOptions {
-		display: none;
-	}
-
-	&.highlight {
-		background:
-			linear-gradient(180deg, rgb(105 174 247 / 12%), rgb(105 174 247 / 4%));
-		box-shadow: inset 0 0 0 1px rgb(105 174 247 / 24%);
-
-		.optionTitle {
-			color: var(--options-text-primary);
-		}
-	}
-
-	&.advanced .optionTitle::before {
-		@extend %warning-icon;
-
-		margin: 0 6px 0 0;
-	}
-
-	&:not(.table, .specialOptionType) .optionSetting {
-		padding: 15px 16px;
-		margin-right: 0;
-		border: 1px solid rgb(255 255 255 / 7%);
-		border-radius: 18px;
-		background:
-			linear-gradient(180deg, rgb(255 255 255 / 3%), rgb(255 255 255 / 1.5%));
-		box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
-	}
-
-	table {
-		clear: both;
-		width: 100%;
-		margin-bottom: 10px;
-		border-collapse: collapse;
-	}
-
-	.wholeTableVisible {
-		max-height: 70vh;
-		overflow-y: auto;
-		border: 1px solid rgb(255 255 255 / 6%);
-		border-radius: 18px;
-
-		th {
-			position: sticky;
-			top: 0;
-			z-index: 1;
-		}
-	}
-
-	.enum img {
-		max-width: 16px;
-	}
+	&.specialOptionType { grid-template-columns: 1fr; }
 }
 
 .optionTitle {
-	grid-area: title;
 	min-width: 0;
-	max-width: 36rem;
-	font-size: 15px;
+	margin: 0;
+	font-size: 14px;
 	font-weight: 600;
 	line-height: 1.4;
-
-	br {
-		display: none;
-	}
 }
+
+.optionTitle br { display: none; }
 
 .optionKey {
 	display: block;
 	margin-top: 6px;
-	font-size: 11px;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--options-text-muted);
-}
-
-.optionSetting {
-	grid-area: setting;
-	display: flex;
-	align-items: flex-start;
-	justify-content: flex-start;
-	min-width: 0;
-	white-space: normal;
-
-	> :is(input, select, textarea, table) {
-		width: 100%;
-	}
-
-	> div {
-		width: 100%;
-	}
-
-	> .toggleButton,
-	> .enum {
-		width: auto;
-	}
+	color: var(--options-text-soft);
+	font: 11px consolas, 'SFMono-Regular', monospace;
+	letter-spacing: 0.04em;
 }
 
 .optionDescription {
-	grid-area: description;
 	min-width: 0;
-	max-width: 46rem;
-	color: var(--options-text-secondary);
-	line-height: 1.55;
+	max-width: 74ch;
+	color: var(--options-text-muted);
 
-	p:first-child {
-		margin-top: 0;
-	}
+	p:last-child { margin-bottom: 0; }
 
-	p:last-child {
-		margin-bottom: 0;
+	code {
+		padding: 1px 5px;
+		border-radius: 6px;
+		background: rgb(255 255 255 / 5%);
+		color: var(--options-text);
 	}
+}
+
+.optionSetting {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-end;
+	min-width: 0;
+
+	> :is(input, select, textarea, table, div) { width: 100%; }
+
+	> .toggleButton,
+	> .enum { width: auto; }
+}
+
+.toggleSetting {
+	align-self: center;
+	align-items: center;
+
+	> .toggleButton { margin-left: auto; }
 }
 
 #RESConsoleContainer input[type='radio'],
-#RESConsoleContainer input[type='checkbox'] {
-	margin: 0;
-	accent-color: var(--options-accent);
-}
+#RESConsoleContainer input[type='checkbox'] { accent-color: var(--options-accent); }
 
 #RESConsoleContainer :is(input[type='text'], input[type='password'], input[type='search'], select, textarea) {
 	width: 100%;
-	min-height: 42px;
-	padding: 10px 12px;
-	border: 1px solid var(--options-border-strong);
-	border-radius: 12px;
-	background-color: var(--options-bg-elevated-strong);
-	box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
-	color: var(--options-text-primary);
-	font: inherit;
+	min-height: 38px;
+	padding: 9px 11px;
+	border: 1px solid var(--options-border);
+	border-radius: 8px;
+	background: var(--options-field);
+	color: var(--options-text);
+}
+
+#RESConsoleContainer :is(input[type='text'], input[type='password'], input[type='search'], select, textarea):hover {
+	border-color: var(--options-border-strong);
+	background: var(--options-field-hover);
 }
 
 #RESConsoleContainer textarea {
-	min-height: 120px;
+	min-height: 108px;
 	resize: vertical;
 }
 
 #RESConsoleContainer select,
-#RESConsoleContainer textarea {
-	color-scheme: dark;
-}
+#RESConsoleContainer textarea { color-scheme: dark; }
 
 #RESConsoleContainer input[type='color'] {
 	width: 56px;
-	height: 42px;
+	height: 38px;
 	padding: 4px;
-	border: 1px solid var(--options-border-strong);
-	border-radius: 12px;
-	background-color: var(--options-bg-elevated-strong);
+	border: 1px solid var(--options-border);
+	border-radius: 8px;
+	background: var(--options-field);
 }
 
-#RESConsoleContainer :is(input, select, textarea)::placeholder {
-	color: color-mix(in srgb, var(--options-text-muted) 88%, transparent);
-}
+#RESConsoleContainer :is(input, select, textarea)::placeholder { color: var(--options-text-soft); }
 
-#RESConsoleContainer :is(button, a, input, select, textarea, .SearchRES-result-item, .SearchRES-result-copybutton):focus-visible {
+#RESConsoleContainer :is(button, a, input, select, textarea, .SearchRES-result-copybutton, .moduleButton, .moduleRowToggle, .toggleButton):focus-visible {
 	outline: 2px solid var(--options-accent-strong);
 	outline-offset: 2px;
 }
 
-#RESConsoleContainer :is(button, a, input, select, textarea, .SearchRES-result-item) {
+#RESConsoleContainer :is(button, a, input, select, textarea, .moduleButton, .moduleRowToggle, .toggleButton) {
 	touch-action: manipulation;
-	-webkit-tap-highlight-color: transparent;
+	-webkit-tap-highlight-color: rgb(88 166 255 / 18%);
 }
 
-#RESConsoleContainer a {
-	color: #9ed0ff;
-}
-
-#RESConsoleContainer .optionDescription code,
-#RESConsoleContainer .optionTitle code {
-	color: #cbe5ff;
-}
+#RESConsoleContainer a { color: var(--options-accent-strong); }
 
 #RESConsoleContainer .toggleButton {
 	position: relative;
 	display: inline-flex;
 	align-items: center;
+	justify-content: flex-start;
 	gap: 10px;
-	padding: 4px;
-	border: 1px solid var(--options-border);
-	border-radius: 999px;
-	background-color: rgb(255 255 255 / 3%);
-	box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--options-text);
+	cursor: pointer;
+	white-space: nowrap;
 
-	.toggleThumb {
-		width: 48px;
-		height: 28px;
-		border: 0;
-		border-radius: 999px;
-		background-color: var(--options-bg-hover-strong);
-		transition: background-color 0.18s ease;
-	}
-
-	&.enabled .toggleThumb {
-		background:
-			linear-gradient(90deg, var(--options-accent), var(--options-accent-strong));
-	}
-
-	.toggleThumb::before {
-		top: 4px;
-		left: 4px;
-		width: 20px;
-		height: 20px;
-		border-radius: 999px;
-		background-color: #f8fbff;
-		box-shadow: 0 6px 16px rgb(2 8 23 / 28%);
-		transition: transform 0.18s ease;
-	}
-
-	&.enabled .toggleThumb::before {
-		transform: translateX(20px);
-	}
-
-	.toggleLabel {
-		min-width: 32px;
-		width: auto;
-		padding-right: 6px;
-		color: var(--options-text-muted);
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-
-		&[data-disabled-text]::before,
-		&[data-enabled-text]::after {
-			line-height: 1;
-		}
-	}
-
-	&.enabled .toggleLabel {
-		color: var(--options-text-primary);
+	input {
+		position: absolute;
+		inset: 0;
+		margin: 0;
+		opacity: 0;
+		pointer-events: none;
 	}
 }
 
-.moduleToggle.toggleButton {
-	padding: 5px;
+#RESConsoleContainer .toggleButton .toggleThumb {
+	position: relative;
+	inset: auto;
+	display: inline-flex;
+	align-items: center;
+	width: 44px;
+	min-width: 44px;
+	height: 24px;
+	flex: 0 0 44px;
+	border: 1px solid var(--options-border-strong);
+	border-radius: 999px;
+	background: var(--options-field);
+	transition: background-color 0.18s ease, border-color 0.18s ease;
 
-	.toggleThumb {
-		width: 56px;
-		height: 32px;
+	&::before {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 0.18s ease, background-color 0.18s ease;
+	}
+}
+
+#RESConsoleContainer .toggleButton.enabled .toggleThumb {
+	border-color: rgb(88 166 255 / 45%);
+	background: var(--options-accent-soft);
+}
+
+#RESConsoleContainer .toggleButton.enabled .toggleThumb::before {
+	transform: translateX(20px);
+	background: var(--options-accent);
+}
+
+#RESConsoleContainer .toggleButton .toggleLabel {
+	display: inline-flex;
+	align-items: center;
+	justify-content: flex-start;
+	width: auto;
+	min-width: 2.5ch;
+	margin: 0;
+	color: var(--options-text-muted);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	text-align: left;
+
+	&::before {
+		content: attr(data-disabled-text);
+		display: block;
+		line-height: 1;
+		opacity: 1;
 	}
 
-	.toggleThumb::before {
-		top: 4px;
-		width: 24px;
-		height: 24px;
+	&::after {
+		content: none;
+		display: none;
+		opacity: 0;
 	}
+}
 
-	&.enabled .toggleThumb::before {
-		transform: translateX(24px);
+#RESConsoleContainer .toggleButton.enabled .toggleLabel {
+	color: var(--options-accent-strong);
+
+	&::before {
+		content: attr(data-enabled-text);
+		opacity: 1;
 	}
 }
 
 .optionsTable {
-	border-spacing: 0;
+	width: 100%;
+	border-collapse: collapse;
+	background: var(--options-panel-alt);
 
-	th {
-		padding: 12px 10px;
-		background-color: rgb(255 255 255 / 4%);
-		color: var(--options-text-primary);
-		font-size: 13px;
-		font-weight: 700;
-		text-align: left;
-	}
-
-	tr:nth-child(even) {
-		background-color: rgb(255 255 255 / 2%);
-	}
-
+	th,
 	td {
 		padding: 10px;
-		border-top: 1px solid rgb(255 255 255 / 5%);
+		border-top: 1px solid var(--options-border);
+		text-align: left;
 		vertical-align: top;
 	}
 
-	tr.dragged {
-		width: 80% !important;
-		background-color: transparent;
-
-		input[type='text'] {
-			width: auto !important;
-		}
+	th {
+		border-top: 0;
+		color: var(--options-text-muted);
+		font-size: 12px;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
 	}
 
-	textarea {
-		min-width: 300px;
-	}
+	textarea { min-width: 220px; }
 }
 
-.RESConsoleButton,
-.addRowButton,
-.res-icon-button {
-	border-radius: 12px;
-}
-
-.RESConsoleButton,
-.addRowButton {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 8px;
-	padding: 9px 12px;
+.wholeTableVisible {
+	overflow: auto;
 	border: 1px solid var(--options-border);
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-primary);
-	cursor: pointer;
-	font: inherit;
-	font-weight: 600;
-	text-decoration: none;
-	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease,
-		transform 0.18s ease;
-	overflow: hidden;
-
-	&:hover {
-		border-color: var(--options-border-strong);
-		background-color: rgb(255 255 255 / 5%);
-		transform: translateY(-1px);
-	}
-
-	+ .RESConsoleButton {
-		margin-left: 8px;
-	}
+	border-radius: 10px;
 }
 
-a.RESConsoleButton {
-	display: inline-flex;
-}
+.addRowButton { margin-top: 12px; }
 
-.addRowButton {
-	margin-top: 12px;
-}
+.res-icon-button,
+.SearchRES-result-copybutton { @extend %icon-button; }
 
-.res-icon-button {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 34px;
-	height: 34px;
-	padding: 0;
-	margin: 0 2px;
-	border: 1px solid rgb(255 255 255 / 6%);
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
-	cursor: pointer;
-	opacity: 1;
-	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease,
-		color 0.18s ease,
-		transform 0.18s ease;
+.res-icon-button:hover,
+.SearchRES-result-copybutton:hover { @extend %icon-button-hover; }
 
-	&:hover {
-		border-color: var(--options-border-strong);
-		background-color: rgb(255 255 255 / 6%);
-		color: var(--options-text-primary);
-		transform: translateY(-1px);
-	}
-}
-
-// #moduleOptionsSave was the old per-module workspace save button. It was
-// replaced in v0.3.6 by the global save button in the top bar
-// (.globalSaveButton). Kept no styles here.
+.deleteButton { color: #ffb7b1; }
+.handle { cursor: grab; }
 
 #SearchRES-results-container {
 	display: none;
-	margin-top: 18px;
+	margin-top: 8px;
 
 	+ #SearchRES-boilerplate {
 		margin-top: 18px;
 		padding-top: 18px;
-		border-top: 1px solid rgb(255 255 255 / 7%);
+		border-top: 1px solid var(--options-border);
 	}
 }
 
 #SearchRES-count {
-	margin-bottom: 14px;
-	color: var(--options-text-secondary);
+	margin-bottom: 12px;
+	color: var(--options-text-muted);
 	font-size: 12px;
 	font-weight: 700;
-	letter-spacing: 0.12em;
+	letter-spacing: 0.08em;
 	text-transform: uppercase;
 }
 
 #SearchRES-results {
 	display: grid;
-	gap: 12px;
+	gap: 0;
+	border-top: 1px solid var(--options-border);
 }
 
 #SearchRES-results-container li {
@@ -1532,119 +1067,49 @@ a.RESConsoleButton {
 	grid-template-columns: auto minmax(0, 1fr);
 	gap: 12px;
 	align-items: flex-start;
-	padding: 18px;
-	border: 1px solid rgb(255 255 255 / 7%);
-	border-radius: 18px;
-	background:
-		linear-gradient(180deg, rgb(255 255 255 / 3%), rgb(255 255 255 / 1%));
-	cursor: default;
+	padding: 16px 0;
+	border-top: 1px solid var(--options-border);
 	content-visibility: auto;
-	contain-intrinsic-size: 0 116px;
-	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease,
-		transform 0.18s ease;
-
-	&:hover {
-		border-color: rgb(105 174 247 / 20%);
-		background-color: rgb(255 255 255 / 4%);
-		transform: translateY(-1px);
-	}
+	contain-intrinsic-size: 0 110px;
 }
+
+#SearchRES-results-container li:first-child { border-top: 0; }
 
 .SearchRES-result-link {
 	display: block;
 	min-width: 0;
 	color: inherit;
 	text-decoration: none;
-	cursor: pointer;
 }
 
-#SearchRES-results-hidden {
-	margin-top: 12px;
-	padding: 14px 16px;
-	border: 1px solid rgb(105 174 247 / 18%);
-	border-radius: 16px;
-	background:
-		linear-gradient(180deg, rgb(105 174 247 / 10%), rgb(105 174 247 / 4%));
-	color: var(--options-text-secondary);
-
-	a {
-		font-weight: 600;
-	}
-}
-
-.SearchRES-result-header {
-	margin-bottom: 10px;
-	color: var(--options-text-secondary);
-}
+.SearchRES-result-header { margin-bottom: 8px; }
 
 .SearchRES-result-title {
 	display: block;
+	color: var(--options-text);
 	font-weight: 700;
-	color: var(--options-text-primary);
-
-	.advanced & {
-		font-style: italic;
-	}
 }
 
 .SearchRES-breadcrumb {
 	display: block;
-	margin-top: 6px;
+	margin-top: 4px;
+	color: var(--options-text-soft);
 	font-size: 12px;
-	color: var(--options-text-muted);
 }
 
 .SearchRES-result-description {
-	color: var(--options-text-secondary);
+	color: var(--options-text-muted);
 
-	p:last-child {
-		margin-bottom: 0;
-	}
+	p:last-child { margin-bottom: 0; }
 }
 
-.SearchRES-result-copybutton {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 34px;
-	height: 34px;
-	padding: 0;
-	border: 1px solid rgb(255 255 255 / 7%);
-	border-radius: 12px;
-	appearance: none;
-	background-color: rgb(255 255 255 / 3%);
-	color: var(--options-text-secondary);
-	cursor: pointer;
-	font: inherit;
-	opacity: 1;
-	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease,
-		color 0.18s ease;
-}
-
-#SearchRES-results .SearchRES-result-copybutton:hover {
-	border-color: var(--options-border-strong);
-	background-color: rgb(255 255 255 / 6%);
-	color: var(--options-text-primary);
-}
-
-#SearchRES-input-container {
-	position: relative;
-	margin: 0;
-
-	&::after {
-		position: absolute;
-		right: 12px;
-		top: 50%;
-		transform: translateY(-50%);
-		color: var(--options-accent-strong);
-		font: normal 16px/1 Batch;
-		content: '\f094';
-		pointer-events: none;
-	}
+#SearchRES-results-hidden {
+	margin-top: 12px;
+	padding: 12px 14px;
+	border: 1px solid rgb(88 166 255 / 28%);
+	border-radius: 10px;
+	background: rgb(88 166 255 / 8%);
+	color: var(--options-text-muted);
 }
 
 #SearchRES-boilerplate ul {
@@ -1654,209 +1119,146 @@ a.RESConsoleButton {
 }
 
 #SearchRES-boilerplate li {
-	color: var(--options-text-secondary);
+	display: list-item;
+	color: var(--options-text-muted);
 }
 
-#SearchRES-input {
-	box-sizing: border-box;
-	width: 100%;
-	min-height: 44px;
-	padding: 10px 42px 10px 14px;
-	font-size: 14px;
+.donateOption { margin-top: 16px; }
+
+body.res-nightmode {
+	#RESConsoleTopBar {
+		color: var(--options-text);
+		border-color: var(--options-border);
+		background: var(--options-panel-raised);
+	}
+
+	.moduleButton,
+	.moduleButton.enabled,
+	.moduleButton:not(.enabled) {
+		border: 0;
+		background: transparent;
+		color: var(--options-text-muted);
+	}
+
+	.moduleButton.enabled { color: var(--options-text); }
+
+	.moduleButton:hover,
+	.moduleButton.active {
+		background: var(--options-panel);
+		color: var(--options-text);
+	}
+
+	.moduleButton.active { box-shadow: inset 2px 0 0 var(--options-accent); }
+
+	.optionContainer {
+		border-color: var(--options-border);
+		background: transparent;
+	}
+	#moduleOptionsScrim { background: rgb(13 17 23 / 78%); }
+
+	#RESConsoleContainer :is(input[type='text'], input[type='password'], .c-form-control, textarea, select) {
+		padding: 9px 11px;
+		border: 1px solid var(--options-border);
+		background: var(--options-field);
+		color: var(--options-text);
+	}
+
+	.optionsTable th {
+		background: var(--options-panel-alt);
+		color: var(--options-text-muted);
+	}
+
+	.optionsTable tr:nth-child(2n),
+	#SearchRES-results-container li { background: transparent; }
+
+	#SearchRES-results-container li {
+		border-radius: 0;
+		box-shadow: none;
+	}
 }
 
 #keyCodeModal {
 	display: none;
-	width: 240px;
 	position: absolute;
+	width: 240px;
 	padding: 12px 14px;
 	border: 1px solid var(--options-border-strong);
-	border-radius: 16px;
-	background-color: var(--options-bg-elevated-strong);
-	color: var(--options-text-primary);
-	box-shadow: var(--options-shadow-md);
+	border-radius: 10px;
+	background: var(--options-panel-raised);
+	color: var(--options-text);
+	box-shadow: 0 14px 40px rgb(0 0 0 / 38%);
 }
 
-#RESClose.RESCloseButtonTopRight {
-	position: static;
-}
-
-#RESClose {
-	border: 0;
-	padding: 0;
-	background: transparent;
-}
-
-#RESClose::after {
-	background-color: rgb(255 255 255 / 4%);
-	border-color: rgb(255 255 255 / 10%);
-	border-radius: 12px;
-	color: var(--options-text-secondary);
-	width: 34px;
-	height: 34px;
-	line-height: 32px;
-}
-
-#RESClose:hover::after {
-	border-color: var(--options-border-strong);
-	background-color: rgb(255 255 255 / 7%);
-	color: var(--options-text-primary);
-}
-
-@media (width <= 1180px) {
-	.optionContainer:not(.table, .specialOptionType) {
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-areas:
-			'title'
-			'description'
-			'setting';
-	}
+@media (width <= 1080px) {
+	.optionContainer { grid-template-columns: 1fr; }
+	.optionSetting { justify-content: flex-start; }
 }
 
 @media (width <= 960px) {
-	body {
-		height: auto;
-		overflow: auto;
-	}
-
-	#RESConsoleContainer {
-		min-height: auto;
-	}
-
-	.RESDialogTopBar {
-		padding-right: 16px;
-	}
+	.sidebarToggleButton { display: inline-flex; }
 
 	#RESConsoleContent {
 		grid-template-columns: 1fr;
-		height: auto;
+		grid-template-rows: auto minmax(0, 1fr);
 	}
 
 	#RESConfigPanelModulesPane {
+		max-height: 42vh;
 		border-right: 0;
-		border-bottom: 1px solid rgb(255 255 255 / 6%);
+		border-bottom: 1px solid var(--options-border);
 	}
 
-	#RESConfigPanelModulesList {
-		max-height: 320px;
-	}
-
-	#RESConfigPanelOptions {
-		overflow: visible;
-		padding: 0;
-	}
-
-	.workspaceScroll {
-		padding: 18px;
-	}
-
-	.workspaceShell,
-	.moduleHeader,
-	.workspaceCanvas {
-		border-radius: 22px;
-	}
-
-	.moduleHeader {
-		padding: 20px;
-		border-radius: 22px 22px 0 0;
-	}
-
-	.workspaceCanvas {
-		border-radius: 0 0 22px 22px;
-	}
-
-	.moduleHeaderTopRow {
-		grid-template-columns: 1fr;
-	}
-
-	.moduleHeaderUtility {
-		justify-items: start;
-	}
-
-	.optionContainer {
-		padding: 18px;
-	}
-
-	.optionTitle,
-	.optionSetting {
-		width: 100%;
-		min-width: 0;
-	}
-
-	.optionContainer:not(.table, .specialOptionType) .optionSetting {
-		padding: 14px 16px;
-	}
-
-	.consoleHeaderActions {
-		width: 100%;
-		justify-content: flex-start;
-	}
+	#RESConsoleContainer.sidebar-collapsed #RESConfigPanelModulesPane { display: none; }
+	.workspaceShell { padding: 20px; }
+	.moduleHeaderTopRow { grid-template-columns: 1fr; }
+	.moduleHeaderUtility { justify-content: flex-start; }
 }
 
 @media (width <= 680px) {
-	.RESDialogTopBar,
-	#RESConfigPanelModulesPane,
-	#RESConfigPanelOptions {
-		padding-left: 16px;
-		padding-right: 16px;
+	.RESDialogTopBar {
+		flex-direction: column;
+		align-items: stretch;
+		padding: 14px 16px;
 	}
 
-	.consoleBrandBlock {
-		gap: 12px;
-	}
+	.consoleBrandBlock,
+	.consoleHeaderActions { width: 100%; }
 
-	.sidebarSectionHeader,
 	.consoleHeaderActions {
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: stretch;
 	}
 
-	.advancedOptionsPanel {
-		grid-template-columns: 1fr;
-		justify-items: start;
-	}
-
-	.globalStageBar {
+	.globalStageBar,
+	.globalSaveButton,
+	.globalDiscardButton,
+	.sidebarToggleButton {
 		width: 100%;
 		justify-content: center;
 	}
 
-	.globalSaveButton,
-	.globalDiscardButton {
-		width: 100%;
-		text-align: center;
+	.sidebarSearchBlock,
+	.sidebarListBlock,
+	.advancedOptionsPanel,
+	.workspaceShell {
+		padding-left: 16px;
+		padding-right: 16px;
 	}
 
-	.moduleName {
-		font-size: 1.8rem;
-	}
-
-	#SearchRES-results-container li {
-		grid-template-columns: 1fr;
-	}
-
-	.SearchRES-result-copybutton {
-		order: 2;
-	}
+	.advancedOptionsPanel { flex-direction: column; }
+	#SearchRES-results-container li { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.RESConfigPanelCategory,
 	.moduleButton,
-	.moduleRowToggle,
 	.moduleRowToggleThumb,
-	.optionContainer,
-	.res-icon-button,
-	.RESConsoleButton,
-	.addRowButton,
+	.globalStageBar,
 	.globalSaveButton,
 	.globalDiscardButton,
-	.globalStageBar,
-	.filterChip,
-	.toggleButton .toggleThumb,
-	.toggleButton .toggleThumb::before,
-	#SearchRES-results-container li,
-	.SearchRES-result-copybutton {
-		transition: none;
-	}
+	.sidebarToggleButton,
+	.RESConsoleButton,
+	.addRowButton,
+	.res-icon-button,
+	.toggleThumb::before,
+	.SearchRES-result-copybutton { transition: none; }
 }

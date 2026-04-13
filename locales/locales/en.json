@@ -65,6 +65,36 @@
 	"aboutOptionsSearchSettings": {
 		"message": "Find RES settings."
 	},
+	"searchSettingsDescription": {
+		"message": "Search by module name, setting name, or description."
+	},
+	"searchSettingsResultsHidden": {
+		"message": "Some results have been hidden because advanced options are currently hidden."
+	},
+	"searchSettingsBoilerplateIntro": {
+		"message": "Try a feature name, a module name, or part of a setting description."
+	},
+	"searchSettingsBoilerplateExamples": {
+		"message": "Examples: <code>timestamps</code>, <code>favicon</code>, or <code>subreddit styles</code>"
+	},
+	"searchSettingsBoilerplateAdvanced": {
+		"message": "Turn on advanced options from the left rail to include expert settings in the results."
+	},
+	"searchSettingsBoilerplateCopy": {
+		"message": "Use the copy button on a result to link directly to that setting in a comment."
+	},
+	"searchResultCountOne": {
+		"message": "$1 result for “$2”"
+	},
+	"searchResultCountMany": {
+		"message": "$1 results for “$2”"
+	},
+	"searchResultOpenLabel": {
+		"message": "Open $1 in settings"
+	},
+	"searchCopyInstruction": {
+		"message": "Copy and paste this into your comment."
+	},
 	"aboutOptionsAnnouncementsTitle": {
 		"message": "Announcements"
 	},
@@ -2619,11 +2649,230 @@
 	"saveOptions": {
 		"message": "save options"
 	},
+	"settingsConsoleSaveDefault": {
+		"message": "Save Options"
+	},
 	"showAdvancedOptions": {
 		"message": "Show advanced options"
 	},
 	"searchRESSettings": {
 		"message": "search RES settings"
+	},
+	"settingsConsoleSubtitle": {
+		"message": "Settings Console"
+	},
+	"settingsConsoleHideModules": {
+		"message": "Hide Modules"
+	},
+	"settingsConsoleShowModules": {
+		"message": "Show Modules"
+	},
+	"settingsConsoleAllChangesSaved": {
+		"message": "All changes saved"
+	},
+	"settingsConsoleSavedJustNow": {
+		"message": "Saved just now"
+	},
+	"settingsConsoleDiscard": {
+		"message": "Discard"
+	},
+	"settingsConsoleDiscardStagedChanges": {
+		"message": "Discard staged changes"
+	},
+	"settingsConsoleClose": {
+		"message": "Close settings"
+	},
+	"settingsConsoleHomeAria": {
+		"message": "$1 settings home"
+	},
+	"settingsConsoleModulesAria": {
+		"message": "Settings modules"
+	},
+	"settingsConsoleFindTitle": {
+		"message": "Find"
+	},
+	"settingsConsoleFindMeta": {
+		"message": "Search modules and settings"
+	},
+	"settingsConsoleFindLabel": {
+		"message": "Find a Setting"
+	},
+	"settingsConsoleFilterGroup": {
+		"message": "Filter modules by state"
+	},
+	"settingsConsoleFilterAll": {
+		"message": "All"
+	},
+	"settingsConsoleFilterOn": {
+		"message": "On"
+	},
+	"settingsConsoleFilterOff": {
+		"message": "Off"
+	},
+	"settingsConsoleFilterModified": {
+		"message": "Modified"
+	},
+	"settingsConsoleModulesTitle": {
+		"message": "Modules"
+	},
+	"settingsConsoleBrowseByCategory": {
+		"message": "Browse by category"
+	},
+	"settingsConsoleNoModulesMatch": {
+		"message": "No modules match this filter."
+	},
+	"settingsConsoleShowAllModules": {
+		"message": "Show All Modules"
+	},
+	"settingsConsoleAdvancedMeta": {
+		"message": "Include expert settings in the workspace and in search."
+	},
+	"settingsConsoleWorkspace": {
+		"message": "Workspace"
+	},
+	"settingsConsoleWorkspaceSummary": {
+		"message": "Search modules, settings, and descriptions from one place."
+	},
+	"settingsConsoleCategoryPlaceholder": {
+		"message": "Category"
+	},
+	"settingsConsoleModuleNamePlaceholder": {
+		"message": "Module Name"
+	},
+	"settingsConsoleStateEnabled": {
+		"message": "Enabled"
+	},
+	"settingsConsoleStateDisabled": {
+		"message": "Disabled"
+	},
+	"settingsConsoleStateAlwaysOn": {
+		"message": "Always On"
+	},
+	"settingsConsoleEnableModuleAction": {
+		"message": "Enable $1"
+	},
+	"settingsConsoleDisableModuleAction": {
+		"message": "Disable $1"
+	},
+	"settingsConsoleNoModuleOptions": {
+		"message": "There are no configurable options for this module."
+	},
+	"settingsConsoleStagedCountOne": {
+		"message": "$1 staged"
+	},
+	"settingsConsoleStagedCountMany": {
+		"message": "$1 staged"
+	},
+	"settingsConsoleCategorySummaryOne": {
+		"message": "$1 category"
+	},
+	"settingsConsoleCategorySummaryMany": {
+		"message": "$1 categories"
+	},
+	"settingsConsoleShowingEnabledOne": {
+		"message": "Showing $1 enabled module"
+	},
+	"settingsConsoleShowingEnabledMany": {
+		"message": "Showing $1 enabled modules"
+	},
+	"settingsConsoleShowingDisabledOne": {
+		"message": "Showing $1 disabled module"
+	},
+	"settingsConsoleShowingDisabledMany": {
+		"message": "Showing $1 disabled modules"
+	},
+	"settingsConsoleShowingModifiedOne": {
+		"message": "Showing $1 modified module"
+	},
+	"settingsConsoleShowingModifiedMany": {
+		"message": "Showing $1 modified modules"
+	},
+	"settingsConsoleInCategoryOne": {
+		"message": " in $1 category"
+	},
+	"settingsConsoleInCategoryMany": {
+		"message": " in $1 categories"
+	},
+	"settingsConsoleStagedModulesOne": {
+		"message": "$1 staged"
+	},
+	"settingsConsoleStagedModulesMany": {
+		"message": "$1 staged"
+	},
+	"settingsConsoleModuleCountLabelOne": {
+		"message": "$1 module"
+	},
+	"settingsConsoleModuleCountLabelMany": {
+		"message": "$1 modules"
+	},
+	"settingsConsoleNoConfigurableOptions": {
+		"message": "No configurable settings"
+	},
+	"settingsConsoleNoConfigurableOptionsAlwaysOn": {
+		"message": "Always on • No configurable settings"
+	},
+	"settingsConsoleSettingCountOne": {
+		"message": "$1 setting"
+	},
+	"settingsConsoleSettingCountMany": {
+		"message": "$1 settings"
+	},
+	"settingsConsoleAdvancedCount": {
+		"message": " • $1 advanced"
+	},
+	"settingsConsoleAlwaysOnSuffix": {
+		"message": " • Always on"
+	},
+	"settingsConsoleChangeStagedOne": {
+		"message": "$1 change staged"
+	},
+	"settingsConsoleChangeStagedMany": {
+		"message": "$1 changes staged"
+	},
+	"settingsConsoleChangeStagedScopeOne": {
+		"message": "$1 change staged across $2 modules"
+	},
+	"settingsConsoleChangeStagedScopeMany": {
+		"message": "$1 changes staged across $2 modules"
+	},
+	"settingsConsoleSaveStagedOne": {
+		"message": "Save $1 Change"
+	},
+	"settingsConsoleSaveStagedMany": {
+		"message": "Save $1 Changes"
+	},
+	"settingsConsoleSaveStagedAriaOne": {
+		"message": "Save $1 staged change"
+	},
+	"settingsConsoleSaveStagedAriaMany": {
+		"message": "Save $1 staged changes"
+	},
+	"settingsConsoleKeycodePrompt": {
+		"message": "Press a key or a combination with Shift, Alt, and/or Ctrl to assign this action."
+	},
+	"settingsConsoleDefaultValue": {
+		"message": "Default: $1"
+	},
+	"settingsConsoleRemoveRow": {
+		"message": "Remove this row"
+	},
+	"settingsConsoleRestoreDeletedRow": {
+		"message": "Restore deleted row"
+	},
+	"settingsConsoleMoveRow": {
+		"message": "Drag and drop to move this row"
+	},
+	"settingsConsoleAbandonChangesConfirmation": {
+		"message": "Abandon your changes to RES settings?"
+	},
+	"settingsConsolePermissionRequired": {
+		"message": "Permission required"
+	},
+	"settingsConsoleAdvancedLinkOpenedNotice": {
+		"message": "You opened a link to an advanced option, but not all options are shown. These options will stay visible until you leave or refresh the page. To keep seeing them, check the <i>Show advanced options</i> checkbox in the menu."
+	},
+	"settingsConsoleEnableModuleScrim": {
+		"message": "Enable this module to edit its settings."
 	},
 	"toggleOn": {
 		"message": "on"
