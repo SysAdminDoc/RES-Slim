@@ -2692,10 +2692,31 @@
 		"message": "Find"
 	},
 	"settingsConsoleFindMeta": {
-		"message": "Search modules and settings"
+		"message": "Search modules & settings"
 	},
 	"settingsConsoleFindLabel": {
 		"message": "Find a Setting"
+	},
+	"settingsConsoleThemeGroup": {
+		"message": "Settings theme"
+	},
+	"settingsConsoleThemeLabel": {
+		"message": "Theme"
+	},
+	"settingsConsoleThemeGraphite": {
+		"message": "Graphite"
+	},
+	"settingsConsoleThemeMidnight": {
+		"message": "Midnight"
+	},
+	"settingsConsoleThemeForest": {
+		"message": "Forest"
+	},
+	"settingsConsoleThemeEmber": {
+		"message": "Ember"
+	},
+	"settingsConsoleApplyTheme": {
+		"message": "Use $1 theme"
 	},
 	"settingsConsoleFilterGroup": {
 		"message": "Filter modules by state"
@@ -2725,7 +2746,7 @@
 		"message": "Show All Modules"
 	},
 	"settingsConsoleAdvancedMeta": {
-		"message": "Include expert settings in the workspace and in search."
+		"message": "Include advanced settings in search & workspace."
 	},
 	"settingsConsoleWorkspace": {
 		"message": "Workspace"
@@ -2819,6 +2840,9 @@
 	},
 	"settingsConsoleAdvancedCount": {
 		"message": " • $1 advanced"
+	},
+	"settingsConsoleAdvancedTag": {
+		"message": "Advanced"
 	},
 	"settingsConsoleAlwaysOnSuffix": {
 		"message": " • Always on"

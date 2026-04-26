@@ -18,6 +18,7 @@ Only the features actually used are kept. Everything else — including all prom
 
 ```bash
 yarn install
+yarn test       # focused fixture checks
 yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
