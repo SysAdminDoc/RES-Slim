@@ -1,19 +1,208 @@
 <!doctype html>
 <html class="res-nightmode">
 	<head>
-		<title>Reddit Enhancement Suite: Permissions needed</title>
+		<title>RES-Slim: Permission needed</title>
 		<link rel="stylesheet" href="res.css"></link>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<style>
+			:root {
+				color-scheme: dark;
+				--prompt-bg: #0d1117;
+				--prompt-panel: #161b22;
+				--prompt-panel-alt: #11161d;
+				--prompt-border: #303a45;
+				--prompt-text: #e6edf3;
+				--prompt-muted: #9ba7b4;
+				--prompt-soft: #7d8894;
+				--prompt-accent: #58a6ff;
+				--prompt-accent-soft: rgb(88 166 255 / 14%);
+				--prompt-accent-strong: #7cc0ff;
+			}
+
+			* { box-sizing: border-box; }
+
+			html,
+			body {
+				min-height: 100%;
+				margin: 0;
+			}
+
+			body {
+				display: grid;
+				place-items: center;
+				padding: 18px;
+				background: var(--prompt-bg);
+				color: var(--prompt-text);
+				font: 13px/1.5 'Segoe UI Variable Text', 'Segoe UI', arial, sans-serif;
+			}
+
+			.permissionShell {
+				width: min(100%, 560px);
+				border: 1px solid var(--prompt-border);
+				border-radius: 14px;
+				background: var(--prompt-panel);
+				box-shadow: 0 18px 50px rgb(0 0 0 / 34%);
+				overflow: hidden;
+			}
+
+			.permissionHeader,
+			.permissionBody { padding: 18px 20px; }
+
+			.permissionHeader {
+				display: grid;
+				grid-template-columns: auto minmax(0, 1fr);
+				gap: 14px;
+				align-items: center;
+				border-bottom: 1px solid var(--prompt-border);
+				background: var(--prompt-panel-alt);
+			}
+
+			.permissionHeader .res-logo {
+				margin: 0;
+				flex: 0 0 auto;
+			}
+
+			h1 {
+				margin: 0;
+				font-size: 18px;
+				line-height: 1.2;
+			}
+
+			.permissionEyebrow {
+				margin: 0 0 4px;
+				color: var(--prompt-accent-strong);
+				font-size: 11px;
+				font-weight: 700;
+				text-transform: uppercase;
+			}
+
+			.permissionBody {
+				display: grid;
+				gap: 14px;
+			}
+
+			p { margin: 0; }
+
+			.permissionLead {
+				color: var(--prompt-muted);
+				font-size: 14px;
+			}
+
+			.permissionList {
+				display: none;
+				margin: 0;
+				padding: 12px 14px;
+				border: 1px solid var(--prompt-border);
+				border-radius: 10px;
+				background: var(--prompt-panel-alt);
+				color: var(--prompt-muted);
+			}
+
+			.permissionList.has-items {
+				display: grid;
+				gap: 6px;
+			}
+
+			.permissionListTitle {
+				color: var(--prompt-text);
+				font-weight: 700;
+			}
+
+			.permissionList ul {
+				display: grid;
+				gap: 4px;
+				margin: 0;
+				padding-left: 18px;
+			}
+
+			.permissionActions {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				flex-wrap: wrap;
+			}
+
+			#request {
+				min-height: 38px;
+				padding: 0 15px;
+				border: 1px solid rgb(88 166 255 / 45%);
+				border-radius: 9px;
+				background: var(--prompt-accent-soft);
+				color: var(--prompt-accent-strong);
+				cursor: pointer;
+				font: inherit;
+				font-weight: 700;
+			}
+
+			#request:hover {
+				border-color: var(--prompt-accent-strong);
+				background: rgb(88 166 255 / 20%);
+			}
+
+			#request:focus-visible,
+			a:focus-visible {
+				outline: 2px solid var(--prompt-accent-strong);
+				outline-offset: 3px;
+			}
+
+			.permissionHint {
+				color: var(--prompt-soft);
+				font-size: 12px;
+			}
+
+			.permissionDetails {
+				color: var(--prompt-soft);
+				font-size: 12px;
+			}
+
+			.permissionDetails summary {
+				width: fit-content;
+				color: var(--prompt-accent-strong);
+				cursor: pointer;
+			}
+
+			.permissionDetails p {
+				margin-top: 8px;
+			}
+
+			a {
+				color: var(--prompt-accent-strong);
+			}
+
+			@media (width <= 520px) {
+				body { place-items: start center; }
+				.permissionHeader,
+				.permissionBody { padding: 16px; }
+				.permissionActions { align-items: stretch; }
+				#request { width: 100%; }
+			}
+		</style>
 	</head>
-	<body style="font-family: verdana,arial,helvetica,sans-serif;">
-		<div class="res-logo"></div>
-		<div style="border-top: 1px solid #3c3c3c;">
-			<p>
-				To execute this action, you must first click the button below to request and grant permissions.
-			</p>
-			<button id="request">Request permissions</button>
-			<p>
-				Reddit Enhancement Suite has opened this window due to security restrictions in the browser. In order to request the required permissions, <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">user interaction must be performed on an included extension page</a>. For more information, see the <a href="https://www.reddit.com/r/Enhancement/wiki/permissions">wiki</a>.
-			</p>
+	<body>
+		<div class="permissionShell">
+			<header class="permissionHeader">
+				<div class="res-logo" aria-hidden="true"></div>
+				<div>
+					<p class="permissionEyebrow">Permission required</p>
+					<h1>RES-Slim needs your approval</h1>
+				</div>
+			</header>
+			<main class="permissionBody">
+				<p class="permissionLead">
+					Your browser requires a direct click before RES-Slim can request this optional permission.
+				</p>
+				<section id="permissionSummary" class="permissionList" aria-live="polite"></section>
+				<div class="permissionActions">
+					<button id="request" type="button">Grant permission</button>
+					<p class="permissionHint">The extension will continue after this window closes.</p>
+				</div>
+				<details class="permissionDetails">
+					<summary>Why this is needed</summary>
+					<p>
+						Optional extension permissions must be requested from a user-opened extension page. Read more in the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">browser documentation</a> or the <a href="https://www.reddit.com/r/Enhancement/wiki/permissions">RES permissions wiki</a>.
+					</p>
+				</details>
+			</main>
 		</div>
 	</body>
 	<script src="prompt.entry.js"></script>

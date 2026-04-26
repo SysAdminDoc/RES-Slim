@@ -1,14 +1,23 @@
 .res-commentNavToggle {
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 24px;
+	margin: 0 0 0 8px;
+	padding: 2px 8px;
+	border: 1px solid rgb(148 163 184 / 34%);
+	border-radius: 999px;
+	background: rgb(255 255 255 / 88%);
+	color: #334155;
 	font-size: 12px;
-	margin-left: 8px;
+	font-weight: 700;
 	cursor: pointer;
 
 	&::after {
 		content: '»';
 		display: inline-block;
-		margin-left: 2px;
 		transform: rotate(90deg);
+		color: #1278d3;
 	}
 
 	&-choices {
@@ -16,26 +25,46 @@
 		z-index: 41;
 		display: none;
 		position: absolute;
-		background-color: rgba(255, 255, 255, .9);
-		padding: 8px;
-		border-radius: 3px;
-		box-shadow: rgb(144, 144, 144) 1px 2px 4px;
+		min-width: 180px;
+		margin-top: 25px;
+		padding: 6px;
+		border: 1px solid rgb(148 163 184 / 34%);
+		border-radius: 10px;
+		background-color: rgb(255 255 255 / 98%);
+		box-shadow: 0 14px 34px rgb(15 23 42 / 18%);
 
 		&[category=new] {
 			color: #9a7d2e;
 		}
 	}
 
-	&:hover &-choices { display: block; }
+	&:hover,
+	&:focus-visible,
+	&[aria-expanded='true'] {
+		border-color: rgb(18 120 211 / 44%);
+		background: #fff;
+		color: #0f1720;
+	}
+
+	&:hover &-choices,
+	&:focus-within &-choices { display: grid; }
 
 	&-type {
-		color: grey;
+		width: 100%;
+		padding: 7px 8px;
+		border: 0;
+		border-radius: 7px;
+		background: transparent;
+		color: #475569;
 		cursor: pointer;
 		font-weight: bold;
-		width: 100%;
+		text-align: left;
 
-		&:hover {
-			text-decoration: underline;
+		&:hover,
+		&:focus-visible {
+			background: rgb(18 120 211 / 10%);
+			color: #0f1720;
+			outline: none;
 		}
 	}
 }
@@ -44,19 +73,29 @@
 	clear: both;
 	float: right;
 	margin-top: 5px;
-	padding: 3px;
-	opacity: .3;
+	padding: 8px;
+	border: 1px solid rgb(148 163 184 / 30%);
+	border-radius: 10px;
+	background: rgb(255 255 255 / 92%);
+	box-shadow: 0 10px 28px rgb(15 23 42 / 14%);
+	opacity: .52;
 	user-select: none;
-	transition: opacity .5s ease-in;
+	transition: opacity .2s ease, box-shadow .2s ease;
 
 	&:focus-within,
 	&:hover {
 		opacity: 1;
+		box-shadow: 0 14px 34px rgb(15 23 42 / 18%);
 	}
 
 	select {
-		width: 60px;
-		border: none;
+		width: 100%;
+		min-width: 92px;
+		min-height: 28px;
+		border: 1px solid rgb(148 163 184 / 38%);
+		border-radius: 7px;
+		background: #fff;
+		color: #172033;
 
 		&:not(:focus) option span {
 			display: none;
@@ -64,21 +103,48 @@
 	}
 }
 
+.commentNavFieldLabel {
+	display: block;
+	margin-bottom: 4px;
+	color: #64748b;
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.commentNavSkipRead {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 6px;
+	color: #475569;
+	font-size: 11px;
+}
+
 #commentNavButtons {
-	text-align: center;
+	display: grid;
+	grid-template-columns: 32px minmax(54px, 1fr) 32px;
+	align-items: center;
+	gap: 4px;
+	margin-top: 8px;
 }
 
 #commentNavUp,
-#commentNavDown {
+#commentNavDown,
+#commentNavPostCount {
 	all: unset;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 30px;
+	border-radius: 8px;
 	color: #1278d3;
 	cursor: pointer;
-	font-size: 35px;
-	clip-path: inset(7px 0);
-	margin: -7px 0;
+	font-weight: 800;
 
-	&:focus {
-		text-shadow: 0 0 5px #1278d3;
+	&:hover,
+	&:focus-visible {
+		background: rgb(18 120 211 / 10%);
 		outline: none;
 	}
 
@@ -88,6 +154,50 @@
 	}
 }
 
+#commentNavUp,
+#commentNavDown {
+	font-size: 24px;
+	line-height: 1;
+}
+
 #commentNavPostCount {
-	color: #1278d3;
+	color: #334155;
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+
+.res-nightmode {
+	.res-commentNavToggle,
+	#REScommentNavBox {
+		border-color: rgb(148 163 184 / 24%);
+		background: rgb(31 38 46 / 94%);
+		color: #d7dde5;
+	}
+
+	.res-commentNavToggle-choices {
+		border-color: rgb(148 163 184 / 24%);
+		background: rgb(31 38 46 / 98%);
+	}
+
+	.res-commentNavToggle-type {
+		color: #aab4c0;
+
+		&:hover,
+		&:focus-visible {
+			background: rgb(88 166 255 / 14%);
+			color: #e6edf3;
+		}
+	}
+
+	#REScommentNavBox select {
+		border-color: rgb(148 163 184 / 28%);
+		background: #11161d;
+		color: #e6edf3;
+	}
+
+	.commentNavFieldLabel,
+	.commentNavSkipRead,
+	#commentNavPostCount {
+		color: #aab4c0;
+	}
 }

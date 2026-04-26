@@ -18,6 +18,7 @@
 	--options-success: #3fb950;
 	--options-warning: #d29922;
 	--options-danger: #f85149;
+	--options-shadow: 0 18px 46px rgb(0 0 0 / 28%);
 }
 
 html[data-settings-theme='midnight'] {
@@ -99,6 +100,11 @@ html[data-settings-theme='ember'] {
 	cursor: pointer;
 	text-decoration: none;
 	transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+
+	&:disabled {
+		cursor: default;
+		opacity: .68;
+	}
 }
 
 %surface-button-hover {
@@ -350,6 +356,7 @@ li {
 	color: var(--options-text-muted);
 	font-size: 12px;
 	font-weight: 600;
+	transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
 
 	&.is-dirty {
 		border-color: rgb(210 153 34 / 40%);
@@ -362,6 +369,19 @@ li {
 		background: rgb(63 185 80 / 12%);
 		color: #b5f4bf;
 	}
+
+	&.is-saved-pulse {
+		box-shadow: 0 0 0 4px rgb(63 185 80 / 10%);
+	}
+
+	&[aria-busy='true'] .globalStageIcon {
+		width: 12px;
+		height: 12px;
+		border: 2px solid currentcolor;
+		border-right-color: transparent;
+		background: transparent;
+		animation: spin 700ms linear infinite;
+	}
 }
 
 .globalStageIcon {
@@ -369,6 +389,10 @@ li {
 	height: 8px;
 	border-radius: 50%;
 	background: currentcolor;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
 }
 
 .globalSaveButton,
@@ -872,7 +896,10 @@ li {
 }
 
 .workspaceEmptyState {
-	padding: 14px 0;
+	padding: 18px 20px;
+	border: 1px solid var(--options-border);
+	border-radius: 10px;
+	background: var(--options-panel-alt);
 	color: var(--options-text-muted);
 }
 
@@ -896,6 +923,8 @@ li {
 	background: rgb(13 17 23 / 78%);
 	color: var(--options-text-muted);
 	text-align: center;
+	backdrop-filter: blur(4px);
+	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 3%);
 
 	&.visible { display: grid; }
 }
@@ -910,6 +939,7 @@ li {
 	scroll-margin-top: 24px;
 	content-visibility: auto;
 	contain-intrinsic-size: 0 120px;
+	transition: background-color 120ms ease, box-shadow 120ms ease;
 
 	&:first-child {
 		border-top: 0;
@@ -917,6 +947,10 @@ li {
 	}
 
 	&.dependsOnDisabledOptions { display: none; }
+
+	&:hover {
+		background: rgb(255 255 255 / 2%);
+	}
 
 	&.highlight {
 		background: rgb(88 166 255 / 7%);
@@ -1480,4 +1514,8 @@ body.res-nightmode {
 	.res-icon-button,
 	.toggleThumb::before,
 	.SearchRES-result-copybutton { transition: none; }
+
+	.globalStageBar[aria-busy='true'] .globalStageIcon {
+		animation: none;
+	}
 }

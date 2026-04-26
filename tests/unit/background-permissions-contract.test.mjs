@@ -11,6 +11,8 @@ test('background permission prompt resolver cannot hang on malformed result URLs
 
 	assert.match(source, /const requestPermissions = apiToPromise/);
 	assert.match(source, /const createWindow = apiToPromise/);
+	assert.match(source, /const width = 640/);
+	assert.match(source, /const height = 560/);
 	assert.match(source, /if \(typeof id !== 'number'\) return false/);
 	assert.match(source, /function finish\(result, closeTab = false\)/);
 	assert.match(source, /JSON\.parse\(updatedUrl\.searchParams\.get\('result'\) \|\| 'false'\)/);

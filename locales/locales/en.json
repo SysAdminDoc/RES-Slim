@@ -1398,6 +1398,12 @@
 	"notificationsSticky": {
 		"message": "sticky"
 	},
+	"notificationsDismiss": {
+		"message": "Dismiss notification"
+	},
+	"notificationsAlwaysShowType": {
+		"message": "Always show this type"
+	},
 	"onboardingName": {
 		"message": "RES Welcome Wagon"
 	},

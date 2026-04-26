@@ -169,9 +169,17 @@ img {
 	display: inline-flex;
 	align-items: center;
 	z-index: 2;
-	background: rgba(0, 0, 0, .3);
+	gap: 2px;
+	padding: 3px;
+	border: 1px solid rgba(255, 255, 255, .16);
+	border-radius: 10px;
+	background: rgba(10, 14, 22, .74);
+	backdrop-filter: blur(8px);
 	opacity: 0;
 	cursor: pointer;
+	box-shadow: 0 10px 24px rgba(0, 0, 0, .24);
+	transition: opacity .16s ease, transform .16s ease;
+	transform: translateY(2px);
 
 	&-left { left: 10px; }
 	&-right { right: 10px; }
@@ -179,12 +187,16 @@ img {
 	&-top { top: 10px; }
 
 	button {
+		min-width: 30px;
+		min-height: 30px;
 		border: none;
+		border-radius: 7px;
 		margin: 0 !important;
 		background: transparent;
-		padding: 6px;
+		padding: 0;
 		filter: saturate(0);
 		line-height: 0;
+		transition: background-color .12s ease, filter .12s ease;
 
 		&::after {
 			cursor: pointer;
@@ -193,7 +205,15 @@ img {
 			vertical-align: baseline;
 		}
 
-		&:hover::after { color: #b9b9b9; }
+		&:hover,
+		&:focus-visible {
+			background: rgba(255, 255, 255, .12);
+			filter: saturate(.35);
+			outline: none;
+		}
+
+		&:hover::after,
+		&:focus-visible::after { color: #fff; }
 	}
 
 	&-lookup::after { content: '\F178'; }
@@ -222,8 +242,17 @@ img {
 	min-height: 46px;
 	position: relative;
 
-	&:hover .res-media-controls {
-		opacity: .8;
+	&:hover .res-media-controls,
+	&:focus-within .res-media-controls {
+		opacity: .94;
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.res-media-controls,
+	.res-media-controls button {
+		transition: none;
 	}
 }
 
