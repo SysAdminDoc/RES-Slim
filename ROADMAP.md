@@ -1,18 +1,19 @@
 # RES-Slim Roadmap
 
-Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 87 media-host expandos, minimal infra. Roadmap stays ruthlessly minimal while keeping parity with upstream security fixes and extending the media roster.
+Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 86 media-host expandos, minimal infra. Roadmap stays ruthlessly minimal while keeping parity with upstream security fixes and extending the media roster.
 
 ## Completed This Pass
 
 - Settings console theme picker and density polish — added Graphite, Midnight, Forest, and Ember palettes backed by shared option tokens, persisted in local storage, with localized labels and accessible pressed-state controls.
 - Initial `yarn test` fixture suite — added a no-dependency Node test contract for the settings-console theme picker and token coverage. Expand this into media-host fixtures next.
+- Media-host fixture coverage — added an old.reddit-style media fixture page plus host registry, critical-host, and browser-manifest permission tests for `showImages`.
 
 ## Planned Features
 
 ### Upstream Sync
 - Scripted diff tool to detect new upstream commits on kept modules
 - Monthly security-fix sync job documented in CONTRIBUTING
-- Automated regression tests for `showImages` against a fixture page
+- [x] Automated regression tests for `showImages` against a fixture page — initial host registry/domain/permission coverage added; richer runtime media rendering fixtures remain open.
 - Version-pin manifest that records upstream SHA per module
 
 ### Media Hosts
@@ -28,7 +29,7 @@ Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 87 m
 - "Collapse OP chain" one-click for long self-post threads
 
 ### Build & Release
-- [x] esbuild + Flow remain; add `yarn test` fixture suite — initial settings-console fixture contract added; media-host and privacy fixtures remain open.
+- [x] esbuild + Flow remain; add `yarn test` fixture suite — settings-console and media-host fixture contracts added; privacy fixtures remain open.
 - CRX3 + XPI signed releases attached to GitHub Releases
 - Parallel MV2 Firefox and MV3 Chrome manifests with shared source
 - Automated version bump + CHANGELOG from conventional commits
@@ -94,7 +95,7 @@ Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 87 m
 - **libertysoft3/Reddit-Enhancement-Suite-old** — https://github.com/libertysoft3/Reddit-Enhancement-Suite-old — fork targeting Reddit clones (Lemmy-style); relevant if we ever extend past old.reddit.com.
 - **RES release 5.24.3 notes** — https://redditenhancementsuite.com/releases/5.24.3/ — documents the MV3 migration + webpack→esbuild swap; exact blueprint for our own.
 - **RES module loader `src/core/modules.js`** — https://github.com/honestbleeps/Reddit-Enhancement-Suite/blob/master/lib/core/modules.js — per-module enable/disable + dependency graph; skeleton for our 45-module tree.
-- **Media expando host list** — https://github.com/honestbleeps/Reddit-Enhancement-Suite/tree/master/lib/modules/hosts — 100+ hosts; we ship 87 — periodically diff for new ones.
+- **Media expando host list** — https://github.com/honestbleeps/Reddit-Enhancement-Suite/tree/master/lib/modules/hosts — 100+ hosts; we ship 86 — periodically diff for new ones.
 - **RES Firefox MV2 + Chrome MV3 dual build** — https://github.com/honestbleeps/Reddit-Enhancement-Suite/tree/master/build — manifest transform between targets; match for our CRX3 + XPI packer.
 
 ### Known Pitfalls from Similar Projects

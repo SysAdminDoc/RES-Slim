@@ -10,7 +10,7 @@ Only the features actually used are kept. Everything else — including all prom
 
 **Comment tweaks**: hideChildComments, commentNavigator, commentPreview, commentTools, commentQuickCollapse, commentSortBy, commentStyle, commentDepth, commentHidePersistor, saveComments, hover, showParent, readComments, newCommentCount, spoilerTags, noParticipation, sourceSnudown.
 
-**Media tweaks**: `showImages` inline expando engine plus all 87 host handlers (imgur, youtube, gfycat, reddit-native, etc.).
+**Media tweaks**: `showImages` inline expando engine plus all 86 host handlers (imgur, youtube, gfycat, reddit-native, etc.).
 
 **Infrastructure only**: menu, notifications, settingsNavigation, selectedEntry, version, requestPermissions, troubleshooter.
 
@@ -19,6 +19,7 @@ Only the features actually used are kept. Everything else — including all prom
 ```bash
 yarn install
 yarn test       # focused fixture checks
+yarn test:show-images
 yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
