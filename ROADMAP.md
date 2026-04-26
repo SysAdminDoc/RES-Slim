@@ -7,6 +7,7 @@ Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 86 m
 - Settings console theme picker and density polish — added Graphite, Midnight, Forest, and Ember palettes backed by shared option tokens, persisted in local storage, with localized labels and accessible pressed-state controls.
 - Initial `yarn test` fixture suite — added a no-dependency Node test contract for the settings-console theme picker and token coverage. Expand this into media-host fixtures next.
 - Media-host fixture coverage — added an old.reddit-style media fixture page plus host registry, critical-host, and browser-manifest permission tests for `showImages`.
+- Privacy outbound URL guard — added a reviewed `lib/**/*.js` outbound URL snapshot and telemetry-domain assertions so new hardcoded network references fail `yarn test` until reviewed.
 
 ## Planned Features
 
@@ -29,14 +30,14 @@ Stripped RES fork (upstream v5.24.8) for old.reddit.com — comment tweaks, 86 m
 - "Collapse OP chain" one-click for long self-post threads
 
 ### Build & Release
-- [x] esbuild + Flow remain; add `yarn test` fixture suite — settings-console and media-host fixture contracts added; privacy fixtures remain open.
+- [x] esbuild + Flow remain; add `yarn test` fixture suite — settings-console, media-host, and privacy fixture contracts added.
 - CRX3 + XPI signed releases attached to GitHub Releases
 - Parallel MV2 Firefox and MV3 Chrome manifests with shared source
 - Automated version bump + CHANGELOG from conventional commits
 
 ### Privacy Hygiene
-- Assert-no-network module that fails the build if any module adds a new outbound URL
-- Strip residual upstream telemetry / remote-config paths
+- [x] Assert-no-network module that fails the build if any module adds a new outbound URL — static reviewed URL snapshot now runs in `yarn test`.
+- [x] Strip residual upstream telemetry / remote-config paths — test blocks common telemetry endpoints from reviewed outbound URL references.
 - Prove offline operation in test harness
 
 ### Documentation

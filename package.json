@@ -16,9 +16,10 @@
     "once": "node build.js --mode development",
     "prebuild": "rimraf dist",
     "build": "node build.js --mode production --zip",
-    "test": "node --test tests/unit/settings-console-theme.test.mjs tests/unit/show-images-hosts.test.mjs",
+    "test": "node --test tests/unit/settings-console-theme.test.mjs tests/unit/show-images-hosts.test.mjs tests/unit/privacy-outbound-urls.test.mjs",
     "test:settings": "node --test tests/unit/settings-console-theme.test.mjs",
     "test:show-images": "node --test tests/unit/show-images-hosts.test.mjs",
+    "test:privacy": "node --test tests/unit/privacy-outbound-urls.test.mjs",
     "eslint": "eslint .",
     "stylelint": "stylelint lib/**/*.scss",
     "lint": "yarn eslint && yarn stylelint"
