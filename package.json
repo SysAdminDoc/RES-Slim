@@ -7,7 +7,7 @@
   "license": "GPL-3.0",
   "private": true,
   "type": "module",
-  "homepage": "https://example.invalid/res-slim",
+  "homepage": "https://github.com/SysAdminDoc/RES-Slim",
   "scripts": {
     "preinstall": "node -v",
     "prestart": "rimraf dist",
@@ -16,7 +16,7 @@
     "once": "node build.js --mode development",
     "prebuild": "rimraf dist",
     "build": "node build.js --mode production --zip",
-    "test": "node --test tests/unit/settings-console-theme.test.mjs tests/unit/show-images-hosts.test.mjs tests/unit/privacy-outbound-urls.test.mjs tests/unit/background-service-worker-safety.test.mjs",
+    "test": "node --test tests/unit/settings-console-theme.test.mjs tests/unit/show-images-hosts.test.mjs tests/unit/privacy-outbound-urls.test.mjs tests/unit/background-service-worker-safety.test.mjs tests/unit/build-release-contract.test.mjs tests/unit/permissions-prompt-contract.test.mjs tests/unit/settings-save-contract.test.mjs tests/unit/comment-navigator-contract.test.mjs",
     "test:settings": "node --test tests/unit/settings-console-theme.test.mjs",
     "test:show-images": "node --test tests/unit/show-images-hosts.test.mjs",
     "test:privacy": "node --test tests/unit/privacy-outbound-urls.test.mjs",

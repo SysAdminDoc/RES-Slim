@@ -9,9 +9,6 @@
 		"gecko": {
 			"id": "jid1-xUfzOsOFlzSOXg@jetpack",
 			"strict_min_version": "__browser_min_version__"
-		},
-		"gecko_android": {
-			"strict_min_version": "__browser_mobile_min_version__"
 		}
 	},
 	"icons": {
@@ -20,8 +17,8 @@
 	},
 	"page_action": {
 		"default_icon": {
-			"19": "css-on-small.png",
-			"38": "css-on.png"
+			"16": "css-on-small.png",
+			"32": "css-on.png"
 		}
 	},
 	"options_ui": {

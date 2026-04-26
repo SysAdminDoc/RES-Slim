@@ -22,11 +22,12 @@ const targets = {
 	firefox: {
 		browserName: 'firefox',
 		browserMinVersion: '115.0',
-		browserMobileMinVersion: '120.0',
 		manifest: './firefox/manifest.json',
 		noSourcemap: true,
 	},
 }
+
+const validModes = new Set(['development', 'production']);
 
 const options = commander.program
 	.option('--watch', 'Enable watch mode')
@@ -35,6 +36,10 @@ const options = commander.program
 	.option('--browsers <list>', 'Specify browsers to target', 'chrome')
 	.parse(process.argv)
 	.opts();
+
+if (!validModes.has(options.mode)) {
+	throw new Error(`Unsupported build mode "${options.mode}". Expected one of: ${Array.from(validModes).join(', ')}`);
+}
 
 const isProduction = options.mode === 'production';
 const devBuildToken = `${Math.random()}`.slice(2);
@@ -52,7 +57,43 @@ const homepageURL /*: string */ = packageInfo.homepage;
 // production builds uses version number to keep the build reproducible
 const buildToken = isProduction ? version : devBuildToken;
 
-async function buildForBrowser(targetName, { manifest, noSourcemap, browserName, browserMinVersion, browserMobileMinVersion }) {
+function normalizeBuildTargets(browsers) {
+	const requestedTargets = String(browsers || '')
+		.split(',')
+		.map(target => target.trim())
+		.filter(Boolean)
+		.flatMap(target => target === 'all' ? Object.keys(targets) : [target]);
+	const buildTargets = [...new Set(requestedTargets)];
+	const unknownTargets = buildTargets.filter(target => !targets[target]);
+
+	if (!buildTargets.length) {
+		throw new Error(`No browser targets requested. Expected one of: ${Object.keys(targets).join(', ')}, all`);
+	}
+
+	if (unknownTargets.length) {
+		throw new Error(`Unknown browser target "${unknownTargets.join(', ')}". Expected one of: ${Object.keys(targets).join(', ')}, all`);
+	}
+
+	return buildTargets;
+}
+
+async function addDirectoryToZip(zip, sourceDir, currentDir = sourceDir) {
+	const entries = await fs.promises.readdir(currentDir, { withFileTypes: true });
+
+	await Promise.all(entries.map(async entry => {
+		const entryPath = path.join(currentDir, entry.name);
+		const zipPath = path.relative(sourceDir, entryPath).split(path.sep).join('/');
+
+		if (entry.isDirectory()) {
+			await addDirectoryToZip(zip, sourceDir, entryPath);
+		} else if (entry.isFile()) {
+			const content = await fs.promises.readFile(entryPath);
+			zip.file(zipPath, content);
+		}
+	}));
+}
+
+async function buildForBrowser(targetName, { manifest, noSourcemap, browserName, browserMinVersion }) {
 	const context = {
 		entryPoints: {
 			'foreground.entry': './lib/foreground.entry.js',
@@ -132,7 +173,6 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 							__homepage__: homepageURL,
 							__author__: author,
 							__browser_min_version__: browserMinVersion,
-							__browser_mobile_min_version__: browserMobileMinVersion || '',
 						}
 						Object.keys(replace).forEach(v => {
 							text = text.replaceAll(v, replace[v]);
@@ -148,13 +188,7 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 					const outPath = './dist/zip';
 					build.onEnd(async () => {
 						const zip = new JSZip();
-						const files = await fs.promises.readdir(sourceDir);
-
-						await Promise.all(files.map(async file => {
-							const filePath = path.join(sourceDir, file);
-							const content = await fs.promises.readFile(filePath);
-							zip.file(file, content);
-						}));
+						await addDirectoryToZip(zip, sourceDir);
 
 						const zipContent = await zip.generateAsync({ compression: 'DEFLATE', type: 'nodebuffer' });
 						await fs.promises.mkdir(outPath, { recursive: true })
@@ -177,7 +211,5 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 	}
 }
 
-let buildTargets = options.browsers;
-// browser option `all` converts to all available targets
-buildTargets = [...new Set(buildTargets.replace('all', Object.keys(targets).join(',')).split(','))];
+const buildTargets = normalizeBuildTargets(options.browsers);
 await Promise.all(buildTargets.map(v => buildForBrowser(v, targets[v])));
