@@ -406,6 +406,16 @@ li {
 	}
 }
 
+.settingsIoButton {
+	@extend %surface-button;
+
+	min-height: 34px;
+	padding: 0 12px;
+	font-weight: 600;
+
+	&:hover { @extend %surface-button-hover; }
+}
+
 .globalStageBar {
 	display: inline-flex;
 	align-items: center;

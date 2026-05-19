@@ -79,3 +79,6 @@ $RECYCLE.BIN/
 ## NPM package lock ##
 package-lock.json
 CLAUDE.md
+
+## Temp test scratch ##
+tests/unit/.tmp-snapshot/

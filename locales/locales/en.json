@@ -2742,6 +2742,30 @@
 	"settingsConsoleReduceMotionActive": {
 		"message": "Motion reduced"
 	},
+	"settingsConsoleExport": {
+		"message": "Export"
+	},
+	"settingsConsoleExportTitle": {
+		"message": "Download all settings as JSON"
+	},
+	"settingsConsoleImport": {
+		"message": "Import"
+	},
+	"settingsConsoleImportTitle": {
+		"message": "Restore settings from a previously exported JSON file"
+	},
+	"settingsConsoleExportSuccess": {
+		"message": "Settings exported"
+	},
+	"settingsConsoleExportFailed": {
+		"message": "Export failed: $1"
+	},
+	"settingsConsoleImportSuccess": {
+		"message": "Imported $1 module(s). Reloading…"
+	},
+	"settingsConsoleImportFailed": {
+		"message": "Import failed: $1"
+	},
 	"settingsConsoleFilterGroup": {
 		"message": "Filter modules by state"
 	},
