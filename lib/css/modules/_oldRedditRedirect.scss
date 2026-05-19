@@ -1,0 +1,41 @@
+// RES-Slim: small pill-free host-toggle injected into #header-bottom-right
+// by the oldRedditRedirect module. Uses subtle 4px corners per the
+// "no fully-rounded backdrop" rule.
+
+.rsm-host-toggle {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 8px;
+	padding: 2px 4px;
+	border: 1px solid rgb(255 122 24 / 28%);
+	border-radius: 4px;
+	background: rgb(255 122 24 / 10%);
+	font-size: 11px;
+	line-height: 1;
+	vertical-align: middle;
+}
+
+.rsm-host-toggle-link {
+	display: inline-block;
+	padding: 3px 6px;
+	border-radius: 4px;
+	color: inherit;
+	font-weight: 600;
+	text-decoration: none;
+	text-transform: lowercase;
+
+	&:hover {
+		background: rgb(255 122 24 / 18%);
+		text-decoration: none;
+	}
+
+	&.is-active {
+		background: rgb(255 122 24 / 30%);
+		color: #ffb06a;
+	}
+}
+
+body.res-nightmode .rsm-host-toggle {
+	border-color: rgb(255 122 24 / 40%);
+	background: rgb(255 122 24 / 18%);
+}
