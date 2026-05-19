@@ -2,6 +2,19 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.7.0 - 2026-05-19
+
+- Phase 7 Privacy, Redirect, and Anti-Promo Suite.
+- New modules: removePromoted, outboundCleanser, eventTrackingSabotage, frictionRemovers, oldRedditRedirect, hideUsername.
+- Hide count badge for promoted posts in the page header.
+- Outbound URL cleanser strips `out.reddit.com` wrappers and UTM/ref/share-id params on hover, click, copy, contextmenu, and focus.
+- Event-tracking sabotage wraps `sendBeacon`, `fetch`, and `XMLHttpRequest` in the page world for Reddit's telemetry hosts and analytics paths.
+- Auto-confirms `/over18` and `/quarantine` gates. Hides "use new Reddit" and "open in app" banners.
+- Optional `www.reddit.com -> old.reddit.com` redirect (off by default) + always-on `old/www/sh` host toggle pill.
+- Logged-in username + (optionally) karma replaced with a configurable placeholder for streaming/screen-share use.
+- Privacy URL snapshot updated (reviewed) for the cleanser base URL.
+- Test count: 95.
+
 ## v0.6.0 - 2026-05-19
 
 - Consolidates Phase 5 (Core Engine + Capture Contracts) and Phase 6 (Settings Panel + Dark/OLED Design System) under one version bump.

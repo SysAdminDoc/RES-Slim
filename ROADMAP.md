@@ -1372,19 +1372,28 @@ Acceptance criteria:
 
 Features:
 
-- Promoted post removal by `.promoted` and `data-promoted`.
-- Outbound URL cleanser for click and copy/mouseover.
-- Event tracking sabotage where safe.
-- App prompt, login wall, mature/age friction handling.
-- Optional old-Reddit redirect and host toggle button.
-- Username hider.
+- [x] Promoted post removal by `.promoted` and `data-promoted`.
+- [x] Outbound URL cleanser for click and copy/mouseover.
+- [x] Event tracking sabotage where safe.
+- [x] App prompt, login wall, mature/age friction handling.
+- [x] Optional old-Reddit redirect and host toggle button.
+- [x] Username hider.
+
+Progress:
+
+- 2026-05-19: removePromoted shipped with header count badge.
+- 2026-05-19: outboundCleanser shipped — pure helpers in `lib/utils/outboundCleanser.js`, DOM glue + capture-phase event handlers in `lib/modules/outboundCleanser.js`. Privacy URL snapshot updated.
+- 2026-05-19: eventTrackingSabotage injects page-world wrappers for `sendBeacon` / `fetch` / `XMLHttpRequest` against curated tracker hosts + Reddit analytics paths.
+- 2026-05-19: frictionRemovers auto-submits `/over18` and `/quarantine` forms; hides "use new Reddit" and "open in app" banners via single injected `<style>`.
+- 2026-05-19: oldRedditRedirect adds opt-in `www -> old` redirect + always-on `old/www/sh` host toggle pill in the userbar.
+- 2026-05-19: hideUsername masks the userbar entry and every `.author` link matching the logged-in user, with optional karma masking.
 
 Acceptance criteria:
 
-- Privacy URL snapshot updated and reviewed.
-- No new external network call happens with default settings.
-- Redirect can be disabled immediately without reload when technically possible.
-- Removed promoted count is visible in a small status surface.
+- [x] Privacy URL snapshot updated and reviewed.
+- [x] No new external network call happens with default settings.
+- [x] Redirect can be disabled immediately without reload when technically possible.
+- [x] Removed promoted count is visible in a small status surface.
 
 ### v0.8.0 - Navigation and Comment Workflow
 
