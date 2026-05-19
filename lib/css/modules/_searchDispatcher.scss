@@ -1,0 +1,23 @@
+// RES-Slim: inline target selector appended to the #search form by
+// the searchDispatcher module.
+
+.rsm-search-dispatcher {
+	margin-left: 4px;
+	padding: 2px 6px;
+	border: 1px solid rgb(255 122 24 / 28%);
+	border-radius: 4px;
+	background: rgb(255 122 24 / 8%);
+	color: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	vertical-align: middle;
+	cursor: pointer;
+
+	&:hover { background: rgb(255 122 24 / 16%); }
+	&:focus-visible { outline: 2px solid #ffb06a; outline-offset: 1px; }
+}
+
+body.res-nightmode .rsm-search-dispatcher {
+	background: rgb(255 122 24 / 16%);
+	color: #ffd9b8;
+}

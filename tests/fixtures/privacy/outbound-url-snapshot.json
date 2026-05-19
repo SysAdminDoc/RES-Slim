@@ -762,6 +762,30 @@
 			"url": "https://www.reddit.com/r/NoParticipation/wiki/intro"
 		},
 		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://duckduckgo.com/?q=site%3Areddit.com+{q}"
+		},
+		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://example.com/?q={q}"
+		},
+		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://old.reddit.com"
+		},
+		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://old.reddit.com/search?q={q}"
+		},
+		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://old.reddit.com${sub}"
+		},
+		{
+			"file": "lib/modules/searchDispatcher.js",
+			"url": "https://www.google.com/search?q=site%3Areddit.com+{q}"
+		},
+		{
 			"file": "lib/modules/showImages.js",
 			"url": "https://${siteModule.domains[0]}"
 		},
