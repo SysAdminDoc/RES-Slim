@@ -1313,13 +1313,17 @@ Each phase must ship a usable product slice and update `README.md`, changelog, t
 
 Features:
 
-- Add feature registry with `init()`/`destroy()`.
-- Add settings schema/defaults/migration layer.
-- Add selector map from this roadmap.
-- Add MHTML-derived HTML fixtures for front page and thread.
-- Add `trustedHtml` helper and TrustedTypes policy.
-- Add toast host and local error log panel.
-- Add anti-FOUC dark/OLED class at `document_start`.
+- [ ] Add feature registry with `init()`/`destroy()`.
+- [ ] Add settings schema/defaults/migration layer.
+- [x] Add selector map from this roadmap.
+- [x] Add MHTML-derived HTML fixtures for front page and thread.
+- [x] Add `trustedHtml` helper and TrustedTypes policy.
+- [ ] Add toast host and local error log panel.
+- [ ] Add anti-FOUC dark/OLED class at `document_start`.
+
+Progress:
+
+- 2026-05-19: Added the old-Reddit selector map, frontpage/thread MHTML-derived fixtures, selector contract coverage, `findElement`/`waitForElement` helpers, and TrustedTypes HTML helpers.
 
 Dependencies:
 
@@ -1329,12 +1333,12 @@ Dependencies:
 
 Acceptance criteria:
 
-- Every migrated feature can be toggled off and back on without duplicate DOM.
-- Selector tests pass against both captured pages.
-- Settings changes apply immediately.
-- Inactive settings overlay has `pointer-events: none`.
-- No keyboard shortcuts are added.
-- No feature code relies on hashed or generated classes as primary selectors.
+- [ ] Every migrated feature can be toggled off and back on without duplicate DOM.
+- [x] Selector tests pass against both captured pages.
+- [ ] Settings changes apply immediately.
+- [ ] Inactive settings overlay has `pointer-events: none`.
+- [ ] No keyboard shortcuts are added.
+- [x] No feature code relies on hashed or generated classes as primary selectors.
 
 ### v0.6.0 - Settings Panel and Dark/OLED Design System
 
