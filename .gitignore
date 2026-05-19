@@ -83,3 +83,4 @@ CLAUDE.md
 ## Temp test scratch ##
 tests/unit/.tmp-snapshot/
 tests/unit/.tmp-outbound/
+tests/unit/.tmp-limiter/
