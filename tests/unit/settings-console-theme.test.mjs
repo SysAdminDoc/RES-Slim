@@ -125,3 +125,20 @@ test('settings console paints branded scrollbars scoped to the console container
 	assert.match(styles, /#RESConsoleContainer[\s\S]{0,200}scrollbar-color:/);
 	assert.match(styles, /#RESConsoleContainer ::-webkit-scrollbar-thumb/);
 });
+
+test('settings console reduce-motion toggle is wired through template, controller, styles, and locale', () => {
+	const template = read('lib/options/templates.js');
+	const controller = read('lib/options/settingsConsole.js');
+	const styles = read('lib/options/options.scss');
+	const locale = JSON.parse(read('locales/locales/en.json'));
+
+	assert.match(template, /id="RESMotionToggle"/);
+	assert.match(controller, /SETTINGS_MOTION_STORAGE_KEY = 'res-settings-motion'/);
+	assert.match(controller, /SETTINGS_MOTION_REDUCE = 'reduce'/);
+	assert.match(controller, /dataset\.reducedMotion/);
+	assert.match(styles, /@mixin console-reduced-motion/);
+	assert.match(styles, /html\[data-reduced-motion='reduce'\]/);
+	assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,200}html:not\(\[data-reduced-motion='allow'\]\)/);
+	assert.equal(typeof locale.settingsConsoleReduceMotion?.message, 'string');
+	assert.equal(typeof locale.settingsConsoleReduceMotionActive?.message, 'string');
+});

@@ -1660,20 +1660,46 @@ html[data-settings-density='dense'] {
 	#SearchRES-results-container li { grid-template-columns: 1fr; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-	.moduleButton,
-	.moduleRowToggleThumb,
-	.globalStageBar,
-	.globalSaveButton,
-	.globalDiscardButton,
-	.sidebarToggleButton,
-	.RESConsoleButton,
-	.addRowButton,
-	.res-icon-button,
-	.toggleThumb::before,
-	.SearchRES-result-copybutton { transition: none; }
+@mixin console-reduced-motion {
+	#RESConsoleContainer,
+	#RESConsoleContainer *,
+	#RESConsoleContainer *::before,
+	#RESConsoleContainer *::after {
+		transition-duration: 1ms !important;
+		transition-delay: 0ms !important;
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		animation-delay: 0ms !important;
+		scroll-behavior: auto !important;
+	}
 
-	.globalStageBar[aria-busy='true'] .globalStageIcon {
-		animation: none;
+	#RESConsoleContainer .moduleButton:hover,
+	#RESConsoleContainer .filterChip:hover,
+	#RESConsoleContainer .globalSaveButton:hover,
+	#RESConsoleContainer .globalDiscardButton:hover,
+	#RESConsoleContainer .sidebarToggleButton:hover,
+	#RESConsoleContainer .densityToggle:hover,
+	#RESConsoleContainer .motionToggle:hover,
+	#RESConsoleContainer .res-icon-button:hover { transform: none !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html:not([data-reduced-motion='allow']) { @include console-reduced-motion; }
+}
+
+html[data-reduced-motion='reduce'] { @include console-reduced-motion; }
+
+.motionToggle {
+	@extend %surface-button;
+
+	min-height: 34px;
+	padding: 0 12px;
+
+	&:hover { @extend %surface-button-hover; }
+
+	&.is-active {
+		border-color: var(--options-accent);
+		background: var(--options-accent-soft);
+		color: var(--options-accent-strong);
 	}
 }

@@ -2736,6 +2736,12 @@
 	"settingsConsoleDenseModeActive": {
 		"message": "Dense mode on"
 	},
+	"settingsConsoleReduceMotion": {
+		"message": "Reduce motion"
+	},
+	"settingsConsoleReduceMotionActive": {
+		"message": "Motion reduced"
+	},
 	"settingsConsoleFilterGroup": {
 		"message": "Filter modules by state"
 	},
