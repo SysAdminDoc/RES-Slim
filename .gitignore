@@ -84,3 +84,4 @@ CLAUDE.md
 tests/unit/.tmp-snapshot/
 tests/unit/.tmp-outbound/
 tests/unit/.tmp-limiter/
+tests/unit/.tmp-filter/

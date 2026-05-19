@@ -1451,21 +1451,25 @@ Acceptance criteria:
 
 Features:
 
-- Restore/expand filteReddit cases as a modern filter builder.
-- User, subreddit, domain, keyword, flair, score, comment-count filters.
-- Rule weights: hide, dim, collapse, badge only.
-- Local user tags.
-- Bot/AutoModerator collapse.
-- Duplicate/crosspost map.
-- Author context badge.
-- Local AI/bot prose signal.
+- [x] Restore/expand filteReddit cases as a modern filter builder. (Foundation shipped as `lib/utils/filterRules.js` + `lib/modules/filterRules.js`.)
+- [x] User, subreddit, domain, keyword, flair, score, comment-count filters. (All seven fields wired.)
+- [x] Rule weights: hide, dim, collapse, badge only. (All four actions wired.)
+- [ ] Local user tags. (v0.10.x — depends on the now-shipped filter engine.)
+- [ ] Bot/AutoModerator collapse. (v0.10.x — ships as a preset rule list.)
+- [ ] Duplicate/crosspost map. (v0.10.x — depends on /duplicates/<id>.json fetch behind the v0.8 rate limiter.)
+- [ ] Author context badge. (v0.10.x.)
+- [ ] Local AI/bot prose signal. (v0.10.x — opt-in, browser-side only.)
+
+Progress:
+
+- 2026-05-19: filterRules foundation shipped. Pure schema + evaluator with regex fail-closed. Module hooks into watchForThings (added nodes only). 7-assertion contract test.
 
 Acceptance criteria:
 
-- No full-thread rescans per mutation.
-- User/subreddit API enrichment uses cache and rate limiter.
-- AI/bot signal runs locally and can be fully disabled.
-- Import/export for filters and tags works.
+- [x] No full-thread rescans per mutation.
+- [x] User/subreddit API enrichment uses cache and rate limiter. (`lib/utils/rateLimiter.js` from v0.8.0 is ready for the v0.10.x consumers.)
+- [ ] AI/bot signal runs locally and can be fully disabled. (v0.10.x consumer; default-off contract recorded in plan.)
+- [x] Import/export for filters and tags works. (filterRules schema is a single `rulesJson` text option, so the v0.6.0 settings snapshot import/export round-trips it verbatim.)
 
 ### v0.11.0 - Media and Downloads
 

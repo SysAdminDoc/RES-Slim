@@ -2,6 +2,14 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.0 - 2026-05-19
+
+- Phase 10 foundation: JSON-backed filter builder (`filterRules` module + `lib/utils/filterRules.js`).
+- Seven fields, five ops, four actions (hide/dim/collapse/badge), optional post/comment/both target.
+- Pure helpers + regex fail-closed; unit test exercises every combination plus malformed JSON.
+- Consumers (user tags, bot collapse, dup map, author context, AI prose signal, multi-column feed, OP/mod highlight) scheduled for v0.10.x patch series.
+- Test count: 151.
+
 ## v0.9.0 - 2026-05-19
 
 - Phase 9 Theming and Layout Superset.
