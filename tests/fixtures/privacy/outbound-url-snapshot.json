@@ -1,849 +1,853 @@
 {
-  "note": "Reviewed hardcoded outbound URL references in lib/**/*.js. Update only after privacy review.",
-  "entries": [
-    {
-      "file": "lib/core/migrate/migrate.js",
-      "url": "https://cdn.example.invalid/updates.css"
-    },
-    {
-      "file": "lib/core/migrate/migrate.js",
-      "url": "https://support.reddithelp.com/hc/articles/205926439-Reddiquette"
-    },
-    {
-      "file": "lib/environment/background/multicast.js",
-      "url": "https://*.reddit.com/*"
-    },
-    {
-      "file": "lib/environment/foreground/context.js",
-      "url": "https://www.reddit.com"
-    },
-    {
-      "file": "lib/environment/foreground/i18n.js",
-      "url": "https://developer.chrome.com/extensions/i18n#examples-getMessage"
-    },
-    {
-      "file": "lib/environment/foreground/i18n.js",
-      "url": "https://developer.chrome.com/extensions/i18n#method-getMessage"
-    },
-    {
-      "file": "lib/modules/archiveLinks.js",
-      "url": "https://undelete.pullpush.io"
-    },
-    {
-      "file": "lib/modules/archiveLinks.js",
-      "url": "https://web.archive.org/web/*/${here}"
-    },
-    {
-      "file": "lib/modules/archiveLinks.js",
-      "url": "https://www.reveddit.com"
-    },
-    {
-      "file": "lib/modules/classicFavicon.js",
-      "url": "https://github.com/chairmanbrando/userthings/blob/cabe18ad9d75411c29b24761f296e9a5e3669993/reddit-favicon.js"
-    },
-    {
-      "file": "lib/modules/commentSortBy.js",
-      "url": "https://old.reddit.com/prefs/#default_comment_sort"
-    },
-    {
-      "file": "lib/modules/commentTools.js",
-      "url": "https://github.com/honestbleeps/Reddit-Enhancement-Suite/issues/829"
-    },
-    {
-      "file": "lib/modules/commentTools.js",
-      "url": "https://support.reddithelp.com/hc/articles/205926439-Reddiquette"
-    },
-    {
-      "file": "lib/modules/disableSubredditStyles.js",
-      "url": "https://greasyfork.org/en/scripts/477625-subreddit-style-remover/code"
-    },
-    {
-      "file": "lib/modules/downloadButtons.js",
-      "url": "https://v.redd.it/${id}/DASH_720.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/aarli.js",
-      "url": "https://aar.li/api.php"
-    },
-    {
-      "file": "lib/modules/hosts/aarli.js",
-      "url": "https://aar.li/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/adultswim.js",
-      "url": "https://www.adultswim.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/adultswim.js",
-      "url": "https://www.adultswim.com/utilities/embed/${path}"
-    },
-    {
-      "file": "lib/modules/hosts/archilogic.js",
-      "url": "https://about.archilogic.com/wp-content/uploads/2017/01/favicon-96x96.png"
-    },
-    {
-      "file": "lib/modules/hosts/archiveis.js",
-      "url": "https://archive.fo/${code}/scr.png"
-    },
-    {
-      "file": "lib/modules/hosts/archiveis.js",
-      "url": "https://archive.is/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/bime.js",
-      "url": "https://${user}.bime.io/dashboard/${dashboardId}"
-    },
-    {
-      "file": "lib/modules/hosts/bime.js",
-      "url": "https://a.bime.io/assets/favicons/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/bluesky.js",
-      "url": "https://bsky.app/static/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/bluesky.js",
-      "url": "https://embed.bsky.app/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/bluesky.js",
-      "url": "https://embed.bsky.app/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/clyp.js",
-      "url": "https://clyp.it/${playlist"
-    },
-    {
-      "file": "lib/modules/hosts/clyp.js",
-      "url": "https://d2cjvbryygm0lr.cloudfront.net/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/codepen.js",
-      "url": "https://codepen.io/${user}/embed/${hash}"
-    },
-    {
-      "file": "lib/modules/hosts/coub.js",
-      "url": "https://coub.com/embed/${hash}?autoplay=true&res=true"
-    },
-    {
-      "file": "lib/modules/hosts/coub.js",
-      "url": "https://coub.com/view/${hash}.gifv?res=true"
-    },
-    {
-      "file": "lib/modules/hosts/dailymotion.js",
-      "url": "https://static1.dmcdn.net/images/favicons/favicon-32x32.png.vb5b47df6329123929"
-    },
-    {
-      "file": "lib/modules/hosts/dailymotion.js",
-      "url": "https://www.dailymotion.com/embed/video/${hash}?api=postMessage"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=0"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=17"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=898402"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=975313"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/deviantart.js",
-      "url": "https://backend.deviantart.com/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/deviantart.js",
-      "url": "https://backend.deviantart.com/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/deviantart.js",
-      "url": "https://i.deviantart.net/icons/da_favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/dropbox.js",
-      "url": "https://cfl.dropboxstatic.com/static/images/favicon-vflk5FiAC.ico"
-    },
-    {
-      "file": "lib/modules/hosts/facebookvideo.js",
-      "url": "https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/${channel}/videos/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/fiveHundredPx.js",
-      "url": "https://500px.com/photo/${photoId}"
-    },
-    {
-      "file": "lib/modules/hosts/fiveHundredPx.js",
-      "url": "https://assetcdn.500px.org/assets/favicon-1e8257b93fb787f8ceb66b5522ee853c.ico"
-    },
-    {
-      "file": "lib/modules/hosts/flickr.js",
-      "url": "https://flic.kr/p/${base58Encode(parseInt(id,"
-    },
-    {
-      "file": "lib/modules/hosts/flickr.js",
-      "url": "https://s.yimg.com/pw/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/flickr.js",
-      "url": "https://www.flickr.com/services/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/flickr.js",
-      "url": "https://www.flickr.com/services/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/gamerdvr.js",
-      "url": "https://gamerdvr.com/${path}/embed"
-    },
-    {
-      "file": "lib/modules/hosts/gamerdvr.js",
-      "url": "https://gamerdvr.com/assets/favicon-240671aabcbf14dcaa1f3f2b406091d2.png"
-    },
-    {
-      "file": "lib/modules/hosts/getyarn.js",
-      "url": "https://getyarn.io/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/getyarn.js",
-      "url": "https://getyarn.io/yarn-clip/embed-test/"
-    },
-    {
-      "file": "lib/modules/hosts/getyarn.js",
-      "url": "https://getyarn.io/yarn-clip/embed/${code}"
-    },
-    {
-      "file": "lib/modules/hosts/gfycat.js",
-      "url": "https://api.gfycat.com/v1/gfycats/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/gfycat.js",
-      "url": "https://gfycat.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://cdn.gifs.com/resources/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://gifs.com/api/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.gif"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.webm"
-    },
-    {
-      "file": "lib/modules/hosts/giphy.js",
-      "url": "https://api.giphy.com/v1/gifs/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/github.js",
-      "url": "https://api.github.com/gists/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/github.js",
-      "url": "https://assets-cdn.github.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/googlemaps.js",
-      "url": "https://maps.google.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/googlemaps.js",
-      "url": "https://www.google.com/maps/embed/v1/view?center=${coords}&key=AIzaSyCtnLZP1XwkgIK53Asx_5qtZa2k9eZcdDc"
-    },
-    {
-      "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://api.gyazo.com/api/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://api.gyazo.com/api/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://gyazo.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://i.gyazo.com/${id}.gif"
-    },
-    {
-      "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://i.gyazo.com/${id}.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/hastebin.js",
-      "url": "https://hastebin.com/${filename}"
-    },
-    {
-      "file": "lib/modules/hosts/iloopit.js",
-      "url": "https://iloopit.net/${titleResult[1]}/${titleResult[2]}/?type=embed"
-    },
-    {
-      "file": "lib/modules/hosts/iloopit.js",
-      "url": "https://iloopit.net/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/imgflip.js",
-      "url": "https://i.imgflip.com/${id}.${type"
-    },
-    {
-      "file": "lib/modules/hosts/imgflip.js",
-      "url": "https://imgflip.com/favicon02.png"
-    },
-    {
-      "file": "lib/modules/hosts/imgur.js",
-      "url": "https://api.imgur.com/3/"
-    },
-    {
-      "file": "lib/modules/hosts/imgur.js",
-      "url": "https://i.imgur.com/"
-    },
-    {
-      "file": "lib/modules/hosts/imgur.js",
-      "url": "https://i.imgur.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/imgur.js",
-      "url": "https://imgur.com/"
-    },
-    {
-      "file": "lib/modules/hosts/instagram.js",
-      "url": "https://instagram.com/p/${id}/embed/captioned/"
-    },
-    {
-      "file": "lib/modules/hosts/jsfiddle.js",
-      "url": "https://jsfiddle.net/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/jsfiddle.js",
-      "url": "https://jsfiddle.net${path}${categories"
-    },
-    {
-      "file": "lib/modules/hosts/liveleak.js",
-      "url": "https://www.liveleak.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/liveleak.js",
-      "url": "https://www.liveleak.com/ll_embed${query}"
-    },
-    {
-      "file": "lib/modules/hosts/liveleak.js",
-      "url": "https://www.liveleak.com/ll_embed${query}&autostart=true"
-    },
-    {
-      "file": "lib/modules/hosts/livememe.js",
-      "url": "https://e.lvme.me/${id}.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/livememe.js",
-      "url": "https://livememe.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/makeameme.js",
-      "url": "https://makeameme.org/images/favicons/favicon-32x32.png"
-    },
-    {
-      "file": "lib/modules/hosts/makeameme.js",
-      "url": "https://makeameme.org/media/created/${id}.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/memecrunch.js",
-      "url": "https://memecrunch.com/meme/${id}/${format"
-    },
-    {
-      "file": "lib/modules/hosts/memecrunch.js",
-      "url": "https://memecrunch.com/static/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/memedad.js",
-      "url": "https://memedad.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/memedad.js",
-      "url": "https://memedad.com/memes/${id}.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/navertv.js",
-      "url": "https://tv.naver.com/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/navertv.js",
-      "url": "https://www.naver.com/favicon.ico?1"
-    },
-    {
-      "file": "lib/modules/hosts/onedrive.js",
-      "url": "https://api.onedrive.com/v1.0/shares/${encodedUrl}/root?expand=children"
-    },
-    {
-      "file": "lib/modules/hosts/onedrive.js",
-      "url": "https://dev.onedrive.com/shares/shares.htm"
-    },
-    {
-      "file": "lib/modules/hosts/pastebin.js",
-      "url": "https://pastebin.com/embed_iframe.php?i=${id}"
-    },
-    {
-      "file": "lib/modules/hosts/peertube.js",
-      "url": "https://${hostname}/videos/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/photobucket.js",
-      "url": "https://api.photobucket.com/v2/media/fromurl"
-    },
-    {
-      "file": "lib/modules/hosts/photobucket.js",
-      "url": "https://pic2.pbsrc.com/common/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/pixiv.js",
-      "url": "https://embed.pixiv.net/embed_mk2.php?id=${id}&size=large"
-    },
-    {
-      "file": "lib/modules/hosts/pixiv.js",
-      "url": "https://www.pixiv.net/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/poly.js",
-      "url": "https://poly.google.com/view/${id}/embed"
-    },
-    {
-      "file": "lib/modules/hosts/pornhub.js",
-      "url": "https://www.pornhub.com/embed/${path}"
-    },
-    {
-      "file": "lib/modules/hosts/ppy.js",
-      "url": "https://osu.ppy.sh/ss/${code}"
-    },
-    {
-      "file": "lib/modules/hosts/ppy.js",
-      "url": "https://s.ppy.sh/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/redditbooru.js",
-      "url": "https://redditbooru.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/redditbooru.js",
-      "url": "https://redditbooru.com/images/"
-    },
-    {
-      "file": "lib/modules/hosts/redditgallery.js",
-      "url": "https://i.redd.it/${media_id}.${m.substr(6"
-    },
-    {
-      "file": "lib/modules/hosts/redditpoll.js",
-      "url": "https://www.reddit.com/poll/${id}/"
-    },
-    {
-      "file": "lib/modules/hosts/redgifs.js",
-      "url": "https://api.redgifs.com/v1/gfycats/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/redgifs.js",
-      "url": "https://redgifs.com/assets/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/redgifs.js",
-      "url": "https://redgifs.com/ifr/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/ridewithgps.js",
-      "url": "https://ridewithgps.com/${type}/${id}/embed"
-    },
-    {
-      "file": "lib/modules/hosts/simplecove.js",
-      "url": "https://simplecove.com/static/images/reslogo.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/simplecove.js",
-      "url": "https://www.simplecove.com/resapi/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/snag.js",
-      "url": "https://i.snag.gy/${id}.${extension"
-    },
-    {
-      "file": "lib/modules/hosts/snag.js",
-      "url": "https://snaggys3static-snaggy.netdna-ssl.com/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/soundcloud.js",
-      "url": "https://a-v2.sndcdn.com/assets/images/sc-icons/favicon-2cadd14b.ico"
-    },
-    {
-      "file": "lib/modules/hosts/soundcloud.js",
-      "url": "https://w.soundcloud.com/player/?url=${href}"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://embed.spotify.com/?uri=spotify:${uri.replace(/"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://open.spotify.com/track/id"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://open.spotify.com/user/someUser/playlist/id"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://play.spotify.com/album/id"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://play.spotify.com/artist/id"
-    },
-    {
-      "file": "lib/modules/hosts/spotify.js",
-      "url": "https://spotify.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/steamcommunity.js",
-      "url": "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*"
-    },
-    {
-      "file": "lib/modules/hosts/steamcommunity.js",
-      "url": "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v0001/?format=json"
-    },
-    {
-      "file": "lib/modules/hosts/steamcommunity.js",
-      "url": "https://store.steampowered.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/steampowered.js",
-      "url": "http://images.akamai.steamusercontent.com${pathname}"
-    },
-    {
-      "file": "lib/modules/hosts/steampowered.js",
-      "url": "https://store.steampowered.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/strawpollcom.js",
-      "url": "https://strawpoll.com/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/strawpollme.js",
-      "url": "https://www.strawpoll.me/embed_1/${uid}"
-    },
-    {
-      "file": "lib/modules/hosts/streamable.js",
-      "url": "https://api.streamable.com/videos/${hash}"
-    },
-    {
-      "file": "lib/modules/hosts/streamable.js",
-      "url": "https://cdn-e2.streamable.com/static/14a98f7cb1ddc5213329c039dc39cac543ba410f/img/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/streamja.js",
-      "url": "https://streamja.com/embed/${code}"
-    },
-    {
-      "file": "lib/modules/hosts/streamja.js",
-      "url": "https://streamja.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/streamvi.js",
-      "url": "https://cdn.streamvi.com/uploads/${code}.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/streamvi.js",
-      "url": "https://cdn.streamvi.com/uploads/${code}.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/streamvi.js",
-      "url": "https://streamvi.com/assets/logo.png"
-    },
-    {
-      "file": "lib/modules/hosts/streamwo.js",
-      "url": "https://playbain.com/${code}.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/streamwo.js",
-      "url": "https://streamwo.com/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/supgif.js",
-      "url": "https://www.supgif.com/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/supload.js",
-      "url": "https://supload.com/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/supload.js",
-      "url": "https://supload.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/supload.js",
-      "url": "https://www.supload.com/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/tenor.js",
-      "url": "https://api.tenor.co/v1/gifs"
-    },
-    {
-      "file": "lib/modules/hosts/tenor.js",
-      "url": "https://www.tenor.co/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/tuckbot.js",
-      "url": "https://tuckbot.tv/#/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/tuckbot.js",
-      "url": "https://tuckbot.tv/#/watch/gq09xf"
-    },
-    {
-      "file": "lib/modules/hosts/tumblr.js",
-      "url": "https://api.tumblr.com/v2/blog/*/posts"
-    },
-    {
-      "file": "lib/modules/hosts/tumblr.js",
-      "url": "https://api.tumblr.com/v2/blog/${blog}/posts"
-    },
-    {
-      "file": "lib/modules/hosts/tumblr.js",
-      "url": "https://secure.assets.tumblr.com/images/favicons/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/twimg.js",
-      "url": "https://twitter.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/twitch.js",
-      "url": "https://player.twitch.tv/?${channelOrVideo}&parent=${location.hostname}&time=${+h"
-    },
-    {
-      "file": "lib/modules/hosts/twitch.js",
-      "url": "https://www.twitch.tv/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/twitchclips.js",
-      "url": "https://clips.twitch.tv/embed?clip=${clipId}&parent=${location.hostname}"
-    },
-    {
-      "file": "lib/modules/hosts/twitchclips.js",
-      "url": "https://www.twitch.tv/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/twitter.js",
-      "url": "https://publish.twitter.com/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/twitter.js",
-      "url": "https://publish.twitter.com/oembed"
-    },
-    {
-      "file": "lib/modules/hosts/vidble.js",
-      "url": "https://vidble.com/${hash}_med.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/vidble.js",
-      "url": "https://vidble.com/album/album/${hash}?json=1"
-    },
-    {
-      "file": "lib/modules/hosts/vidble.js",
-      "url": "https://vidble.com/assets/ico/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/vimeo.js",
-      "url": "https://player.vimeo.com/video/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/vlipsy.js",
-      "url": "https://vlipsy.com/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/vlipsy.js",
-      "url": "https://vlipsy.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/vlive.js",
-      "url": "https://vlive.tv/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/vlive.js",
-      "url": "https://www.vlive.tv/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/vreddit.js",
-      "url": "https://*.redd.it/*"
-    },
-    {
-      "file": "lib/modules/hosts/vreddit.js",
-      "url": "https://v.redd.it/${id}/DASHPlaylist.mpd"
-    },
-    {
-      "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=sections&page=${article}&origin=*"
-    },
-    {
-      "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=text|displaytitle&section=${sectionId}&page=${article}&origin=*"
-    },
-    {
-      "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://${language}.wikipedia.org/wiki/${article}"
-    },
-    {
-      "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://en.wikipedia.org/static/favicon/wikipedia.ico"
-    },
-    {
-      "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://www.mediawiki.org/wiki/API:Main_page#Identifying_your_client"
-    },
-    {
-      "file": "lib/modules/hosts/xboxdvr.js",
-      "url": "https://gamerdvr.com/assets/favicon-240671aabcbf14dcaa1f3f2b406091d2.png"
-    },
-    {
-      "file": "lib/modules/hosts/xboxdvr.js",
-      "url": "https://xboxdvr.com/${path}/embed"
-    },
-    {
-      "file": "lib/modules/hosts/xkcd.js",
-      "url": "https://xkcd.com/*/info.0.json"
-    },
-    {
-      "file": "lib/modules/hosts/xkcd.js",
-      "url": "https://xkcd.com/${id}/info.0.json"
-    },
-    {
-      "file": "lib/modules/hosts/xkcd.js",
-      "url": "https://xkcd.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/youtube.js",
-      "url": "https://www.googleapis.com/youtube/v3/videos"
-    },
-    {
-      "file": "lib/modules/hosts/youtube.js",
-      "url": "https://www.youtube.com/embed/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/znipe.js",
-      "url": "https://assets.znipe.tv/icons/favicon.jpg"
-    },
-    {
-      "file": "lib/modules/hosts/znipe.js",
-      "url": "https://beta.znipe.tv/watch?${clipType}=${clipId}"
-    },
-    {
-      "file": "lib/modules/noParticipation.js",
-      "url": "https://reddit.com/rules"
-    },
-    {
-      "file": "lib/modules/noParticipation.js",
-      "url": "https://www.reddit.com/r/NoParticipation/wiki/intro"
-    },
-    {
-      "file": "lib/modules/showImages.js",
-      "url": "https://${siteModule.domains[0]}"
-    },
-    {
-      "file": "lib/modules/showImages.js",
-      "url": "https://external-preview.redd.it"
-    },
-    {
-      "file": "lib/modules/showImages.js",
-      "url": "https://images.google.com/searchbyimage?client=app&sbisrc=cr_1_5_2&image_url=${lookupUrl}"
-    },
-    {
-      "file": "lib/modules/userProfileSearch.js",
-      "url": "https://duckduckgo.com/?q=${q}"
-    },
-    {
-      "file": "lib/modules/userProfileSearch.js",
-      "url": "https://kagi.com/search?q=${q}"
-    },
-    {
-      "file": "lib/modules/userProfileSearch.js",
-      "url": "https://www.google.com/search?q=${q}"
-    },
-    {
-      "file": "lib/modules/viewDeleted.js",
-      "url": "https://api.pullpush.io/reddit/search/comment/"
-    },
-    {
-      "file": "lib/utils/__tests__/escapeHTML.js",
-      "url": "https://www.reddit.com"
-    },
-    {
-      "file": "lib/utils/__tests__/string.js",
-      "url": "https://example.com?url=${"
-    },
-    {
-      "file": "lib/utils/__tests__/string.js",
-      "url": "https://example.com?url=https%3A%2F%2Freddit.com%2Fr%2Fresissues%2Benhancement"
-    },
-    {
-      "file": "lib/utils/__tests__/string.js",
-      "url": "https://reddit.com/r/resissues+enhancement"
-    },
-    {
-      "file": "lib/utils/array.js",
-      "url": "https://github.com/facebook/flow/issues/34"
-    },
-    {
-      "file": "lib/utils/async.js",
-      "url": "https://github.com/facebook/flow/issues/1015"
-    },
-    {
-      "file": "lib/utils/async.js",
-      "url": "https://github.com/facebook/flow/issues/1163,"
-    },
-    {
-      "file": "lib/utils/async.js",
-      "url": "https://github.com/facebook/flow/issues/34"
-    },
-    {
-      "file": "lib/utils/floater.js",
-      "url": "https://github.com/facebook/flow/pull/4664"
-    },
-    {
-      "file": "lib/utils/keycode.js",
-      "url": "https://github.com/facebook/flow/issues/380"
-    },
-    {
-      "file": "lib/utils/location.js",
-      "url": "https://www.reddit.com/r/metarage/comments/p3eqe/full_updated_list_of_comment_faces_wcodes/"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.kevinleary.net/jquery-fadein-fadeout-problems-in-internet-explorer/"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.mysite.com/myapp#guider=welcome"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.myurl.com/mypage.html#guider=id"
-    }
-  ]
+	"note": "Reviewed hardcoded outbound URL references in lib/**/*.js. Update only after privacy review.",
+	"entries": [
+		{
+			"file": "lib/core/migrate/migrate.js",
+			"url": "https://cdn.example.invalid/updates.css"
+		},
+		{
+			"file": "lib/core/migrate/migrate.js",
+			"url": "https://support.reddithelp.com/hc/articles/205926439-Reddiquette"
+		},
+		{
+			"file": "lib/environment/background/multicast.js",
+			"url": "https://*.reddit.com/*"
+		},
+		{
+			"file": "lib/environment/foreground/context.js",
+			"url": "https://www.reddit.com"
+		},
+		{
+			"file": "lib/environment/foreground/i18n.js",
+			"url": "https://developer.chrome.com/extensions/i18n#examples-getMessage"
+		},
+		{
+			"file": "lib/environment/foreground/i18n.js",
+			"url": "https://developer.chrome.com/extensions/i18n#method-getMessage"
+		},
+		{
+			"file": "lib/modules/archiveLinks.js",
+			"url": "https://undelete.pullpush.io"
+		},
+		{
+			"file": "lib/modules/archiveLinks.js",
+			"url": "https://web.archive.org/web/*/${here}"
+		},
+		{
+			"file": "lib/modules/archiveLinks.js",
+			"url": "https://www.reveddit.com"
+		},
+		{
+			"file": "lib/modules/classicFavicon.js",
+			"url": "https://github.com/chairmanbrando/userthings/blob/cabe18ad9d75411c29b24761f296e9a5e3669993/reddit-favicon.js"
+		},
+		{
+			"file": "lib/modules/commentSortBy.js",
+			"url": "https://old.reddit.com/prefs/#default_comment_sort"
+		},
+		{
+			"file": "lib/modules/commentTools.js",
+			"url": "https://github.com/honestbleeps/Reddit-Enhancement-Suite/issues/829"
+		},
+		{
+			"file": "lib/modules/commentTools.js",
+			"url": "https://support.reddithelp.com/hc/articles/205926439-Reddiquette"
+		},
+		{
+			"file": "lib/modules/disableSubredditStyles.js",
+			"url": "https://greasyfork.org/en/scripts/477625-subreddit-style-remover/code"
+		},
+		{
+			"file": "lib/modules/downloadButtons.js",
+			"url": "https://v.redd.it/${id}/DASH_720.mp4"
+		},
+		{
+			"file": "lib/modules/hosts/aarli.js",
+			"url": "https://aar.li/api.php"
+		},
+		{
+			"file": "lib/modules/hosts/aarli.js",
+			"url": "https://aar.li/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/adultswim.js",
+			"url": "https://www.adultswim.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/adultswim.js",
+			"url": "https://www.adultswim.com/utilities/embed/${path}"
+		},
+		{
+			"file": "lib/modules/hosts/archilogic.js",
+			"url": "https://about.archilogic.com/wp-content/uploads/2017/01/favicon-96x96.png"
+		},
+		{
+			"file": "lib/modules/hosts/archiveis.js",
+			"url": "https://archive.fo/${code}/scr.png"
+		},
+		{
+			"file": "lib/modules/hosts/archiveis.js",
+			"url": "https://archive.is/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/bime.js",
+			"url": "https://${user}.bime.io/dashboard/${dashboardId}"
+		},
+		{
+			"file": "lib/modules/hosts/bime.js",
+			"url": "https://a.bime.io/assets/favicons/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/bluesky.js",
+			"url": "https://bsky.app/static/favicon.png"
+		},
+		{
+			"file": "lib/modules/hosts/bluesky.js",
+			"url": "https://embed.bsky.app/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/bluesky.js",
+			"url": "https://embed.bsky.app/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/clyp.js",
+			"url": "https://clyp.it/${playlist"
+		},
+		{
+			"file": "lib/modules/hosts/clyp.js",
+			"url": "https://d2cjvbryygm0lr.cloudfront.net/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/codepen.js",
+			"url": "https://codepen.io/${user}/embed/${hash}"
+		},
+		{
+			"file": "lib/modules/hosts/coub.js",
+			"url": "https://coub.com/embed/${hash}?autoplay=true&res=true"
+		},
+		{
+			"file": "lib/modules/hosts/coub.js",
+			"url": "https://coub.com/view/${hash}.gifv?res=true"
+		},
+		{
+			"file": "lib/modules/hosts/dailymotion.js",
+			"url": "https://static1.dmcdn.net/images/favicons/favicon-32x32.png.vb5b47df6329123929"
+		},
+		{
+			"file": "lib/modules/hosts/dailymotion.js",
+			"url": "https://www.dailymotion.com/embed/video/${hash}?api=postMessage"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/api/v2/images/show.json"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/api/v2/images/show.json?ids=0"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/api/v2/images/show.json?ids=17"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/api/v2/images/show.json?ids=898402"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/api/v2/images/show.json?ids=975313"
+		},
+		{
+			"file": "lib/modules/hosts/derpibooru.js",
+			"url": "https://derpibooru.org/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/deviantart.js",
+			"url": "https://backend.deviantart.com/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/deviantart.js",
+			"url": "https://backend.deviantart.com/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/deviantart.js",
+			"url": "https://i.deviantart.net/icons/da_favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/dropbox.js",
+			"url": "https://cfl.dropboxstatic.com/static/images/favicon-vflk5FiAC.ico"
+		},
+		{
+			"file": "lib/modules/hosts/facebookvideo.js",
+			"url": "https://www.facebook.com/plugins/video.php?href=https://www.facebook.com/${channel}/videos/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/fiveHundredPx.js",
+			"url": "https://500px.com/photo/${photoId}"
+		},
+		{
+			"file": "lib/modules/hosts/fiveHundredPx.js",
+			"url": "https://assetcdn.500px.org/assets/favicon-1e8257b93fb787f8ceb66b5522ee853c.ico"
+		},
+		{
+			"file": "lib/modules/hosts/flickr.js",
+			"url": "https://flic.kr/p/${base58Encode(parseInt(id,"
+		},
+		{
+			"file": "lib/modules/hosts/flickr.js",
+			"url": "https://s.yimg.com/pw/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/flickr.js",
+			"url": "https://www.flickr.com/services/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/flickr.js",
+			"url": "https://www.flickr.com/services/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/gamerdvr.js",
+			"url": "https://gamerdvr.com/${path}/embed"
+		},
+		{
+			"file": "lib/modules/hosts/gamerdvr.js",
+			"url": "https://gamerdvr.com/assets/favicon-240671aabcbf14dcaa1f3f2b406091d2.png"
+		},
+		{
+			"file": "lib/modules/hosts/getyarn.js",
+			"url": "https://getyarn.io/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/getyarn.js",
+			"url": "https://getyarn.io/yarn-clip/embed-test/"
+		},
+		{
+			"file": "lib/modules/hosts/getyarn.js",
+			"url": "https://getyarn.io/yarn-clip/embed/${code}"
+		},
+		{
+			"file": "lib/modules/hosts/gfycat.js",
+			"url": "https://api.gfycat.com/v1/gfycats/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/gfycat.js",
+			"url": "https://gfycat.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/gifyoutube.js",
+			"url": "https://cdn.gifs.com/resources/favicon.png"
+		},
+		{
+			"file": "lib/modules/hosts/gifyoutube.js",
+			"url": "https://gifs.com/api/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/gifyoutube.js",
+			"url": "https://share.gifyoutube.com/${id}.gif"
+		},
+		{
+			"file": "lib/modules/hosts/gifyoutube.js",
+			"url": "https://share.gifyoutube.com/${id}.mp4"
+		},
+		{
+			"file": "lib/modules/hosts/gifyoutube.js",
+			"url": "https://share.gifyoutube.com/${id}.webm"
+		},
+		{
+			"file": "lib/modules/hosts/giphy.js",
+			"url": "https://api.giphy.com/v1/gifs/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/github.js",
+			"url": "https://api.github.com/gists/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/github.js",
+			"url": "https://assets-cdn.github.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/googlemaps.js",
+			"url": "https://maps.google.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/googlemaps.js",
+			"url": "https://www.google.com/maps/embed/v1/view?center=${coords}&key=AIzaSyCtnLZP1XwkgIK53Asx_5qtZa2k9eZcdDc"
+		},
+		{
+			"file": "lib/modules/hosts/gyazo.js",
+			"url": "https://api.gyazo.com/api/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/gyazo.js",
+			"url": "https://api.gyazo.com/api/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/gyazo.js",
+			"url": "https://gyazo.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/gyazo.js",
+			"url": "https://i.gyazo.com/${id}.gif"
+		},
+		{
+			"file": "lib/modules/hosts/gyazo.js",
+			"url": "https://i.gyazo.com/${id}.mp4"
+		},
+		{
+			"file": "lib/modules/hosts/hastebin.js",
+			"url": "https://hastebin.com/${filename}"
+		},
+		{
+			"file": "lib/modules/hosts/iloopit.js",
+			"url": "https://iloopit.net/${titleResult[1]}/${titleResult[2]}/?type=embed"
+		},
+		{
+			"file": "lib/modules/hosts/iloopit.js",
+			"url": "https://iloopit.net/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/imgflip.js",
+			"url": "https://i.imgflip.com/${id}.${type"
+		},
+		{
+			"file": "lib/modules/hosts/imgflip.js",
+			"url": "https://imgflip.com/favicon02.png"
+		},
+		{
+			"file": "lib/modules/hosts/imgur.js",
+			"url": "https://api.imgur.com/3/"
+		},
+		{
+			"file": "lib/modules/hosts/imgur.js",
+			"url": "https://i.imgur.com/"
+		},
+		{
+			"file": "lib/modules/hosts/imgur.js",
+			"url": "https://i.imgur.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/imgur.js",
+			"url": "https://imgur.com/"
+		},
+		{
+			"file": "lib/modules/hosts/instagram.js",
+			"url": "https://instagram.com/p/${id}/embed/captioned/"
+		},
+		{
+			"file": "lib/modules/hosts/jsfiddle.js",
+			"url": "https://jsfiddle.net/favicon.png"
+		},
+		{
+			"file": "lib/modules/hosts/jsfiddle.js",
+			"url": "https://jsfiddle.net${path}${categories"
+		},
+		{
+			"file": "lib/modules/hosts/liveleak.js",
+			"url": "https://www.liveleak.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/liveleak.js",
+			"url": "https://www.liveleak.com/ll_embed${query}"
+		},
+		{
+			"file": "lib/modules/hosts/liveleak.js",
+			"url": "https://www.liveleak.com/ll_embed${query}&autostart=true"
+		},
+		{
+			"file": "lib/modules/hosts/livememe.js",
+			"url": "https://e.lvme.me/${id}.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/livememe.js",
+			"url": "https://livememe.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/makeameme.js",
+			"url": "https://makeameme.org/images/favicons/favicon-32x32.png"
+		},
+		{
+			"file": "lib/modules/hosts/makeameme.js",
+			"url": "https://makeameme.org/media/created/${id}.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/memecrunch.js",
+			"url": "https://memecrunch.com/meme/${id}/${format"
+		},
+		{
+			"file": "lib/modules/hosts/memecrunch.js",
+			"url": "https://memecrunch.com/static/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/memedad.js",
+			"url": "https://memedad.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/memedad.js",
+			"url": "https://memedad.com/memes/${id}.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/navertv.js",
+			"url": "https://tv.naver.com/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/navertv.js",
+			"url": "https://www.naver.com/favicon.ico?1"
+		},
+		{
+			"file": "lib/modules/hosts/onedrive.js",
+			"url": "https://api.onedrive.com/v1.0/shares/${encodedUrl}/root?expand=children"
+		},
+		{
+			"file": "lib/modules/hosts/onedrive.js",
+			"url": "https://dev.onedrive.com/shares/shares.htm"
+		},
+		{
+			"file": "lib/modules/hosts/pastebin.js",
+			"url": "https://pastebin.com/embed_iframe.php?i=${id}"
+		},
+		{
+			"file": "lib/modules/hosts/peertube.js",
+			"url": "https://${hostname}/videos/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/photobucket.js",
+			"url": "https://api.photobucket.com/v2/media/fromurl"
+		},
+		{
+			"file": "lib/modules/hosts/photobucket.js",
+			"url": "https://pic2.pbsrc.com/common/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/pixiv.js",
+			"url": "https://embed.pixiv.net/embed_mk2.php?id=${id}&size=large"
+		},
+		{
+			"file": "lib/modules/hosts/pixiv.js",
+			"url": "https://www.pixiv.net/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/poly.js",
+			"url": "https://poly.google.com/view/${id}/embed"
+		},
+		{
+			"file": "lib/modules/hosts/pornhub.js",
+			"url": "https://www.pornhub.com/embed/${path}"
+		},
+		{
+			"file": "lib/modules/hosts/ppy.js",
+			"url": "https://osu.ppy.sh/ss/${code}"
+		},
+		{
+			"file": "lib/modules/hosts/ppy.js",
+			"url": "https://s.ppy.sh/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/redditbooru.js",
+			"url": "https://redditbooru.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/redditbooru.js",
+			"url": "https://redditbooru.com/images/"
+		},
+		{
+			"file": "lib/modules/hosts/redditgallery.js",
+			"url": "https://i.redd.it/${media_id}.${m.substr(6"
+		},
+		{
+			"file": "lib/modules/hosts/redditpoll.js",
+			"url": "https://www.reddit.com/poll/${id}/"
+		},
+		{
+			"file": "lib/modules/hosts/redgifs.js",
+			"url": "https://api.redgifs.com/v1/gfycats/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/redgifs.js",
+			"url": "https://redgifs.com/assets/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/redgifs.js",
+			"url": "https://redgifs.com/ifr/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/ridewithgps.js",
+			"url": "https://ridewithgps.com/${type}/${id}/embed"
+		},
+		{
+			"file": "lib/modules/hosts/simplecove.js",
+			"url": "https://simplecove.com/static/images/reslogo.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/simplecove.js",
+			"url": "https://www.simplecove.com/resapi/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/snag.js",
+			"url": "https://i.snag.gy/${id}.${extension"
+		},
+		{
+			"file": "lib/modules/hosts/snag.js",
+			"url": "https://snaggys3static-snaggy.netdna-ssl.com/favicon.png"
+		},
+		{
+			"file": "lib/modules/hosts/soundcloud.js",
+			"url": "https://a-v2.sndcdn.com/assets/images/sc-icons/favicon-2cadd14b.ico"
+		},
+		{
+			"file": "lib/modules/hosts/soundcloud.js",
+			"url": "https://w.soundcloud.com/player/?url=${href}"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://embed.spotify.com/?uri=spotify:${uri.replace(/"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://open.spotify.com/track/id"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://open.spotify.com/user/someUser/playlist/id"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://play.spotify.com/album/id"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://play.spotify.com/artist/id"
+		},
+		{
+			"file": "lib/modules/hosts/spotify.js",
+			"url": "https://spotify.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/steamcommunity.js",
+			"url": "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*"
+		},
+		{
+			"file": "lib/modules/hosts/steamcommunity.js",
+			"url": "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v0001/?format=json"
+		},
+		{
+			"file": "lib/modules/hosts/steamcommunity.js",
+			"url": "https://store.steampowered.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/steampowered.js",
+			"url": "http://images.akamai.steamusercontent.com${pathname}"
+		},
+		{
+			"file": "lib/modules/hosts/steampowered.js",
+			"url": "https://store.steampowered.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/strawpollcom.js",
+			"url": "https://strawpoll.com/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/strawpollme.js",
+			"url": "https://www.strawpoll.me/embed_1/${uid}"
+		},
+		{
+			"file": "lib/modules/hosts/streamable.js",
+			"url": "https://api.streamable.com/videos/${hash}"
+		},
+		{
+			"file": "lib/modules/hosts/streamable.js",
+			"url": "https://cdn-e2.streamable.com/static/14a98f7cb1ddc5213329c039dc39cac543ba410f/img/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/streamja.js",
+			"url": "https://streamja.com/embed/${code}"
+		},
+		{
+			"file": "lib/modules/hosts/streamja.js",
+			"url": "https://streamja.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/streamvi.js",
+			"url": "https://cdn.streamvi.com/uploads/${code}.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/streamvi.js",
+			"url": "https://cdn.streamvi.com/uploads/${code}.mp4"
+		},
+		{
+			"file": "lib/modules/hosts/streamvi.js",
+			"url": "https://streamvi.com/assets/logo.png"
+		},
+		{
+			"file": "lib/modules/hosts/streamwo.js",
+			"url": "https://playbain.com/${code}.mp4"
+		},
+		{
+			"file": "lib/modules/hosts/streamwo.js",
+			"url": "https://streamwo.com/favicon.png"
+		},
+		{
+			"file": "lib/modules/hosts/supgif.js",
+			"url": "https://www.supgif.com/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/supload.js",
+			"url": "https://supload.com/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/supload.js",
+			"url": "https://supload.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/supload.js",
+			"url": "https://www.supload.com/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/tenor.js",
+			"url": "https://api.tenor.co/v1/gifs"
+		},
+		{
+			"file": "lib/modules/hosts/tenor.js",
+			"url": "https://www.tenor.co/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/tuckbot.js",
+			"url": "https://tuckbot.tv/#/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/tuckbot.js",
+			"url": "https://tuckbot.tv/#/watch/gq09xf"
+		},
+		{
+			"file": "lib/modules/hosts/tumblr.js",
+			"url": "https://api.tumblr.com/v2/blog/*/posts"
+		},
+		{
+			"file": "lib/modules/hosts/tumblr.js",
+			"url": "https://api.tumblr.com/v2/blog/${blog}/posts"
+		},
+		{
+			"file": "lib/modules/hosts/tumblr.js",
+			"url": "https://secure.assets.tumblr.com/images/favicons/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/twimg.js",
+			"url": "https://twitter.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/twitch.js",
+			"url": "https://player.twitch.tv/?${channelOrVideo}&parent=${location.hostname}&time=${+h"
+		},
+		{
+			"file": "lib/modules/hosts/twitch.js",
+			"url": "https://www.twitch.tv/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/twitchclips.js",
+			"url": "https://clips.twitch.tv/embed?clip=${clipId}&parent=${location.hostname}"
+		},
+		{
+			"file": "lib/modules/hosts/twitchclips.js",
+			"url": "https://www.twitch.tv/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/twitter.js",
+			"url": "https://publish.twitter.com/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/twitter.js",
+			"url": "https://publish.twitter.com/oembed"
+		},
+		{
+			"file": "lib/modules/hosts/vidble.js",
+			"url": "https://vidble.com/${hash}_med.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/vidble.js",
+			"url": "https://vidble.com/album/album/${hash}?json=1"
+		},
+		{
+			"file": "lib/modules/hosts/vidble.js",
+			"url": "https://vidble.com/assets/ico/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/vimeo.js",
+			"url": "https://player.vimeo.com/video/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/vlipsy.js",
+			"url": "https://vlipsy.com/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/vlipsy.js",
+			"url": "https://vlipsy.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/vlive.js",
+			"url": "https://vlive.tv/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/vlive.js",
+			"url": "https://www.vlive.tv/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/vreddit.js",
+			"url": "https://*.redd.it/*"
+		},
+		{
+			"file": "lib/modules/hosts/vreddit.js",
+			"url": "https://v.redd.it/${id}/DASHPlaylist.mpd"
+		},
+		{
+			"file": "lib/modules/hosts/wikipedia.js",
+			"url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=sections&page=${article}&origin=*"
+		},
+		{
+			"file": "lib/modules/hosts/wikipedia.js",
+			"url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=text|displaytitle&section=${sectionId}&page=${article}&origin=*"
+		},
+		{
+			"file": "lib/modules/hosts/wikipedia.js",
+			"url": "https://${language}.wikipedia.org/wiki/${article}"
+		},
+		{
+			"file": "lib/modules/hosts/wikipedia.js",
+			"url": "https://en.wikipedia.org/static/favicon/wikipedia.ico"
+		},
+		{
+			"file": "lib/modules/hosts/wikipedia.js",
+			"url": "https://www.mediawiki.org/wiki/API:Main_page#Identifying_your_client"
+		},
+		{
+			"file": "lib/modules/hosts/xboxdvr.js",
+			"url": "https://gamerdvr.com/assets/favicon-240671aabcbf14dcaa1f3f2b406091d2.png"
+		},
+		{
+			"file": "lib/modules/hosts/xboxdvr.js",
+			"url": "https://xboxdvr.com/${path}/embed"
+		},
+		{
+			"file": "lib/modules/hosts/xkcd.js",
+			"url": "https://xkcd.com/*/info.0.json"
+		},
+		{
+			"file": "lib/modules/hosts/xkcd.js",
+			"url": "https://xkcd.com/${id}/info.0.json"
+		},
+		{
+			"file": "lib/modules/hosts/xkcd.js",
+			"url": "https://xkcd.com/favicon.ico"
+		},
+		{
+			"file": "lib/modules/hosts/youtube.js",
+			"url": "https://www.googleapis.com/youtube/v3/videos"
+		},
+		{
+			"file": "lib/modules/hosts/youtube.js",
+			"url": "https://www.youtube.com/embed/${id}"
+		},
+		{
+			"file": "lib/modules/hosts/znipe.js",
+			"url": "https://assets.znipe.tv/icons/favicon.jpg"
+		},
+		{
+			"file": "lib/modules/hosts/znipe.js",
+			"url": "https://beta.znipe.tv/watch?${clipType}=${clipId}"
+		},
+		{
+			"file": "lib/modules/noParticipation.js",
+			"url": "https://reddit.com/rules"
+		},
+		{
+			"file": "lib/modules/noParticipation.js",
+			"url": "https://www.reddit.com/r/NoParticipation/wiki/intro"
+		},
+		{
+			"file": "lib/modules/showImages.js",
+			"url": "https://${siteModule.domains[0]}"
+		},
+		{
+			"file": "lib/modules/showImages.js",
+			"url": "https://external-preview.redd.it"
+		},
+		{
+			"file": "lib/modules/showImages.js",
+			"url": "https://images.google.com/searchbyimage?client=app&sbisrc=cr_1_5_2&image_url=${lookupUrl}"
+		},
+		{
+			"file": "lib/modules/userProfileSearch.js",
+			"url": "https://duckduckgo.com/?q=${q}"
+		},
+		{
+			"file": "lib/modules/userProfileSearch.js",
+			"url": "https://kagi.com/search?q=${q}"
+		},
+		{
+			"file": "lib/modules/userProfileSearch.js",
+			"url": "https://www.google.com/search?q=${q}"
+		},
+		{
+			"file": "lib/modules/viewDeleted.js",
+			"url": "https://api.pullpush.io/reddit/search/comment/"
+		},
+		{
+			"file": "lib/utils/__tests__/escapeHTML.js",
+			"url": "https://www.reddit.com"
+		},
+		{
+			"file": "lib/utils/__tests__/string.js",
+			"url": "https://example.com?url=${"
+		},
+		{
+			"file": "lib/utils/__tests__/string.js",
+			"url": "https://example.com?url=https%3A%2F%2Freddit.com%2Fr%2Fresissues%2Benhancement"
+		},
+		{
+			"file": "lib/utils/__tests__/string.js",
+			"url": "https://reddit.com/r/resissues+enhancement"
+		},
+		{
+			"file": "lib/utils/array.js",
+			"url": "https://github.com/facebook/flow/issues/34"
+		},
+		{
+			"file": "lib/utils/async.js",
+			"url": "https://github.com/facebook/flow/issues/1015"
+		},
+		{
+			"file": "lib/utils/async.js",
+			"url": "https://github.com/facebook/flow/issues/1163,"
+		},
+		{
+			"file": "lib/utils/async.js",
+			"url": "https://github.com/facebook/flow/issues/34"
+		},
+		{
+			"file": "lib/utils/floater.js",
+			"url": "https://github.com/facebook/flow/pull/4664"
+		},
+		{
+			"file": "lib/utils/keycode.js",
+			"url": "https://github.com/facebook/flow/issues/380"
+		},
+		{
+			"file": "lib/utils/location.js",
+			"url": "https://www.reddit.com/r/metarage/comments/p3eqe/full_updated_list_of_comment_faces_wcodes/"
+		},
+		{
+			"file": "lib/utils/outboundCleanser.js",
+			"url": "https://old.reddit.com/"
+		},
+		{
+			"file": "lib/vendor/guiders.js",
+			"url": "http://www.kevinleary.net/jquery-fadein-fadeout-problems-in-internet-explorer/"
+		},
+		{
+			"file": "lib/vendor/guiders.js",
+			"url": "http://www.mysite.com/myapp#guider=welcome"
+		},
+		{
+			"file": "lib/vendor/guiders.js",
+			"url": "http://www.myurl.com/mypage.html#guider=id"
+		}
+	]
 }
