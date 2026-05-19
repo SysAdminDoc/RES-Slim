@@ -2766,6 +2766,33 @@
 	"settingsConsoleImportFailed": {
 		"message": "Import failed: $1"
 	},
+	"settingsConsoleToastModuleEnabled": {
+		"message": "Enabled $1 (Save to apply)"
+	},
+	"settingsConsoleToastModuleDisabled": {
+		"message": "Disabled $1 (Save to apply)"
+	},
+	"settingsConsoleToastSaved": {
+		"message": "Settings saved"
+	},
+	"settingsConsoleToastReverted": {
+		"message": "Reverted unsaved changes"
+	},
+	"settingsConsoleToastThemeApplied": {
+		"message": "Theme: $1"
+	},
+	"settingsConsoleToastDensityDense": {
+		"message": "Density: dense"
+	},
+	"settingsConsoleToastDensityComfortable": {
+		"message": "Density: comfortable"
+	},
+	"settingsConsoleToastMotionReduced": {
+		"message": "Motion: reduced"
+	},
+	"settingsConsoleToastMotionSystem": {
+		"message": "Motion: follow system"
+	},
 	"settingsConsoleFilterGroup": {
 		"message": "Filter modules by state"
 	},

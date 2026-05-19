@@ -126,6 +126,40 @@ test('settings console paints branded scrollbars scoped to the console container
 	assert.match(styles, /#RESConsoleContainer ::-webkit-scrollbar-thumb/);
 });
 
+test('settings console exposes a settings-toast helper used by every preference change', () => {
+	const controller = read('lib/options/settingsConsole.js');
+	const locale = JSON.parse(read('locales/locales/en.json'));
+
+	assert.match(controller, /function settingsToast\(/);
+	for (const callSite of [
+		"settingsToast(i18n('settingsConsoleToastThemeApplied'",
+		"settingsToast(i18n(nextDensity === SETTINGS_DENSITY_DENSE",
+		"settingsToast(i18n(nextMotion === SETTINGS_MOTION_REDUCE",
+		"settingsToast(i18n(enable ? 'settingsConsoleToastModuleEnabled'",
+		"settingsToast(i18n('settingsConsoleToastSaved'))",
+		"settingsToast(i18n('settingsConsoleToastReverted'))",
+	]) {
+		assert.ok(controller.includes(callSite), `controller should toast: ${callSite}`);
+	}
+
+	for (const key of [
+		'settingsConsoleToastThemeApplied',
+		'settingsConsoleToastDensityDense',
+		'settingsConsoleToastDensityComfortable',
+		'settingsConsoleToastMotionReduced',
+		'settingsConsoleToastMotionSystem',
+		'settingsConsoleToastModuleEnabled',
+		'settingsConsoleToastModuleDisabled',
+		'settingsConsoleToastSaved',
+		'settingsConsoleToastReverted',
+		'settingsConsoleExportSuccess',
+		'settingsConsoleImportSuccess',
+	]) {
+		assert.equal(typeof locale[key]?.message, 'string', `${key} should be localized`);
+		assert.notEqual(locale[key].message.trim(), '', `${key} should not be empty`);
+	}
+});
+
 test('settings console reduce-motion toggle is wired through template, controller, styles, and locale', () => {
 	const template = read('lib/options/templates.js');
 	const controller = read('lib/options/settingsConsole.js');
