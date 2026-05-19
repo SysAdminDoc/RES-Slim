@@ -1426,21 +1426,26 @@ Acceptance criteria:
 
 Features:
 
-- Full-width content.
-- Multi-column feed.
-- Hide/collapse sidebar.
-- Post numbers.
-- Hide awards/flair/icons/avatar controls.
-- OP/admin/mod/friend highlight refresh.
-- Color-coded comment depth.
-- Custom subreddit style override.
+- [x] Full-width content.
+- [ ] Multi-column feed. (Deferred to v0.10 alongside the filter builder so column eviction shares a pass.)
+- [x] Hide/collapse sidebar.
+- [x] Post numbers.
+- [x] Hide awards/flair/icons/avatar controls.
+- [ ] OP/admin/mod/friend highlight refresh. (Existing `commentHighlights` covers OP; admin/mod/friend lanes scheduled with the v0.10 user-tagger work.)
+- [x] Color-coded comment depth.
+- [ ] Custom subreddit style override. (Binary kill switch already in `disableSubredditStyles`; per-sub allow/deny list scheduled with the v0.10 filter builder.)
+
+Progress:
+
+- 2026-05-19: `layoutTweaks` ships seven body-class-gated CSS toggles (full-width, hide-sidebar, post-numbers, hide-awards, hide-flair, hide-link-flair, hide-avatars). All `!important` so subreddit CSS cannot override them.
+- 2026-05-19: `commentDepthColors` ships HSL stripe rotation per comment depth with saturation + max-depth knobs; rules scoped behind `body.rsm-depth-colors`.
 
 Acceptance criteria:
 
-- All layout toggles are per-page and reversible.
-- No nested cards inside cards.
-- No fully rounded/pill UI surfaces.
-- Subreddit custom CSS cannot permanently hide settings access.
+- [x] All layout toggles are per-page and reversible.
+- [x] No nested cards inside cards.
+- [x] No fully rounded/pill UI surfaces.
+- [x] Subreddit custom CSS cannot permanently hide settings access.
 
 ### v0.10.0 - Filters, Tags, and Author Intelligence
 

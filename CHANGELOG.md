@@ -2,6 +2,14 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.9.0 - 2026-05-19
+
+- Phase 9 Theming and Layout Superset.
+- New `layoutTweaks` module: full-width, hide sidebar, post numbers, hide awards/flair/link-flair/avatars (single body-class-gated stylesheet).
+- New `commentDepthColors` module: HSL stripe per comment depth, saturation + max-depth knobs.
+- Multi-column feed, OP/admin/mod/friend highlight refresh, and per-sub custom-style override deferred to v0.10 alongside the filter builder.
+- Test count: 144.
+
 ## v0.8.0 - 2026-05-19
 
 - Phase 8 Navigation and Comment Workflow.
