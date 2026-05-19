@@ -2712,6 +2712,9 @@
 	"settingsConsoleThemeLabel": {
 		"message": "Theme"
 	},
+	"settingsConsoleThemeOled": {
+		"message": "OLED"
+	},
 	"settingsConsoleThemeGraphite": {
 		"message": "Graphite"
 	},
@@ -2726,6 +2729,12 @@
 	},
 	"settingsConsoleApplyTheme": {
 		"message": "Use $1 theme"
+	},
+	"settingsConsoleDenseMode": {
+		"message": "Dense"
+	},
+	"settingsConsoleDenseModeActive": {
+		"message": "Dense mode on"
 	},
 	"settingsConsoleFilterGroup": {
 		"message": "Filter modules by state"

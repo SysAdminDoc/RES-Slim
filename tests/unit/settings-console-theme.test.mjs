@@ -7,6 +7,7 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
 const themes = [
+	'oled',
 	'graphite',
 	'midnight',
 	'forest',
@@ -16,23 +17,28 @@ const themes = [
 test('settings console theme picker is wired through template, controller, styles, and locale', () => {
 	const template = read('lib/options/templates.js');
 	const controller = read('lib/options/settingsConsole.js');
+	const presets = read('lib/core/theme/settingsThemePresets.js');
 	const styles = read('lib/options/options.scss');
 	const locale = JSON.parse(read('locales/locales/en.json'));
 
 	assert.match(template, /id="RESThemeSelector"/);
 	assert.match(template, /role="group"/);
 	assert.match(template, /aria-pressed/);
+	assert.match(template, /SETTINGS_THEME_PRESETS/);
 	assert.match(controller, /SETTINGS_THEME_STORAGE_KEY = 'res-settings-theme'/);
+	assert.match(controller, /normalizeSettingsTheme/);
+	assert.match(presets, /DEFAULT_SETTINGS_THEME = 'oled'/);
 
 	for (const theme of themes) {
-		assert.match(template, new RegExp(`id: '${theme}'`));
-		assert.match(controller, new RegExp(`${theme}: '#[0-9a-f]{6}'`, 'i'));
+		assert.match(presets, new RegExp(`id: '${theme}'`));
+		assert.match(presets, new RegExp(`'${theme}'[\\s\\S]*?metaColor: '#[0-9a-f]{6}'`, 'i'));
 		assert.match(styles, new RegExp(`themeOptionSwatch--${theme}`));
 	}
 
 	for (const key of [
 		'settingsConsoleThemeGroup',
 		'settingsConsoleThemeLabel',
+		'settingsConsoleThemeOled',
 		'settingsConsoleThemeGraphite',
 		'settingsConsoleThemeMidnight',
 		'settingsConsoleThemeForest',
@@ -64,11 +70,58 @@ test('non-default settings themes expose complete token overrides', () => {
 		'--options-accent-strong',
 	];
 
-	for (const theme of themes.filter(theme => theme !== 'graphite')) {
+	for (const theme of themes.filter(theme => theme !== 'oled')) {
 		const block = styles.match(new RegExp(`html\\[data-settings-theme='${theme}'\\] \\{([\\s\\S]*?)\\n\\}`));
 		assert.ok(block, `${theme} theme should have a CSS block`);
 		for (const token of requiredTokens) {
 			assert.match(block[1], new RegExp(`${token}:`), `${theme} should override ${token}`);
 		}
 	}
+});
+
+test('default OLED theme is exposed via :root with full token set', () => {
+	const styles = read('lib/options/options.scss');
+	const requiredTokens = [
+		'--options-bg',
+		'--options-panel',
+		'--options-panel-alt',
+		'--options-panel-raised',
+		'--options-field',
+		'--options-field-hover',
+		'--options-border',
+		'--options-border-strong',
+		'--options-text',
+		'--options-text-muted',
+		'--options-text-soft',
+		'--options-accent',
+		'--options-accent-soft',
+		'--options-accent-strong',
+		'--options-success',
+		'--options-warning',
+		'--options-danger',
+	];
+	const block = styles.match(/:root\s*\{([\s\S]*?)\n\}/);
+	assert.ok(block, ':root token block should exist');
+	for (const token of requiredTokens) {
+		assert.match(block[1], new RegExp(`${token}:`), `:root should declare ${token}`);
+	}
+});
+
+test('settings console exposes density toggle wiring and storage', () => {
+	const template = read('lib/options/templates.js');
+	const controller = read('lib/options/settingsConsole.js');
+	const styles = read('lib/options/options.scss');
+	const locale = JSON.parse(read('locales/locales/en.json'));
+
+	assert.match(template, /id="RESDensityToggle"/);
+	assert.match(controller, /SETTINGS_DENSITY_STORAGE_KEY = 'res-settings-density'/);
+	assert.match(controller, /dataset\.settingsDensity/);
+	assert.match(styles, /\[data-settings-density='dense'\]/);
+	assert.equal(typeof locale.settingsConsoleDenseMode?.message, 'string');
+});
+
+test('settings console paints branded scrollbars scoped to the console container', () => {
+	const styles = read('lib/options/options.scss');
+	assert.match(styles, /#RESConsoleContainer[\s\S]{0,200}scrollbar-color:/);
+	assert.match(styles, /#RESConsoleContainer ::-webkit-scrollbar-thumb/);
 });
