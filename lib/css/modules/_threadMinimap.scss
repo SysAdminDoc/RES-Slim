@@ -1,0 +1,51 @@
+// RES-Slim: minimap strip injected by threadMinimap. Fixed to the right (or
+// left) viewport edge, narrow enough not to overlap the main content
+// column. Pointer events stay scoped to the rail / stripes so the rest of
+// the page scrolls normally.
+
+.rsm-thread-minimap {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	width: 16px;
+	pointer-events: none;
+	z-index: 9999;
+
+	&[data-side='right'] { right: 0; }
+	&[data-side='left'] { left: 0; }
+}
+
+.rsm-thread-minimap-rail {
+	position: relative;
+	height: 100%;
+	background: rgb(5 6 8 / 35%);
+	pointer-events: auto;
+}
+
+.rsm-thread-minimap-stripe {
+	position: absolute;
+	right: 1px;
+	left: 1px;
+	min-height: 2px;
+	border: 0;
+	border-radius: 2px;
+	background: var(--minimap-stripe-color, #ff7a18);
+	cursor: pointer;
+	padding: 0;
+	opacity: 0.6;
+	transition: opacity 120ms ease;
+
+	&:hover { opacity: 1; }
+	&:focus-visible { outline: 2px solid #ffb06a; outline-offset: 1px; }
+}
+
+.rsm-thread-minimap-viewport {
+	position: absolute;
+	right: 0;
+	left: 0;
+	min-height: 6px;
+	border: 1px solid rgb(255 122 24 / 70%);
+	background: rgb(255 122 24 / 12%);
+	pointer-events: none;
+	border-radius: 2px;
+}
