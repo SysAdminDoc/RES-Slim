@@ -1313,8 +1313,8 @@ Each phase must ship a usable product slice and update `README.md`, changelog, t
 
 Features:
 
-- [ ] Add feature registry with `init()`/`destroy()`.
-- [ ] Add settings schema/defaults/migration layer.
+- [x] Add feature registry with `init()`/`destroy()`.
+- [x] Add settings schema/defaults/migration layer.
 - [x] Add selector map from this roadmap.
 - [x] Add MHTML-derived HTML fixtures for front page and thread.
 - [x] Add `trustedHtml` helper and TrustedTypes policy.
@@ -1324,6 +1324,7 @@ Features:
 Progress:
 
 - 2026-05-19: Added the old-Reddit selector map, frontpage/thread MHTML-derived fixtures, selector contract coverage, `findElement`/`waitForElement` helpers, and TrustedTypes HTML helpers.
+- 2026-05-19: Added standalone reversible feature registry/context infrastructure plus the roadmap-backed settings schema, defaults, migration helpers, and static contract tests.
 
 Dependencies:
 
@@ -1335,9 +1336,9 @@ Acceptance criteria:
 
 - [ ] Every migrated feature can be toggled off and back on without duplicate DOM.
 - [x] Selector tests pass against both captured pages.
-- [ ] Settings changes apply immediately.
+- [x] Settings changes apply immediately.
 - [ ] Inactive settings overlay has `pointer-events: none`.
-- [ ] No keyboard shortcuts are added.
+- [x] No keyboard shortcuts are added.
 - [x] No feature code relies on hashed or generated classes as primary selectors.
 
 ### v0.6.0 - Settings Panel and Dark/OLED Design System
