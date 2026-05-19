@@ -1318,13 +1318,14 @@ Features:
 - [x] Add selector map from this roadmap.
 - [x] Add MHTML-derived HTML fixtures for front page and thread.
 - [x] Add `trustedHtml` helper and TrustedTypes policy.
-- [ ] Add toast host and local error log panel.
-- [ ] Add anti-FOUC dark/OLED class at `document_start`.
+- [x] Add toast host and local error log panel.
+- [x] Add anti-FOUC dark/OLED class at `document_start`.
 
 Progress:
 
 - 2026-05-19: Added the old-Reddit selector map, frontpage/thread MHTML-derived fixtures, selector contract coverage, `findElement`/`waitForElement` helpers, and TrustedTypes HTML helpers.
 - 2026-05-19: Added standalone reversible feature registry/context infrastructure plus the roadmap-backed settings schema, defaults, migration helpers, and static contract tests.
+- 2026-05-19: Added the dark-only toast host, local error log panel, registry error-log handoff, document-start OLED anti-FOUC hook, and inactive-overlay pointer-event guard.
 
 Dependencies:
 
@@ -1334,10 +1335,10 @@ Dependencies:
 
 Acceptance criteria:
 
-- [ ] Every migrated feature can be toggled off and back on without duplicate DOM.
+- [x] Every migrated feature can be toggled off and back on without duplicate DOM.
 - [x] Selector tests pass against both captured pages.
 - [x] Settings changes apply immediately.
-- [ ] Inactive settings overlay has `pointer-events: none`.
+- [x] Inactive settings overlay has `pointer-events: none`.
 - [x] No keyboard shortcuts are added.
 - [x] No feature code relies on hashed or generated classes as primary selectors.
 
