@@ -1,0 +1,32 @@
+// RES-Slim: small toolbar pill injected into .commentarea .menuarea by
+// the autoRefreshComments module, plus highlight styling for freshly
+// spliced comments.
+
+.rsm-auto-refresh-toggle {
+	display: inline-flex;
+	align-items: center;
+	margin-right: 8px;
+	padding: 3px 8px;
+	border: 1px solid rgb(255 122 24 / 35%);
+	border-radius: 4px;
+	background: rgb(255 122 24 / 8%);
+	color: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	cursor: pointer;
+
+	&:hover { background: rgb(255 122 24 / 16%); }
+	&.is-on {
+		border-color: #ff7a18;
+		background: rgb(255 122 24 / 26%);
+		color: #ffd9b8;
+	}
+}
+
+.rsm-auto-refresh-new {
+	margin: 4px 0;
+	padding: 6px 8px;
+	border-left: 3px solid #ff7a18;
+	background: rgb(255 122 24 / 12%);
+	border-radius: 0 6px 6px 0;
+}
