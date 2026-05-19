@@ -1346,19 +1346,27 @@ Acceptance criteria:
 
 Features:
 
-- Rebuild settings categories from schema.
-- OLED, graphite, midnight, forest, ember, and accent token presets.
-- Dense mode, branded scrollbar, reduced-motion support.
-- Search/filter within settings.
-- JSON import/export.
-- Toast feedback for every setting change.
+- [x] Rebuild settings categories from schema (handled by the v0.4.0 console rebuild + the v0.6.0 design system pass).
+- [x] OLED, graphite, midnight, forest, ember, and accent token presets.
+- [x] Dense mode, branded scrollbar, reduced-motion support.
+- [x] Search/filter within settings.
+- [x] JSON import/export.
+- [x] Toast feedback for every setting change.
+
+Progress:
+
+- 2026-05-19: OLED palette landed as default; presets centralised in `lib/core/theme/settingsThemePresets.js`.
+- 2026-05-19: Density toggle + branded scrollbar + reduce-motion override shipped.
+- 2026-05-19: JSON import/export with snapshot round-trip + forward-compat contract test (`tests/unit/settings-snapshot-contract.test.mjs`).
+- 2026-05-19: Toast helper `settingsToast()` wired into theme/density/motion/module/save/discard paths.
+- 2026-05-19: WCAG AA contrast contract added (`tests/unit/settings-console-contrast.test.mjs`); all five themes pass 16 token pairings.
 
 Acceptance criteria:
 
-- No light theme exists.
-- WCAG contrast tests pass for all tokens.
-- Disabling reduced motion removes shimmer/lifts/stagger.
-- Settings can import/export and round-trip without losing unknown future keys.
+- [x] No light theme exists.
+- [x] WCAG contrast tests pass for all tokens.
+- [x] Disabling reduced motion removes shimmer/lifts/stagger.
+- [x] Settings can import/export and round-trip without losing unknown future keys.
 
 ### v0.7.0 - Privacy, Redirect, and Anti-Promo Suite
 
