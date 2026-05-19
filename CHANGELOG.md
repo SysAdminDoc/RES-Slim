@@ -2,6 +2,20 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.8.0 - 2026-05-19
+
+- Phase 8 Navigation and Comment Workflow.
+- New modules: continueThreadInline, scrollRestore, threadMinimap, searchFilterPersist, searchDispatcher, topCommentsPreview, autoRefreshComments.
+- New `lib/utils/rateLimiter.js` token-bucket helper, shared by topCommentsPreview and autoRefreshComments.
+- topCommentsPreview caches per (permalink, count) and pulls top comments via `.json?sort=top&depth=1`.
+- autoRefreshComments runs an opt-in 30s -> 300s exponential backoff poll on /comments/ pages.
+- threadMinimap paints a fixed depth/score heatmap rail with viewport tracking; pointer-events scoped so page scroll is unaffected.
+- scrollRestore persists `window.scrollY` per pathname in an LRU; restores at contentStart (skipping if URL hash is set).
+- searchFilterPersist remembers sort + time-window across /search.
+- searchDispatcher offers Reddit / sub / Google / DuckDuckGo + custom targets.
+- continueThreadInline splices the next slice of nested comments under the link.
+- Test count: 138.
+
 ## v0.7.0 - 2026-05-19
 
 - Phase 7 Privacy, Redirect, and Anti-Promo Suite.

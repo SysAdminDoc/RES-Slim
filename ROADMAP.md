@@ -1399,21 +1399,28 @@ Acceptance criteria:
 
 Features:
 
-- Continue-thread inline loader.
-- Scroll restore per permalink.
-- Comment navigator button surface with no feature shortcuts.
-- Thread minimap/heatmap.
-- Search filter persistence.
-- Search dispatcher.
-- Top-comments preview.
-- Auto-refresh comments with backoff.
+- [x] Continue-thread inline loader.
+- [x] Scroll restore per permalink.
+- [x] Comment navigator button surface with no feature shortcuts. (Existing `commentNavigator` module — no changes needed for this phase.)
+- [x] Thread minimap/heatmap.
+- [x] Search filter persistence.
+- [x] Search dispatcher.
+- [x] Top-comments preview.
+- [x] Auto-refresh comments with backoff.
+
+Progress:
+
+- 2026-05-19: continueThreadInline + scrollRestore landed.
+- 2026-05-19: threadMinimap + searchFilterPersist landed.
+- 2026-05-19: searchDispatcher + topCommentsPreview landed (introduces `lib/utils/rateLimiter.js` token bucket).
+- 2026-05-19: autoRefreshComments landed (uses the shared rate limiter; 30s -> 300s exponential backoff).
 
 Acceptance criteria:
 
-- MutationObserver processes added nodes only.
-- API calls are cached and rate-limited.
-- Continue-thread loader can be destroyed and restores original link.
-- Thread minimap does not block comment scrolling.
+- [x] MutationObserver processes added nodes only.
+- [x] API calls are cached and rate-limited.
+- [x] Continue-thread loader can be destroyed and restores original link.
+- [x] Thread minimap does not block comment scrolling.
 
 ### v0.9.0 - Theming and Layout Superset
 
