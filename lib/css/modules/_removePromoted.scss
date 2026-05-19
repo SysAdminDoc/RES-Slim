@@ -1,0 +1,33 @@
+// RES-Slim: badge that surfaces the number of promoted posts hidden this page-load.
+// Lives in the existing #header-bottom-right cluster so it sits next to mail/userbar.
+
+.rsm-promoted-hidden-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	margin-left: 6px;
+	padding: 0 6px;
+	border: 1px solid rgb(255 122 24 / 35%);
+	border-radius: 4px;
+	background: rgb(255 122 24 / 14%);
+	color: #ffb06a;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1;
+	text-decoration: none;
+	vertical-align: middle;
+	pointer-events: none;
+	user-select: none;
+
+	&:empty,
+	&[hidden] { display: none; }
+}
+
+body.res-nightmode .rsm-promoted-hidden-badge {
+	border-color: rgb(255 122 24 / 45%);
+	background: rgb(255 122 24 / 22%);
+	color: #ffd9b8;
+}
