@@ -20,5 +20,5 @@ test('settings saves await persistence before showing saved state', () => {
 	assert.match(consoleSource, /async function saveAllStagedOptions\(\)/);
 	assert.match(consoleSource, /await Options\.stage\.commit\(\)/);
 	assert.match(consoleSource, /if \(isSavingOptions\) return/);
-	assert.equal(locale.settingsConsoleSaving.message, 'Saving...');
+	assert.equal(locale.settingsConsoleSaving.message, 'Saving changes...');
 });

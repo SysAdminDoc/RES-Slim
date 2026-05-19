@@ -52,10 +52,20 @@
 		justify-content: center;
 		min-height: 30px;
 		padding: 0 11px;
+		border: 1px solid rgb(16 122 196 / 24%);
 		border-radius: 7px;
 		color: white !important;
 		background-color: #107ac4;
 		text-decoration: none;
+		transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+
+		&:hover,
+		&:focus-visible {
+			border-color: rgb(16 122 196 / 52%);
+			background-color: #0c68a8;
+			box-shadow: 0 8px 20px rgb(16 122 196 / 20%);
+			outline: none;
+		}
 	}
 
 	&Content {
@@ -168,6 +178,40 @@
 
 .RESNotification.transitionToTransparent {
 	transform: translateY(4px);
+}
+
+.res-nightmode {
+	.RESNotification {
+		border-color: rgb(148 163 184 / 24%);
+		background: rgb(17 22 29 / 98%);
+		box-shadow: 0 16px 42px rgb(0 0 0 / 36%);
+		color: #e6edf3;
+	}
+
+	.RESNotificationHeader {
+		border-bottom-color: rgb(148 163 184 / 16%);
+		background: #0d1117;
+		color: #e6edf3;
+	}
+
+	.RESNotificationContent {
+		border-color: rgb(148 163 184 / 16%);
+		background: #11161d;
+		color: #c9d5e2;
+
+		h2 {
+			color: #f0f6fc;
+		}
+	}
+
+	.RESNotificationFooter {
+		color: #9ba7b4;
+		background: #0f141b;
+	}
+
+	.RESNotification a {
+		color: #8ecbff;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

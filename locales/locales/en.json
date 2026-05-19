@@ -2656,7 +2656,7 @@
 		"message": "save options"
 	},
 	"settingsConsoleSaveDefault": {
-		"message": "Save Options"
+		"message": "Save changes"
 	},
 	"showAdvancedOptions": {
 		"message": "Show advanced options"
@@ -2665,13 +2665,13 @@
 		"message": "search RES settings"
 	},
 	"settingsConsoleSubtitle": {
-		"message": "Settings Console"
+		"message": "Old Reddit controls, media, and comment tools."
 	},
 	"settingsConsoleHideModules": {
-		"message": "Hide Modules"
+		"message": "Hide modules"
 	},
 	"settingsConsoleShowModules": {
-		"message": "Show Modules"
+		"message": "Show modules"
 	},
 	"settingsConsoleAllChangesSaved": {
 		"message": "All changes saved"
@@ -2680,13 +2680,13 @@
 		"message": "Saved just now"
 	},
 	"settingsConsoleSaving": {
-		"message": "Saving..."
+		"message": "Saving changes..."
 	},
 	"settingsConsoleDiscard": {
-		"message": "Discard"
+		"message": "Revert"
 	},
 	"settingsConsoleDiscardStagedChanges": {
-		"message": "Discard staged changes"
+		"message": "Revert staged changes"
 	},
 	"settingsConsoleClose": {
 		"message": "Close settings"
@@ -2701,7 +2701,7 @@
 		"message": "Find"
 	},
 	"settingsConsoleFindMeta": {
-		"message": "Search modules & settings"
+		"message": "Search modules and settings"
 	},
 	"settingsConsoleFindLabel": {
 		"message": "Find a Setting"
@@ -2749,13 +2749,13 @@
 		"message": "Browse by category"
 	},
 	"settingsConsoleNoModulesMatch": {
-		"message": "No modules match this filter."
+		"message": "No modules match the current view."
 	},
 	"settingsConsoleShowAllModules": {
-		"message": "Show All Modules"
+		"message": "Show all modules"
 	},
 	"settingsConsoleAdvancedMeta": {
-		"message": "Include advanced settings in search & workspace."
+		"message": "Include advanced settings in search and module pages."
 	},
 	"settingsConsoleWorkspace": {
 		"message": "Workspace"
@@ -2785,7 +2785,10 @@
 		"message": "Disable $1"
 	},
 	"settingsConsoleNoModuleOptions": {
-		"message": "There are no configurable options for this module."
+		"message": "This module works without additional configuration."
+	},
+	"settingsConsoleNoModuleOptionsTitle": {
+		"message": "No settings here"
 	},
 	"settingsConsoleStagedCountOne": {
 		"message": "$1 staged"
@@ -2905,7 +2908,10 @@
 		"message": "You opened a link to an advanced option, but not all options are shown. These options will stay visible until you leave or refresh the page. To keep seeing them, check the <i>Show advanced options</i> checkbox in the menu."
 	},
 	"settingsConsoleEnableModuleScrim": {
-		"message": "Enable this module to edit its settings."
+		"message": "Enable it to adjust these settings."
+	},
+	"settingsConsoleModuleDisabledTitle": {
+		"message": "Module disabled"
 	},
 	"toggleOn": {
 		"message": "on"

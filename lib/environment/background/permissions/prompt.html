@@ -1,22 +1,33 @@
 <!doctype html>
 <html class="res-nightmode">
 	<head>
+		<meta charset="UTF-8">
 		<title>RES-Slim: Permission needed</title>
 		<link rel="stylesheet" href="res.css"></link>
 		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="theme-color" content="#0d1117">
 		<style>
 			:root {
 				color-scheme: dark;
 				--prompt-bg: #0d1117;
 				--prompt-panel: #161b22;
 				--prompt-panel-alt: #11161d;
+				--prompt-field: #0f141b;
 				--prompt-border: #303a45;
+				--prompt-border-strong: #405062;
 				--prompt-text: #e6edf3;
 				--prompt-muted: #9ba7b4;
 				--prompt-soft: #7d8894;
 				--prompt-accent: #58a6ff;
 				--prompt-accent-soft: rgb(88 166 255 / 14%);
 				--prompt-accent-strong: #7cc0ff;
+				--prompt-success: #3fb950;
+				--prompt-warning: #d29922;
+				--prompt-danger: #f85149;
+				--prompt-radius-sm: 6px;
+				--prompt-radius-md: 8px;
+				--prompt-shadow: 0 18px 50px rgb(0 0 0 / 34%);
+				--prompt-focus-ring: 0 0 0 3px rgb(124 192 255 / 18%);
 			}
 
 			* { box-sizing: border-box; }
@@ -39,9 +50,9 @@
 			.permissionShell {
 				width: min(100%, 560px);
 				border: 1px solid var(--prompt-border);
-				border-radius: 14px;
+				border-radius: var(--prompt-radius-md);
 				background: var(--prompt-panel);
-				box-shadow: 0 18px 50px rgb(0 0 0 / 34%);
+				box-shadow: var(--prompt-shadow);
 				overflow: hidden;
 			}
 
@@ -93,7 +104,7 @@
 				margin: 0;
 				padding: 12px 14px;
 				border: 1px solid var(--prompt-border);
-				border-radius: 10px;
+				border-radius: var(--prompt-radius-md);
 				background: var(--prompt-panel-alt);
 				color: var(--prompt-muted);
 			}
@@ -115,6 +126,52 @@
 				padding-left: 18px;
 			}
 
+			.permissionStatus {
+				display: grid;
+				grid-template-columns: auto minmax(0, 1fr);
+				gap: 8px;
+				align-items: start;
+				margin: 0;
+				padding: 10px 12px;
+				border: 1px solid var(--prompt-border);
+				border-radius: var(--prompt-radius-md);
+				background: var(--prompt-field);
+				color: var(--prompt-muted);
+			}
+
+			.permissionStatus[hidden] {
+				display: none;
+			}
+
+			.permissionStatus::before {
+				content: '';
+				width: 9px;
+				height: 9px;
+				margin-top: 5px;
+				border-radius: 3px;
+				background: var(--prompt-accent-strong);
+			}
+
+			.permissionStatus.is-success {
+				border-color: rgb(63 185 80 / 36%);
+				background: rgb(63 185 80 / 10%);
+				color: #b5f4bf;
+			}
+
+			.permissionStatus.is-success::before {
+				background: var(--prompt-success);
+			}
+
+			.permissionStatus.is-error {
+				border-color: rgb(248 81 73 / 38%);
+				background: rgb(248 81 73 / 10%);
+				color: #ffb7b1;
+			}
+
+			.permissionStatus.is-error::before {
+				background: var(--prompt-danger);
+			}
+
 			.permissionActions {
 				display: flex;
 				align-items: center;
@@ -126,12 +183,13 @@
 				min-height: 38px;
 				padding: 0 15px;
 				border: 1px solid rgb(88 166 255 / 45%);
-				border-radius: 9px;
+				border-radius: var(--prompt-radius-md);
 				background: var(--prompt-accent-soft);
 				color: var(--prompt-accent-strong);
 				cursor: pointer;
 				font: inherit;
 				font-weight: 700;
+				transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease;
 			}
 
 			#request:hover {
@@ -139,10 +197,16 @@
 				background: rgb(88 166 255 / 20%);
 			}
 
+			#request:disabled {
+				cursor: default;
+				opacity: .72;
+			}
+
 			#request:focus-visible,
 			a:focus-visible {
 				outline: 2px solid var(--prompt-accent-strong);
 				outline-offset: 3px;
+				box-shadow: var(--prompt-focus-ring);
 			}
 
 			.permissionHint {
@@ -159,6 +223,7 @@
 				width: fit-content;
 				color: var(--prompt-accent-strong);
 				cursor: pointer;
+				border-radius: var(--prompt-radius-sm);
 			}
 
 			.permissionDetails p {
@@ -189,17 +254,18 @@
 			</header>
 			<main class="permissionBody">
 				<p class="permissionLead">
-					Your browser requires a direct click before RES-Slim can request this optional permission.
+					Your browser requires a direct click before RES-Slim can request optional access for the feature you enabled.
 				</p>
 				<section id="permissionSummary" class="permissionList" aria-live="polite"></section>
+				<p id="permissionStatus" class="permissionStatus" role="status" aria-live="polite" hidden></p>
 				<div class="permissionActions">
-					<button id="request" type="button">Grant permission</button>
-					<p class="permissionHint">The extension will continue after this window closes.</p>
+					<button id="request" type="button">Grant access</button>
+					<p class="permissionHint">RES-Slim will return you to the settings console after this request finishes.</p>
 				</div>
 				<details class="permissionDetails">
 					<summary>Why this is needed</summary>
 					<p>
-						Optional extension permissions must be requested from a user-opened extension page. Read more in the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">browser documentation</a> or the <a href="https://www.reddit.com/r/Enhancement/wiki/permissions">RES permissions wiki</a>.
+						Optional permissions are requested only when a feature needs access your browser has not granted yet. Read more in the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">browser documentation</a> or the <a href="https://www.reddit.com/r/Enhancement/wiki/permissions">RES permissions wiki</a>.
 					</p>
 				</details>
 			</main>

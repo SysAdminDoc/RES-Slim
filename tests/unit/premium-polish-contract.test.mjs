@@ -13,9 +13,12 @@ test('permission prompt uses a structured premium approval surface', () => {
 	assert.match(html, /class="permissionShell"/);
 	assert.match(html, /class="permissionHeader"/);
 	assert.match(html, /id="permissionSummary"/);
-	assert.match(html, /Grant permission/);
+	assert.match(html, /id="permissionStatus"/);
+	assert.match(html, /Grant access/);
 	assert.match(html, /@media \(width <= 520px\)/);
 	assert.match(entry, /function renderPermissionSummary\(\)/);
+	assert.match(entry, /function setPromptStatus\(message: string/);
+	assert.match(entry, /function finishPrompt\(result: boolean\)/);
 	assert.match(entry, /document\.createElement\('li'\)/);
 	assert.match(entry, /summary\.replaceChildren\(title, list\)/);
 	assert.doesNotMatch(entry, /summary\.innerHTML/);
@@ -33,6 +36,7 @@ test('notifications use semantic controls and modern toast styling', () => {
 	assert.match(styles, /width: min\(360px, calc\(100vw - 24px\)\)/);
 	assert.match(styles, /border-radius: 10px/);
 	assert.match(styles, /box-shadow: 0 16px 42px/);
+	assert.match(styles, /\.res-nightmode \{/);
 	assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
@@ -59,6 +63,9 @@ test('settings status feedback has premium busy and saved states', () => {
 	assert.match(styles, /&\[aria-busy='true'\] \.globalStageIcon/);
 	assert.match(styles, /@keyframes spin/);
 	assert.match(styles, /\.workspaceEmptyState \{/);
+	assert.match(styles, /\.workspaceEmptyStateIcon/);
 	assert.match(styles, /#moduleOptionsScrim \{/);
-	assert.match(styles, /backdrop-filter: blur\(4px\)/);
+	assert.match(styles, /\.moduleOptionsScrimTitle/);
+	assert.doesNotMatch(styles, /border-radius: 999px/);
+	assert.doesNotMatch(styles, /backdrop-filter: blur\(4px\)/);
 });

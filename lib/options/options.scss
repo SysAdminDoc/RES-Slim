@@ -19,6 +19,12 @@
 	--options-warning: #d29922;
 	--options-danger: #f85149;
 	--options-shadow: 0 18px 46px rgb(0 0 0 / 28%);
+	--options-shadow-soft: 0 10px 28px rgb(0 0 0 / 18%);
+	--options-radius-xs: 4px;
+	--options-radius-sm: 6px;
+	--options-radius-md: 8px;
+	--options-radius-lg: 10px;
+	--options-focus-ring: 0 0 0 3px rgb(124 192 255 / 18%);
 }
 
 html[data-settings-theme='midnight'] {
@@ -72,14 +78,14 @@ html[data-settings-theme='ember'] {
 	--options-accent-strong: #ffc08f;
 }
 
-%badge-pill {
+%compact-badge {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	min-height: 22px;
 	padding: 0 8px;
 	border: 1px solid var(--options-border);
-	border-radius: 999px;
+	border-radius: var(--options-radius-sm);
 	background: var(--options-panel-alt);
 	color: var(--options-text-muted);
 	font-size: 11px;
@@ -94,7 +100,7 @@ html[data-settings-theme='ember'] {
 	min-height: 36px;
 	padding: 0 14px;
 	border: 1px solid var(--options-border);
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-panel-raised);
 	color: var(--options-text);
 	cursor: pointer;
@@ -120,7 +126,7 @@ html[data-settings-theme='ember'] {
 	height: 32px;
 	padding: 0;
 	border: 1px solid var(--options-border);
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-panel-raised);
 	color: var(--options-text-muted);
 	cursor: pointer;
@@ -221,7 +227,7 @@ li {
 	width: 56px;
 	height: 28px;
 	border: 1px solid var(--options-border);
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	overflow: hidden;
 	background: var(--options-panel-alt);
 	color: var(--options-text);
@@ -241,7 +247,7 @@ li {
 	position: absolute;
 	inset: auto 8px 5px 8px;
 	height: 3px;
-	border-radius: 999px;
+	border-radius: var(--options-radius-xs);
 	background: #ff8b3d;
 }
 
@@ -273,7 +279,7 @@ li {
 .moduleCategoryBadge,
 .moduleStateBadge,
 .moduleRowLock {
-	@extend %badge-pill;
+	@extend %compact-badge;
 }
 
 .consoleHeaderActions {
@@ -328,10 +334,10 @@ li {
 }
 
 .themeOptionSwatch {
-	width: 10px;
-	height: 10px;
+	width: 12px;
+	height: 12px;
 	border: 1px solid rgb(255 255 255 / 24%);
-	border-radius: 999px;
+	border-radius: var(--options-radius-xs);
 	flex: 0 0 auto;
 }
 
@@ -351,7 +357,7 @@ li {
 	gap: 8px;
 	padding: 8px 12px;
 	border: 1px solid var(--options-border);
-	border-radius: 999px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-panel-alt);
 	color: var(--options-text-muted);
 	font-size: 12px;
@@ -385,9 +391,9 @@ li {
 }
 
 .globalStageIcon {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
+	width: 9px;
+	height: 9px;
+	border-radius: 3px;
 	background: currentcolor;
 }
 
@@ -554,7 +560,7 @@ li {
 	min-height: 26px;
 	padding: 0 9px;
 	border: 1px solid var(--options-border);
-	border-radius: 999px;
+	border-radius: var(--options-radius-sm);
 	background: var(--options-panel);
 	color: var(--options-text-muted);
 	cursor: pointer;
@@ -578,7 +584,7 @@ li {
 	justify-content: center;
 	min-width: 18px;
 	padding: 0 5px;
-	border-radius: 999px;
+	border-radius: var(--options-radius-xs);
 	background: rgb(255 255 255 / 6%);
 	color: inherit;
 	font-size: 11px;
@@ -659,7 +665,7 @@ li {
 	min-width: 0;
 	padding: 6px 8px 6px 10px;
 	border: 0;
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	background: transparent;
 	color: var(--options-text-muted);
 	cursor: pointer;
@@ -697,7 +703,7 @@ li {
 }
 
 .moduleButtonStage {
-	@extend %badge-pill;
+	@extend %compact-badge;
 
 	min-height: 20px;
 	padding: 0 6px;
@@ -720,24 +726,25 @@ li {
 }
 
 .moduleRowToggle {
-	width: 34px;
-	height: 20px;
+	width: 36px;
+	height: 22px;
 	padding: 0;
 	border: 1px solid var(--options-border-strong);
-	border-radius: 999px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 	cursor: pointer;
+	transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .moduleRowToggleThumb {
 	display: block;
-	width: 14px;
-	height: 14px;
+	width: 16px;
+	height: 16px;
 	margin-left: 2px;
-	border-radius: 50%;
+	border-radius: var(--options-radius-xs);
 	background: #fff;
 	transform: translateY(1px);
-	transition: margin-left 0.18s ease;
+	transition: margin-left 0.18s ease, background-color 0.18s ease;
 }
 
 .moduleRowToggle.is-on {
@@ -745,7 +752,10 @@ li {
 	background: var(--options-accent-soft);
 }
 
-.moduleRowToggle.is-on .moduleRowToggleThumb { margin-left: 18px; }
+.moduleRowToggle.is-on .moduleRowToggleThumb {
+	margin-left: 16px;
+	background: var(--options-accent);
+}
 .moduleRowLock { min-width: 34px; }
 
 .advancedOptionsPanel {
@@ -851,7 +861,7 @@ li {
 	margin-left: 10px;
 	padding: 2px 8px;
 	border: 1px solid var(--options-border);
-	border-radius: 999px;
+	border-radius: var(--options-radius-sm);
 	background: var(--options-panel-alt);
 	color: var(--options-text-soft);
 	font: 12px consolas, 'SFMono-Regular', monospace;
@@ -896,10 +906,45 @@ li {
 }
 
 .workspaceEmptyState {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 4px 12px;
+	align-items: start;
 	padding: 18px 20px;
 	border: 1px solid var(--options-border);
-	border-radius: 10px;
+	border-radius: var(--options-radius-lg);
 	background: var(--options-panel-alt);
+	color: var(--options-text-muted);
+	box-shadow: var(--options-shadow-soft);
+}
+
+.workspaceEmptyStateIcon {
+	grid-row: span 2;
+	width: 26px;
+	height: 26px;
+	border: 1px solid rgb(88 166 255 / 28%);
+	border-radius: var(--options-radius-sm);
+	background: rgb(88 166 255 / 10%);
+
+	&::before {
+		content: '';
+		display: block;
+		width: 10px;
+		height: 10px;
+		margin: 7px;
+		border: 2px solid var(--options-accent-strong);
+		border-top: 0;
+		border-left: 0;
+		transform: rotate(45deg) translate(-1px, -1px);
+	}
+}
+
+.workspaceEmptyState strong {
+	color: var(--options-text);
+	font-size: 14px;
+}
+
+.workspaceEmptyState span:last-child {
 	color: var(--options-text-muted);
 }
 
@@ -917,16 +962,46 @@ li {
 	inset: 0;
 	z-index: 2;
 	place-items: center;
-	padding: 16px;
+	align-content: center;
+	gap: 8px;
+	padding: 20px;
 	border: 1px dashed var(--options-border-strong);
-	border-radius: 10px;
-	background: rgb(13 17 23 / 78%);
+	border-radius: var(--options-radius-lg);
+	background: rgb(13 17 23 / 92%);
 	color: var(--options-text-muted);
 	text-align: center;
-	backdrop-filter: blur(4px);
 	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 3%);
 
 	&.visible { display: grid; }
+}
+
+.moduleOptionsScrimIcon {
+	width: 30px;
+	height: 30px;
+	border: 1px solid rgb(210 153 34 / 36%);
+	border-radius: var(--options-radius-sm);
+	background: rgb(210 153 34 / 10%);
+
+	&::before {
+		content: '';
+		display: block;
+		width: 10px;
+		height: 10px;
+		margin: 9px auto 0;
+		border: 2px solid #f6d47a;
+		border-top: 0;
+		border-left: 0;
+		transform: rotate(45deg);
+	}
+}
+
+.moduleOptionsScrimTitle {
+	color: var(--options-text);
+	font-size: 14px;
+}
+
+.moduleOptionsScrimText {
+	max-width: 32ch;
 }
 
 .optionContainer {
@@ -963,7 +1038,7 @@ li {
 		margin-left: 10px;
 		padding: 2px 7px;
 		border: 1px solid rgb(210 153 34 / 32%);
-		border-radius: 999px;
+		border-radius: var(--options-radius-sm);
 		color: #f6d47a;
 		font-size: 10px;
 		font-weight: 700;
@@ -1036,9 +1111,10 @@ li {
 	min-height: 38px;
 	padding: 9px 11px;
 	border: 1px solid var(--options-border);
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 	color: var(--options-text);
+	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
 #RESConsoleContainer :is(input[type='text'], input[type='password'], input[type='search'], select, textarea):hover {
@@ -1059,7 +1135,7 @@ li {
 	height: 38px;
 	padding: 4px;
 	border: 1px solid var(--options-border);
-	border-radius: 8px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 }
 
@@ -1068,6 +1144,7 @@ li {
 #RESConsoleContainer :is(button, a, input, select, textarea, .SearchRES-result-copybutton, .moduleButton, .moduleRowToggle, .toggleButton):focus-visible {
 	outline: 2px solid var(--options-accent-strong);
 	outline-offset: 2px;
+	box-shadow: var(--options-focus-ring);
 }
 
 #RESConsoleContainer :is(button, a, input, select, textarea, .moduleButton, .moduleRowToggle, .toggleButton) {
@@ -1111,18 +1188,18 @@ li {
 	height: 24px;
 	flex: 0 0 44px;
 	border: 1px solid var(--options-border-strong);
-	border-radius: 999px;
+	border-radius: var(--options-radius-md);
 	background: var(--options-field);
-	transition: background-color 0.18s ease, border-color 0.18s ease;
+	transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 
 	&::before {
 		content: '';
 		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 18px;
-		height: 18px;
-		border-radius: 50%;
+		top: 3px;
+		left: 3px;
+		width: 16px;
+		height: 16px;
+		border-radius: var(--options-radius-xs);
 		background: #fff;
 		transition: transform 0.18s ease, background-color 0.18s ease;
 	}
