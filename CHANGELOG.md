@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.12 - 2026-05-22
+
+- New `mediaScopeToggle` module — independently disable inline media on posts only, on comments only, or both. Closes a long-running r/Enhancement request.
+- Pure-CSS body-class scoping (`rsm-mediaScope-noPosts`, `rsm-mediaScope-noComments`, `rsm-mediaScope-noThumb`). Style mounts at `beforeLoad`.
+- Optional `collapseLoadedExpando` snaps shut any already-open expando on the suppressed surface; `watchForThings` re-collapses late-initialising expandos from `showImages`.
+- `keepThumbnail` (default on) preserves the small left-rail thumbnail even when post media is suppressed.
+- Defaults: comments suppressed, posts not suppressed — the noisier surface is the comment tree. Module itself disabled by default.
+- New contract test `tests/unit/media-scope-toggle-contract.test.mjs` — 7 assertions.
+- Test count: 310.
+
 ## v0.11.11 - 2026-05-22
 
 - New `mastodon` host handler — federated oembed expando. Detects `<instance>/@<user>/<id>` and `<instance>/users/<user>/statuses/<id>` URL shapes. Calls the post-instance's own `/api/oembed?url=...` and inlines the returned iframe HTML.
