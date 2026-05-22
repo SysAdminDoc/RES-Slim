@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.5 - 2026-05-22
+
+- New `roleHighlights` module — refresh OP / moderator / admin / friend highlight lanes via body-class-gated CSS.
+- Per-role colour pickers; defaults: OP `#3b82f6`, mod `#22c55e`, admin `#ef4444`, friend `#a855f7` (off by default).
+- Optional backdrop tint paints a left-border stripe on each role's entry.
+- Optional animated role-flair shimmer (reduced-motion aware via `prefers-reduced-motion`).
+- Style injected at `beforeLoad` to avoid the brief default-colour flash on slow first paints.
+- New contract test `tests/unit/role-highlights-contract.test.mjs` — 7 assertions on option schema, body-class convention, stable author selectors, and motion safety.
+- Test count: 195.
+
 ## v0.10.4 - 2026-05-22
 
 - New `authorContextBadge` module — inline `[age · karma]` chip after every `.author` link.
