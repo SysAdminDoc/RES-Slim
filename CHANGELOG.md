@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.6 - 2026-05-22
+
+- New `mediaArchiveManifest` module — records every media download triggered from a reddit post into a local IndexedDB manifest. Source classifier knows about downloadButtons (RES upstream), galleryZip, cobaltDownloader, and localCompanion.
+- Pure helpers in `lib/utils/mediaManifest.js`: `buildEntry`, `filterEntries`, `buildExport`, `isDownloadAnchor` (matches `[download]` HTML attribute and the four known RES-Slim download-button classes).
+- IDB schema (v1): object store keyed by `${timestamp}::${url}`; indexes on `timestamp`, `source`, `subreddit`. 20k hard cap by default; oldest dropped first.
+- Capture-phase document click listener so the recorder works regardless of which module emits the download.
+- Userbar `media log` link exports the full manifest as JSON.
+- Disabled by default.
+- New contract test `tests/unit/media-manifest-contract.test.mjs` — 7 assertions.
+- Test count: 358.
+
 ## v0.12.5 - 2026-05-22
 
 - New `voteHistory` module — record every vote you cast to IndexedDB. Nothing leaves the browser.
