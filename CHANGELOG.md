@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.1 - 2026-05-22 — Phase 11 opens (Media & Downloads)
+
+- New `directImage` module — first v0.11 consumer. On posts whose `data-domain` is in the configured direct-host list AND whose `data-url` points at a direct image/video URL, the post title link is rewritten to open the raw media. Comments link untouched.
+- Pure helpers in `lib/utils/directImage.js`: `parseDomainList`, `isDirectMediaUrl`, `shouldRewrite`, `normalizeImgurGifv`.
+- Imgur `.gifv` URLs are normalised to `.mp4` (the sibling resolves to a direct video).
+- Defaults: `i.redd.it`, `i.imgur.com`, `v.redd.it`, `preview.redd.it`. Opens in new tab with `rel="noopener noreferrer"`.
+- Disabled by default. Marks rewritten anchors with `data-rsm-direct-image="1"` so the change is observable.
+- New contract test `tests/unit/direct-image-contract.test.mjs` — 6 assertions on the helpers + module registration.
+- Test count: 237.
+
 ## v0.10.11 - 2026-05-22 — v0.10.x patch series complete
 
 - New `a11yTriple` module — bundles three accessibility levers:
