@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.2 - 2026-05-22
+
+- New `waybackSnapshot` module — `archive` button on every post. Three modes: manual (open save in new tab), check (availability lookup + save if stale beyond N days), force (always save).
+- Pure helpers in `lib/utils/wayback.js`: `SAVE_BASE`, `AVAILABILITY_BASE`, `buildSaveUrl`, `buildAvailabilityUrl`, `parseAvailabilityResponse`, `isWaybackUrl`, `formatTimestamp` (14-digit Wayback ts → ISO).
+- Configurable target: permalink, linked URL (data-url), or both.
+- Dedicated 3-token / 2s rate limiter so availability checks don't burst.
+- Pairs with `archiveLinks` (links to existing snapshots) — this module CREATES snapshots.
+- Disabled by default.
+- New contract test `tests/unit/wayback-snapshot-contract.test.mjs` — 8 assertions.
+- Test count: 327.
+
 ## v0.12.1 - 2026-05-22 — Phase 12 opens (Archival, Recovery, Export)
 
 - New `arcticShift` module — restore `[removed]` / `[deleted]` comments inline via the Arctic Shift API. Successor path to the broken Pushshift dependency that crippled the legacy `viewDeleted` (pullpush) module.

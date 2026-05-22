@@ -1148,7 +1148,7 @@ Features:
 - ✅ **v0.12.1 — Arctic Shift restoration.** New `arcticShift` module. Pure helpers in `lib/utils/arcticShift.js` handle both API envelope shapes. Dedicated 3-token/2s rate limiter. Inline "Arctic Shift" provenance pill on restored comments. 9-assertion contract test. Test count: 319.
 - PullPush as legacy fallback.
 - Wayback / archive.today fallback chain.
-- Snapshot-now button (push current page to Wayback).
+- ✅ **v0.12.2 — Wayback snapshot-now.** New `waybackSnapshot` module. Manual / check / force modes. Pure helpers in `lib/utils/wayback.js` (buildSaveUrl, buildAvailabilityUrl, parseAvailabilityResponse, formatTimestamp). 8-assertion contract test. Test count: 327.
 - Removed-content badge with provenance (source + timestamp + restoration latency).
 - Comment-tree export: JSON (full fidelity), Markdown (human-readable), HTML (offline-viewable).
 - Saved-content backup (paginate `/user/<me>/saved` + dump).
