@@ -7,7 +7,7 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-const expectedHostCount = 86;
+const expectedHostCount = 88;
 const criticalHosts = new Set([
 	'defaultImage',
 	'defaultAudio',

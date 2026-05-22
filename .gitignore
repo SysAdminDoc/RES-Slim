@@ -103,6 +103,8 @@ tests/unit/.tmp-arctic-shift/
 tests/unit/.tmp-wayback-snapshot/
 tests/unit/.tmp-comment-tree-export/
 tests/unit/.tmp-saved-backup/
+tests/unit/.tmp-vote-history/
+tests/unit/.tmp-media-manifest/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

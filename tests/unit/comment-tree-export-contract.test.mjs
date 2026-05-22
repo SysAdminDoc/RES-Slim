@@ -119,9 +119,7 @@ test('commentTreeExport module is registered and uses the helpers', () => {
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/commentTreeExport.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/commentTreeExport'/);
 	assert.match(mod, /isPageType\('comments'\)/);
-	for (const opt of ['includeAllChildren', 'htmlOpenInNewTab']) {
-		assert.ok(mod.includes(opt), `expected option ${opt}`);
-	}
+	assert.ok(mod.includes('htmlOpenInNewTab'), 'expected option htmlOpenInNewTab');
 });
 
 test('commentTreeExport SCSS ships in the bundle', () => {

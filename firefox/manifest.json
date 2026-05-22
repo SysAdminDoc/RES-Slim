@@ -86,7 +86,9 @@
 		"https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*",
 		"https://*.redd.it/*",
 		"https://www.flickr.com/services/oembed",
-		"https://embed.bsky.app/oembed"
+		"https://embed.bsky.app/oembed",
+		"https://www.threads.com/*",
+		"https://www.threads.net/*"
 	],
 	"web_accessible_resources": [
 		"prompt.html",

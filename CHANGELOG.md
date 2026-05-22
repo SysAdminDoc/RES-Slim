@@ -2,6 +2,25 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.7 - 2026-05-22
+
+Senior-engineer refactor pass — bug hunt + hardening + UX consistency, no new modules.
+
+- **New `lib/utils/buttonStatus.js`** — shared `flashStatus(el, message, { restore, durationMs })` helper. WeakMap-tracked per-element timer so repeated clicks never race conflicting setTimeouts to flip the label back. All seven status-flashing modules now route through it: `cobaltDownloader`, `galleryZip`, `localCompanion`, `savedBackup`, `voteHistory`, `mediaArchiveManifest`, `commentTreeExport`.
+- **`lib/utils/rateLimiter.js`** — refill interval now starts lazily on first `schedule()` and stops when the bucket is full + queue + active are all empty. Previously a module's `createRateLimiter(...)` ran the refill `setInterval` for the lifetime of the page even when the user never triggered the feature. Closes a per-page background-tick leak.
+- **`cobaltDownloader`** — fixed `eligibleHosts()` so the default host set is merged with the user's custom list instead of being replaced when only custom hosts were entered. Wrapped `res.json()` in a try/catch so a malformed Cobalt response surfaces "bad response" instead of throwing past the try-with-resource.
+- **`galleryZip`** — `loadJszip()` now resets the cached promise on rejection so a transient CDN hiccup doesn't permanently break the gallery-zip button until full page reload.
+- **`voteHistory`, `mediaArchiveManifest`** — `dbPromise` is reset on IndexedDB open failure (was previously sticky, meaning one transient IDB error broke the module until reload).
+- **`arcticShift`** — failure label now distinguishes `rate-limited`, `network`, `server-error`, `bad archive response`, and `not in archive` instead of folding everything into a flat "not in archive" string. Helps the user know whether to retry or give up.
+- **`dragResize`** — drag teardown is now centralised. Added `pointercancel` and `window.blur` handlers so a tab switch or an OS-level pointer steal during a drag no longer leaves dangling `pointermove`/`keydown` listeners on `window`. Consolidated the cleanup logic into a single `teardown()` closure.
+- **`userTagger`** — popover now closes on Esc. Only one popover can be open at a time; opening a new one tears down the previous. The deferred outside-click handler now checks that the same popover instance is still active before doing anything (avoids a tear-down racing the click).
+- **`commentTreeExport`** — removed the dead `includeAllChildren: false` option branch. The fetch path was always the same; the option just confused the settings UI.
+- **`filterRules`** — `collapse` action now degrades to `dim` for posts (posts have no native collapse on old.reddit). `data-rsm-filter-hit` is now space-separated and dedupes hit IDs instead of producing leading whitespace and duplicate IDs across re-scans.
+- **`botCollapse`** — reveal button now drives its label off the live `.collapsed` class instead of a separate `data-rsm-bot-collapsed` attribute, so reddit's native `[-]` / `[+]` toggle stays in sync with the button text. A scoped MutationObserver on the comment element refreshes the label automatically.
+- **`redgifsLayoutFix`** — replaced the document-body-wide MutationObserver with per-Thing scoped observers on the post's `.expando` container. Same coverage, dramatically less work on busy listings. Also stamps a `data-rsm-redgifs-fixed` attribute so each iframe is processed exactly once even if multiple observers fire.
+- **Fixture hygiene** — privacy outbound-URL snapshot regenerated against the current `lib/` (`scripts/regen-privacy-snapshot.mjs` shipped so this is repeatable). `expectedHostCount` bumped 86 → 88 for the `mastodon` and `threads` handlers shipped in v0.11.11. `threads` host permissions added to both chrome + firefox manifests. Cleared two test scratch dirs from the index and added them to `.gitignore`.
+- Test count: 358 (all green). Chrome + Firefox builds clean.
+
 ## v0.12.6 - 2026-05-22
 
 - New `mediaArchiveManifest` module — records every media download triggered from a reddit post into a local IndexedDB manifest. Source classifier knows about downloadButtons (RES upstream), galleryZip, cobaltDownloader, and localCompanion.
