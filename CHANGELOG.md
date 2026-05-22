@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.9 - 2026-05-22
+
+- New `cobaltDownloader` module — optional Cobalt API bridge. Adds a `cobalt` button to posts on supported hosts (YouTube, TikTok, Twitter/X, BlueSky, Reddit, SoundCloud, Vimeo, Twitch, Streamable, Instagram, Bilibili, Tumblr, Pinterest, Facebook, Rumble, VK, Dailymotion, OK, Loom, Snapchat). Click POSTs the URL; the returned tunnel/redirect/stream/picker is downloaded.
+- Pure helpers in `lib/utils/cobalt.js`: `DEFAULT_HOSTS` (20 hosts), `isCobaltEligible` (case-insensitive + suffix match), `parseHostList`, `buildRequestBody` (matches cobalt v10 schema), `sanitizeInstance`, `looksLikeStreamUrl`.
+- Strictly opt-in: nothing fires without an explicit click. Instance URL is configurable for self-hosted cobalt deployments.
+- Configurable video quality (360→2160p, max), audio format (best/mp3/opus/m4a/wav), download mode (auto/audio/mute).
+- Picker responses (multi-asset hosts) trigger one download per item.
+- Disabled by default.
+- New contract test `tests/unit/cobalt-downloader-contract.test.mjs` — 7 assertions.
+- Test count: 288.
+
 ## v0.11.8 - 2026-05-22
 
 - New `overlayViewer` module — click any inline expanded image (post expando, selftext markdown, or comment body) to open a viewport-sized overlay viewer.

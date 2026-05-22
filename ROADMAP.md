@@ -1128,7 +1128,7 @@ Features:
 - Display-direct image (skip Reddit viewer chrome).
 - ✅ **v0.11.5 — Imgur album flatten.** New `imgurFlatten` module; rewrites imgur `/a/<id>` and `/gallery/<id>` through a configurable rimgo mirror. Pure helpers in `lib/utils/imgurFlatten.js`. 6-assertion contract test. Test count: 262.
 - GIF → WebM client-side transcode for files >N MB (wasm).
-- Optional Cobalt API bridge.
+- ✅ **v0.11.9 — Cobalt API bridge.** New `cobaltDownloader` module. Pure helpers in `lib/utils/cobalt.js` (DEFAULT_HOSTS × 20, isCobaltEligible, parseHostList, buildRequestBody, sanitizeInstance, looksLikeStreamUrl). Strictly opt-in click-only. Configurable instance for self-hosted deployments. 7-assertion contract test. Test count: 288.
 - Optional local-companion bridge (`http://127.0.0.1:<port>/ytdlp`).
 
 Acceptance:
