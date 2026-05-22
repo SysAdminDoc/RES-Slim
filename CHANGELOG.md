@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.8 - 2026-05-22
+
+- New `perSubCss` module — granular per-sub CSS allow/deny lists. Successor to the binary `disableSubredditStyles`.
+- Pure helpers in `lib/utils/perSubCss.js`: `parseSubList` (handles `/r/` prefix, dedupes), `normalizeMode`, `currentSubFromPath`, `shouldStripStyles` (three modes).
+- Three modes: `allow-all` (deny list strips), `deny-all` (allow list keeps), `per-list` (default keep, deny strips).
+- Mutation observer keeps stripping if reddit re-injects the stylesheet after the initial render.
+- Disabled by default. Mutually exclusive with `disableSubredditStyles` (don't enable both unless you want the hard global kill).
+- New contract test `tests/unit/per-sub-css-contract.test.mjs` — 7 assertions on the helpers + module registration.
+- Test count: 218.
+
 ## v0.10.7 - 2026-05-22
 
 - New `multiColumnFeed` module — lay out the listing feed in 2, 3, or 4 columns via CSS grid.
