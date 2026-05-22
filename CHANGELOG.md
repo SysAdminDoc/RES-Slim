@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.7 - 2026-05-22
+
+- New `multiColumnFeed` module — lay out the listing feed in 2, 3, or 4 columns via CSS grid.
+- Listing pages only via `isPageType('linklist')`; thread / profile / wiki untouched.
+- Non-thing children (pagers, panestack-title, nav-buttons) span the full row.
+- `includeSelfPosts` (default on) lets you keep self-text rows in a single column at the top.
+- `useFullWidth` (default on) stretches the feed to viewport width so columns get breathing room.
+- New contract test `tests/unit/multi-column-feed-contract.test.mjs` — 7 assertions on schema, scope, body class, and grid plumbing.
+- Test count: 211.
+
 ## v0.10.6 - 2026-05-22
 
 - New `perSubSort` module — remember the preferred sort per subreddit. Bare `/r/<sub>/` URLs redirect to the saved sort (and time-window for top/controversial).
