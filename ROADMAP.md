@@ -1126,7 +1126,7 @@ Features:
 - Inline search-result gallery carousel.
 - Inline tweet / BlueSky / Nitter / Mastodon / Threads expandos (closes RES PR #5560).
 - Display-direct image (skip Reddit viewer chrome).
-- Imgur album flatten via rimgo public instance routing.
+- ✅ **v0.11.5 — Imgur album flatten.** New `imgurFlatten` module; rewrites imgur `/a/<id>` and `/gallery/<id>` through a configurable rimgo mirror. Pure helpers in `lib/utils/imgurFlatten.js`. 6-assertion contract test. Test count: 262.
 - GIF → WebM client-side transcode for files >N MB (wasm).
 - Optional Cobalt API bridge.
 - Optional local-companion bridge (`http://127.0.0.1:<port>/ytdlp`).

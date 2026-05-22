@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.5 - 2026-05-22
+
+- New `imgurFlatten` module — rewrite imgur `/a/<id>` and `/gallery/<id>` URLs through a configurable rimgo mirror so albums browse correctly after imgur paywalled the direct HTML in 2025.
+- Pure helpers in `lib/utils/imgurFlatten.js`: `isImgurAlbumUrl`, `extractAlbumId`, `sanitizeMirror`, `rewriteAlbumUrl`, `rewriteImageUrl`.
+- Default mirror: `https://rimgo.totaldarkness.net`. Users can swap to any rimgo-compatible instance (see `https://github.com/rimgo/instances`).
+- Rewrites both the post title `href` and `data-url`/`data-domain` so downstream modules (showImages, downloadButtons, hoverZoom) follow the mirror.
+- Only `/a/` and `/gallery/` URLs are touched — bare `i.imgur.com` direct uploads are untouched (handled by `directImage` / showImages).
+- New contract test `tests/unit/imgur-flatten-contract.test.mjs` — 6 assertions.
+- Test count: 262.
+
 ## v0.11.4 - 2026-05-22
 
 - New `dragResize` module — bottom-right corner handle on inline expandos for image, video, and iframe content. Shift toggles the keepAspect default during a drag.
