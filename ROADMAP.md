@@ -1098,7 +1098,7 @@ Each phase must ship a usable product slice and update `README.md`, `CHANGELOG.m
 Single minor stream layering the consumers on the v0.10 foundation. Each lands as a patch (v0.10.1, v0.10.2, ...). All `Build` rows from the matrix labelled v0.10.x:
 
 - ✅ **v0.10.1 — Local user tagger.** Persistent JSON list of `{user, color, tag, ignore}` records. Inline tag badge on every `.author`. `lib/modules/userTagger.js` + pure helpers `lib/utils/userTags.js`. Popover editor (click the `+` next to an author). Storage via `Storage.wrapBlob('RESmodules.userTagger.tags', ...)`. JSON import-merge on contentStart. 12-assertion contract test. Test count: 163.
-- **v0.10.2 — Bot collapse / AutoMod attribution.** Preset list of AutoMod-style bots (configurable). Auto-collapse on render with reveal toggle. AutoModerator authorship attribution badge on removed comments where attribution can be inferred.
+- ✅ **v0.10.2 — Bot collapse / AutoMod attribution.** New `botCollapse` module with editable list of 20 default bots. Click-based collapse triggers reddit's native one-line stub; `[reveal]` toggle bypasses per-comment. AutoMod stickies get an orange badge, other bots a slate badge. Pure helpers in `lib/utils/botList.js`. 8-assertion contract test. Test count: 171.
 - **v0.10.3 — Duplicate / crosspost map.** `/duplicates/<article>.json` fetch behind rate limiter. Inline widget on comments page showing every sub the post appears in with timestamps + scores.
 - **v0.10.4 — Author context badge (rate-limited).** Inline age + karma + first-time-poster flag next to every `.author`. One cached API call per user per 24h.
 - **v0.10.5 — OP/admin/mod/friend highlight refresh.** Body-class-gated CSS lanes. Animated role flair (REL-style) optional.

@@ -2,6 +2,15 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.2 - 2026-05-22
+
+- New `botCollapse` module — auto-collapse comments by known bots (AutoModerator, RemindMeBot, sneakpeekbot, etc.) and badge AutoMod sticky comments.
+- Pure helpers in `lib/utils/botList.js`: `DEFAULT_BOTS` (20 common bots), `normalizeBotName`, `parseBotList` (accepts JSON array OR comma/newline-separated), `isBot`, `isAutoModSticky`.
+- Collapse via existing `.expand` click pattern so reddit's native one-line stub fires; a `[reveal]` button is injected for one-click bypass.
+- Disabled by default. Sticky-AutoMod collapse and other-bot collapse are independent toggles.
+- New contract test `tests/unit/bot-collapse-contract.test.mjs` — 8 assertions on the pure helpers + module registration + SCSS bundle wiring.
+- Test count: 171.
+
 ## v0.10.1 - 2026-05-22
 
 - New `userTagger` module — local-only user tagging with free-text label, hex colour, and ignore flag.

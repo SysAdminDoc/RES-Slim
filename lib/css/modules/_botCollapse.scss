@@ -1,0 +1,50 @@
+// botCollapse module styles. v0.10.2.
+
+.rsm-botCollapse-badge {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 4px;
+	padding: 0 5px;
+	min-height: 14px;
+	font: 600 10px/14px 'Helvetica Neue', Arial, sans-serif;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	color: #fff;
+	background: #525252;
+	border: 1px solid rgb(255 255 255 / 14%);
+	border-radius: 3px;
+	pointer-events: none;
+	vertical-align: baseline;
+
+	&--automod {
+		background: #b45309;
+		border-color: #92400e;
+	}
+
+	&--bot {
+		background: #475569;
+		border-color: #334155;
+	}
+}
+
+.rsm-botCollapse-reveal {
+	all: unset;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	margin-left: 4px;
+	padding: 0 6px;
+	min-height: 14px;
+	font: 11px/14px 'Helvetica Neue', Arial, sans-serif;
+	color: #93c5fd;
+	background: rgb(59 130 246 / 14%);
+	border: 1px solid rgb(59 130 246 / 35%);
+	border-radius: 3px;
+	transition: background .12s ease-out;
+
+	&:hover,
+	&:focus-visible {
+		background: rgb(59 130 246 / 28%);
+		outline: none;
+	}
+}
