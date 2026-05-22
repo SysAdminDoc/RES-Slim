@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.5 - 2026-05-22
+
+- New `voteHistory` module — record every vote you cast to IndexedDB. Nothing leaves the browser.
+- Pure helpers in `lib/utils/voteHistory.js`: `SCHEMA_VERSION` (locked to 1), `DB_NAME`, `STORE_NAME`, `makeId`, `classifyDirection`, `buildRecord` (kind inferred from fullname prefix; 240-char snippet cap), `filterRecords` (sub/author/direction/time filters), `toCsv` (CSV-RFC-compliant quoting).
+- IndexedDB schema: object store keyed by `${fullname}@${timestamp}`, indexes on `timestamp` / `subreddit` / `author`.
+- Userbar `vote log` link exports the full log to JSON; Shift+click exports CSV.
+- Hard cap default 50,000 records — oldest dropped first when exceeded.
+- Disabled by default. Recording is a separate option from the module enable so users can keep the existing log read-only.
+- New contract test `tests/unit/vote-history-contract.test.mjs` — 8 assertions including CSV quoting safety.
+- Test count: 351.
+
 ## v0.12.4 - 2026-05-22
 
 - New `savedBackup` module — paginates the logged-in user's `/user/<me>/saved.json` and downloads a single JSON file containing the entire saved list.
