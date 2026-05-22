@@ -1,0 +1,26 @@
+// dragResize module styles. v0.11.4.
+
+.rsm-dragResize-handle {
+	position: absolute;
+	right: 4px;
+	bottom: 4px;
+	width: 14px;
+	height: 14px;
+	cursor: nwse-resize;
+	background:
+		linear-gradient(135deg, transparent 50%, rgb(255 255 255 / 70%) 50%, rgb(255 255 255 / 70%) 60%, transparent 60%, transparent 75%, rgb(255 255 255 / 70%) 75%, rgb(255 255 255 / 70%) 85%, transparent 85%);
+	border-radius: 2px;
+	opacity: 0.4;
+	transition: opacity .12s ease-out;
+	z-index: 5;
+
+	&:hover,
+	&:focus-visible {
+		opacity: 0.95;
+		outline: none;
+	}
+}
+
+.expando[data-rsm-resize='1'] {
+	position: relative;
+}

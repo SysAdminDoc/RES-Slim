@@ -94,6 +94,7 @@ tests/unit/.tmp-per-sub-css/
 tests/unit/.tmp-scoped-filters/
 tests/unit/.tmp-direct-image/
 tests/unit/.tmp-hover-zoom/
+tests/unit/.tmp-drag-resize/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

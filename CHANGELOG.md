@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.4 - 2026-05-22
+
+- New `dragResize` module — bottom-right corner handle on inline expandos for image, video, and iframe content. Shift toggles the keepAspect default during a drag.
+- Pure helpers in `lib/utils/dragResize.js`: `clampSize`, `applyAspectRatio`, `computeNextSize` (dominant-axis aspect lock).
+- Sizes persist per host (data-domain) via `Storage.wrapBlob('RESmodules.dragResize.sizes', ...)`. Future expandos open at the saved size.
+- Mutation observer re-attaches the handle when `showImages` flips `.expando-uninitialized` off.
+- Pointer Events API + pointer capture so the drag survives the cursor leaving the handle. Reduced-motion-aware (handle has no animations).
+- New contract test `tests/unit/drag-resize-contract.test.mjs` — 6 assertions.
+- Test count: 256.
+
 ## v0.11.3 - 2026-05-22
 
 - New `hoverZoom` module — hover preview popover for direct image/video links (jpg/png/gif/webp/mp4/webm/imgur gifv). Host-brokered embeds (gfycat, redgifs, youtube) continue to use `showImages`.

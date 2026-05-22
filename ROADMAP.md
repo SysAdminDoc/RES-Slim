@@ -1121,7 +1121,7 @@ Features:
 - **v.redd.it DASH mux** via `ffmpeg.wasm` lazy-load OR optional local companion (chosen per-asset).
 - Gallery ZIP export (images + `captions.txt`).
 - ✅ **v0.11.3 — Hover zoom preview.** New `hoverZoom` module for direct image/video URLs. Pure helpers in `lib/utils/hoverZoom.js` with viewport-aware positioning. Host-brokered embeds stay with `showImages`. 7-assertion contract test. Test count: 250.
-- Drag-to-resize expandos (REL-style).
+- ✅ **v0.11.4 — Drag-to-resize expandos.** New `dragResize` module; pointer-capture-based drag handle on inline media; sizes persisted per data-domain via `Storage.wrapBlob`. Pure helpers (clampSize, applyAspectRatio, computeNextSize with dominant-axis lock). 6-assertion contract test. Test count: 256.
 - ✅ **v0.11.2 — RedGifs v3 layout fix.** New `redgifsLayoutFix` module; body-class CSS + observer-driven param rewrites (controls/autoplay/related). 6-assertion contract test. Test count: 243.
 - Inline search-result gallery carousel.
 - Inline tweet / BlueSky / Nitter / Mastodon / Threads expandos (closes RES PR #5560).
