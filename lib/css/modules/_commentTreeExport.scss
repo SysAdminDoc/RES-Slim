@@ -1,0 +1,55 @@
+// commentTreeExport module styles. v0.12.3.
+
+#rsm-commentTreeExport-host {
+	position: relative;
+	display: inline-block;
+	margin-left: 8px;
+}
+
+.rsm-commentTreeExport-host-trigger {
+	color: #93c5fd;
+	font-size: 12px;
+	text-decoration: none;
+	padding: 2px 8px;
+	border-radius: 4px;
+	background: rgb(59 130 246 / 12%);
+	border: 1px solid rgb(59 130 246 / 28%);
+	transition: background .12s ease-out;
+
+	&:hover,
+	&:focus-visible {
+		background: rgb(59 130 246 / 24%);
+		outline: none;
+	}
+}
+
+.rsm-commentTreeExport-host-menu {
+	position: absolute;
+	top: calc(100% + 4px);
+	right: 0;
+	z-index: 9999;
+	min-width: 140px;
+	padding: 4px;
+	background: #111418;
+	color: #e5e7eb;
+	border: 1px solid rgb(255 255 255 / 12%);
+	border-radius: 6px;
+	box-shadow: 0 8px 24px rgb(0 0 0 / 55%);
+	font: 12px/1.4 'Helvetica Neue', Arial, sans-serif;
+
+	> button {
+		all: unset;
+		cursor: pointer;
+		display: block;
+		width: 100%;
+		padding: 6px 10px;
+		border-radius: 4px;
+		transition: background .12s ease-out;
+
+		&:hover,
+		&:focus-visible {
+			background: rgb(255 255 255 / 8%);
+			outline: none;
+		}
+	}
+}

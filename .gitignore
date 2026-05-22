@@ -101,6 +101,7 @@ tests/unit/.tmp-cobalt-downloader/
 tests/unit/.tmp-local-companion/
 tests/unit/.tmp-arctic-shift/
 tests/unit/.tmp-wayback-snapshot/
+tests/unit/.tmp-comment-tree-export/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

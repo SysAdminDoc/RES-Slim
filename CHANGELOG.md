@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.3 - 2026-05-22
+
+- New `commentTreeExport` module — export the current thread as JSON, Markdown, or HTML. Dropdown menu next to the sort dropdown on every comments page.
+- Pure helpers in `lib/utils/commentTreeExport.js`: `parsePostFromListing`, `parseCommentsFromListing` (recursive walk with depth + parent tracking, skips `more` placeholders), `buildTree`, `toJson`, `toMarkdown`, `toHtml`.
+- HTML output is a self-contained dark-themed page that opens offline. Escapes user content via HTML entity escapes.
+- Markdown output uses `> ` indentation per depth so the tree shape is preserved in any Markdown viewer.
+- Re-fetches the thread via `<permalink>.json?limit=500&depth=10` by default so the export includes comments that haven't yet loaded on screen.
+- Disabled by default.
+- New contract test `tests/unit/comment-tree-export-contract.test.mjs` — 10 assertions including HTML escape safety.
+- Test count: 337.
+
 ## v0.12.2 - 2026-05-22
 
 - New `waybackSnapshot` module — `archive` button on every post. Three modes: manual (open save in new tab), check (availability lookup + save if stale beyond N days), force (always save).

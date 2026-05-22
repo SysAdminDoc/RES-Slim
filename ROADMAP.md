@@ -1150,7 +1150,7 @@ Features:
 - Wayback / archive.today fallback chain.
 - ✅ **v0.12.2 — Wayback snapshot-now.** New `waybackSnapshot` module. Manual / check / force modes. Pure helpers in `lib/utils/wayback.js` (buildSaveUrl, buildAvailabilityUrl, parseAvailabilityResponse, formatTimestamp). 8-assertion contract test. Test count: 327.
 - Removed-content badge with provenance (source + timestamp + restoration latency).
-- Comment-tree export: JSON (full fidelity), Markdown (human-readable), HTML (offline-viewable).
+- ✅ **v0.12.3 — Comment-tree export.** New `commentTreeExport` module. Pure helpers in `lib/utils/commentTreeExport.js` walk `t1` children with depth + parent tracking. Outputs JSON / Markdown / HTML (self-contained offline page with entity-escaped content). 10-assertion contract test. Test count: 337.
 - Saved-content backup (paginate `/user/<me>/saved` + dump).
 - Vote / read history local log (IDB schema versioned; per-vote: fullname, score-at-time, sub, timestamp, snippet).
 - Media archive manifest (URL + sha256 + post permalink + downloaded timestamp).
