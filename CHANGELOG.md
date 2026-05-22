@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.6 - 2026-05-22
+
+- New `galleryZip` module — `ZIP gallery` button next to gallery posts. Downloads every image plus a `captions.txt` sidecar in one archive.
+- Pure helpers in `lib/utils/galleryZip.js`: `parseGalleryFromJson` (decodes `&amp;`, infers ext from MIME), `safeFilename`, `paddedIndex`, `formatCaptionsText`.
+- Fetches `<permalink>.json?raw_json=1`, extracts `media_metadata` + `gallery_data.items`. Caps at 50 by default (configurable).
+- JSZip loaded lazily via dynamic `import('jszip')` so it isn't bundled into the foreground content script until first use.
+- Failures per-image fall back to a sidecar `.failed.txt` so partial archives still ship.
+- New contract test `tests/unit/gallery-zip-contract.test.mjs` — 6 assertions.
+- Test count: 268.
+
 ## v0.11.5 - 2026-05-22
 
 - New `imgurFlatten` module — rewrite imgur `/a/<id>` and `/gallery/<id>` URLs through a configurable rimgo mirror so albums browse correctly after imgur paywalled the direct HTML in 2025.

@@ -96,6 +96,7 @@ tests/unit/.tmp-direct-image/
 tests/unit/.tmp-hover-zoom/
 tests/unit/.tmp-drag-resize/
 tests/unit/.tmp-imgur-flatten/
+tests/unit/.tmp-gallery-zip/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
