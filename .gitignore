@@ -91,6 +91,7 @@ tests/unit/.tmp-crosspost-map/
 tests/unit/.tmp-author-context/
 tests/unit/.tmp-per-sub-sort/
 tests/unit/.tmp-per-sub-css/
+tests/unit/.tmp-scoped-filters/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

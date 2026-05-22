@@ -1105,8 +1105,7 @@ Single minor stream layering the consumers on the v0.10 foundation. Each lands a
 - ✅ **v0.10.6 — Per-sub default sort memory.** New `perSubSort` module. `Storage.wrapBlob` keyed by sub. Redirect at `beforeLoad` on bare `/r/<sub>/` URLs. Inline `★ remember sort` button next to the tabmenu. Pure helpers in `lib/utils/perSubSort.js`. 9-assertion contract test. Test count: 204.
 - ✅ **v0.10.7 — Multi-column feed.** New `multiColumnFeed` module. CSS-grid layout for `#siteTable.linklisting` at 2/3/4 columns. Non-thing children span row; self-text option, full-width option. Scoped to `isPageType('linklist')`. 7-assertion contract test. Test count: 211.
 - ✅ **v0.10.8 — Per-sub CSS allow/deny.** New `perSubCss` module with three modes (allow-all/deny-all/per-list). Pure helpers in `lib/utils/perSubCss.js`. Same strip mechanic + mutation observer as `disableSubredditStyles`. Mutually exclusive with that hard-kill. 7-assertion contract test. Test count: 218.
-- **v0.10.9 — Per-sub muting (mute X in sub Y only).** Filter rule extension: optional sub-scope per rule.
-- **v0.10.10 — URL-substring block.** Domain filter extension: substring matching for affiliate-spam patterns.
+- ✅ **v0.10.9 + v0.10.10 — `scopedFilters` module.** Combined the two filter extensions. Per-sub muting via `user|sub` syntax (with `*` wildcard); URL substring block matches against post URL, domain, title link, and comment-body anchors. Pure helpers in `lib/utils/scopedFilters.js`. 6-assertion contract test. Test count: 224.
 - **v0.10.11 — Font sizing + dyslexia-readable font + collapsible sidebar rail.** A11y triple.
 
 Acceptance for the v0.10.x stream: every consumer extends the existing schema, every new module has a contract test, no full-thread rescans, all settings round-trip through snapshot export/import.

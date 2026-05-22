@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.10 - 2026-05-22
+
+- New `scopedFilters` module combining v0.10.9 (per-sub muting) and v0.10.10 (URL substring block) — two filter capabilities that didn't fit into the v0.10.0 `filterRules` flat schema.
+- Per-sub muting: list of `user|sub` pairs. The user is hidden only when browsing that sub. `*` as the sub wildcards across all subs.
+- URL substring block: comma-separated substrings hide any post URL, post domain, or comment-body URL containing the substring. Catches affiliate spam patterns that flat domain filters cannot express.
+- Pure helpers in `lib/utils/scopedFilters.js`: `parsePerSubMutes`, `muteApplies`, `parseUrlSubstrings`, `urlMatchesAny`.
+- `hideCompletely` toggles between `display:none` (default) and dim-by-opacity.
+- Disabled by default. Skipping the version jump from v0.10.8 directly to v0.10.10 since this single module fulfils both roadmap items.
+- New contract test `tests/unit/scoped-filters-contract.test.mjs` — 6 assertions on the helpers + module registration.
+- Test count: 224.
+
 ## v0.10.8 - 2026-05-22
 
 - New `perSubCss` module — granular per-sub CSS allow/deny lists. Successor to the binary `disableSubredditStyles`.
