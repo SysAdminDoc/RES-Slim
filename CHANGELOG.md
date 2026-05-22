@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.4 - 2026-05-22
+
+- New `authorContextBadge` module — inline `[age · karma]` chip after every `.author` link.
+- Pure helpers in `lib/utils/authorContext.js`: `parseAuthorAbout`, `formatAccountAge`, `formatKarma`, `formatBadge`, `isFresh`, `ageRiskClass`.
+- Fetches `/user/<u>/about.json?raw_json=1` behind a dedicated 5-token / 1s rate limiter (2 concurrent max); cached via `Storage.wrapBlob('RESmodules.authorContextBadge.cache', ...)` with a configurable TTL (default 24h).
+- Optional `colorByAge` tints accounts younger than 30d red and younger than 180d amber.
+- `[deleted]` and `[removed]` authors are skipped by default.
+- Disabled by default. In-memory dedup + inflight guard so repeat authors in a single page only fire one request.
+- New contract test `tests/unit/author-context-badge-contract.test.mjs` — 10 assertions on the pure helpers + module registration + SCSS bundle wiring.
+- Test count: 188.
+
 ## v0.10.3 - 2026-05-22
 
 - New `crosspostMap` module — on a comments page, lists every other subreddit the same post appears in via `/duplicates/<id>.json`.
