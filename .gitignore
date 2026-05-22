@@ -85,3 +85,9 @@ tests/unit/.tmp-snapshot/
 tests/unit/.tmp-outbound/
 tests/unit/.tmp-limiter/
 tests/unit/.tmp-filter/
+tests/unit/.tmp-user-tagger/
+
+## Research artifacts (decoded MHTML, selector maps, captures) ##
+.research/
+*.mhtml
+*.mht

@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.1 - 2026-05-22
+
+- New `userTagger` module — local-only user tagging with free-text label, hex colour, and ignore flag.
+- Click the `+` button next to any username to open the popover editor; tags persist via `Storage.wrapBlob('RESmodules.userTagger.tags', ...)`.
+- Pure helpers in `lib/utils/userTags.js`: `normalizeUsername`, `sanitizeTagText`, `sanitizeColor`, `normalizeTag`, `parseTagsJson`, `stringifyTags`, `mergeTags`, `tagBadgeText`.
+- Disabled by default; opt-in via settings. Ignored users have their posts and comments hidden (toggleable).
+- JSON import box merges into the store on next page load — round-trippable via the settings snapshot.
+- New contract test `tests/unit/user-tagger-contract.test.mjs` — 12 assertions on the pure helpers + module registration + SCSS bundle wiring.
+- Test count: 163.
+
 ## v0.10.0 - 2026-05-19
 
 - Phase 10 foundation: JSON-backed filter builder (`filterRules` module + `lib/utils/filterRules.js`).
