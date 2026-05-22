@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.3 - 2026-05-22
+
+- New `hoverZoom` module — hover preview popover for direct image/video links (jpg/png/gif/webp/mp4/webm/imgur gifv). Host-brokered embeds (gfycat, redgifs, youtube) continue to use `showImages`.
+- Pure helpers in `lib/utils/hoverZoom.js`: `classifyUrl`, `normalizePreviewUrl`, `inferUrlFromAnchor`, `placePopover` (smart viewport-aware positioning with left/right flip + edge clamping).
+- Configurable hover delay (default 180ms), max width (480px), max height (540px), mute toggle, "require direct URL" guard.
+- Videos autoplay muted (Chrome autoplay policy) and loop. Reduced-motion-aware fade-in.
+- Scoped to `r2` (old.reddit). Disabled by default. Mouseover/mouseout listeners attached in capture phase; clears on scroll + blur.
+- New contract test `tests/unit/hover-zoom-contract.test.mjs` — 7 assertions.
+- Test count: 250.
+
 ## v0.11.2 - 2026-05-22
 
 - New `redgifsLayoutFix` module — normalises RedGifs v3 iframe embeds. Body-class-gated CSS sizes the iframe to the available width (with a configurable height cap: 400/500/600/720/unlimited), removes the wrapper padding, and hides the legacy toggle leftovers.
