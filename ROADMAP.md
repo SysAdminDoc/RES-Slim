@@ -1151,7 +1151,7 @@ Features:
 - ✅ **v0.12.2 — Wayback snapshot-now.** New `waybackSnapshot` module. Manual / check / force modes. Pure helpers in `lib/utils/wayback.js` (buildSaveUrl, buildAvailabilityUrl, parseAvailabilityResponse, formatTimestamp). 8-assertion contract test. Test count: 327.
 - Removed-content badge with provenance (source + timestamp + restoration latency).
 - ✅ **v0.12.3 — Comment-tree export.** New `commentTreeExport` module. Pure helpers in `lib/utils/commentTreeExport.js` walk `t1` children with depth + parent tracking. Outputs JSON / Markdown / HTML (self-contained offline page with entity-escaped content). 10-assertion contract test. Test count: 337.
-- Saved-content backup (paginate `/user/<me>/saved` + dump).
+- ✅ **v0.12.4 — Saved-content backup.** New `savedBackup` module. Pure helpers paginate `/user/<me>/saved.json` (limit 1-100, `after` cursor). 2-token/1.5s rate limiter. Userbar "backup saved" link triggers a single JSON dump. 6-assertion contract test. Test count: 343.
 - Vote / read history local log (IDB schema versioned; per-vote: fullname, score-at-time, sub, timestamp, snippet).
 - Media archive manifest (URL + sha256 + post permalink + downloaded timestamp).
 - Local-first own-saved archival (every saved post snapshotted to IDB + optional file dump).

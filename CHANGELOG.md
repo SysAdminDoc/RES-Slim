@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.4 - 2026-05-22
+
+- New `savedBackup` module — paginates the logged-in user's `/user/<me>/saved.json` and downloads a single JSON file containing the entire saved list.
+- Pure helpers in `lib/utils/savedBackup.js`: `parseSavedPage` (handles t1 + t3, falls back to selftext for posts), `buildSavedUrl` (URI-encoded username, limit clamp 1-100, optional `after` cursor), `mergeAndDedupe` (by fullname), `buildExport` (schema-versioned).
+- Dedicated 2-token / 1.5s rate limiter so pagination doesn't burst.
+- Inline "backup saved" link in the userbar (`#header-bottom-right`). Filename format `saved-<username>-<YYYY-MM-DD>.json`.
+- Max 100 pages by default (10,000 items at 100/page) as a runaway safeguard.
+- Disabled by default.
+- New contract test `tests/unit/saved-backup-contract.test.mjs` — 6 assertions.
+- Test count: 343.
+
 ## v0.12.3 - 2026-05-22
 
 - New `commentTreeExport` module — export the current thread as JSON, Markdown, or HTML. Dropdown menu next to the sort dropdown on every comments page.
