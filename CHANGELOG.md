@@ -2,6 +2,19 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.11 - 2026-05-22 — v0.10.x patch series complete
+
+- New `a11yTriple` module — bundles three accessibility levers:
+  1. **Font size scale** — 100% / 110% / 125% / 140% applied to titles, comment bodies, taglines.
+  2. **Dyslexia-readable font** — OpenDyslexic / Atkinson Hyperlegible / Lexend / System UI. The font must already be installed locally; the extension never downloads fonts.
+  3. **Collapsible sidebar rail** — narrows `.side` to a 16-px hover-expandable rail. Mutex with `layoutTweaks.hideSidebar`.
+- Pure-CSS body-class scoping (`rsm-a11yTriple`, `rsm-a11yTriple-font`, `rsm-a11yTriple-rail`). Style mounts at `beforeLoad`.
+- Rail uses `prefers-reduced-motion: reduce` to suppress the expand transition.
+- Disabled by default. Each lever is independent.
+- Closes the v0.10.x patch series: 10 modules + 80 new assertions added since v0.10.0.
+- New contract test `tests/unit/a11y-triple-contract.test.mjs` — 7 assertions.
+- Test count: 231.
+
 ## v0.10.10 - 2026-05-22
 
 - New `scopedFilters` module combining v0.10.9 (per-sub muting) and v0.10.10 (URL substring block) — two filter capabilities that didn't fit into the v0.10.0 `filterRules` flat schema.
