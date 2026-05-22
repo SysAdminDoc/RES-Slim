@@ -1,0 +1,86 @@
+// crosspostMap module styles. v0.10.3.
+
+.rsm-crosspostMap {
+	margin: 8px 0 12px;
+	padding: 8px 12px;
+	background: rgb(0 0 0 / 18%);
+	border: 1px solid rgb(255 255 255 / 10%);
+	border-radius: 6px;
+	font: 12px/1.45 'Helvetica Neue', Arial, sans-serif;
+	color: #d1d5db;
+
+	&-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 4px;
+	}
+
+	&-title {
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		font-size: 11px;
+		color: #9ca3af;
+	}
+
+	&-trigger {
+		all: unset;
+		cursor: pointer;
+		padding: 3px 10px;
+		margin-left: auto;
+		font: 600 11px/1 'Helvetica Neue', Arial, sans-serif;
+		color: #93c5fd;
+		background: rgb(59 130 246 / 14%);
+		border: 1px solid rgb(59 130 246 / 35%);
+		border-radius: 4px;
+		transition: background .12s ease-out;
+
+		&:hover,
+		&:focus-visible {
+			background: rgb(59 130 246 / 28%);
+			outline: none;
+		}
+
+		&:disabled {
+			cursor: default;
+			opacity: 0.65;
+		}
+	}
+
+	&-list {
+		list-style: none;
+		margin: 6px 0 0;
+		padding: 0;
+	}
+
+	&-list-item {
+		padding: 3px 0;
+		border-bottom: 1px solid rgb(255 255 255 / 6%);
+
+		&:last-child { border-bottom: 0; }
+	}
+
+	&-list-sub {
+		font-weight: 600;
+		color: #f97316;
+
+		&:hover { text-decoration: underline; }
+	}
+
+	&-list-link {
+		color: #93c5fd;
+
+		&:hover { text-decoration: underline; }
+	}
+
+	&-list-meta {
+		color: #9ca3af;
+		font-size: 11px;
+	}
+
+	&-list-empty {
+		color: #9ca3af;
+		font-style: italic;
+	}
+}

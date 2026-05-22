@@ -87,6 +87,7 @@ tests/unit/.tmp-limiter/
 tests/unit/.tmp-filter/
 tests/unit/.tmp-user-tagger/
 tests/unit/.tmp-bot-collapse/
+tests/unit/.tmp-crosspost-map/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

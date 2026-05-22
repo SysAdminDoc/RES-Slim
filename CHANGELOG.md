@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.3 - 2026-05-22
+
+- New `crosspostMap` module — on a comments page, lists every other subreddit the same post appears in via `/duplicates/<id>.json`.
+- Pure helpers in `lib/utils/crosspostMap.js`: `extractArticleId`, `buildDuplicatesUrl`, `parseDuplicatesResponse` (excludes the self-post, sorts newest first), `relativeAge`.
+- Rate-limited via its own 2-token bucket (1.5s refill); cached per article ID for the session.
+- Inline widget injected after `#siteTable`; `Find crossposts` button + `auto-load` toggle. `hide when empty` defaults on so quiet posts don't show an empty box.
+- Disabled by default. Max 50 items, configurable (default 10).
+- New contract test `tests/unit/crosspost-map-contract.test.mjs` — 7 assertions on the pure helpers + module registration + SCSS bundle wiring.
+- Test count: 178.
+
 ## v0.10.2 - 2026-05-22
 
 - New `botCollapse` module — auto-collapse comments by known bots (AutoModerator, RemindMeBot, sneakpeekbot, etc.) and badge AutoMod sticky comments.
