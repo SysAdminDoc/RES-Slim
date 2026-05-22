@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.7 - 2026-05-22
+
+- New `searchGallery` module — inline thumbnail strip on `/search` result rows. Image posts get a single preview; gallery posts get a configurable strip (default 4, max 10).
+- Reuses `lib/utils/galleryZip.js`'s `parseGalleryFromJson` plus a dedicated 2-token rate limiter (1.5s refill). Falls back to `preview.images[0].source.url` for non-gallery image posts, then to `url_overridden_by_dest` when the post is a direct media link.
+- IntersectionObserver gates fetches to visible rows (default on) with a 300 px rootMargin so scrolling pre-loads a row ahead.
+- Disabled by default. Strips scroll horizontally when wider than the row.
+- Reduced-motion-aware (hover-lift transitions suppressed).
+- New contract test `tests/unit/search-gallery-contract.test.mjs` — 6 assertions.
+- Test count: 274.
+
 ## v0.11.6 - 2026-05-22
 
 - New `galleryZip` module — `ZIP gallery` button next to gallery posts. Downloads every image plus a `captions.txt` sidecar in one archive.

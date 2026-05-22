@@ -1123,7 +1123,7 @@ Features:
 - ✅ **v0.11.3 — Hover zoom preview.** New `hoverZoom` module for direct image/video URLs. Pure helpers in `lib/utils/hoverZoom.js` with viewport-aware positioning. Host-brokered embeds stay with `showImages`. 7-assertion contract test. Test count: 250.
 - ✅ **v0.11.4 — Drag-to-resize expandos.** New `dragResize` module; pointer-capture-based drag handle on inline media; sizes persisted per data-domain via `Storage.wrapBlob`. Pure helpers (clampSize, applyAspectRatio, computeNextSize with dominant-axis lock). 6-assertion contract test. Test count: 256.
 - ✅ **v0.11.2 — RedGifs v3 layout fix.** New `redgifsLayoutFix` module; body-class CSS + observer-driven param rewrites (controls/autoplay/related). 6-assertion contract test. Test count: 243.
-- Inline search-result gallery carousel.
+- ✅ **v0.11.7 — Inline search-result gallery carousel.** New `searchGallery` module; reuses `parseGalleryFromJson`; IntersectionObserver-gated fetches with 300px rootMargin; non-gallery image-post fallback via `preview.images[0].source.url`. 6-assertion contract test. Test count: 274.
 - Inline tweet / BlueSky / Nitter / Mastodon / Threads expandos (closes RES PR #5560).
 - Display-direct image (skip Reddit viewer chrome).
 - ✅ **v0.11.5 — Imgur album flatten.** New `imgurFlatten` module; rewrites imgur `/a/<id>` and `/gallery/<id>` through a configurable rimgo mirror. Pure helpers in `lib/utils/imgurFlatten.js`. 6-assertion contract test. Test count: 262.
