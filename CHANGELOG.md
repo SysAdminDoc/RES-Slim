@@ -2,6 +2,15 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.11 - 2026-05-22
+
+- New `mastodon` host handler — federated oembed expando. Detects `<instance>/@<user>/<id>` and `<instance>/users/<user>/statuses/<id>` URL shapes. Calls the post-instance's own `/api/oembed?url=...` and inlines the returned iframe HTML.
+- Default permissions ship for 7 well-known instances: mastodon.social, mastodon.online, fosstodon.org, hachyderm.io, mas.to, infosec.exchange, mstdn.social. Niche servers can be added via the extension permissions surface.
+- New `threads` host handler — meta.com/threads embed via the documented `/embed/` URL suffix. Pure iframe, no API calls. Supports both `threads.com` and `threads.net` domains.
+- Closes RES PR #5560 for the Mastodon/Threads portion. BlueSky already had a handler since the v0.1.0 fork.
+- New contract test `tests/unit/social-hosts-contract.test.mjs` — 8 assertions on URL pattern detection, permissions, embed URL construction, and failure-safe oembed.
+- Test count: 303.
+
 ## v0.11.10 - 2026-05-22
 
 - New `localCompanion` module — optional localhost-only bridge to a user-run helper that wraps yt-dlp, ffmpeg, and ollama. Adds a `local DL` button next to posts; a tiny health badge sits next to the userbar showing whether the companion is reachable.
