@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.10.6 - 2026-05-22
+
+- New `perSubSort` module — remember the preferred sort per subreddit. Bare `/r/<sub>/` URLs redirect to the saved sort (and time-window for top/controversial).
+- Pure helpers in `lib/utils/perSubSort.js`: `parseSubListingPath`, `buildSortedPath`, `shouldRedirect`, `normalizePreference`, plus the canonical `SUPPORTED_SORTS` / `SUPPORTED_TIME_WINDOWS` arrays.
+- Storage via `Storage.wrapBlob('RESmodules.perSubSort.prefs', ...)` keyed by lowercased sub.
+- Inline `★ remember sort` button injected next to the tab menu; one click saves the current view.
+- Redirect runs at `beforeLoad` so navigation happens before any other module mounts.
+- Disabled by default. Redirect-on-entry and save-button are independent toggles.
+- New contract test `tests/unit/per-sub-sort-contract.test.mjs` — 9 assertions on the pure helpers + module registration + SCSS bundle wiring.
+- Test count: 204.
+
 ## v0.10.5 - 2026-05-22
 
 - New `roleHighlights` module — refresh OP / moderator / admin / friend highlight lanes via body-class-gated CSS.
