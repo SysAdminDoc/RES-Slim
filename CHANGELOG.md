@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.12.1 - 2026-05-22 — Phase 12 opens (Archival, Recovery, Export)
+
+- New `arcticShift` module — restore `[removed]` / `[deleted]` comments inline via the Arctic Shift API. Successor path to the broken Pushshift dependency that crippled the legacy `viewDeleted` (pullpush) module.
+- Pure helpers in `lib/utils/arcticShift.js`: `DEFAULT_INSTANCE`, `sanitizeInstance`, `buildCommentUrl`, `buildPostUrl`, `parseCommentResponse` (handles both `data` and `results` envelopes), `parsePostResponse`, `isDeletedBody`.
+- Dedicated 3-token / 2s rate limiter (2 concurrent max).
+- `autoLoad` (default off) with a configurable max-per-thread cap (default 25) to avoid hammering the archive.
+- Inline render carries an "Arctic Shift" provenance pill so the restoration source is always visible.
+- Pairs with `viewDeleted` (pullpush fallback) — both can be enabled at once.
+- New contract test `tests/unit/arctic-shift-contract.test.mjs` — 9 assertions.
+- Test count: 319.
+
 ## v0.11.12 - 2026-05-22
 
 - New `mediaScopeToggle` module — independently disable inline media on posts only, on comments only, or both. Closes a long-running r/Enhancement request.

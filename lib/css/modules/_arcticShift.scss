@@ -1,0 +1,33 @@
+// arcticShift module styles. v0.12.1.
+
+.rsm-arcticShift-link {
+	color: #93c5fd;
+	font-size: 11px;
+
+	&:hover { text-decoration: underline; }
+}
+
+.rsm-arcticShift-restored {
+	border-left: 3px solid #60a5fa;
+	padding: 4px 8px;
+	margin: 4px 0;
+	color: #d1d5db;
+	background: rgb(96 165 250 / 6%);
+	border-radius: 0 4px 4px 0;
+	font-size: 13px;
+	white-space: pre-wrap;
+
+	&::before {
+		content: 'Arctic Shift';
+		display: inline-block;
+		margin-right: 8px;
+		padding: 0 4px;
+		font: 600 9px/12px 'Helvetica Neue', Arial, sans-serif;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: #1e3a8a;
+		background: #93c5fd;
+		border-radius: 2px;
+		vertical-align: middle;
+	}
+}

@@ -1145,7 +1145,7 @@ Acceptance:
 
 Features:
 
-- **Arctic Shift** as the primary deleted-content restoration source (replaces broken Pushshift dependence).
+- ✅ **v0.12.1 — Arctic Shift restoration.** New `arcticShift` module. Pure helpers in `lib/utils/arcticShift.js` handle both API envelope shapes. Dedicated 3-token/2s rate limiter. Inline "Arctic Shift" provenance pill on restored comments. 9-assertion contract test. Test count: 319.
 - PullPush as legacy fallback.
 - Wayback / archive.today fallback chain.
 - Snapshot-now button (push current page to Wayback).
