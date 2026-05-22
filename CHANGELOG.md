@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.10 - 2026-05-22
+
+- New `localCompanion` module — optional localhost-only bridge to a user-run helper that wraps yt-dlp, ffmpeg, and ollama. Adds a `local DL` button next to posts; a tiny health badge sits next to the userbar showing whether the companion is reachable.
+- Pure helpers in `lib/utils/localCompanion.js`: `isLocalhostUrl` (matches 127.0.0.1 / localhost / [::1] with optional port + path), `sanitizeCompanionUrl` (rejects non-localhost), `buildHealthUrl`, `buildYtdlpUrl`, `buildOllamaUrl`, `parseHealth` (flat or nested `tools` shape), `buildYtdlpBody`.
+- Strictly opt-in. Non-localhost URLs are rejected at runtime; the option silently reverts to the localhost default.
+- Configurable yt-dlp format selector with sensible presets and an audio-only toggle.
+- Disabled by default.
+- New contract test `tests/unit/local-companion-contract.test.mjs` — 7 assertions.
+- Test count: 295.
+
 ## v0.11.9 - 2026-05-22
 
 - New `cobaltDownloader` module — optional Cobalt API bridge. Adds a `cobalt` button to posts on supported hosts (YouTube, TikTok, Twitter/X, BlueSky, Reddit, SoundCloud, Vimeo, Twitch, Streamable, Instagram, Bilibili, Tumblr, Pinterest, Facebook, Rumble, VK, Dailymotion, OK, Loom, Snapchat). Click POSTs the URL; the returned tunnel/redirect/stream/picker is downloaded.

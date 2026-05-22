@@ -98,6 +98,7 @@ tests/unit/.tmp-drag-resize/
 tests/unit/.tmp-imgur-flatten/
 tests/unit/.tmp-gallery-zip/
 tests/unit/.tmp-cobalt-downloader/
+tests/unit/.tmp-local-companion/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
