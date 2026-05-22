@@ -1115,7 +1115,7 @@ Acceptance for the v0.10.x stream: every consumer extends the existing schema, e
 Features:
 
 - Post / comment media toggle split.
-- Full-height images + overlay viewer (Esc / click-outside to close).
+- ✅ **v0.11.8 — Full-height images + overlay viewer.** New `overlayViewer` module. ARIA-modal lightbox for images inside expandos / selftext / comment bodies. Esc + outside-click + close-button close paths. Modifier-key clicks bypass to preserve "open in new tab". Configurable backdrop opacity. 7-assertion contract test. Test count: 281.
 - Native video controls (where safe).
 - Download buttons extended to gallery + audio + DASH.
 - **v.redd.it DASH mux** via `ffmpeg.wasm` lazy-load OR optional local companion (chosen per-asset).

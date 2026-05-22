@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.8 - 2026-05-22
+
+- New `overlayViewer` module — click any inline expanded image (post expando, selftext markdown, or comment body) to open a viewport-sized overlay viewer.
+- Closes on Esc, click-outside, or the close button. ARIA-modal dialog with focus moved to close. No keyboard shortcuts beyond standard Esc / Tab cycle.
+- Ctrl/Cmd/Shift/Alt-clicks bypass the overlay so "open original in new tab" still works.
+- Backdrop opacity configurable (60/75/85/95%). Reduced-motion-aware (fade-in disabled).
+- Selftext images and comment-body images are independently toggleable (default on).
+- Disabled by default.
+- New contract test `tests/unit/overlay-viewer-contract.test.mjs` — 7 assertions.
+- Test count: 281.
+
 ## v0.11.7 - 2026-05-22
 
 - New `searchGallery` module — inline thumbnail strip on `/search` result rows. Image posts get a single preview; gallery posts get a configurable strip (default 4, max 10).

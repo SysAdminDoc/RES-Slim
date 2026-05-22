@@ -1,0 +1,74 @@
+// overlayViewer module styles. v0.11.8.
+
+#rsm-overlayViewer {
+	position: fixed;
+	inset: 0 0 0 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	cursor: zoom-out;
+	animation: rsm-overlayViewer-fadeIn 100ms ease-out;
+}
+
+#rsm-overlayViewer-inner {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	max-width: min(100%, 96vw);
+	max-height: 100%;
+	cursor: default;
+}
+
+#rsm-overlayViewer-img {
+	display: block;
+	max-width: 100%;
+	max-height: 92vh;
+	width: auto;
+	height: auto;
+	border-radius: 4px;
+	box-shadow: 0 24px 80px rgb(0 0 0 / 65%), 0 6px 16px rgb(0 0 0 / 45%);
+	background: #000;
+}
+
+#rsm-overlayViewer-close {
+	all: unset;
+	position: absolute;
+	top: -10px;
+	right: -10px;
+	cursor: pointer;
+	width: 32px;
+	height: 32px;
+	border-radius: 6px;
+	background: #111418;
+	color: #f3f4f6;
+	font-size: 16px;
+	line-height: 32px;
+	text-align: center;
+	border: 1px solid rgb(255 255 255 / 18%);
+	box-shadow: 0 4px 14px rgb(0 0 0 / 45%);
+	transition: background .12s ease-out;
+
+	&:hover,
+	&:focus-visible {
+		background: #1f2937;
+		outline: 2px solid rgb(96 165 250 / 65%);
+		outline-offset: 2px;
+	}
+}
+
+body.rsm-overlayViewer-open {
+	overflow: hidden;
+}
+
+@keyframes rsm-overlayViewer-fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#rsm-overlayViewer { animation: none; }
+	#rsm-overlayViewer-close { transition: none; }
+}
