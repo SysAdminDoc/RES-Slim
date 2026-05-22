@@ -2,6 +2,14 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.11.2 - 2026-05-22
+
+- New `redgifsLayoutFix` module — normalises RedGifs v3 iframe embeds. Body-class-gated CSS sizes the iframe to the available width (with a configurable height cap: 400/500/600/720/unlimited), removes the wrapper padding, and hides the legacy toggle leftovers.
+- Mutation observer rewrites iframe URLs to append `controls=1`, `autoplay=1`, `related=0` so RedGifs's documented embed-control parameters take effect.
+- Three options: `enabled`, `maxHeight`, `hideRelated`. Module disabled by default; once enabled, `enabled` lets the user toggle the fix without unloading the module.
+- New contract test `tests/unit/redgifs-layout-fix-contract.test.mjs` — 6 assertions.
+- Test count: 243.
+
 ## v0.11.1 - 2026-05-22 — Phase 11 opens (Media & Downloads)
 
 - New `directImage` module — first v0.11 consumer. On posts whose `data-domain` is in the configured direct-host list AND whose `data-url` points at a direct image/video URL, the post title link is rewritten to open the raw media. Comments link untouched.

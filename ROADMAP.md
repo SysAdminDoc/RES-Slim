@@ -1122,7 +1122,7 @@ Features:
 - Gallery ZIP export (images + `captions.txt`).
 - **Hover zoom preview** (Hover-Zoom+-style; image + video; rate-limit-aware for RedGifs).
 - Drag-to-resize expandos (REL-style).
-- RedGifs v3 layout fix.
+- ✅ **v0.11.2 — RedGifs v3 layout fix.** New `redgifsLayoutFix` module; body-class CSS + observer-driven param rewrites (controls/autoplay/related). 6-assertion contract test. Test count: 243.
 - Inline search-result gallery carousel.
 - Inline tweet / BlueSky / Nitter / Mastodon / Threads expandos (closes RES PR #5560).
 - Display-direct image (skip Reddit viewer chrome).
