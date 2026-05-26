@@ -131,3 +131,16 @@ test('host optional permissions stay mirrored in both browser manifests', () => 
 		}
 	}
 });
+
+test('comment text media auto-expands image/gallery/muted media expandos by default', () => {
+	const source = read('lib/modules/showImages.js');
+
+	assert.match(source, /autoExpandCommentMedia:\s*\{[\s\S]*?value:\s*true/);
+	assert.match(source, /title:\s*'showImagesAutoExpandCommentMediaTitle'/);
+	assert.match(source, /module\.options\.autoExpandCommentMedia\.value && inText\(expando\.button\) && thing && thing\.isComment\(\)/);
+	assert.match(source, /autoExpand = true;/);
+
+	const locale = read('locales/locales/en.json');
+	assert.match(locale, /showImagesAutoExpandCommentMediaTitle/);
+	assert.match(locale, /Automatically expand images, galleries, and muted media/);
+});

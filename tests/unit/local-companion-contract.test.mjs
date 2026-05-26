@@ -18,6 +18,7 @@ const {
 	buildHealthUrl,
 	buildYtdlpUrl,
 	buildOllamaUrl,
+	looksLikeDownloadUrl,
 	parseHealth,
 	buildYtdlpBody,
 } = await import(pathToFileURL(modulePath).href);
@@ -34,6 +35,8 @@ test('isLocalhostUrl rejects everything else', () => {
 	assert.equal(isLocalhostUrl('http://example.com'), false);
 	assert.equal(isLocalhostUrl('http://127.0.0.2'), false);
 	assert.equal(isLocalhostUrl('http://my.localhost.com'), false);
+	assert.equal(isLocalhostUrl('http://localhost:99999'), false);
+	assert.equal(isLocalhostUrl('http://user:pass@localhost:7860'), false);
 	assert.equal(isLocalhostUrl(null), false);
 	assert.equal(isLocalhostUrl('localhost'), false, 'scheme required');
 });
@@ -42,6 +45,8 @@ test('sanitizeCompanionUrl falls back when non-localhost', () => {
 	assert.equal(sanitizeCompanionUrl(''), 'http://127.0.0.1:7860');
 	assert.equal(sanitizeCompanionUrl('http://localhost:8080/'), 'http://localhost:8080');
 	assert.equal(sanitizeCompanionUrl('localhost:8080'), 'http://localhost:8080');
+	assert.equal(sanitizeCompanionUrl('http://localhost:8080/api?ignored=1#frag'), 'http://localhost:8080/api');
+	assert.equal(sanitizeCompanionUrl('http://localhost:99999'), 'http://127.0.0.1:7860');
 	assert.equal(sanitizeCompanionUrl('http://example.com'), 'http://127.0.0.1:7860', 'non-localhost reverts to default');
 });
 
@@ -50,6 +55,15 @@ test('build*Url append the documented paths to the sanitized base', () => {
 	assert.equal(buildHealthUrl(base), 'http://127.0.0.1:8080/health');
 	assert.equal(buildYtdlpUrl(base), 'http://127.0.0.1:8080/ytdlp');
 	assert.equal(buildOllamaUrl(base), 'http://127.0.0.1:8080/ollama');
+});
+
+test('looksLikeDownloadUrl accepts valid http(s) URLs only', () => {
+	assert.equal(looksLikeDownloadUrl('https://example.com/file.mp4'), true);
+	assert.equal(looksLikeDownloadUrl('http://127.0.0.1:7860/file'), true);
+	assert.equal(looksLikeDownloadUrl('javascript:alert(1)'), false);
+	assert.equal(looksLikeDownloadUrl('file:///tmp/file'), false);
+	assert.equal(looksLikeDownloadUrl('https://'), false);
+	assert.equal(looksLikeDownloadUrl(null), false);
 });
 
 test('parseHealth supports flat and nested `tools` shape', () => {
@@ -77,6 +91,7 @@ test('localCompanion module is registered and uses the helpers', () => {
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/localCompanion.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/localCompanion'/);
 	assert.match(mod, /isLocalhostUrl\(/);
+	assert.match(mod, /looksLikeDownloadUrl\(/);
 	assert.match(mod, /buildHealthUrl\(/);
 	assert.match(mod, /buildYtdlpUrl\(/);
 	for (const opt of ['companionUrl', 'ytdlpFormat', 'audioOnly', 'showHealth']) {

@@ -2,6 +2,8 @@
 // the searchDispatcher module.
 
 .rsm-search-dispatcher {
+	display: inline-block;
+	max-width: 128px;
 	margin-left: 4px;
 	padding: 2px 6px;
 	border: 1px solid rgb(255 122 24 / 28%);
@@ -20,4 +22,10 @@
 body.res-nightmode .rsm-search-dispatcher {
 	background: rgb(255 122 24 / 16%);
 	color: #ffd9b8;
+}
+
+@media (max-width: 720px) {
+	.rsm-search-dispatcher {
+		max-width: 96px;
+	}
 }

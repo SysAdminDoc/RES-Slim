@@ -15,7 +15,7 @@ test('autoRefreshComments is registered in the module index', () => {
 test('autoRefreshComments fetches the thread JSON sorted by new through the rate limiter', () => {
 	const source = read('lib/modules/autoRefreshComments.js');
 	assert.match(source, /createRateLimiter/);
-	assert.match(source, /\.json\?sort=new&depth=10&limit=200/);
+	assert.match(source, /\.json\?raw_json=1&sort=new&depth=10&limit=200/);
 });
 
 test('autoRefreshComments dedupes by data-fullname before splicing new entries', () => {
@@ -44,4 +44,12 @@ test('autoRefreshComments only runs on /comments/ pages and ships an on/off togg
 test('autoRefreshComments CSS partial is wired into res.scss', () => {
 	const res = read('lib/css/res.scss');
 	assert.match(res, /@import 'modules\/autoRefreshComments';/);
+});
+
+test('autoRefreshComments sanitizes newly fetched comment HTML', () => {
+	const source = read('lib/modules/autoRefreshComments.js');
+	assert.match(source, /import DOMPurify from 'dompurify'/);
+	assert.match(source, /function safeCommentBodyHtml/);
+	assert.match(source, /DOMPurify\.sanitize\(html\)/);
+	assert.match(source, /escapeHTML\(d\.author \|\| '\[deleted\]'\)/);
 });

@@ -46,4 +46,22 @@ test('searchDispatcher styles + integrates with res.scss imports', () => {
 	assert.match(res, /@import 'modules\/searchDispatcher';/);
 	const css = read('lib/css/modules/_searchDispatcher.scss');
 	assert.match(css, /\.rsm-search-dispatcher/);
+	assert.match(css, /max-width:\s*128px/);
+	assert.match(css, /max-width:\s*96px/);
+});
+
+test('searchDispatcher keeps visible labels compact while preserving full titles', () => {
+	const source = read('lib/modules/searchDispatcher.js');
+	assert.match(source, /label: 'Google', title: 'Google · site:reddit\.com'/);
+	assert.match(source, /label: 'DuckDuckGo', title: 'DuckDuckGo · site:reddit\.com'/);
+	assert.match(source, /option\.title = target\.title \|\| target\.label/);
+});
+
+test('searchDispatcher renders custom targets defensively', () => {
+	const source = read('lib/modules/searchDispatcher.js');
+	assert.match(source, /function replaceAllTokens/);
+	assert.match(source, /\.split\(token\)\.join\(replacement\)/);
+	assert.match(source, /new URL\(rendered, location\.href\)/);
+	assert.match(source, /url\.protocol !== 'http:' && url\.protocol !== 'https:'/);
+	assert.match(source, /refused unsafe or invalid search target/);
 });

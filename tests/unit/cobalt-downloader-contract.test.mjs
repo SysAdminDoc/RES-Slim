@@ -13,6 +13,7 @@ const stripped = flowRemoveTypes(src, { all: true }).toString();
 const modulePath = path.join(tmpDir, 'cobalt.mjs');
 fs.writeFileSync(modulePath, stripped);
 const {
+	DEFAULT_INSTANCE,
 	DEFAULT_HOSTS,
 	isCobaltEligible,
 	parseHostList,
@@ -61,14 +62,19 @@ test('buildRequestBody produces the exact shape the cobalt API expects', () => {
 });
 
 test('sanitizeInstance normalises scheme + trailing slash + falls back', () => {
-	assert.equal(sanitizeInstance(''), 'https://api.cobalt.tools');
+	assert.equal(DEFAULT_INSTANCE, 'https://api.cobalt.tools');
+	assert.equal(sanitizeInstance(''), DEFAULT_INSTANCE);
 	assert.equal(sanitizeInstance('api.example.com/'), 'https://api.example.com');
 	assert.equal(sanitizeInstance('http://api.example.com//'), 'http://api.example.com');
+	assert.equal(sanitizeInstance('https://api.example.com/base/?ignored=1#frag'), 'https://api.example.com/base');
+	assert.equal(sanitizeInstance('javascript:alert(1)'), DEFAULT_INSTANCE);
+	assert.equal(sanitizeInstance('http://localhost:99999'), DEFAULT_INSTANCE);
 });
 
 test('looksLikeStreamUrl accepts http(s) URLs only', () => {
 	assert.equal(looksLikeStreamUrl('https://x/y.mp4'), true);
 	assert.equal(looksLikeStreamUrl('http://x/y.mp4'), true);
+	assert.equal(looksLikeStreamUrl('https://'), false);
 	assert.equal(looksLikeStreamUrl('file:///x'), false);
 	assert.equal(looksLikeStreamUrl(null), false);
 });
@@ -82,6 +88,7 @@ test('cobaltDownloader module is registered and uses the helpers', () => {
 	assert.match(mod, /from '\.\.\/utils\/cobalt'/);
 	assert.match(mod, /watchForThings\(\['post'\]/);
 	assert.match(mod, /buildRequestBody\(/);
+	assert.match(mod, /item && looksLikeStreamUrl\(item\.url\)/, 'picker entries must be URL-validated before download');
 	for (const opt of ['instance', 'videoQuality', 'audioFormat', 'downloadMode', 'customHosts']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
 	}

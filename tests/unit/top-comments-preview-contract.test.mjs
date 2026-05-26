@@ -16,7 +16,7 @@ test('topCommentsPreview is registered in the module index', () => {
 
 test('topCommentsPreview hits the comments JSON endpoint with depth + limit pinned', () => {
 	const source = read('lib/modules/topCommentsPreview.js');
-	assert.match(source, /\.json\?sort=top&depth=1&limit=\$\{count\}/);
+	assert.match(source, /\.json\?raw_json=1&sort=top&depth=1&limit=\$\{count\}/);
 	assert.match(source, /Accept: 'application\/json'/);
 });
 
@@ -35,6 +35,14 @@ test('topCommentsPreview only renders on listing and profile surfaces', () => {
 test('topCommentsPreview caps the per-post comment count at 10', () => {
 	const source = read('lib/modules/topCommentsPreview.js');
 	assert.match(source, /Math\.min\(10, Math\.floor\(raw\)\)/);
+});
+
+test('topCommentsPreview sanitizes Reddit comment HTML before insertion', () => {
+	const source = read('lib/modules/topCommentsPreview.js');
+	assert.match(source, /import DOMPurify from 'dompurify'/);
+	assert.match(source, /function safeCommentBodyHtml/);
+	assert.match(source, /DOMPurify\.sanitize\(html\)/);
+	assert.match(source, /escapeHTML\(c\.author \|\| '\[deleted\]'\)/);
 });
 
 test('rateLimiter token-bucket helper exposes schedule + pending', async () => {

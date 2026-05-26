@@ -4681,6 +4681,12 @@
 	"showImagesAutoExpandSelfTextNSFWDesc": {
 		"message": "Also expand expandos in selftexts which are marked NSFW."
 	},
+	"showImagesAutoExpandCommentMediaTitle": {
+		"message": "Auto Expand Comment Media"
+	},
+	"showImagesAutoExpandCommentMediaDesc": {
+		"message": "Automatically expand images, galleries, and muted media found inside comment text."
+	},
 	"showImagesShowSiteAttributionTitle": {
 		"message": "Show Site Attribution"
 	},

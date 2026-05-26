@@ -15,6 +15,7 @@ fs.writeFileSync(modulePath, stripped);
 const {
 	DEFAULT_INSTANCE,
 	sanitizeInstance,
+	parseAutoLoadBudget,
 	buildCommentUrl,
 	buildPostUrl,
 	parseCommentResponse,
@@ -30,6 +31,16 @@ test('sanitizeInstance normalises scheme and trailing slash', () => {
 	assert.equal(sanitizeInstance(''), DEFAULT_INSTANCE);
 	assert.equal(sanitizeInstance('arctic.example.com/'), 'https://arctic.example.com');
 	assert.equal(sanitizeInstance('http://arctic.example.com//'), 'http://arctic.example.com');
+	assert.equal(sanitizeInstance('https://arctic.example.com/base/?ignored=1#frag'), 'https://arctic.example.com/base');
+	assert.equal(sanitizeInstance('javascript:alert(1)'), DEFAULT_INSTANCE);
+	assert.equal(sanitizeInstance('http://localhost:99999'), DEFAULT_INSTANCE);
+});
+
+test('parseAutoLoadBudget preserves zero and clamps negatives', () => {
+	assert.equal(parseAutoLoadBudget('0'), 0);
+	assert.equal(parseAutoLoadBudget('-5'), 0);
+	assert.equal(parseAutoLoadBudget('12'), 12);
+	assert.equal(parseAutoLoadBudget('garbage'), 25);
 });
 
 test('buildCommentUrl strips t1_ prefix and non-alphanumeric chars', () => {
@@ -78,6 +89,8 @@ test('arcticShift module is registered and uses the helpers', () => {
 	assert.match(mod, /from '\.\.\/utils\/arcticShift'/);
 	assert.match(mod, /watchForThings\(\['comment'\]/);
 	assert.match(mod, /createRateLimiter\(/);
+	assert.match(mod, /href = '#'/, 'restore link should not use a javascript: URL');
+	assert.match(mod, /parseAutoLoadBudget\(module\.options\.maxAutoLoad\.value\)/);
 	for (const opt of ['instance', 'autoLoad', 'maxAutoLoad']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
 	}

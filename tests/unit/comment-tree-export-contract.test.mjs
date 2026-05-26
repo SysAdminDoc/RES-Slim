@@ -120,6 +120,8 @@ test('commentTreeExport module is registered and uses the helpers', () => {
 	assert.match(mod, /from '\.\.\/utils\/commentTreeExport'/);
 	assert.match(mod, /isPageType\('comments'\)/);
 	assert.ok(mod.includes('htmlOpenInNewTab'), 'expected option htmlOpenInNewTab');
+	assert.match(mod, /function openHtmlPreview/);
+	assert.match(mod, /URL\.revokeObjectURL\(blobUrl\)/);
 });
 
 test('commentTreeExport SCSS ships in the bundle', () => {
