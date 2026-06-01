@@ -2,6 +2,10 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+- Consolidated root planning docs into `ROADMAP.md`, `COMPLETED.md`, and `RESEARCH_REPORT.md`; archived historical roadmap and research artifacts under `docs/archive/`.
+
 ## v0.12.7 - 2026-05-22
 
 Senior-engineer refactor pass — bug hunt + hardening + UX consistency, no new modules.

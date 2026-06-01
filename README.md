@@ -10,7 +10,7 @@ Only the features actually used are kept. Everything else — including all prom
 
 **Comment tweaks**: hideChildComments, commentNavigator, commentPreview, commentTools, commentQuickCollapse, commentSortBy, commentStyle, commentDepth, commentHidePersistor, saveComments, hover, showParent, readComments, newCommentCount, spoilerTags, noParticipation, sourceSnudown.
 
-**Media tweaks**: `showImages` inline expando engine plus all 86 host handlers (imgur, youtube, gfycat, reddit-native, etc.).
+**Media tweaks**: `showImages` inline expando engine plus all 88 host handlers (imgur, youtube, gfycat, reddit-native, Mastodon, Threads, etc.).
 
 **Infrastructure only**: menu, notifications, settingsNavigation, selectedEntry, version, requestPermissions.
 
@@ -26,6 +26,13 @@ yarn build      # production build + zip -> dist/zip/
 ```
 
 Load unpacked from `dist/chrome/` in Chrome, or `dist/firefox/` in Firefox.
+
+## Project planning
+
+- [Roadmap](ROADMAP.md)
+- [Completed work](COMPLETED.md)
+- [Research report](RESEARCH_REPORT.md)
+- [Archived roadmap](docs/archive/roadmap/ROADMAP-2026-05-22.md)
 
 ## License
 
