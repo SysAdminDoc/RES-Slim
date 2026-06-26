@@ -6,7 +6,7 @@ import path from 'node:path';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const styles = fs.readFileSync(path.join(repoRoot, 'lib/options/options.scss'), 'utf8');
 
-const THEMES = ['oled', 'graphite', 'midnight', 'forest', 'ember'];
+const THEMES = ['oled', 'graphite', 'midnight', 'forest', 'ember', 'catppuccin', 'tokyonight', 'rosepine'];
 
 function extractBlock(theme) {
 	const re = theme === 'oled'

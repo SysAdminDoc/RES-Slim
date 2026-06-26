@@ -95,6 +95,57 @@ html[data-settings-theme='ember'] {
 	--options-accent-strong: #ffc08f;
 }
 
+html[data-settings-theme='catppuccin'] {
+	--options-bg: #1e1e2e;
+	--options-panel: #24243a;
+	--options-panel-alt: #1e1e30;
+	--options-panel-raised: #2a2a42;
+	--options-field: #181825;
+	--options-field-hover: #22223a;
+	--options-border: #313244;
+	--options-border-strong: #45475a;
+	--options-text: #cdd6f4;
+	--options-text-muted: #a6adc8;
+	--options-text-soft: #7f849c;
+	--options-accent: #cba6f7;
+	--options-accent-soft: rgb(203 166 247 / 14%);
+	--options-accent-strong: #dbc0fa;
+}
+
+html[data-settings-theme='tokyonight'] {
+	--options-bg: #1a1b26;
+	--options-panel: #1f2133;
+	--options-panel-alt: #1a1b2a;
+	--options-panel-raised: #24263a;
+	--options-field: #16171e;
+	--options-field-hover: #1c1d2b;
+	--options-border: #292e42;
+	--options-border-strong: #3b4261;
+	--options-text: #c0caf5;
+	--options-text-muted: #9aa5ce;
+	--options-text-soft: #737aa2;
+	--options-accent: #7aa2f7;
+	--options-accent-soft: rgb(122 162 247 / 14%);
+	--options-accent-strong: #a9c1f9;
+}
+
+html[data-settings-theme='rosepine'] {
+	--options-bg: #191724;
+	--options-panel: #1f1d2e;
+	--options-panel-alt: #1a1826;
+	--options-panel-raised: #26233a;
+	--options-field: #15131f;
+	--options-field-hover: #1d1b2a;
+	--options-border: #26233a;
+	--options-border-strong: #393552;
+	--options-text: #e0def4;
+	--options-text-muted: #908caa;
+	--options-text-soft: #6e6a86;
+	--options-accent: #c4a7e7;
+	--options-accent-soft: rgb(196 167 231 / 14%);
+	--options-accent-strong: #d5c4ef;
+}
+
 %compact-badge {
 	display: inline-flex;
 	align-items: center;

@@ -4833,5 +4833,14 @@
 	},
 	"quarantineHideInSubDesc": {
 		"message": "Hide all warnings of quarantine while viewing a quarantined subreddit"
+	},
+	"settingsConsoleThemeCatppuccin": {
+		"message": "Catppuccin Mocha"
+	},
+	"settingsConsoleThemeTokyoNight": {
+		"message": "Tokyo Night"
+	},
+	"settingsConsoleThemeRosePine": {
+		"message": "Rose Pine"
 	}
 }
