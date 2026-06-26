@@ -84,11 +84,25 @@ test('crosspostMap module is registered and wires the helpers', () => {
 	}
 });
 
+test('crosspostMap exposes a labeled region with live status and stateful retry', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/crosspostMap.js'), 'utf8');
+	assert.match(mod, /setAttribute\('role', 'region'\)/);
+	assert.match(mod, /setAttribute\('aria-labelledby', TITLE_ID\)/);
+	assert.match(mod, /setAttribute\('aria-live', 'polite'\)/);
+	assert.match(mod, /function setStatus/);
+	assert.match(mod, /host\.dataset\.state = kind/);
+	assert.match(mod, /btn\.textContent = 'Retry'/);
+});
+
 test('crosspostMap SCSS ships in the bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_crosspostMap.scss');
 	assert.ok(fs.existsSync(scssPath));
 	const scss = fs.readFileSync(scssPath, 'utf8');
 	assert.match(scss, /\.rsm-crosspostMap/);
+	assert.match(scss, /&-status/);
+	assert.match(scss, /\[data-state='success'\]/);
+	assert.match(scss, /\[data-state='error'\]/);
+	assert.match(scss, /\[data-state='empty'\]/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/crosspostMap'/);
 });

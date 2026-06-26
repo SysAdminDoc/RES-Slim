@@ -38,7 +38,24 @@ test('overlayViewer targets images inside expando / selftext / comment-body', ()
 
 test('overlayViewer sets aria-modal and moves focus to the close button', () => {
 	assert.match(modSource, /aria-modal/);
+	assert.match(modSource, /aria-labelledby/);
+	assert.match(modSource, /aria-describedby/);
 	assert.match(modSource, /closeBtn\.focus\(\)/);
+});
+
+test('overlayViewer exposes premium loading/error/original-link controls', () => {
+	assert.match(modSource, /dataset\.state = 'loading'/);
+	assert.match(modSource, /Open original/);
+	assert.match(modSource, /setAttribute\('role', 'status'\)/);
+	assert.match(modSource, /display\.addEventListener\('load'/);
+	assert.match(modSource, /display\.addEventListener\('error'/);
+});
+
+test('overlayViewer traps focus and restores the prior focused element', () => {
+	assert.match(modSource, /focusableOverlayControls/);
+	assert.match(modSource, /e\.key === 'Tab'/);
+	assert.match(modSource, /_restoreFocus/);
+	assert.match(modSource, /restoreFocus\.focus\(\)/);
 });
 
 test('overlayViewer SCSS ships in the bundle', () => {
@@ -46,6 +63,9 @@ test('overlayViewer SCSS ships in the bundle', () => {
 	assert.ok(fs.existsSync(scssPath));
 	const scss = fs.readFileSync(scssPath, 'utf8');
 	assert.match(scss, /#rsm-overlayViewer/);
+	assert.match(scss, /#rsm-overlayViewer-toolbar/);
+	assert.match(scss, /#rsm-overlayViewer-status/);
+	assert.match(scss, /\[data-state='error'\]/);
 	assert.match(scss, /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/overlayViewer'/);

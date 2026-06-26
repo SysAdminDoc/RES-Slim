@@ -41,9 +41,30 @@ test('autoRefreshComments only runs on /comments/ pages and ships an on/off togg
 	assert.match(source, /aria-pressed/);
 });
 
+test('autoRefreshComments surfaces live status for paused, checking, success, and retry states', () => {
+	const source = read('lib/modules/autoRefreshComments.js');
+	assert.match(source, /const STATUS_ID = 'RSMAutoRefreshCommentsStatus'/);
+	assert.match(source, /setAttribute\('role', 'status'\)/);
+	assert.match(source, /setAttribute\('aria-live', 'polite'\)/);
+	assert.match(source, /setStatus\('Checking for new comments\.\.\.', 'checking'\)/);
+	assert.match(source, /setStatus\(`Added \$\{added\} new comment/);
+	assert.match(source, /setStatus\(`Refresh failed\. Retrying in/);
+	assert.match(source, /setAttribute\('aria-describedby', STATUS_ID\)/);
+});
+
 test('autoRefreshComments CSS partial is wired into res.scss', () => {
 	const res = read('lib/css/res.scss');
 	assert.match(res, /@import 'modules\/autoRefreshComments';/);
+});
+
+test('autoRefreshComments SCSS styles the status companion and focus states', () => {
+	const scss = read('lib/css/modules/_autoRefreshComments.scss');
+	assert.match(scss, /\.rsm-auto-refresh-host/);
+	assert.match(scss, /\.rsm-auto-refresh-status/);
+	assert.match(scss, /\[data-state='checking'\]/);
+	assert.match(scss, /\[data-state='success'\]/);
+	assert.match(scss, /\[data-state='error'\]/);
+	assert.match(scss, /prefers-reduced-motion: reduce/);
 });
 
 test('autoRefreshComments sanitizes newly fetched comment HTML', () => {

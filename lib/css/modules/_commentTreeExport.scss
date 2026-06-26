@@ -4,52 +4,83 @@
 	position: relative;
 	display: inline-block;
 	margin-left: 8px;
+	vertical-align: middle;
 }
 
 .rsm-commentTreeExport-host-trigger {
+	display: inline-flex;
+	align-items: center;
+	min-height: 24px;
+	box-sizing: border-box;
 	color: #93c5fd;
 	font-size: 12px;
+	font-weight: 600;
 	text-decoration: none;
-	padding: 2px 8px;
+	padding: 0 9px;
 	border-radius: 4px;
 	background: rgb(59 130 246 / 12%);
 	border: 1px solid rgb(59 130 246 / 28%);
-	transition: background .12s ease-out;
+	transition: background .12s ease-out, border-color .12s ease-out, color .12s ease-out;
 
 	&:hover,
 	&:focus-visible {
+		color: #dbeafe;
 		background: rgb(59 130 246 / 24%);
-		outline: none;
+		border-color: rgb(147 197 253 / 44%);
+		outline: 2px solid rgb(96 165 250 / 48%);
+		outline-offset: 2px;
+	}
+
+	&[aria-expanded='true'] {
+		color: #dbeafe;
+		background: rgb(59 130 246 / 24%);
+		border-color: rgb(147 197 253 / 44%);
 	}
 }
 
 .rsm-commentTreeExport-host-menu {
 	position: absolute;
-	top: calc(100% + 4px);
+	top: calc(100% + 6px);
 	right: 0;
 	z-index: 9999;
-	min-width: 140px;
-	padding: 4px;
-	background: #111418;
+	min-width: 168px;
+	padding: 5px;
+	background: #10141b;
 	color: #e5e7eb;
 	border: 1px solid rgb(255 255 255 / 12%);
-	border-radius: 6px;
-	box-shadow: 0 8px 24px rgb(0 0 0 / 55%);
+	border-radius: 8px;
+	box-shadow: 0 14px 36px rgb(0 0 0 / 48%);
 	font: 12px/1.4 'Helvetica Neue', Arial, sans-serif;
 
 	> button {
 		all: unset;
 		cursor: pointer;
-		display: block;
+		display: flex;
+		align-items: center;
+		box-sizing: border-box;
 		width: 100%;
-		padding: 6px 10px;
+		min-height: 30px;
+		padding: 0 10px;
 		border-radius: 4px;
-		transition: background .12s ease-out;
+		color: #dbe3ef;
+		transition: background .12s ease-out, color .12s ease-out;
 
 		&:hover,
 		&:focus-visible {
-			background: rgb(255 255 255 / 8%);
-			outline: none;
+			color: #fff;
+			background: rgb(255 255 255 / 10%);
+			outline: 2px solid rgb(96 165 250 / 48%);
+			outline-offset: 1px;
+		}
+
+		&:disabled {
+			cursor: progress;
+			opacity: 0.72;
 		}
 	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rsm-commentTreeExport-host-trigger,
+	.rsm-commentTreeExport-host-menu > button { transition: none; }
 }

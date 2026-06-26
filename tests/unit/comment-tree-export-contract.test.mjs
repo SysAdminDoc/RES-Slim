@@ -124,9 +124,24 @@ test('commentTreeExport module is registered and uses the helpers', () => {
 	assert.match(mod, /URL\.revokeObjectURL\(blobUrl\)/);
 });
 
+test('commentTreeExport menu exposes controlled, keyboard-dismissable busy states', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/commentTreeExport.js'), 'utf8');
+	assert.match(mod, /const MENU_ID = `\$\{HOST_ID\}-menu`/);
+	assert.match(mod, /setAttribute\('aria-controls', MENU_ID\)/);
+	assert.match(mod, /setAttribute\('aria-label', 'Export thread format'\)/);
+	assert.match(mod, /const setOpen = \(open: boolean/);
+	assert.match(mod, /e\.key !== 'Escape'/);
+	assert.match(mod, /item\.disabled = true/);
+	assert.match(mod, /setAttribute\('aria-busy', 'true'\)/);
+});
+
 test('commentTreeExport SCSS ships in the bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_commentTreeExport.scss');
 	assert.ok(fs.existsSync(scssPath));
+	const scss = fs.readFileSync(scssPath, 'utf8');
+	assert.match(scss, /\[aria-expanded='true'\]/);
+	assert.match(scss, /&:disabled/);
+	assert.match(scss, /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/commentTreeExport'/);
 });

@@ -45,6 +45,25 @@ test('topCommentsPreview sanitizes Reddit comment HTML before insertion', () => 
 	assert.match(source, /escapeHTML\(c\.author \|\| '\[deleted\]'\)/);
 });
 
+test('topCommentsPreview renders polished loading, empty, error, and expanded states', () => {
+	const source = read('lib/modules/topCommentsPreview.js');
+	assert.match(source, /setAttribute\('role', 'region'\)/);
+	assert.match(source, /setAttribute\('aria-expanded', 'false'\)/);
+	assert.match(source, /setAttribute\('aria-controls', hostId\)/);
+	assert.match(source, /setHostState\(host, 'loading'\)/);
+	assert.match(source, /setHostState\(host, html \? 'ready' : 'empty', html\)/);
+	assert.match(source, /setHostState\(host, 'error'\)/);
+});
+
+test('topCommentsPreview SCSS includes premium state surfaces', () => {
+	const scss = read('lib/css/modules/_topCommentsPreview.scss');
+	assert.match(scss, /\.rsm-tcp-header/);
+	assert.match(scss, /&--loading/);
+	assert.match(scss, /&--empty/);
+	assert.match(scss, /&--error/);
+	assert.match(scss, /\[aria-busy='true'\]/);
+});
+
 test('rateLimiter token-bucket helper exposes schedule + pending', async () => {
 	const limiterSource = fs.readFileSync(path.join(repoRoot, 'lib/utils/rateLimiter.js'), 'utf8');
 	const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-limiter');

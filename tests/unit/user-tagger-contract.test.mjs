@@ -124,6 +124,27 @@ test('userTagger module is registered and uses the helpers', () => {
 	}
 });
 
+test('userTagger popover exposes dialog semantics, status feedback, and trigger state', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/userTagger.js'), 'utf8');
+	assert.match(mod, /setAttribute\('role', 'dialog'\)/);
+	assert.match(mod, /setAttribute\('aria-labelledby', titleId\)/);
+	assert.match(mod, /setAttribute\('aria-describedby', statusId\)/);
+	assert.match(mod, /setAttribute\('aria-haspopup', 'dialog'\)/);
+	assert.match(mod, /setAttribute\('aria-expanded', 'false'\)/);
+	assert.match(mod, /setAttribute\('aria-controls', dialogId\)/);
+	assert.match(mod, /setPopoverBusy\(pop, true, 'Saving tag\.\.\.'\)/);
+	assert.match(mod, /Could not save\. Try again\./);
+});
+
+test('userTagger positions the popover against viewport edges', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/userTagger.js'), 'utf8');
+	assert.match(mod, /function placePopover/);
+	assert.match(mod, /classList\.add\('is-flipped'\)/);
+	assert.match(mod, /classList\.add\('is-above'\)/);
+	assert.match(mod, /window\.addEventListener\('resize', onResize, true\)/);
+	assert.match(mod, /window\.addEventListener\('scroll', onResize, true\)/);
+});
+
 test('user tagger styles ship in the SCSS bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_userTagger.scss');
 	assert.ok(fs.existsSync(scssPath), 'expected _userTagger.scss to exist');
@@ -131,6 +152,10 @@ test('user tagger styles ship in the SCSS bundle', () => {
 	assert.match(scss, /\.rsm-userTagger-btn/);
 	assert.match(scss, /\.rsm-userTagger-badge/);
 	assert.match(scss, /\.rsm-userTagger-popover/);
+	assert.match(scss, /&\.is-flipped/);
+	assert.match(scss, /&\.is-above/);
+	assert.match(scss, /&-status/);
+	assert.match(scss, /\[aria-busy='true'\]/);
 
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/userTagger'/);

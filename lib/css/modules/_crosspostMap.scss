@@ -1,11 +1,13 @@
 // crosspostMap module styles. v0.10.3.
 
 .rsm-crosspostMap {
-	margin: 8px 0 12px;
-	padding: 8px 12px;
-	background: rgb(0 0 0 / 18%);
-	border: 1px solid rgb(255 255 255 / 10%);
-	border-radius: 6px;
+	margin: 10px 0 14px;
+	padding: 12px 14px;
+	background: rgb(10 13 18 / 78%);
+	border: 1px solid rgb(255 255 255 / 12%);
+	border-left: 3px solid rgb(96 165 250 / 70%);
+	border-radius: 0 8px 8px 0;
+	box-shadow: 0 10px 28px rgb(0 0 0 / 16%);
 	font: 12px/1.45 'Helvetica Neue', Arial, sans-serif;
 	color: #d1d5db;
 
@@ -13,21 +15,27 @@
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		margin-bottom: 4px;
 	}
 
 	&-title {
+		margin: 0;
 		font-weight: 600;
-		letter-spacing: 0.02em;
 		text-transform: uppercase;
 		font-size: 11px;
+		color: #dbeafe;
+	}
+
+	&-status {
+		margin: 6px 0 0;
 		color: #9ca3af;
+		font-size: 11px;
 	}
 
 	&-trigger {
 		all: unset;
 		cursor: pointer;
-		padding: 3px 10px;
+		min-height: 24px;
+		padding: 0 10px;
 		margin-left: auto;
 		font: 600 11px/1 'Helvetica Neue', Arial, sans-serif;
 		color: #93c5fd;
@@ -39,23 +47,43 @@
 		&:hover,
 		&:focus-visible {
 			background: rgb(59 130 246 / 28%);
-			outline: none;
+			outline: 2px solid rgb(96 165 250 / 48%);
+			outline-offset: 2px;
 		}
 
 		&:disabled {
 			cursor: default;
-			opacity: 0.65;
+			opacity: 0.74;
 		}
+	}
+
+	&[data-state='loading'] &-trigger {
+		cursor: progress;
+	}
+
+	&[data-state='success'] {
+		border-left-color: rgb(74 222 128 / 70%);
+	}
+
+	&[data-state='error'] {
+		border-left-color: rgb(248 113 113 / 72%);
+	}
+
+	&[data-state='empty'] {
+		border-left-color: rgb(156 163 175 / 64%);
 	}
 
 	&-list {
 		list-style: none;
-		margin: 6px 0 0;
+		margin: 10px 0 0;
 		padding: 0;
+		background: rgb(255 255 255 / 3%);
+		border: 1px solid rgb(255 255 255 / 7%);
+		border-radius: 6px;
 	}
 
 	&-list-item {
-		padding: 3px 0;
+		padding: 7px 9px;
 		border-bottom: 1px solid rgb(255 255 255 / 6%);
 
 		&:last-child { border-bottom: 0; }
@@ -80,7 +108,12 @@
 	}
 
 	&-list-empty {
+		padding: 7px 9px;
 		color: #9ca3af;
 		font-style: italic;
 	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rsm-crosspostMap-trigger { transition: none; }
 }

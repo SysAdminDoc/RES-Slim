@@ -2,20 +2,36 @@
 // the autoRefreshComments module, plus highlight styling for freshly
 // spliced comments.
 
+.rsm-auto-refresh-host {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	margin-right: 10px;
+	vertical-align: middle;
+}
+
 .rsm-auto-refresh-toggle {
 	display: inline-flex;
 	align-items: center;
-	margin-right: 8px;
-	padding: 3px 8px;
+	justify-content: center;
+	min-height: 24px;
+	padding: 0 9px;
 	border: 1px solid rgb(255 122 24 / 35%);
 	border-radius: 4px;
 	background: rgb(255 122 24 / 8%);
 	color: inherit;
 	font-size: 11px;
 	font-weight: 600;
+	white-space: nowrap;
 	cursor: pointer;
+	transition: background .12s ease-out, border-color .12s ease-out, color .12s ease-out;
 
-	&:hover { background: rgb(255 122 24 / 16%); }
+	&:hover,
+	&:focus-visible {
+		background: rgb(255 122 24 / 16%);
+		outline: 2px solid rgb(255 122 24 / 40%);
+		outline-offset: 2px;
+	}
 
 	&.is-on {
 		border-color: #ff7a18;
@@ -24,10 +40,46 @@
 	}
 }
 
+.rsm-auto-refresh-status {
+	display: inline-flex;
+	align-items: center;
+	min-height: 22px;
+	padding: 0 8px;
+	color: #9ca3af;
+	background: rgb(0 0 0 / 14%);
+	border: 1px solid rgb(255 255 255 / 8%);
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+
+	&[data-state='checking'],
+	&[data-state='active'] {
+		color: #fed7aa;
+		border-color: rgb(255 122 24 / 20%);
+	}
+
+	&[data-state='success'] {
+		color: #bbf7d0;
+		border-color: rgb(34 197 94 / 22%);
+	}
+
+	&[data-state='error'] {
+		color: #fecaca;
+		border-color: rgb(248 113 113 / 26%);
+		background: rgb(127 29 29 / 14%);
+	}
+}
+
 .rsm-auto-refresh-new {
-	margin: 4px 0;
-	padding: 6px 8px;
+	margin: 6px 0;
+	padding: 7px 9px;
 	border-left: 3px solid #ff7a18;
 	background: rgb(255 122 24 / 12%);
 	border-radius: 0 6px 6px 0;
+	box-shadow: 0 8px 18px rgb(0 0 0 / 10%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.rsm-auto-refresh-toggle { transition: none; }
 }
