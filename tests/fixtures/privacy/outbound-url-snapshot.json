@@ -844,18 +844,6 @@
     {
       "file": "lib/utils/wayback.js",
       "url": "https://web.archive.org/save/"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.kevinleary.net/jquery-fadein-fadeout-problems-in-internet-explorer/"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.mysite.com/myapp#guider=welcome"
-    },
-    {
-      "file": "lib/vendor/guiders.js",
-      "url": "http://www.myurl.com/mypage.html#guider=id"
     }
   ]
 }
