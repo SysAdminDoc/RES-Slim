@@ -8,14 +8,17 @@
 .rsm-searchGallery-strip {
 	display: flex;
 	gap: 6px;
-	overflow-x: auto;
-	overflow-y: hidden;
+	overflow: auto hidden;
 	padding-bottom: 4px;
 	scrollbar-width: thin;
 	scrollbar-color: rgb(255 122 24 / 35%) transparent;
 
 	&::-webkit-scrollbar { height: 6px; }
-	&::-webkit-scrollbar-thumb { background: rgb(255 122 24 / 40%); border-radius: 3px; }
+
+	&::-webkit-scrollbar-thumb {
+		border-radius: 3px;
+		background: rgb(255 122 24 / 40%);
+	}
 }
 
 .rsm-searchGallery-thumb {
@@ -43,5 +46,6 @@
 
 @media (prefers-reduced-motion: reduce) {
 	.rsm-searchGallery-thumb { transition: none; }
+
 	.rsm-searchGallery-thumb:hover { transform: none; }
 }

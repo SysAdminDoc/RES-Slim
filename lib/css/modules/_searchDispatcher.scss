@@ -16,7 +16,11 @@
 	cursor: pointer;
 
 	&:hover { background: rgb(255 122 24 / 16%); }
-	&:focus-visible { outline: 2px solid #ffb06a; outline-offset: 1px; }
+
+	&:focus-visible {
+		outline: 2px solid #ffb06a;
+		outline-offset: 1px;
+	}
 }
 
 body.res-nightmode .rsm-search-dispatcher {
@@ -24,7 +28,7 @@ body.res-nightmode .rsm-search-dispatcher {
 	color: #ffd9b8;
 }
 
-@media (max-width: 720px) {
+@media (width <= 720px) {
 	.rsm-search-dispatcher {
 		max-width: 96px;
 	}

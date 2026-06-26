@@ -23,10 +23,20 @@
 }
 
 @keyframes rsm-hoverZoom-fadeIn {
-	from { opacity: 0; transform: translateY(2px); }
-	to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(2px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	#rsm-hoverZoom-popover { animation: none; transition: none; }
+	#rsm-hoverZoom-popover {
+		animation: none;
+		transition: none;
+	}
 }

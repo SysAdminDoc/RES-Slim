@@ -59,12 +59,21 @@ test('storageDashboard uses setTrustedHTML for DOM writes', () => {
 	const src = read('lib/modules/storageDashboard.js');
 	assert.ok(src.includes('setTrustedHTML'));
 	assert.ok(src.includes("from '../core/dom/trustedHtml'"));
+	assert.ok(src.includes("trigger.setAttribute('aria-expanded', 'false')"));
+	assert.ok(src.includes("panel.setAttribute('role', 'region')"));
+	assert.ok(src.includes("closeBtn.className = 'rsm-storageDashboard-close'"));
+	assert.ok(src.includes('panel.replaceChildren(header, ...rows)'));
+	assert.ok(!src.includes('panel.innerHTML ='));
 });
 
 test('storageDashboard has a SCSS module', () => {
 	const scss = read('lib/css/modules/_storageDashboard.scss');
 	assert.ok(scss.includes('.rsm-storageDashboard-panel'));
+	assert.ok(scss.includes('.rsm-storageDashboard-header'));
+	assert.ok(scss.includes('.rsm-storageDashboard-close'));
 	assert.ok(scss.includes('.rsm-storageDashboard-purge'));
+	assert.ok(scss.includes("[data-state='success']"));
+	assert.ok(scss.includes('.rsm-storageDashboard-empty.is-error'));
 });
 
 test('storageDashboard SCSS is imported in res.scss', () => {

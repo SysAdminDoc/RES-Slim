@@ -89,7 +89,19 @@ test('formatRulesHtml escapes HTML in rule text', async () => {
 test('subRulesInline module is registered and disabled by default', () => {
 	const src = read('lib/modules/subRulesInline.js');
 	assert.ok(src.includes('disabledByDefault = true'));
+	assert.ok(src.includes("popover.setAttribute('role', 'tooltip')"));
+	assert.ok(src.includes("anchor.addEventListener('focus', showPopover)"));
+	assert.ok(src.includes("anchor.addEventListener('blur', hidePopover)"));
+	assert.ok(src.includes("anchor.setAttribute('aria-describedby', POPOVER_ID)"));
 	const index = read('lib/modules/index.js');
 	assert.ok(index.includes("from './subRulesInline'"));
 	assert.ok(index.includes('subRulesInline,'));
+});
+
+test('subRulesInline popover styles include polished states', () => {
+	const scss = read('lib/css/modules/_subRulesInline.scss');
+	assert.ok(scss.includes('.rsm-subrules-popover'));
+	assert.ok(scss.includes('width: min(420px, calc(100vw - 24px))'));
+	assert.ok(scss.includes('.rsm-subrules-empty.is-error'));
+	assert.ok(scss.includes('.rsm-subrules-item'));
 });

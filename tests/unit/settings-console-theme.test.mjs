@@ -12,6 +12,9 @@ const themes = [
 	'midnight',
 	'forest',
 	'ember',
+	'catppuccin',
+	'tokyonight',
+	'rosepine',
 ];
 
 test('settings console theme picker is wired through template, controller, styles, and locale', () => {
@@ -43,8 +46,14 @@ test('settings console theme picker is wired through template, controller, style
 		'settingsConsoleThemeMidnight',
 		'settingsConsoleThemeForest',
 		'settingsConsoleThemeEmber',
+		'settingsConsoleThemeCatppuccin',
+		'settingsConsoleThemeTokyoNight',
+		'settingsConsoleThemeRosePine',
 		'settingsConsoleApplyTheme',
 		'settingsConsoleAdvancedTag',
+		'settingsConsoleDisplayGroup',
+		'settingsConsoleSettingsFileGroup',
+		'settingsConsoleChangesGroup',
 	]) {
 		assert.equal(typeof locale[key]?.message, 'string', `${key} should be localized`);
 		assert.notEqual(locale[key].message.trim(), '', `${key} should not be empty`);

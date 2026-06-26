@@ -16,6 +16,7 @@
 	cursor: pointer;
 
 	&:hover { background: rgb(255 122 24 / 16%); }
+
 	&.is-on {
 		border-color: #ff7a18;
 		background: rgb(255 122 24 / 26%);

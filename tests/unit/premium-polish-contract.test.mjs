@@ -57,15 +57,28 @@ test('floating media and comment navigation controls expose polished focus state
 });
 
 test('settings status feedback has premium busy and saved states', () => {
+	const controller = read('lib/options/settingsConsole.js');
 	const styles = read('lib/options/options.scss');
+	const locale = JSON.parse(read('locales/locales/en.json'));
 
 	assert.match(styles, /&\.is-saved-pulse/);
+	assert.match(styles, /&\.is-attention/);
 	assert.match(styles, /&\[aria-busy='true'\] \.globalStageIcon/);
 	assert.match(styles, /@keyframes spin/);
 	assert.match(styles, /\.workspaceEmptyState \{/);
 	assert.match(styles, /\.workspaceEmptyStateIcon/);
 	assert.match(styles, /#moduleOptionsScrim \{/);
 	assert.match(styles, /\.moduleOptionsScrimTitle/);
+	assert.match(styles, /\.consoleControlGroup/);
+	assert.match(styles, /\.enum \{/);
+	assert.match(styles, /\.themeOptionSwatch--catppuccin/);
+	assert.match(styles, /\.themeOptionSwatch--tokyonight/);
+	assert.match(styles, /\.themeOptionSwatch--rosepine/);
+	assert.match(controller, /function notifyCloseBlockedByUnsavedChanges\(\)/);
+	assert.match(controller, /saveButton\.focus\(\)/);
+	assert.match(controller, /settingsConsoleUnsavedCloseBlocked/);
+	assert.doesNotMatch(controller, /Alert\.open\(getAbandonChangesConfirmation/);
+	assert.equal(locale.settingsConsoleUnsavedCloseBlocked.message, 'Save or revert changes before closing.');
 	assert.doesNotMatch(styles, /border-radius: 999px/);
 	assert.doesNotMatch(styles, /backdrop-filter: blur\(4px\)/);
 });

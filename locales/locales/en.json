@@ -2691,6 +2691,15 @@
 	"settingsConsoleClose": {
 		"message": "Close settings"
 	},
+	"settingsConsoleDisplayGroup": {
+		"message": "Display preferences"
+	},
+	"settingsConsoleSettingsFileGroup": {
+		"message": "Settings import and export"
+	},
+	"settingsConsoleChangesGroup": {
+		"message": "Staged changes"
+	},
 	"settingsConsoleHomeAria": {
 		"message": "$1 settings home"
 	},
@@ -2966,6 +2975,12 @@
 	},
 	"settingsConsoleAbandonChangesConfirmation": {
 		"message": "Abandon your changes to RES-Slim settings?"
+	},
+	"settingsConsoleUnsavedCloseBlocked": {
+		"message": "Save or revert changes before closing."
+	},
+	"settingsConsoleSavingCloseBlocked": {
+		"message": "Saving changes. You can close when it finishes."
 	},
 	"settingsConsolePermissionRequired": {
 		"message": "Permission required"
