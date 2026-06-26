@@ -1,0 +1,67 @@
+.rsm-storageDashboard-panel {
+	position: fixed;
+	top: 50px;
+	right: 20px;
+	z-index: 1000;
+	min-width: 320px;
+	max-width: 420px;
+	padding: 14px 18px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 8px;
+	background: rgba(18, 18, 24, 0.97);
+	color: #e0e0e0;
+	font-size: 13px;
+	line-height: 1.6;
+	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+}
+
+.rsm-storageDashboard-title {
+	font-weight: 600;
+	font-size: 14px;
+	margin-bottom: 10px;
+	color: #fff;
+}
+
+.rsm-storageDashboard-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+	&:last-child {
+		border-bottom: none;
+	}
+}
+
+.rsm-storageDashboard-label {
+	flex: 1;
+	font-family: monospace;
+	font-size: 12px;
+}
+
+.rsm-storageDashboard-purge {
+	margin-left: 12px;
+	padding: 2px 10px;
+	font-size: 11px;
+	border: 1px solid rgba(248, 81, 73, 0.4);
+	border-radius: 4px;
+	background: rgba(248, 81, 73, 0.12);
+	color: #f85149;
+	cursor: pointer;
+
+	&:hover {
+		background: rgba(248, 81, 73, 0.25);
+	}
+
+	&:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+}
+
+.rsm-storageDashboard-loading,
+.rsm-storageDashboard-empty {
+	color: #888;
+	font-style: italic;
+}
