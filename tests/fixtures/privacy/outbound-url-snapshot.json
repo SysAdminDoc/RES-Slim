@@ -710,15 +710,15 @@
       "url": "https://www.google.com/search?q=site%3Areddit.com+{q}"
     },
     {
-      "file": "lib/modules/showImages.js",
-      "url": "https://${siteModule.domains[0]}"
-    },
-    {
-      "file": "lib/modules/showImages.js",
+      "file": "lib/modules/showImages/linkScanner.js",
       "url": "https://external-preview.redd.it"
     },
     {
-      "file": "lib/modules/showImages.js",
+      "file": "lib/modules/showImages/mediaControls.js",
+      "url": "https://${siteModule.domains[0]}"
+    },
+    {
+      "file": "lib/modules/showImages/mediaTypes.js",
       "url": "https://images.google.com/searchbyimage?client=app&sbisrc=cr_1_5_2&image_url=${lookupUrl}"
     },
     {

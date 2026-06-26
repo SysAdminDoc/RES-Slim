@@ -137,8 +137,11 @@ test('comment text media auto-expands image/gallery/muted media expandos by defa
 
 	assert.match(source, /autoExpandCommentMedia:\s*\{[\s\S]*?value:\s*true/);
 	assert.match(source, /title:\s*'showImagesAutoExpandCommentMediaTitle'/);
-	assert.match(source, /module\.options\.autoExpandCommentMedia\.value && inText\(expando\.button\) && thing && thing\.isComment\(\)/);
-	assert.match(source, /autoExpand = true;/);
+
+	// The auto-expand logic lives in the linkScanner sub-module after the showImages split
+	const scannerSource = read('lib/modules/showImages/linkScanner.js');
+	assert.match(scannerSource, /module\.options\.autoExpandCommentMedia\.value && inText\(expando\.button\) && thing && thing\.isComment\(\)/);
+	assert.match(scannerSource, /autoExpand = true;/);
 
 	const locale = read('locales/locales/en.json');
 	assert.match(locale, /showImagesAutoExpandCommentMediaTitle/);
