@@ -105,6 +105,7 @@ tests/unit/.tmp-comment-tree-export/
 tests/unit/.tmp-saved-backup/
 tests/unit/.tmp-vote-history/
 tests/unit/.tmp-media-manifest/
+tests/unit/.tmp-engagement-bait/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
