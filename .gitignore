@@ -106,6 +106,7 @@ tests/unit/.tmp-saved-backup/
 tests/unit/.tmp-vote-history/
 tests/unit/.tmp-media-manifest/
 tests/unit/.tmp-engagement-bait/
+tests/unit/.tmp-sub-rules/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
