@@ -3,6 +3,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import * as commander from 'commander';
 import * as esbuild from 'esbuild';
 import * as semver from 'semver';
@@ -12,6 +13,8 @@ import { copy } from 'esbuild-plugin-copy';
 import { sassPlugin } from 'esbuild-sass-plugin';
 import isBetaVersion from './build/isBetaVersion.js';
 import packageInfo from './package.json' with { type: 'json' };
+
+const DASHJS_SHA256 = '66dff6f83ec1e22418f3fa17a2b2b9b21b7b3ffc290fd17a6a6595678c35ed9b';
 
 const targets = {
 	chrome: {
@@ -197,6 +200,19 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 					})
 				},
 			} : undefined,
+			{
+				name: 'verify-dashjs-integrity',
+				setup(build) {
+					build.onEnd(async () => {
+						const dashjsPath = `./dist/${targetName}/dash.mediaplayer.min.js`;
+						const content = await fs.promises.readFile(dashjsPath);
+						const actual = crypto.createHash('sha256').update(content).digest('hex');
+						if (actual !== DASHJS_SHA256) {
+							throw new Error(`dashjs integrity check failed!\n  expected: ${DASHJS_SHA256}\n  actual:   ${actual}\nThe vendored dashjs file may have been tampered with. Update DASHJS_SHA256 in build.js if you intentionally upgraded the package.`);
+						}
+					});
+				},
+			},
 		].filter(Boolean),
 	};
 
