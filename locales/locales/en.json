@@ -6,7 +6,7 @@
 		"message": "No"
 	},
 	"aboutCategory": {
-		"message": "About RES"
+		"message": "About RES-Slim"
 	},
 	"myAccountCategory": {
 		"message": "My Account"
@@ -42,28 +42,28 @@
 		"message": "option ID"
 	},
 	"aboutName": {
-		"message": "About RES"
+		"message": "About RES-Slim"
 	},
 	"aboutDesc": {
-		"message": "Reddit Enhancement Suite is a collection of modules that makes browsing reddit a whole lot easier."
+		"message": "RES-Slim is a collection of modules that makes browsing reddit a whole lot easier."
 	},
 	"aboutOptionsPresetsTitle": {
 		"message": "Presets"
 	},
 	"aboutOptionsPresets": {
-		"message": "Quickly customize RES with various presets."
+		"message": "Quickly customize RES-Slim with various presets."
 	},
 	"aboutOptionsBackupTitle": {
 		"message": "Backup"
 	},
 	"aboutOptionsBackup": {
-		"message": "Backup (export) and restore (import) your RES settings."
+		"message": "Backup (export) and restore (import) your RES-Slim settings."
 	},
 	"aboutOptionsSearchSettingsTitle": {
 		"message": "Search Settings"
 	},
 	"aboutOptionsSearchSettings": {
-		"message": "Find RES settings."
+		"message": "Find RES-Slim settings."
 	},
 	"searchSettingsDescription": {
 		"message": "Search by module name, setting name, or description."
@@ -105,7 +105,7 @@
 		"message": "Donate"
 	},
 	"aboutOptionsDonate": {
-		"message": "Support further RES development."
+		"message": "Support further RES-Slim development."
 	},
 	"disableSubredditStylesName": {
 		"message": "Disable Subreddit Styles"
@@ -117,49 +117,49 @@
 		"message": "Bugs"
 	},
 	"aboutOptionsBugs": {
-		"message": "If something isn't working right, visit /r/RESissues for help."
+		"message": "If something isn't working right, visit the issue tracker for help."
 	},
 	"aboutOptionsSuggestionsTitle": {
 		"message": "Suggestions"
 	},
 	"aboutOptionsSuggestions": {
-		"message": "If you have an idea for RES or want to chat with other users, visit /r/Enhancement."
+		"message": "If you have an idea for RES-Slim or want to chat with other users, visit the project page."
 	},
 	"aboutOptionsFAQTitle": {
 		"message": "FAQ"
 	},
 	"aboutOptionsFAQ": {
-		"message": "Learn more about RES on the /r/Enhancement wiki."
+		"message": "Learn more about RES-Slim on the the project page wiki."
 	},
 	"aboutOptionsCodeTitle": {
 		"message": "Code"
 	},
 	"aboutOptionsCode": {
-		"message": "You can improve RES with your code, designs, and ideas! RES is an open-source project on GitHub."
+		"message": "You can improve RES-Slim with your code, designs, and ideas! RES-Slim is an open-source project on GitHub."
 	},
 	"aboutOptionsContributorsTitle": {
 		"message": "Contributors"
 	},
 	"aboutOptionsContributors": {
-		"message": "Steve Sobel and a slew of community members have contributed code, design and/or great ideas to upstream RES."
+		"message": "Steve Sobel and a slew of community members have contributed code, design and/or great ideas to upstream RES-Slim."
 	},
 	"aboutOptionsPrivacyTitle": {
 		"message": "Privacy"
 	},
 	"aboutOptionsPrivacy": {
-		"message": "Read about RES's privacy policy."
+		"message": "Read about RES-Slim's privacy policy."
 	},
 	"aboutOptionsLicenseTitle": {
 		"message": "License"
 	},
 	"aboutOptionsLicense": {
-		"message": "Reddit Enhancement Suite is released under the GPL v3.0 license."
+		"message": "RES-Slim is released under the GPL v3.0 license."
 	},
 	"accountSwitcherName": {
 		"message": "Account Switcher"
 	},
 	"accountSwitcherDesc": {
-		"message": "Store username/password pairs and switch accounts instantly while browsing Reddit!\n\nIf you forget a password which is stored in Account Switcher, [you can recover them from RES settings](/r/Enhancement/wiki/faq/passwords). Be aware that RES offers very little protection for stored passwords, so be careful when sharing your computer or settings!\n\nLeave a password box blank to be prompted for a password every time you switch to that account."
+		"message": "Store username/password pairs and switch accounts instantly while browsing Reddit!\n\nIf you forget a password which is stored in Account Switcher, [you can recover them from RES-Slim settings](the project page/wiki/faq/passwords). Be aware that RES-Slim offers very little protection for stored passwords, so be careful when sharing your computer or settings!\n\nLeave a password box blank to be prompted for a password every time you switch to that account."
 	},
 	"accountSwitcherAddAccount": {
 		"message": "+add account"
@@ -217,25 +217,25 @@
 		"message": "You have been logged out."
 	},
 	"announcementsName": {
-		"message": "RES Announcements"
+		"message": "Announcements"
 	},
 	"announcementsDesc": {
 		"message": "Keep up with important news."
 	},
 	"announcementsNewPost": {
-	  "message": "A new post has been made to /r/$1"
+		"message": "A new post has been made to /r/$1"
 	},
 	"announcementsNewPostByUser": {
-	  "message": "A new post has been made to /r/$1 by /u/$2"
+		"message": "A new post has been made to /r/$1 by /u/$2"
 	},
 	"announcementsMarkAsRead": {
-	  "message": "mark as read"
+		"message": "mark as read"
 	},
 	"backupName": {
 		"message": "Backup & Restore"
 	},
 	"backupDesc": {
-		"message": "Backup (export) and restore (import) your Reddit Enhancement Suite settings."
+		"message": "Backup (export) and restore (import) your RES-Slim settings."
 	},
 	"betteRedditName": {
 		"message": "betteReddit"
@@ -244,10 +244,10 @@
 		"message": "Adds a number of interface enhancements to Reddit, such as \"full comments\" links, the ability to unhide accidentally hidden posts, and more."
 	},
 	"commandLineName": {
-		"message": "RES Command Line"
+		"message": "Command Line"
 	},
 	"commandLineDesc": {
-		"message": "Command line for navigating reddit, toggling RES settings, and debugging RES."
+		"message": "Command line for navigating reddit, toggling RES-Slim settings, and debugging RES-Slim."
 	},
 	"commentDepthName": {
 		"message": "Custom Comment Depth"
@@ -343,13 +343,13 @@
 		"message": "Custom Toggles"
 	},
 	"customTogglesDesc": {
-		"message": "Set up custom on/off switches for various parts of RES."
+		"message": "Set up custom on/off switches for various parts of RES-Slim."
 	},
 	"dashboardName": {
-		"message": "RES Dashboard"
+		"message": "Dashboard"
 	},
 	"dashboardDesc": {
-		"message": "The RES Dashboard is home to a number of features including widgets and other useful tools."
+		"message": "The Dashboard is home to a number of features including widgets and other useful tools."
 	},
 	"easterEggName": {
 		"message": "Easter Egg"
@@ -379,7 +379,7 @@
 		"message": "filteReddit"
 	},
 	"filteRedditDesc": {
-		"message": "Filter out NSFW content, or links by keyword, domain or subreddit (for /r/all or /domain/*).\n\nRegExp like `/(this|that|theother)/i` is allowed in text boxes. Find out more on the [/r/Enhancement wiki](/r/Enhancement/wiki/index/filters/filtereddit/regexp)."
+		"message": "Filter out NSFW content, or links by keyword, domain or subreddit (for /r/all or /domain/*).\n\nRegExp like `/(this|that|theother)/i` is allowed in text boxes. Find out more on the [the project page wiki](the project page/wiki/index/filters/filtereddit/regexp)."
 	},
 	"hideChildCommentsName": {
 		"message": "Hide All Child Comments"
@@ -418,7 +418,7 @@
 		"message": "hide child comments"
 	},
 	"hoverName": {
-		"message": "RES Pop-up Hover"
+		"message": "RES-Slim Pop-up Hover"
 	},
 	"hoverDesc": {
 		"message": "Customize the behavior of the large informational pop-ups which appear when you hover your mouse over certain elements."
@@ -493,13 +493,13 @@
 		"message": "Linear Scroll Style"
 	},
 	"keyboardNavLinearScrollStyleDesc": {
-		"message": "When moving up/down with keynav, when and how should RES scroll the window?\n\n**Directional**: Scroll just enough to bring the selected element into view, if it's offscreen.\n\n**Page up/down**: Scroll up/down an entire page after reaching the top or bottom.\n\n**Lock to top**: Always align the selected element to the top of the screen.\n\n**In middle**: Scroll just enough to bring the selected element to the middle of the viewport.\n\n**Adopt top**: Reuse the alignment of the previous selected element.\n\n**Legacy**: If the element is offscreen, lock to top."
+		"message": "When moving up/down with keynav, when and how should RES-Slim scroll the window?\n\n**Directional**: Scroll just enough to bring the selected element into view, if it's offscreen.\n\n**Page up/down**: Scroll up/down an entire page after reaching the top or bottom.\n\n**Lock to top**: Always align the selected element to the top of the screen.\n\n**In middle**: Scroll just enough to bring the selected element to the middle of the viewport.\n\n**Adopt top**: Reuse the alignment of the previous selected element.\n\n**Legacy**: If the element is offscreen, lock to top."
 	},
 	"keyboardNavNonLinearScrollStyleTitle": {
 		"message": "Non-linear Scroll Style"
 	},
 	"keyboardNavNonLinearScrollStyleDesc": {
-		"message": "When jumping to a entry (moveUpThread/moveDownThread, moveUpSibling/moveDownSibling, moveToParent, and moveDownParentSibling), when and how should RES scroll the window?"
+		"message": "When jumping to a entry (moveUpThread/moveDownThread, moveUpSibling/moveDownSibling, moveToParent, and moveDownParentSibling), when and how should RES-Slim scroll the window?"
 	},
 	"keyboardNavLinkNumbersTitle": {
 		"message": "Link Numbers"
@@ -571,7 +571,7 @@
 		"message": "Toggle Cmd Line"
 	},
 	"keyboardNavToggleCmdLineDesc": {
-		"message": "Launch RES command line."
+		"message": "Launch RES-Slim command line."
 	},
 	"keyboardNavEnterFilterCommandLineTitle": {
 		"message": "Enter Filter Command Line"
@@ -844,10 +844,10 @@
 		"message": "Save the current comment to your reddit account. This is accessible from anywhere that you're logged in, but does not preserve the original text if it's edited or deleted."
 	},
 	"keyboardNavSaveRESTitle": {
-		"message": "Save RES"
+		"message": "Save RES-Slim"
 	},
 	"keyboardNavSaveRESDesc": {
-		"message": "Save the current comment with RES. This does preserve the original text of the comment, but is only saved locally."
+		"message": "Save the current comment with RES-Slim. This does preserve the original text of the comment, but is only saved locally."
 	},
 	"keyboardNavReplyTitle": {
 		"message": "Reply"
@@ -1018,7 +1018,7 @@
 		"message": "Move down using Comment Navigator."
 	},
 	"keyboardNavAmbiguousShortcutPrompt": {
-		"message": "RES' $1 isn't sure what to do when you press the keyboard shortcut $2. $3 What should pressing $4 do?"
+		"message": "RES-Slim' $1 isn't sure what to do when you press the keyboard shortcut $2. $3 What should pressing $4 do?"
 	},
 	"keyboardNavAmbiguousShortcutPromptFollowUp": {
 		"message": "You can change this later from the $1 settings"
@@ -1078,7 +1078,7 @@
 		"message": "If redditLogoDestination is set to custom, link here."
 	},
 	"menuName": {
-		"message": "RES Menu"
+		"message": "RES-Slim Menu"
 	},
 	"messageMenuName": {
 		"message": "Message Menu"
@@ -1129,7 +1129,7 @@
 		"message": "Mod Helper"
 	},
 	"modhelperDesc": {
-		"message": "Helps moderators via tips and tricks for playing nice with RES."
+		"message": "Helps moderators via tips and tricks for playing nice with RES-Slim."
 	},
 	"multiredditNavbarName": {
 		"message": "Multireddit Navigation"
@@ -1246,7 +1246,7 @@
 		"message": "Clean Comments"
 	},
 	"newCommentCountCleanCommentsDesc": {
-		"message": "Number of days before RES stops keeping track of a viewed thread."
+		"message": "Number of days before RES-Slim stops keeping track of a viewed thread."
 	},
 	"newCommentCountSubscriptionLengthTitle": {
 		"message": "Count Subscription Length"
@@ -1348,10 +1348,10 @@
 		"message": "Remove np mode when leaving a No-Participation page."
 	},
 	"notificationsName": {
-		"message": "RES Notifications"
+		"message": "RES-Slim Notifications"
 	},
 	"notificationsDesc": {
-		"message": "Manage pop-up notifications for RES functions."
+		"message": "Manage pop-up notifications for RES-Slim functions."
 	},
 	"notificationStickyTitle": {
 		"message": "Sticky"
@@ -1405,10 +1405,10 @@
 		"message": "Always show this type"
 	},
 	"onboardingName": {
-		"message": "RES Welcome Wagon"
+		"message": "RES-Slim Welcome Wagon"
 	},
 	"onboardingDesc": {
-		"message": "Learn more about RES at /r/Enhancement."
+		"message": "Learn more about RES-Slim at the project page."
 	},
 	"onboardingUpdateNotificationName": {
 		"message": "Update Notification"
@@ -1429,7 +1429,7 @@
 		"message": "Notification method for beta updates."
 	},
 	"onboardingUpgradeMessage": {
-		"message": "Reddit Enhancement Suite has been upgraded to v$1."
+		"message": "RES-Slim has been upgraded to v$1."
 	},
 	"onboardingUpgradeCta": {
 		"message": "Read more"
@@ -1459,13 +1459,13 @@
 		"message": "Update Current Tab"
 	},
 	"orangeredUpdateCurrentTabDesc": {
-		"message": "Update mail buttons on current tab when RES checks for orangereds."
+		"message": "Update mail buttons on current tab when RES-Slim checks for orangereds."
 	},
 	"orangeredUpdateOtherTabsTitle": {
 		"message": "Update Other Tabs"
 	},
 	"orangeredUpdateOtherTabsDesc": {
-		"message": "Update all open tabs when RES checks for orangereds."
+		"message": "Update all open tabs when RES-Slim checks for orangereds."
 	},
 	"orangeredShowFloatingEnvelopeTitle": {
 		"message": "Show Floating Envelope"
@@ -1477,7 +1477,7 @@
 		"message": "Retro Unread Count"
 	},
 	"orangeredRetroUnreadCountDesc": {
-		"message": "If you dislike the unread count provided by native reddit, you can replace it with the RES-style bracketed unread count."
+		"message": "If you dislike the unread count provided by native reddit, you can replace it with the RES-Slim-style bracketed unread count."
 	},
 	"orangeredShowUnreadCountInTitleTitle": {
 		"message": "Show Unread Count In Title"
@@ -1579,7 +1579,7 @@
 		"message": "Presets"
 	},
 	"presetsDesc": {
-		"message": "Select from various preset RES configurations. Each preset turns on or off various modules/options, but does not reset your entire configuration."
+		"message": "Select from various preset RES-Slim configurations. Each preset turns on or off various modules/options, but does not reset your entire configuration."
 	},
 	"quickMessageName": {
 		"message": "Quick Message"
@@ -1588,19 +1588,19 @@
 		"message": "A pop-up dialog that allows you to send messages from anywhere on reddit. Messages can be sent from the quick message dialog by pressing control-enter or command-enter."
 	},
 	"resTipsName": {
-		"message": "RES Tips and Tricks"
+		"message": "RES-Slim Tips and Tricks"
 	},
 	"resTipsDesc": {
-		"message": "Adds tips/tricks help to RES console."
+		"message": "Adds tips/tricks help to RES-Slim console."
 	},
 	"saveCommentsName": {
 		"message": "Save Comments"
 	},
 	"saveCommentsDesc": {
-		"message": "To save comments with RES click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES if you are not logged in, or if you are logged in to any account—all the comments will be visible in one location. You will only be able to view saved RES comments on whichever browser you have RES installed on.\n\nWhen saving comments with reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with reddit looks the same as saving with RES—but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES.)"
+		"message": "To save comments with RES-Slim click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES-Slim saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES-Slim if you are not logged in, or if you are logged in to any account—all the comments will be visible in one location. You will only be able to view saved RES-Slim comments on whichever browser you have RES-Slim installed on.\n\nWhen saving comments with reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with reddit looks the same as saving with RES-Slim—but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES-Slim.)"
 	},
 	"searchName": {
-		"message": "Search RES Settings"
+		"message": "Search RES-Slim Settings"
 	},
 	"searchHelperName": {
 		"message": "Search Helper"
@@ -1621,10 +1621,10 @@
 		"message": "Add Row"
 	},
 	"settingsNavName": {
-		"message": "RES Settings Navigation"
+		"message": "RES-Slim Settings Navigation"
 	},
 	"settingsNavDesc": {
-		"message": "Helping you get around the RES Settings Console with greater ease."
+		"message": "Helping you get around the RES-Slim Settings Console with greater ease."
 	},
 	"showImagesName": {
 		"message": "Inline Image Viewer"
@@ -1690,7 +1690,7 @@
 		"message": "Submit an Issue"
 	},
 	"submitIssueDesc": {
-		"message": "If you have any problems with RES, visit /r/RESissues. If you have any requests or questions, visit /r/Enhancement."
+		"message": "If you have any problems with RES-Slim, visit the issue tracker. If you have any requests or questions, visit the project page."
 	},
 	"subredditInfoName": {
 		"message": "Subreddit Info"
@@ -1720,7 +1720,7 @@
 		"message": "Troubleshooter"
 	},
 	"troubleshooterDesc": {
-		"message": "Resolve common problems and clean/clear unwanted settings data.\n\nYour first line of defence against browser crashes/updates, or potential issues with RES, is a frequent backup.\n\nSee [here](/r/Enhancement/wiki/backing_up_res_settings) for details on backing up your RES settings."
+		"message": "Resolve common problems and clean/clear unwanted settings data.\n\nYour first line of defence against browser crashes/updates, or potential issues with RES-Slim, is a frequent backup.\n\nSee [here](the project page/wiki/backing_up_res_settings) for details on backing up your RES-Slim settings."
 	},
 	"userbarHiderName": {
 		"message": "User Bar Hider"
@@ -1813,7 +1813,7 @@
 		"message": "Accounts"
 	},
 	"accountSwitcherAccountsDesc": {
-		"message": "Set your usernames and passwords below. They are only stored in RES preferences."
+		"message": "Set your usernames and passwords below. They are only stored in RES-Slim preferences."
 	},
 	"accountSwitcherUpdateOtherTabsTitle": {
 		"message": "Update Other Tabs"
@@ -1894,13 +1894,13 @@
 		"message": "Warn Before Automatic Restore"
 	},
 	"backupAndRestoreAutomaticRestoreDesc": {
-		"message": "Should RES automatically restore a newer backup (e.g. from another computer) when available?"
+		"message": "Should RES-Slim automatically restore a newer backup (e.g. from another computer) when available?"
 	},
 	"backupAndRestoreAutomaticRestoreTitle": {
 		"message": "Automatic Restore"
 	},
 	"backupAndRestoreSyncFrequencyDesc": {
-		"message": "How often (in hours) should RES update its backup?"
+		"message": "How often (in hours) should RES-Slim update its backup?"
 	},
 	"backupAndRestoreSyncFrequencyTitle": {
 		"message": "Sync Frequency"
@@ -1918,19 +1918,19 @@
 		"message": "Backup"
 	},
 	"backupAndRestoreBackupDesc": {
-		"message": "Make a backup of your current RES state. Download it with \"File\", or upload it to a cloud backup provider."
+		"message": "Make a backup of your current RES-Slim state. Download it with \"File\", or upload it to a cloud backup provider."
 	},
 	"backupAndRestoreRestoreTitle": {
 		"message": "Restore"
 	},
 	"backupAndRestoreRestoreDesc": {
-		"message": "Restore a backup of your RES settings."
+		"message": "Restore a backup of your RES-Slim settings."
 	},
 	"backupAndRestoreRestoreDescFirefox": {
-		"message": "Restore a backup of your RES settings. Note that OneDrive backups for Firefox are separate from OneDrive backups for other browsers."
+		"message": "Restore a backup of your RES-Slim settings. Note that OneDrive backups for Firefox are separate from OneDrive backups for other browsers."
 	},
 	"backupAndRestoreImported": {
-		"message": "Your RES storage has been imported. Reloading reddit."
+		"message": "Your RES-Slim storage has been imported. Reloading reddit."
 	},
 	"backupAndRestoreImportedOtherTabs": {
 		"message": "Storage has been imported in another tab. Reload for settings to take effect?"
@@ -2410,13 +2410,13 @@
 		"message": "Toggle"
 	},
 	"customTogglesToggleDesc": {
-		"message": "Enable or disable everything connected to this toggle; and optionally add a toggle to the RES gear dropdown menu."
+		"message": "Enable or disable everything connected to this toggle; and optionally add a toggle to the RES-Slim gear dropdown menu."
 	},
 	"dashboardMenuItemTitle": {
 		"message": "Menu Item"
 	},
 	"dashboardMenuItemDesc": {
-		"message": "Show link to my dashboard in RES menu."
+		"message": "Show link to my dashboard in RES-Slim menu."
 	},
 	"dashboardDefaultPostsTitle": {
 		"message": "Default Posts"
@@ -2578,13 +2578,13 @@
 		"message": "Custom Comment Filters"
 	},
 	"filteRedditCustomFiltersDesc": {
-		"message": "Hide posts based on complex custom criteria.\n\nThis is a very advanced feature, please [read the guide](/r/Enhancement/wiki/customfilters) before asking questions."
+		"message": "Hide posts based on complex custom criteria.\n\nThis is a very advanced feature, please [read the guide](the project page/wiki/customfilters) before asking questions."
 	},
 	"filteRedditEmptyNotificationHeader": {
 		"message": "All posts are filtered out"
 	},
 	"filteRedditEmptyNotificationInfo": {
-		"message": "RES noticed that every post is hidden. Click on the button below to see why posts are filtered out."
+		"message": "RES-Slim noticed that every post is hidden. Click on the button below to see why posts are filtered out."
 	},
 	"filteRedditEmptyNotificationToggleShowReason": {
 		"message": "Toggle show filter reasons"
@@ -2626,7 +2626,7 @@
 		"message": "/r/$1 is in $2 multireddits"
 	},
 	"RESSettings": {
-		"message": "RES settings"
+		"message": "RES-Slim settings"
 	},
 	"myDashboard": {
 		"message": "my dashboard"
@@ -2635,7 +2635,7 @@
 		"message": "tips & tricks"
 	},
 	"donateToRES": {
-		"message": "donate to RES"
+		"message": "donate to RES-Slim"
 	},
 	"nightModeToggleText": {
 		"message": "night mode"
@@ -2650,7 +2650,7 @@
 		"message": "Toggle NSFW Filter"
 	},
 	"RESSettingsConsole": {
-		"message": "RES settings console"
+		"message": "RES-Slim settings console"
 	},
 	"saveOptions": {
 		"message": "save options"
@@ -2662,7 +2662,7 @@
 		"message": "Show advanced options"
 	},
 	"searchRESSettings": {
-		"message": "search RES settings"
+		"message": "search RES-Slim settings"
 	},
 	"settingsConsoleSubtitle": {
 		"message": "Old Reddit controls, media, and comment tools."
@@ -2965,7 +2965,7 @@
 		"message": "Drag and drop to move this row"
 	},
 	"settingsConsoleAbandonChangesConfirmation": {
-		"message": "Abandon your changes to RES settings?"
+		"message": "Abandon your changes to RES-Slim settings?"
 	},
 	"settingsConsolePermissionRequired": {
 		"message": "Permission required"
@@ -3055,7 +3055,7 @@
 		"message": "User Bar Hidden"
 	},
 	"userbarHiderContentHiddenNotification": {
-		"message": "Your username, karma, preferences, RES gear, and so on are hidden. You can show them again by clicking the $1 button in the top right corner."
+		"message": "Your username, karma, preferences, RES-Slim gear, and so on are hidden. You can show them again by clicking the $1 button in the top right corner."
 	},
 	"userbarHiderToggleUserbar": {
 		"message": "Toggle Userbar"
@@ -3220,7 +3220,7 @@
 		"message": "Use Subreddit Styles"
 	},
 	"nightModeUseSubredditStylesDesc": {
-		"message": "Always keep subreddit styles enabled when using night mode, ignoring the compatibility check.\n\nWhen using night mode, subreddit styles are automatically disabled unless [the subreddit indicates it is night mode-friendly](/r/Enhancement/wiki/subredditstyling#wiki_res_night_mode_and_your_subreddit). You must tick the \"Use subreddit stylesheet\" in a subreddit's sidebar to enable subreddit styles in that subreddit. This is because most subreddits are not night mode-friendly.\n\nIf you choose to show subreddit styles, you will see flair images and spoiler tags, but be warned: **you may see bright images, comment highlighting, etc.** It is up to the mods of each subreddit to make their sub night mode friendly, which is not a tiny amount of work. Please be polite when requesting moderators make a sub night mode friendly."
+		"message": "Always keep subreddit styles enabled when using night mode, ignoring the compatibility check.\n\nWhen using night mode, subreddit styles are automatically disabled unless [the subreddit indicates it is night mode-friendly](the project page/wiki/subredditstyling#wiki_res_night_mode_and_your_subreddit). You must tick the \"Use subreddit stylesheet\" in a subreddit's sidebar to enable subreddit styles in that subreddit. This is because most subreddits are not night mode-friendly.\n\nIf you choose to show subreddit styles, you will see flair images and spoiler tags, but be warned: **you may see bright images, comment highlighting, etc.** It is up to the mods of each subreddit to make their sub night mode friendly, which is not a tiny amount of work. Please be polite when requesting moderators make a sub night mode friendly."
 	},
 	"nightModeSubredditStylesWhitelistTitle": {
 		"message": "Subreddit Styles Whitelist"
@@ -3241,10 +3241,10 @@
 		"message": "Use mobile (lower resolution) gifs from gfycat."
 	},
 	"presetsLiteDesc": {
-		"message": "RES Lite: just the popular stuff"
+		"message": "RES-Slim Lite: just the popular stuff"
 	},
 	"presetsCleanSlateDesc": {
-		"message": "Turn off all the RES modules"
+		"message": "Turn off all the RES-Slim modules"
 	},
 	"presetsNoPopupsDesc": {
 		"message": "Turn off notifications and hover pop-ups"
@@ -3277,7 +3277,7 @@
 		"message": "Show a random tip once every 24 hours."
 	},
 	"RESTipsMenuItemDesc": {
-		"message": "Add an item to the RES dropdown menu to show tips."
+		"message": "Add an item to the RES-Slim dropdown menu to show tips."
 	},
 	"RESTipsNewFeatureTipsDesc": {
 		"message": "Show tips about new features when they appear for the first time."
@@ -3415,10 +3415,10 @@
 		"message": "Scroll On Collapse"
 	},
 	"penaltyBoxName": {
-		"message": "RES Feature Throttle"
+		"message": "RES-Slim Feature Throttle"
 	},
 	"penaltyBoxDesc": {
-		"message": "Automatically delay or disable RES features which go unused."
+		"message": "Automatically delay or disable RES-Slim features which go unused."
 	},
 	"penaltyBoxDelayFeaturesDesc": {
 		"message": "Throttle showing features which have a high penalty."
@@ -3445,7 +3445,7 @@
 		"message": "Suspended Feature"
 	},
 	"penaltyBoxSuspendFeaturesNotificationMessage": {
-		"message": "$1 will be turned off due to lack of use. You can enable it again later in the RES settings console."
+		"message": "$1 will be turned off due to lack of use. You can enable it again later in the RES-Slim settings console."
 	},
 	"penaltyBoxSuspendFeaturesUndoButton": {
 		"message": "Enable this feature again"
@@ -3467,13 +3467,13 @@
 		"message": "Launch"
 	},
 	"commandLineLaunchDesc": {
-		"message": "Open the RES Command Line"
+		"message": "Open the Command Line"
 	},
 	"commandLineMenuItemTitle": {
 		"message": "Menu Item"
 	},
 	"commandLineMenuItemDesc": {
-		"message": "Add a \"launch command line\" item to the RES dropdown menu"
+		"message": "Add a \"launch command line\" item to the RES-Slim dropdown menu"
 	},
 	"presetsLiteTitle": {
 		"message": "Lite"
@@ -3515,7 +3515,7 @@
 		"message": "Change Profile Landing Page"
 	},
 	"profileRedirectFromLandingPageNotificationText": {
-		"message": "RES can redirect to the \"overview\" legacy user page or other views of the profile. This is especially useful for moderating."
+		"message": "RES-Slim can redirect to the \"overview\" legacy user page or other views of the profile. This is especially useful for moderating."
 	},
 	"profileRedirectFromLandingPageNotificationButton": {
 		"message": "Change profile landing page"
@@ -3791,7 +3791,7 @@
 		"message": "Disable Animations"
 	},
 	"styleTweaksDisableAnimationsDesc": {
-		"message": "Discourage CSS3 animations. (This will apply to all of reddit, every subreddit, and RES functionality. However, subreddits might still have some animations.)"
+		"message": "Discourage CSS3 animations. (This will apply to all of reddit, every subreddit, and RES-Slim functionality. However, subreddits might still have some animations.)"
 	},
 	"styleTweaksVisitedStyleTitle": {
 		"message": "Visited Style"
@@ -3886,24 +3886,24 @@
 	"styleTweaksHideDomainLink": {
 		"message": "Hide Domain Link"
 	},
-	"styleTweaksHideDomainLinkDesc":{
+	"styleTweaksHideDomainLinkDesc": {
 		"message": "Hides the domain link in post taglines."
 	},
-    "styleTweaksFlairEmojiAsText": {
-        "message": "Flair Emoji As Text"
-    },
-    "styleTweaksFlairEmojiAsTextDesc":{
-        "message": "Show emoji flairs as text instead of icons"
-    },
-    "styleTweaksFlairEmojiAsTextNever": {
-        "message": "Never"
-    },
-    "styleTweaksFlairEmojiAsTextNoSubStyle": {
-        "message": "Subreddit Style Disabled"
-    },
-    "styleTweaksFlairEmojiAsTextAlways": {
-        "message": "Always"
-    },
+	"styleTweaksFlairEmojiAsText": {
+		"message": "Flair Emoji As Text"
+	},
+	"styleTweaksFlairEmojiAsTextDesc": {
+		"message": "Show emoji flairs as text instead of icons"
+	},
+	"styleTweaksFlairEmojiAsTextNever": {
+		"message": "Never"
+	},
+	"styleTweaksFlairEmojiAsTextNoSubStyle": {
+		"message": "Subreddit Style Disabled"
+	},
+	"styleTweaksFlairEmojiAsTextAlways": {
+		"message": "Always"
+	},
 	"subRedditTaggerSubRedditsTitle": {
 		"message": "Sub Reddits"
 	},
@@ -3947,7 +3947,7 @@
 		"message": "Clear Cache"
 	},
 	"troubleshooterClearCacheDesc": {
-		"message": "Clear your RES cache and session. This includes the \"My Subreddits\" dropdown, user/subreddit info, i18n dictionary, etc."
+		"message": "Clear your RES-Slim cache and session. This includes the \"My Subreddits\" dropdown, user/subreddit info, i18n dictionary, etc."
 	},
 	"troubleshooterClearTagsTitle": {
 		"message": "Clear Tags"
@@ -3959,13 +3959,13 @@
 		"message": "Reset To Factory"
 	},
 	"troubleshooterResetToFactoryDesc": {
-		"message": "Warning: This will remove all your RES settings, including tags, saved comments, filters etc!"
+		"message": "Warning: This will remove all your RES-Slim settings, including tags, saved comments, filters etc!"
 	},
 	"troubleshooterDisableRESTitle": {
-		"message": "Disable RES"
+		"message": "Disable RES-Slim"
 	},
 	"troubleshooterDisableRESDesc": {
-		"message": "Reloads the page and disables RES for this tab only. RES will still be enabled in any other reddit tabs or windows you currently have open or open after this. This feature can be used for troubleshooting, as well as to quickly hide usernotes, vote counts, subreddit shortcuts, and other RES data for clean screenshotting."
+		"message": "Reloads the page and disables RES-Slim for this tab only. RES-Slim will still be enabled in any other reddit tabs or windows you currently have open or open after this. This feature can be used for troubleshooting, as well as to quickly hide usernotes, vote counts, subreddit shortcuts, and other RES-Slim data for clean screenshotting."
 	},
 	"troubleshooterBreakpointTitle": {
 		"message": "Breakpoint"
@@ -4697,13 +4697,13 @@
 		"message": "Expando Comment Redirects"
 	},
 	"showImagesExpandoCommentRedirectsDesc": {
-		"message": "How should RES handle posts where the link is redirected to the comments page with preview expanded?"
+		"message": "How should RES-Slim handle posts where the link is redirected to the comments page with preview expanded?"
 	},
 	"showImagesStartVideosMutedTitle": {
 		"message": "Start Videos Muted"
 	},
 	"showImagesStartVideosMutedDesc": {
-		"message": "Don't auto-play audio when using RES' video player."
+		"message": "Don't auto-play audio when using RES-Slim' video player."
 	},
 	"showImagesMaxSimultaneousPlayingTitle": {
 		"message": "Max Simultaneous Playing"
@@ -4754,10 +4754,10 @@
 		"message": "The lowest video quality (in kB/s) the adaptive player shall use."
 	},
 	"imgurPreferResAlbumsTitle": {
-		"message": "Prefer RES Albums"
+		"message": "Prefer RES-Slim Albums"
 	},
 	"imgurPreferResAlbumsDesc": {
-		"message": "Prefer RES support for imgur albums rather than reddit's built in support."
+		"message": "Prefer RES-Slim support for imgur albums rather than reddit's built in support."
 	},
 	"imgurPreferredImgurLinkTitle": {
 		"message": "Preferred Imgur Link"
@@ -4773,7 +4773,7 @@
 	},
 	"userInfoUserTag": {
 		"message": "User Tag:"
-  },
+	},
 	"menuGearIconClickActionTitle": {
 		"message": "Gear Icon Click Action"
 	},
@@ -4828,10 +4828,10 @@
 	"quarantineHideFlairDesc": {
 		"message": "Hide \"Quarantined\" post flair (regardless of where the post is being viewed from)"
 	},
-    "quarantineHideInSubTitle": {
-        "message": "Hide subreddit warnings"
-    },
-    "quarantineHideInSubDesc": {
-        "message": "Hide all warnings of quarantine while viewing a quarantined subreddit"
-    }
+	"quarantineHideInSubTitle": {
+		"message": "Hide subreddit warnings"
+	},
+	"quarantineHideInSubDesc": {
+		"message": "Hide all warnings of quarantine while viewing a quarantined subreddit"
+	}
 }
