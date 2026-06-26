@@ -42,6 +42,10 @@
 @import 'modules/subRulesInline';
 @import 'modules/storageDashboard';
 
+.rsm-sortable-dragging {
+	opacity: 0.4;
+}
+
 @font-face {
 	font-family: Batch;
 	src: url('../fonts/batch-icons-webfont.woff') format('woff');
