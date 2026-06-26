@@ -46,8 +46,8 @@ test('searchDispatcher styles + integrates with res.scss imports', () => {
 	assert.match(res, /@import 'modules\/searchDispatcher';/);
 	const css = read('lib/css/modules/_searchDispatcher.scss');
 	assert.match(css, /\.rsm-search-dispatcher/);
-	assert.match(css, /max-width:\s*128px/);
-	assert.match(css, /max-width:\s*96px/);
+	assert.match(css, /width:\s*100%/);
+	assert.match(css, /box-sizing:\s*border-box/);
 });
 
 test('searchDispatcher keeps visible labels compact while preserving full titles', () => {
