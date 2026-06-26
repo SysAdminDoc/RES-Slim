@@ -200,6 +200,30 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 					})
 				},
 			} : undefined,
+			isProduction ? {
+				name: 'bundle-budget',
+				setup(build) {
+					build.onEnd(async () => {
+						const budgets = {
+							'foreground.entry.js': 1_800_000,
+							'options.entry.js': 1_900_000,
+							'background.entry.js': 400_000,
+						};
+						const violations = [];
+						for (const [file, limit] of Object.entries(budgets)) {
+							const filePath = `./dist/${targetName}/${file}`;
+							const stat = await fs.promises.stat(filePath).catch(() => null);
+							if (!stat) continue;
+							if (stat.size > limit) {
+								violations.push(`${file}: ${(stat.size / 1024).toFixed(0)}KB exceeds budget of ${(limit / 1024).toFixed(0)}KB`);
+							}
+						}
+						if (violations.length) {
+							throw new Error(`Bundle budget exceeded:\n  ${violations.join('\n  ')}`);
+						}
+					});
+				},
+			} : undefined,
 			{
 				name: 'verify-dashjs-integrity',
 				setup(build) {

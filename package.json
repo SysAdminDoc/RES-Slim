@@ -22,6 +22,7 @@
     "test:privacy": "node --test tests/unit/privacy-outbound-urls.test.mjs",
     "eslint": "eslint .",
     "stylelint": "stylelint lib/**/*.scss",
+    "test:bundle": "node build.js --mode production --browsers chrome",
     "lint": "yarn eslint && yarn stylelint"
   },
   "browserslist": [
