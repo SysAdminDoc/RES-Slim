@@ -1,6 +1,5 @@
 /* @flow */
 
-import { mapValues } from 'lodash-es';
 import locales from './locales';
 
 const localeDictionaries: { [string]: { [string]: { message: string } } } = (locales: any);
@@ -44,5 +43,5 @@ export function getLocaleDictionary(localeName: string): { [string]: string } {
 		...localeDictionaries[transifexLocale],
 	};
 
-	return mapValues(mergedLocales, x => x.message);
+	return Object.fromEntries(Object.entries(mergedLocales).map(([k, x]) => [k, x.message]));
 }

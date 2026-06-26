@@ -1379,13 +1379,6 @@ eslint-plugin-prefer-spread@1.0.3:
   resolved "https://registry.npmjs.org/eslint-plugin-prefer-spread/-/eslint-plugin-prefer-spread-1.0.3.tgz"
   integrity sha512-RmNSEKASlXjg8tO3nFEYcoa179gORclLl3CkNOtbs+oWMISfqD78pJkNoH2ftImL5U59ewJv9n6hd9YVUaEedQ==
 
-eslint-plugin-you-dont-need-lodash-underscore@6.14.0:
-  version "6.14.0"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-you-dont-need-lodash-underscore/-/eslint-plugin-you-dont-need-lodash-underscore-6.14.0.tgz#41f6032367e2e13a88d350e5e555b180fabf9501"
-  integrity sha512-3zkkU/O1agczP7szJGHmisZJS/AknfVl6mb0Zqoc95dvFsdmfK+cbhrn+Ffy0UWB1pgDJwQr7kIO3rPstWs3Dw==
-  dependencies:
-    kebab-case "^1.0.0"
-
 eslint-scope@5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/eslint-scope/-/eslint-scope-5.1.1.tgz#e786e59a66cb92b3f6c1fb0d508aab174848f48c"
@@ -1555,11 +1548,6 @@ fastq@^1.6.0:
   integrity sha512-wBrocU2LCXXa+lWBt8RoIRD89Fi8OdABODa/kEnyeyjS5aZO5/GNvI5sEINADqP/h8M29UHTHUb53sUu5Ihqdw==
   dependencies:
     reusify "^1.0.4"
-
-favico.js@0.3.10:
-  version "0.3.10"
-  resolved "https://registry.npmjs.org/favico.js/-/favico.js-0.3.10.tgz"
-  integrity sha512-S5KvqAOczRjlyjQPPZPSlUEybBkfBgKosY/pzTIxkvKgigB+DkITvIEI70dxQarbv4PZ+UD77QzquCAcU/6LHQ==
 
 file-entry-cache@^6.0.1:
   version "6.0.1"
@@ -2167,11 +2155,6 @@ jackspeak@^4.0.1:
   optionalDependencies:
     "@pkgjs/parseargs" "^0.11.0"
 
-jquery@3.7.1:
-  version "3.7.1"
-  resolved "https://registry.npmjs.org/jquery/-/jquery-3.7.1.tgz"
-  integrity sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==
-
 js-tokens@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz"
@@ -2245,11 +2228,6 @@ jszip@3.10.1:
     readable-stream "~2.3.6"
     setimmediate "^1.0.5"
 
-kebab-case@^1.0.0:
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/kebab-case/-/kebab-case-1.0.2.tgz"
-  integrity sha512-7n6wXq4gNgBELfDCpzKc+mRrZFs7D+wgfF5WRFLNAr4DA/qtr9Js8uOAVAfHhuLMfAcQ0pRKqbpjx+TcJVdE1Q==
-
 keyv@^4.5.3, keyv@^4.5.4:
   version "4.5.4"
   resolved "https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz"
@@ -2320,11 +2298,6 @@ locate-path@^6.0.0:
   integrity sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==
   dependencies:
     p-locate "^5.0.0"
-
-lodash-es@4.17.21:
-  version "4.17.21"
-  resolved "https://registry.npmjs.org/lodash-es/-/lodash-es-4.17.21.tgz"
-  integrity sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==
 
 lodash.camelcase@4.3.0:
   version "4.3.0"
@@ -2987,11 +2960,6 @@ snudown-js@4.0.1:
   resolved "https://registry.npmjs.org/snudown-js/-/snudown-js-4.0.1.tgz"
   integrity sha512-91ZrO9Uu4qSDCpswyK0laHX64B1IqO7bSOs6iPUvNxkvxvrnzlDZqBV7bnqSkUBxGFGdOLFS4PfahqDz+JLVZw==
 
-sortablejs@1.15.3:
-  version "1.15.3"
-  resolved "https://registry.yarnpkg.com/sortablejs/-/sortablejs-1.15.3.tgz#033668db5ebfb11167d1249ab88e748f27959e29"
-  integrity sha512-zdK3/kwwAK1cJgy1rwl1YtNTbRmc8qW/+vgXf75A7NHag5of4pyI6uK86ktmQETyWRH7IGaE73uZOOBcGxgqZg==
-
 "source-map-js@>=0.6.2 <2.0.0", source-map-js@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/source-map-js/-/source-map-js-1.0.2.tgz#adbc361d9c62df380125e7f161f71c826f1e490c"
@@ -3227,11 +3195,6 @@ stylelint@16.6.1:
     svg-tags "^1.0.0"
     table "^6.8.2"
     write-file-atomic "^5.0.1"
-
-suncalc@1.9.0:
-  version "1.9.0"
-  resolved "https://registry.npmjs.org/suncalc/-/suncalc-1.9.0.tgz"
-  integrity sha512-vMJ8Byp1uIPoj+wb9c1AdK4jpkSKVAywgHX0lqY7zt6+EWRRC3Z+0Ucfjy/0yxTVO1hwwchZe4uoFNqrIC24+A==
 
 supports-color@^5.3.0:
   version "5.5.0"
