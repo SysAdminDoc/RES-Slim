@@ -17,10 +17,28 @@ const {
 	DEFAULT_HOSTS,
 	isCobaltEligible,
 	parseHostList,
+	parseInstanceList,
 	buildRequestBody,
 	sanitizeInstance,
 	looksLikeStreamUrl,
 } = await import(pathToFileURL(modulePath).href);
+
+test('parseInstanceList splits, sanitizes, dedupes, and always yields a default', () => {
+	assert.deepEqual(parseInstanceList(''), [DEFAULT_INSTANCE]);
+	assert.deepEqual(
+		parseInstanceList('cobalt.example.com, https://c2.example.com\nc2.example.com'),
+		['https://cobalt.example.com', 'https://c2.example.com'],
+	);
+});
+
+test('cobaltDownloader falls over across instances and to the local companion', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/cobaltDownloader.js'), 'utf8');
+	assert.match(mod, /const instances = instancesFor\(\);/);
+	assert.match(mod, /for \(let i = 0; i < instances\.length; i\+\+\)/);
+	assert.match(mod, /tryCompanionFallback\(targetUrl, button, restoreText\)/);
+	assert.match(mod, /buildYtdlpUrl\(base\)/);
+	assert.match(mod, /isLocalhostUrl\(base\)/);
+});
 
 test('DEFAULT_HOSTS includes the canonical video hosts cobalt supports', () => {
 	for (const host of ['youtube.com', 'twitter.com', 'tiktok.com', 'v.redd.it', 'soundcloud.com']) {
