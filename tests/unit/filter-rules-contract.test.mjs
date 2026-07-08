@@ -13,10 +13,23 @@ const stripped = flowRemoveTypes(source, { all: true }).toString();
 const modulePath = path.join(tmpDir, 'filter.mjs');
 fs.writeFileSync(modulePath, stripped);
 
-const { ruleMatches, evaluateRules, parseRulesFromJson } = await import(pathToFileURL(modulePath).href);
+const { ruleMatches, evaluateRules, parseRulesFromJson, isLikelyCatastrophicRegex } = await import(pathToFileURL(modulePath).href);
 
 const rule = (over = {}) => ({ id: 'r', enabled: true, field: 'user', op: 'equals', value: 'spammer', action: 'hide', target: 'both', ...over });
 const facts = (over = {}) => ({ kind: 'post', user: 'alice', subreddit: 'pics', domain: 'i.imgur.com', title: 'hello world', flair: '', score: 5, commentCount: 12, ...over });
+
+test('isLikelyCatastrophicRegex rejects nested-quantifier and over-long patterns', () => {
+	assert.equal(isLikelyCatastrophicRegex('(a+)+'), true);
+	assert.equal(isLikelyCatastrophicRegex('(a*)*'), true);
+	assert.equal(isLikelyCatastrophicRegex('(.+)*'), true);
+	assert.equal(isLikelyCatastrophicRegex('x'.repeat(301)), true);
+	assert.equal(isLikelyCatastrophicRegex('^hello$'), false);
+	assert.equal(isLikelyCatastrophicRegex('(cat|dog)s?'), false);
+});
+
+test('a catastrophic user regex fails closed (no match, no hang)', () => {
+	assert.equal(ruleMatches(rule({ field: 'keyword', op: 'regex', value: '(a+)+$' }), facts({ title: `${'a'.repeat(40)}!` })), false);
+});
 
 test('ruleMatches handles equals/contains/regex/lt/gt against the right fields', () => {
 	assert.equal(ruleMatches(rule({ value: 'alice' }), facts()), true);
