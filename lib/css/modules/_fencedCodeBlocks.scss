@@ -1,0 +1,38 @@
+pre.rsm-fenced {
+	position: relative;
+	margin: 6px 0;
+	padding: 10px 12px;
+	overflow: auto;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 6px;
+	background: rgba(20, 20, 24, 0.92);
+	color: #dcdce0;
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	tab-size: 4;
+
+	code {
+		display: block;
+		padding: 0;
+		background: none;
+		color: inherit;
+		white-space: pre;
+	}
+}
+
+.rsm-fenced-lang {
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.4);
+	user-select: none;
+}
+
+.rsm-tok-comment { color: #6a737d; font-style: italic; }
+.rsm-tok-string { color: #98c379; }
+.rsm-tok-number { color: #d19a66; }
+.rsm-tok-keyword { color: #c678dd; }
