@@ -83,3 +83,18 @@ test('rateLimiter token-bucket helper exposes schedule + pending', async () => {
 	assert.deepEqual(results, [1, 2, 3]);
 	assert.deepEqual(order, ['a', 'b', 'c']);
 });
+
+test('rateLimiter releases the slot when a job throws synchronously', async () => {
+	const limiterSource = fs.readFileSync(path.join(repoRoot, 'lib/utils/rateLimiter.js'), 'utf8');
+	const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-limiter');
+	fs.mkdirSync(tmpDir, { recursive: true });
+	const modulePath = path.join(tmpDir, 'limiter.mjs');
+	fs.writeFileSync(modulePath, flowRemoveTypes(limiterSource, { all: true }).toString());
+	const { createRateLimiter } = await import(`${pathToFileURL(modulePath).href}?sync`);
+
+	const limiter = createRateLimiter({ tokens: 1, refillMs: 50, maxConcurrent: 1 });
+	// A job that throws synchronously (not returning a promise) must still reject...
+	await assert.rejects(limiter.schedule(() => { throw new Error('boom'); }), /boom/);
+	// ...and must not wedge the limiter: a following job still runs.
+	assert.equal(await limiter.schedule(async () => 'ok'), 'ok');
+});
