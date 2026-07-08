@@ -113,6 +113,7 @@ tests/unit/.tmp-csv/
 tests/unit/.tmp-fenced-code/
 tests/unit/.tmp-text-diff/
 tests/unit/.tmp-repost-dedupe/
+tests/unit/.tmp-url-guard/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

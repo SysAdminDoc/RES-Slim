@@ -14,7 +14,7 @@ test('download requests propagate extension API failures to callers', () => {
 	assert.match(foregroundDownload, /export function download\(url: string, filename\?: string\): Promise<\*>/);
 	assert.match(foregroundDownload, /return sendMessage\('download'/);
 	assert.match(backgroundDownload, /const downloadFile = apiToPromise/);
-	assert.match(backgroundDownload, /=>\s+downloadFile\(\{ url, filename/s);
+	assert.match(backgroundDownload, /return downloadFile\(\{ url, filename/s);
 	assert.match(showImagesMediaTypes, /return download\(downloadUrl, filename\)/);
 	assert.match(showImagesMediaTypes, /return download\(downloadUrl\)/);
 	assert.match(showImagesMediaTypes, /notificationID: 'downloadFailed'/);
