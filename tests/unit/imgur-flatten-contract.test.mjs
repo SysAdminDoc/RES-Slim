@@ -37,7 +37,7 @@ test('extractAlbumId returns the bare id', () => {
 });
 
 test('sanitizeMirror falls back to the default, normalises scheme + trailing slash', () => {
-	assert.equal(sanitizeMirror(''), 'https://rimgo.totaldarkness.net');
+	assert.equal(sanitizeMirror(''), 'https://ri.bcow.xyz');
 	assert.equal(sanitizeMirror('rimgo.example.com/'), 'https://rimgo.example.com');
 	assert.equal(sanitizeMirror('http://rimgo.example.com//'), 'http://rimgo.example.com');
 });
