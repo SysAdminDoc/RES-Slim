@@ -2700,6 +2700,30 @@
 	"settingsConsoleChangesGroup": {
 		"message": "Staged changes"
 	},
+	"settingsConsoleUtilityRailAria": {
+		"message": "Settings console controls"
+	},
+	"settingsConsoleStatusTitle": {
+		"message": "Status"
+	},
+	"settingsConsoleStatusMeta": {
+		"message": "Save, revert, and staged-change state"
+	},
+	"settingsConsoleDisplayTitle": {
+		"message": "Display"
+	},
+	"settingsConsoleDisplayMeta": {
+		"message": "Theme, density, and motion"
+	},
+	"settingsConsoleDataTitle": {
+		"message": "Data"
+	},
+	"settingsConsoleDataMeta": {
+		"message": "Portable JSON snapshots"
+	},
+	"settingsConsoleBuildLabel": {
+		"message": "Build"
+	},
 	"settingsConsoleHomeAria": {
 		"message": "$1 settings home"
 	},

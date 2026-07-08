@@ -141,12 +141,12 @@ test('settings console exposes a settings-toast helper used by every preference 
 
 	assert.match(controller, /function settingsToast\(/);
 	for (const callSite of [
-		"settingsToast(i18n('settingsConsoleToastThemeApplied'",
-		"settingsToast(i18n(nextDensity === SETTINGS_DENSITY_DENSE",
-		"settingsToast(i18n(nextMotion === SETTINGS_MOTION_REDUCE",
-		"settingsToast(i18n(enable ? 'settingsConsoleToastModuleEnabled'",
-		"settingsToast(i18n('settingsConsoleToastSaved'))",
-		"settingsToast(i18n('settingsConsoleToastReverted'))",
+		'settingsToast(i18n(\'settingsConsoleToastThemeApplied\'',
+		'settingsToast(i18n(nextDensity === SETTINGS_DENSITY_DENSE',
+		'settingsToast(i18n(nextMotion === SETTINGS_MOTION_REDUCE',
+		'settingsToast(i18n(enable ? \'settingsConsoleToastModuleEnabled\'',
+		'settingsToast(i18n(\'settingsConsoleToastSaved\'))',
+		'settingsToast(i18n(\'settingsConsoleToastReverted\'))',
 	]) {
 		assert.ok(controller.includes(callSite), `controller should toast: ${callSite}`);
 	}
@@ -184,4 +184,37 @@ test('settings console reduce-motion toggle is wired through template, controlle
 	assert.match(styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,200}html:not\(\[data-reduced-motion='allow'\]\)/);
 	assert.equal(typeof locale.settingsConsoleReduceMotion?.message, 'string');
 	assert.equal(typeof locale.settingsConsoleReduceMotionActive?.message, 'string');
+});
+
+test('settings console uses the command-center utility rail layout', () => {
+	const template = read('lib/options/templates.js');
+	const controller = read('lib/options/settingsConsole.js');
+	const styles = read('lib/options/options.scss');
+	const locale = JSON.parse(read('locales/locales/en.json'));
+
+	assert.match(template, /id="RESConsoleUtilityRail"/);
+	assert.match(template, /utilityPanel--status/);
+	assert.match(template, /utilityPanel--display/);
+	assert.match(template, /utilityPanel--data/);
+	assert.match(template, /id="RESGlobalStageBar"[\s\S]*?class="globalStageBar/);
+	assert.match(template, /id="RESThemeSelector"[\s\S]*?class="themeSelector/);
+	assert.match(styles, /#RESConsoleContent[\s\S]{0,220}grid-template-columns: minmax\(270px, 312px\) minmax\(0, 1fr\) minmax\(284px, 328px\)/);
+	assert.match(styles, /#RESConsoleUtilityRail[\s\S]{0,260}border-left: 1px solid var\(--options-border-strong\)/);
+	assert.match(styles, /@media \(width <= 1240px\)[\s\S]{0,500}#RESConsoleUtilityRail/);
+	assert.match(styles, /@media \(width <= 680px\)[\s\S]{0,160}html\[res-options\][\s\S]{0,420}#RESConsoleUtilityRail[\s\S]{0,120}grid-auto-flow: row/);
+	assert.match(controller, /setSidebarCollapsed\(moduleID \? moduleID !== Search\.module\.moduleID : true\)/);
+
+	for (const key of [
+		'settingsConsoleUtilityRailAria',
+		'settingsConsoleStatusTitle',
+		'settingsConsoleStatusMeta',
+		'settingsConsoleDisplayTitle',
+		'settingsConsoleDisplayMeta',
+		'settingsConsoleDataTitle',
+		'settingsConsoleDataMeta',
+		'settingsConsoleBuildLabel',
+	]) {
+		assert.equal(typeof locale[key]?.message, 'string', `${key} should be localized`);
+		assert.notEqual(locale[key].message.trim(), '', `${key} should not be empty`);
+	}
 });

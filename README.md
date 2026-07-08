@@ -1,6 +1,6 @@
 # RES-Slim
 
-![Version](https://img.shields.io/badge/version-0.12.9-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
+![Version](https://img.shields.io/badge/version-0.13.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
 
 A stripped-down private fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (upstream v5.24.8), targeting **old.reddit.com** only.
 
@@ -13,6 +13,8 @@ Only the features actually used are kept. Everything else — including all prom
 **Media tweaks**: `showImages` inline expando engine plus all 73 host handlers (imgur, youtube, reddit-native, Mastodon, Threads, etc.).
 
 **Infrastructure only**: menu, notifications, settingsNavigation, selectedEntry, version, requestPermissions.
+
+**Settings console**: command-center layout with module library, focused workspace, staged-change controls, theme/density/motion controls, and portable data actions.
 
 ## Build
 
