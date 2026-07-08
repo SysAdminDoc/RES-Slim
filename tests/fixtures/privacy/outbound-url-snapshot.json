@@ -663,11 +663,11 @@
     },
     {
       "file": "lib/modules/imgurFlatten.js",
-      "url": "https://github.com/rimgo/instances"
+      "url": "https://ri.bcow.xyz"
     },
     {
       "file": "lib/modules/imgurFlatten.js",
-      "url": "https://rimgo.totaldarkness.net"
+      "url": "https://rimgo.codeberg.page/"
     },
     {
       "file": "lib/modules/localCompanion.js",
@@ -811,7 +811,7 @@
     },
     {
       "file": "lib/utils/imgurFlatten.js",
-      "url": "https://rimgo.totaldarkness.net"
+      "url": "https://ri.bcow.xyz"
     },
     {
       "file": "lib/utils/keycode.js",
