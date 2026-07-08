@@ -1,4 +1,10 @@
 {
+	"redditApiForbidden": {
+		"message": "Reddit blocked a data request ($1). Make sure you are logged in — Reddit removed anonymous access to this data."
+	},
+	"redditApiRateLimited": {
+		"message": "Reddit is rate-limiting requests ($1). RES-Slim is slowing down for a bit."
+	},
 	"yes": {
 		"message": "Yes"
 	},

@@ -108,6 +108,7 @@ tests/unit/.tmp-media-manifest/
 tests/unit/.tmp-engagement-bait/
 tests/unit/.tmp-sub-rules/
 tests/unit/.tmp-storage-dashboard/
+tests/unit/.tmp-reddit-api-status/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
