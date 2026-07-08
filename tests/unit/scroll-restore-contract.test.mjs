@@ -29,6 +29,13 @@ test('scrollRestore debounces scroll persistence and re-applies after image expa
 	assert.match(source, /setTimeout\(\(\) => \{ window\.scrollTo\(0, targetY\); \}, 300\);/);
 });
 
+test('scrollRestore only remembers/restores on comment threads, not listings', () => {
+	const source = read('lib/modules/scrollRestore.js');
+	assert.match(source, /import \{ isPageType \} from '\.\.\/utils';/);
+	// contentStart bails before wiring restore/save on any non-comments page.
+	assert.match(source, /module\.contentStart = \(\) => \{\s*(?:\/\/[^\n]*\n\s*)*if \(!isPageType\('comments'\)\) return;/);
+});
+
 test('scrollRestore enforces an LRU cap on stored entries', () => {
 	const source = read('lib/modules/scrollRestore.js');
 	assert.match(source, /maxEntries:/);
