@@ -74,6 +74,14 @@
       "url": "https://v.redd.it/${id}/DASH_720.mp4"
     },
     {
+      "file": "lib/modules/editedCommentDiff.js",
+      "url": "https://api.pullpush.io/reddit/search/comment/"
+    },
+    {
+      "file": "lib/modules/editedCommentDiff.js",
+      "url": "https://arctic-shift.photon-reddit.com"
+    },
+    {
       "file": "lib/modules/hosts/aarli.js",
       "url": "https://aar.li/api.php"
     },

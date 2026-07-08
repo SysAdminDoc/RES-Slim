@@ -111,6 +111,7 @@ tests/unit/.tmp-storage-dashboard/
 tests/unit/.tmp-reddit-api-status/
 tests/unit/.tmp-csv/
 tests/unit/.tmp-fenced-code/
+tests/unit/.tmp-text-diff/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

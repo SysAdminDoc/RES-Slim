@@ -1,0 +1,28 @@
+.rsm-editedDiff-link {
+	font-size: 11px;
+	color: #8ab4f8;
+	cursor: pointer;
+}
+
+.rsm-editedDiff-body {
+	margin: 6px 0;
+	padding: 8px 10px;
+	border-left: 3px solid rgba(138, 180, 248, 0.5);
+	background: rgba(30, 32, 38, 0.6);
+	border-radius: 0 6px 6px 0;
+	font-size: 13px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+
+	ins.rsm-diff-ins {
+		background: rgba(70, 140, 80, 0.35);
+		color: #b5e8b8;
+		text-decoration: none;
+	}
+
+	del.rsm-diff-del {
+		background: rgba(150, 60, 60, 0.35);
+		color: #f0a6a6;
+	}
+}
