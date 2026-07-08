@@ -114,6 +114,7 @@ tests/unit/.tmp-fenced-code/
 tests/unit/.tmp-text-diff/
 tests/unit/.tmp-repost-dedupe/
 tests/unit/.tmp-url-guard/
+tests/unit/.tmp-comment-highlights/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/
