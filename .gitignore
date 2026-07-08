@@ -112,6 +112,7 @@ tests/unit/.tmp-reddit-api-status/
 tests/unit/.tmp-csv/
 tests/unit/.tmp-fenced-code/
 tests/unit/.tmp-text-diff/
+tests/unit/.tmp-repost-dedupe/
 
 ## Research artifacts (decoded MHTML, selector maps, captures) ##
 .research/

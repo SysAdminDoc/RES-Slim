@@ -846,6 +846,10 @@
       "url": "https://old.reddit.com/"
     },
     {
+      "file": "lib/utils/repostDedupe.js",
+      "url": "https://old.reddit.com"
+    },
+    {
       "file": "lib/utils/savedBackup.js",
       "url": "https://old.reddit.com/user/${user}/saved.json"
     },
