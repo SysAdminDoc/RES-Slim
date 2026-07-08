@@ -8,8 +8,10 @@ import flowRemoveTypes from 'flow-remove-types';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-vote-history');
 fs.mkdirSync(tmpDir, { recursive: true });
-const src = fs.readFileSync(path.join(repoRoot, 'lib/utils/voteHistory.js'), 'utf8');
-const stripped = flowRemoveTypes(src, { all: true }).toString();
+const strip = file => flowRemoveTypes(fs.readFileSync(path.join(repoRoot, file), 'utf8'), { all: true }).toString();
+// voteHistory imports ./csv; emit it alongside so the relative import resolves.
+fs.writeFileSync(path.join(tmpDir, 'csv.mjs'), strip('lib/utils/csv.js'));
+const stripped = strip('lib/utils/voteHistory.js').replace(/from '\.\/csv'/, "from './csv.mjs'");
 const modulePath = path.join(tmpDir, 'voteHistory.mjs');
 fs.writeFileSync(modulePath, stripped);
 const {
@@ -76,6 +78,17 @@ test('toCsv quotes values that contain commas, quotes, or newlines', () => {
 	const lines = csv.split('\n');
 	assert.match(lines[0], /^timestamp,direction,fullname/);
 	assert.match(lines[1], /"hello, ""world"""/);
+});
+
+test('toCsv neutralizes spreadsheet formula injection but keeps negative numbers', () => {
+	const csv = toCsv([
+		{ id: '1', fullname: 't1_a', kind: 't1', direction: 'up', subreddit: 's', author: '=HYPERLINK("http://evil")', permalink: '/p/', snippet: '@SUM(1+1)', scoreAtTime: -5, timestamp: 1700000000000 },
+	]);
+	const cells = csv.split('\n')[1].split(',');
+	// author (index 5) formula-prefixed with a leading apostrophe
+	assert.ok(cells[5].startsWith(`"'=HYPERLINK`) || cells[5].startsWith(`'=HYPERLINK`), cells[5]);
+	// scoreAtTime (index 7) preserved as a plain negative number
+	assert.equal(cells[7], '-5');
 });
 
 test('voteHistory module is registered and uses the helpers', () => {
