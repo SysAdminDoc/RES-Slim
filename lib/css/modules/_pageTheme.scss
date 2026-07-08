@@ -1,0 +1,220 @@
+// RES-Slim pageTheme — an opt-in dark/OLED skin for old.reddit itself.
+// Combined and cleaned up from a few community Stylus userstyles. Everything is
+// gated behind classes on <html> that the pageTheme module toggles, so the skin
+// is fully reversible and never touches the page when the module is off.
+// Palette is driven by CSS custom properties — each `res-pageTheme--<name>` class
+// redefines the variables, and the skin rules below consume them. The `--rsm-th-
+// accent` variable (visited links, flair border, post-number chip) is set inline
+// by the module from the user's accent option, falling back to the value here.
+
+html.res-pageTheme {
+	--rsm-th-bg: #000;
+	--rsm-th-bg-elev: #121212;
+	--rsm-th-bg-raise: #1b1b1b;
+	--rsm-th-txt: #b8b6b6;
+	--rsm-th-txt-strong: #f2f2f2;
+	--rsm-th-link: #ccc;
+	--rsm-th-border: rgba(255, 255, 255, 0.09);
+	--rsm-th-accent: #8a5cff;
+}
+
+// ---- Palettes -------------------------------------------------------------
+
+html.res-pageTheme--oled {
+	--rsm-th-bg: #000;
+	--rsm-th-bg-elev: #121212;
+	--rsm-th-bg-raise: #1b1b1b;
+	--rsm-th-txt: #b8b6b6;
+	--rsm-th-txt-strong: #f2f2f2;
+	--rsm-th-link: #ccc;
+	--rsm-th-border: rgba(255, 255, 255, 0.09);
+}
+
+html.res-pageTheme--graphite {
+	--rsm-th-bg: #0d1117;
+	--rsm-th-bg-elev: #161b22;
+	--rsm-th-bg-raise: #21262d;
+	--rsm-th-txt: #c9d1d9;
+	--rsm-th-txt-strong: #f0f6fc;
+	--rsm-th-link: #dbe3ec;
+	--rsm-th-border: rgba(240, 246, 252, 0.10);
+}
+
+html.res-pageTheme--midnight {
+	--rsm-th-bg: #08131f;
+	--rsm-th-bg-elev: #0f1e2e;
+	--rsm-th-bg-raise: #16293c;
+	--rsm-th-txt: #b3c2d1;
+	--rsm-th-txt-strong: #eaf2fb;
+	--rsm-th-link: #cdddec;
+	--rsm-th-border: rgba(180, 205, 230, 0.12);
+}
+
+html.res-pageTheme--catppuccin {
+	--rsm-th-bg: #1e1e2e;
+	--rsm-th-bg-elev: #282a3a;
+	--rsm-th-bg-raise: #313244;
+	--rsm-th-txt: #cdd6f4;
+	--rsm-th-txt-strong: #f5f5ff;
+	--rsm-th-link: #b4befe;
+	--rsm-th-border: rgba(205, 214, 244, 0.12);
+}
+
+html.res-pageTheme--tokyonight {
+	--rsm-th-bg: #1a1b26;
+	--rsm-th-bg-elev: #24283b;
+	--rsm-th-bg-raise: #2f3549;
+	--rsm-th-txt: #c0caf5;
+	--rsm-th-txt-strong: #ecf0ff;
+	--rsm-th-link: #9aa5ce;
+	--rsm-th-border: rgba(192, 202, 245, 0.12);
+}
+
+html.res-pageTheme--rosepine {
+	--rsm-th-bg: #191724;
+	--rsm-th-bg-elev: #1f1d2e;
+	--rsm-th-bg-raise: #26233a;
+	--rsm-th-txt: #e0def4;
+	--rsm-th-txt-strong: #f7f5ff;
+	--rsm-th-link: #c4a7e7;
+	--rsm-th-border: rgba(224, 222, 244, 0.12);
+}
+
+// ---- Base surface ---------------------------------------------------------
+
+html.res-pageTheme body,
+html.res-pageTheme #header,
+html.res-pageTheme .side,
+html.res-pageTheme .link,
+html.res-pageTheme .comment,
+html.res-pageTheme .infobar,
+html.res-pageTheme .linkinfo,
+html.res-pageTheme .searchpane.raisedbox,
+html.res-pageTheme .interstitial,
+html.res-pageTheme .modal-body,
+html.res-pageTheme .reddit-infobar,
+html.res-pageTheme .titlebox,
+html.res-pageTheme .sidebox .spacer,
+html.res-pageTheme .usertext-body .md,
+html.res-pageTheme .md,
+html.res-pageTheme .md pre,
+html.res-pageTheme .md :not(pre) > code {
+	background-color: var(--rsm-th-bg);
+	color: var(--rsm-th-txt) !important;
+}
+
+// Slightly raised surfaces: things, header chrome, tabs, subreddit bar.
+html.res-pageTheme .thing,
+html.res-pageTheme #header-bottom-right,
+html.res-pageTheme .tabmenu li a,
+html.res-pageTheme .res-selected,
+html.res-pageTheme .top-matter,
+html.res-pageTheme #sr-header-area,
+html.res-pageTheme #sr-header-area a,
+html.res-pageTheme #sr-header-area span {
+	background-color: var(--rsm-th-bg-elev) !important;
+	color: var(--rsm-th-txt);
+}
+
+html.res-pageTheme .thing {
+	border: 1px solid var(--rsm-th-border);
+}
+
+// Form controls readable on dark.
+html.res-pageTheme #search input[type="text"],
+html.res-pageTheme textarea,
+html.res-pageTheme .roundfield input[type="text"],
+html.res-pageTheme .roundfield input[type="url"],
+html.res-pageTheme .roundfield input[type="password"],
+html.res-pageTheme .roundfield input[type="number"],
+html.res-pageTheme .roundfield textarea,
+html.res-pageTheme #compose-message .roundfield select {
+	background-color: var(--rsm-th-bg-raise) !important;
+	color: var(--rsm-th-txt-strong) !important;
+	border-color: var(--rsm-th-border) !important;
+}
+
+// ---- Links & titles -------------------------------------------------------
+
+html.res-pageTheme .thing .title,
+html.res-pageTheme a.title {
+	color: var(--rsm-th-link);
+}
+
+html.res-pageTheme .thing .title:visited,
+html.res-pageTheme a.title:visited,
+html.res-pageTheme .md a:visited {
+	color: var(--rsm-th-accent);
+}
+
+// Flair: transparent chip with an accent outline instead of a loud fill.
+html.res-pageTheme span[class*="flair"],
+html.res-pageTheme .linkflairlabel {
+	background-color: transparent !important;
+	border: 1px solid var(--rsm-th-accent);
+	color: var(--rsm-th-txt-strong) !important;
+}
+
+// ---- Optional: subtle rounded corners (radius within house-allowed set) ---
+
+html.res-pageTheme--rounded .thing,
+html.res-pageTheme--rounded .side .spacer,
+html.res-pageTheme--rounded .searchpane.raisedbox,
+html.res-pageTheme--rounded .expando,
+html.res-pageTheme--rounded .res-expandoBox {
+	border-radius: 6px;
+}
+
+// ---- Optional: declutter chrome cruft -------------------------------------
+
+html.res-pageTheme--declutter .ad-container,
+html.res-pageTheme--declutter .bottommenu,
+html.res-pageTheme--declutter .debuginfo,
+html.res-pageTheme--declutter .email-collection-banner,
+html.res-pageTheme--declutter .footer-parent,
+html.res-pageTheme--declutter .giftgold,
+html.res-pageTheme--declutter .give-gold-button,
+html.res-pageTheme--declutter .infobar-toaster-container,
+html.res-pageTheme--declutter .listing-chooser,
+html.res-pageTheme--declutter .listingsignupbar,
+html.res-pageTheme--declutter .nub,
+html.res-pageTheme--declutter .premium-banner-outer,
+html.res-pageTheme--declutter .redesign-beta-optin,
+html.res-pageTheme--declutter #sr-more-link,
+html.res-pageTheme--declutter .sidecontentbox.trophy-area,
+html.res-pageTheme--declutter .thing.promoted,
+html.res-pageTheme--declutter .thing.promotedlink {
+	display: none !important;
+}
+
+// ---- Optional: collapse the right sidebar to a hover peek -----------------
+
+html.res-pageTheme--collapse-sidebar .side {
+	position: fixed;
+	top: 0;
+	right: 0;
+	margin-top: 50px;
+	width: 22px;
+	height: 22px;
+	overflow: hidden;
+	opacity: 0.5;
+	z-index: 100;
+	background-color: var(--rsm-th-bg-elev);
+	transition: opacity 0.15s ease;
+}
+
+html.res-pageTheme--collapse-sidebar .side:hover {
+	width: 330px;
+	height: auto;
+	max-height: calc(100vh - 60px);
+	overflow: auto;
+	opacity: 1;
+	padding: 2.5em 8px 8px;
+	border-left: 1px solid var(--rsm-th-border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.res-pageTheme--collapse-sidebar .side {
+		transition: none;
+	}
+}
