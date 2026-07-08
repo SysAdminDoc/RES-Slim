@@ -31,7 +31,7 @@
   ],
   "dependencies": {
     "dashjs": "4.7.4",
-    "dayjs": "1.11.13",
+    "dayjs": "1.11.21",
     "dompurify": "3.4.11",
     "fast-levenshtein": "3.0.0",
     "snudown-js": "4.0.1",
@@ -46,7 +46,7 @@
     "@babel/register": "7.24.6",
     "commander": "12.1.0",
     "cross-env": "7.0.3",
-    "esbuild": "0.23.1",
+    "esbuild": "0.25.10",
     "esbuild-plugin-copy": "2.1.1",
     "esbuild-sass-plugin": "3.3.1",
     "eslint": "8.57.0",
