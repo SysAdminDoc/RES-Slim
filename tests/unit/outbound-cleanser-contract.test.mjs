@@ -14,7 +14,27 @@ const stripped = flowRemoveTypes(source, { all: true }).toString();
 const modulePath = path.join(tmpDir, 'cleanser.mjs');
 fs.writeFileSync(modulePath, stripped);
 
-const { cleanseUrl, TRACKING_PARAMS, OUTBOUND_HOST } = await import(pathToFileURL(modulePath).href);
+const { cleanseUrl, toCleanLink, TRACKING_PARAMS, OUTBOUND_HOST } = await import(pathToFileURL(modulePath).href);
+
+test('toCleanLink always returns a normalized clean URL (not null when nothing to strip)', () => {
+	assert.equal(
+		toCleanLink('https://old.reddit.com/r/x/comments/1/t/?utm_source=share&share_id=z'),
+		'https://old.reddit.com/r/x/comments/1/t/',
+	);
+	// No tracking params — still returns an absolute URL rather than null.
+	assert.equal(toCleanLink('/r/x/comments/1/t/'), 'https://old.reddit.com/r/x/comments/1/t/');
+	assert.equal(toCleanLink(''), null);
+});
+
+test('cleanLinkCopy module is registered and disabled by default', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/cleanLinkCopy.js'), 'utf8');
+	assert.match(mod, /module\.disabledByDefault = true;/);
+	assert.match(mod, /toCleanLink\(href/);
+	assert.match(mod, /navigator\.clipboard\.writeText\(clean\)/);
+	const index = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
+	assert.match(index, /import \{ module as cleanLinkCopy \} from '\.\/cleanLinkCopy';/);
+	assert.match(index, /^\s*cleanLinkCopy,/m);
+});
 
 test('cleanseUrl unwraps Reddit out.reddit.com tracker wrappers', () => {
 	const target = 'https://example.com/article?id=42';

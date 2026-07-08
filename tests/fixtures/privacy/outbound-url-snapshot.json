@@ -846,6 +846,10 @@
       "url": "https://old.reddit.com/"
     },
     {
+      "file": "lib/utils/outboundCleanser.js",
+      "url": "https://old.reddit.com/"
+    },
+    {
       "file": "lib/utils/repostDedupe.js",
       "url": "https://old.reddit.com"
     },
