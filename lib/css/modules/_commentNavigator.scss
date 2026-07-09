@@ -1,77 +1,3 @@
-.res-commentNavToggle {
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	min-height: 24px;
-	margin: 0 0 0 8px;
-	padding: 2px 8px;
-	border: 1px solid rgb(148 163 184 / 34%);
-	border-radius: 7px;
-	background: rgb(255 255 255 / 88%);
-	color: #334155;
-	font-size: 12px;
-	font-weight: 700;
-	cursor: pointer;
-	transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
-
-	&::after {
-		content: '»';
-		display: inline-block;
-		transform: rotate(90deg);
-		color: #1278d3;
-	}
-
-	&-choices {
-		cursor: initial;
-		z-index: 41;
-		display: none;
-		position: absolute;
-		min-width: 180px;
-		margin-top: 25px;
-		padding: 6px;
-		border: 1px solid rgb(148 163 184 / 34%);
-		border-radius: 10px;
-		background-color: rgb(255 255 255 / 98%);
-		box-shadow: 0 14px 34px rgb(15 23 42 / 18%);
-
-		&[category=new] {
-			color: #9a7d2e;
-		}
-	}
-
-	&:hover,
-	&:focus-visible,
-	&[aria-expanded='true'] {
-		border-color: rgb(18 120 211 / 44%);
-		background: #fff;
-		color: #0f1720;
-		box-shadow: 0 6px 18px rgb(15 23 42 / 12%);
-	}
-
-	&:hover &-choices,
-	&:focus-within &-choices { display: grid; }
-
-	&-type {
-		width: 100%;
-		padding: 7px 8px;
-		border: 0;
-		border-radius: 7px;
-		background: transparent;
-		color: #475569;
-		cursor: pointer;
-		font-weight: bold;
-		text-align: left;
-
-		&:hover,
-		&:focus-visible {
-			background: rgb(18 120 211 / 10%);
-			color: #0f1720;
-			outline: 2px solid rgb(18 120 211 / 22%);
-			outline-offset: 1px;
-		}
-	}
-}
-
 #REScommentNavBox {
 	clear: both;
 	float: right;
@@ -171,26 +97,10 @@
 }
 
 .res-nightmode {
-	.res-commentNavToggle,
 	#REScommentNavBox {
 		border-color: rgb(148 163 184 / 24%);
 		background: rgb(31 38 46 / 94%);
 		color: #d7dde5;
-	}
-
-	.res-commentNavToggle-choices {
-		border-color: rgb(148 163 184 / 24%);
-		background: rgb(31 38 46 / 98%);
-	}
-
-	.res-commentNavToggle-type {
-		color: #aab4c0;
-
-		&:hover,
-		&:focus-visible {
-			background: rgb(88 166 255 / 14%);
-			color: #e6edf3;
-		}
 	}
 
 	#REScommentNavBox select {

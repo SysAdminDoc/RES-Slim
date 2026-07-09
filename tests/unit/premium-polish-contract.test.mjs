@@ -46,8 +46,6 @@ test('floating media and comment navigation controls expose polished focus state
 	const showImagesStyles = read('lib/css/modules/_showImages.scss');
 
 	assert.match(commentNav, /aria-label="Comment navigation"/);
-	assert.match(commentNav, /aria-haspopup="menu"/);
-	assert.match(commentNav, /aria-expanded="false"/);
 	assert.match(commentNavStyles, /\.commentNavFieldLabel/);
 	assert.match(commentNavStyles, /#commentNavButtons \{/);
 	assert.match(commentNavStyles, /:focus-visible/);
