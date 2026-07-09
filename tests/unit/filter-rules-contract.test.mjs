@@ -78,6 +78,29 @@ test('parseRulesFromJson normalises ids and defaults enabled to true', () => {
 	assert.equal(parsed[1].enabled, false);
 });
 
+test('default rulesJson hides posts whose titles begin with "I built"', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/filterRules.js'), 'utf8');
+	const match = mod.match(/const DEFAULT_RULES_JSON = '(\[.*\])';/);
+	assert.ok(match, 'expected DEFAULT_RULES_JSON literal in filterRules module');
+	// Undo JS source escaping ('\\\\' in source is '\\' in the runtime string).
+	const defaultJson = match[1].replace(/\\\\/g, '\\');
+	const rules = parseRulesFromJson(defaultJson);
+	assert.equal(rules.length, 1);
+	assert.equal(rules[0].id, 'i-built');
+	assert.equal(rules[0].action, 'hide');
+	assert.equal(rules[0].target, 'post');
+
+	const post = title => facts({ title });
+	assert.equal(evaluateRules(rules, post('I built an open-source dashboard for my homelab')).length, 1);
+	assert.equal(evaluateRules(rules, post('i built a browser extension in a weekend')).length, 1);
+	// Anchored at the start of the title, whole-word "built" only.
+	assert.equal(evaluateRules(rules, post('So I built something over the weekend')).length, 0);
+	assert.equal(evaluateRules(rules, post('I builtin support for plugins')).length, 0);
+	assert.equal(evaluateRules(rules, post('New study finds dark matter may interact with photons')).length, 0);
+	// Post-only: a comment starting with "I built" is untouched.
+	assert.equal(evaluateRules(rules, facts({ kind: 'comment', title: undefined, body: 'I built one of these too' })).length, 0);
+});
+
 test('filterRules module is registered and uses the utility helpers', () => {
 	const index = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
 	assert.match(index, /import \{ module as filterRules \} from '\.\/filterRules';/);
