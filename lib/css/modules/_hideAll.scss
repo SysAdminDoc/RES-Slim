@@ -1,0 +1,23 @@
+// hideAll module styles — the "hide all" entry in the listing tab menu.
+//
+// This sits inside reddit's own #header-bottom-left tabmenu, so it uses the ink
+// tokens and inherits the tab menu's own metrics rather than imposing its own.
+
+.rsm-hideAll-link > a {
+	display: inline-block;
+	color: var(--rsm-ink-warning);
+	font-weight: 600;
+	text-decoration: none;
+
+	&:hover {
+		text-decoration: underline;
+	}
+
+	// While a run is in progress the label counts up, so it must not shift the
+	// tabs beside it on every tick.
+	&[aria-busy='true'] {
+		min-width: 11ch;
+		cursor: progress;
+		opacity: 0.85;
+	}
+}

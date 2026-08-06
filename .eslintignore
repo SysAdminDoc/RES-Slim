@@ -4,3 +4,7 @@
 # Vendor files
 /lib/vendor/*.js
 !/lib/vendor/index.js
+
+# Reference userscripts kept for provenance, not built or imported.
+# lib/modules/hideAll.js is the rewrite of this one.
+/*.user.js
