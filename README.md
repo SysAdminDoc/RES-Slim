@@ -49,10 +49,11 @@ Two things that look like bugs but aren't:
 
 ## Project planning
 
-- [Roadmap](ROADMAP.md)
-- [Completed work](COMPLETED.md)
-- [Research report](RESEARCH_REPORT.md)
-- [Archived roadmap](docs/archive/roadmap/ROADMAP-2026-05-22.md)
+Planning lives in the working copy, not in git: `README.md` is the only Markdown
+file this repo tracks, so `ROADMAP.md`, `CHANGELOG.md`, `RESEARCH.md`,
+`Roadmap_Blocked.md` and the `docs/archive/` history are all gitignored. They
+are there after a clone only if you created them. Shipped history is in the
+commit log.
 
 ## License
 
