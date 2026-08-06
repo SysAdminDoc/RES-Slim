@@ -9,13 +9,16 @@ const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 test('permission prompt uses a structured premium approval surface', () => {
 	const html = read('lib/environment/background/permissions/prompt.html');
 	const entry = read('lib/environment/background/permissions/prompt.entry.js');
+	// The page's styles moved out of an inline <style> block, which the
+	// extension CSP refused, and into a real stylesheet.
+	const styles = read('lib/environment/background/permissions/prompt.scss');
 
 	assert.match(html, /class="permissionShell"/);
 	assert.match(html, /class="permissionHeader"/);
 	assert.match(html, /id="permissionSummary"/);
 	assert.match(html, /id="permissionStatus"/);
 	assert.match(html, /Grant access/);
-	assert.match(html, /@media \(width <= 520px\)/);
+	assert.match(styles, /@media \(width <= 520px\)/);
 	assert.match(entry, /function renderPermissionSummary\(\)/);
 	assert.match(entry, /function setPromptStatus\(message: string/);
 	assert.match(entry, /function finishPrompt\(result: boolean\)/);
