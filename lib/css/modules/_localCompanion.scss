@@ -10,7 +10,7 @@
 	font: 600 11px/1 'Helvetica Neue', Arial, sans-serif;
 	background: rgb(255 255 255 / 6%);
 	border: 1px solid rgb(255 255 255 / 14%);
-	border-radius: 3px;
+	border-radius: var(--rsm-radius-xs);
 	color: #d1d5db;
 	vertical-align: middle;
 	pointer-events: auto;

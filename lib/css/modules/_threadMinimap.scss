@@ -29,7 +29,7 @@
 	left: 1px;
 	min-height: 2px;
 	border: 0;
-	border-radius: 2px;
+	border-radius: var(--rsm-radius-xs);
 	background: var(--minimap-stripe-color, #ff7a18);
 	cursor: pointer;
 	padding: 0;
@@ -52,5 +52,5 @@
 	border: 1px solid rgb(255 122 24 / 70%);
 	background: rgb(255 122 24 / 12%);
 	pointer-events: none;
-	border-radius: 2px;
+	border-radius: var(--rsm-radius-xs);
 }

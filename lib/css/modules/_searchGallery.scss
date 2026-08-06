@@ -16,7 +16,7 @@
 	&::-webkit-scrollbar { height: 6px; }
 
 	&::-webkit-scrollbar-thumb {
-		border-radius: 3px;
+		border-radius: var(--rsm-radius-xs);
 		background: rgb(255 122 24 / 40%);
 	}
 }

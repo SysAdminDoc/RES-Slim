@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>RES-Slim: Permission needed</title>
-		<link rel="stylesheet" href="res.css"></link>
+		<link rel="stylesheet" href="res.css">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="theme-color" content="#0d1117">
 		<style>
@@ -27,7 +27,11 @@
 				--prompt-radius-sm: 6px;
 				--prompt-radius-md: 8px;
 				--prompt-shadow: 0 18px 50px rgb(0 0 0 / 34%);
-				--prompt-focus-ring: 0 0 0 3px rgb(124 192 255 / 18%);
+				/* Derived from the accent, so the ring can never drift to a
+				   different hue than the button it surrounds. */
+				--prompt-accent-line: color-mix(in srgb, var(--prompt-accent) 45%, transparent);
+				--prompt-accent-fill: color-mix(in srgb, var(--prompt-accent) 20%, transparent);
+				--prompt-focus-ring: 0 0 0 3px color-mix(in srgb, var(--prompt-accent) 22%, transparent);
 			}
 
 			* { box-sizing: border-box; }
@@ -182,7 +186,7 @@
 			#request {
 				min-height: 38px;
 				padding: 0 15px;
-				border: 1px solid rgb(88 166 255 / 45%);
+				border: 1px solid var(--prompt-accent-line);
 				border-radius: var(--prompt-radius-md);
 				background: var(--prompt-accent-soft);
 				color: var(--prompt-accent-strong);
@@ -192,9 +196,9 @@
 				transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease;
 			}
 
-			#request:hover {
+			#request:hover:not(:disabled) {
 				border-color: var(--prompt-accent-strong);
-				background: rgb(88 166 255 / 20%);
+				background: var(--prompt-accent-fill);
 			}
 
 			#request:disabled {
@@ -202,7 +206,10 @@
 				opacity: .72;
 			}
 
+			/* summary is focusable and was relying on the UA outline, which is
+			   nearly invisible against this background. */
 			#request:focus-visible,
+			summary:focus-visible,
 			a:focus-visible {
 				outline: 2px solid var(--prompt-accent-strong);
 				outline-offset: 3px;
@@ -265,11 +272,11 @@
 				<details class="permissionDetails">
 					<summary>Why this is needed</summary>
 					<p>
-						Optional permissions are requested only when a feature needs access your browser has not granted yet. Read more in the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">browser documentation</a> or the <a href="https://www.reddit.com/r/Enhancement/wiki/permissions">RES permissions wiki</a>.
+						Optional permissions are requested only when a feature needs access your browser has not granted yet, and only for as long as that feature stays on. Declining leaves the rest of RES-Slim working normally. Read more in the <a href="https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/User_actions">browser documentation</a>.
 					</p>
 				</details>
 			</main>
 		</div>
+		<script src="prompt.entry.js"></script>
 	</body>
-	<script src="prompt.entry.js"></script>
 </html>

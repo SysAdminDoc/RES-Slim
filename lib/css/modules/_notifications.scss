@@ -53,18 +53,26 @@
 		min-height: 30px;
 		padding: 0 11px;
 		border: 1px solid rgb(16 122 196 / 24%);
-		border-radius: 7px;
+		border-radius: var(--rsm-radius-sm);
 		color: white !important;
 		background-color: #107ac4;
 		text-decoration: none;
-		transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease;
+		transition:
+			background-color var(--rsm-motion) var(--rsm-ease),
+			border-color var(--rsm-motion) var(--rsm-ease),
+			box-shadow var(--rsm-motion) var(--rsm-ease);
 
-		&:hover,
-		&:focus-visible {
+		// Hover and focus are separate; the combined rule used to kill the
+		// outline, leaving keyboard focus indistinguishable from hover.
+		&:hover {
 			border-color: rgb(16 122 196 / 52%);
 			background-color: #0c68a8;
 			box-shadow: 0 8px 20px rgb(16 122 196 / 20%);
-			outline: none;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--rsm-accent);
+			outline-offset: 2px;
 		}
 	}
 
@@ -120,6 +128,29 @@
 		background: #172033;
 		border-bottom: 1px solid rgb(15 23 42 / 22%);
 
+		// No title and no owning module: the bar has nothing to say, so it
+		// shrinks to the close button instead of sitting there as an empty slab.
+		&.is-untitled {
+			min-height: 0;
+			padding: 4px 6px;
+			background: transparent;
+			border-bottom: 0;
+		}
+
+		&.is-untitled h3 { display: none; }
+
+		// With the dark bar gone the close glyph sits on the card itself, which
+		// is light by default and dark under nightMode.
+		&.is-untitled .RESCloseButton {
+			&::after { color: #64748b; }
+
+			&:hover,
+			&:focus-visible { background: rgb(15 23 42 / 8%); }
+
+			&:hover::after,
+			&:focus-visible::after { color: #0f1720; }
+		}
+
 		h3 {
 			margin: 0;
 			min-width: 0;
@@ -144,7 +175,7 @@
 			width: 28px;
 			height: 28px;
 			margin-left: auto;
-			border-radius: 7px;
+			border-radius: var(--rsm-radius-sm);
 			cursor: pointer;
 
 			&::after {
@@ -169,7 +200,7 @@
 			}
 
 			&:focus-visible {
-				outline: 2px solid #8ecbff;
+				outline: 2px solid var(--rsm-accent);
 				outline-offset: 2px;
 			}
 		}
@@ -210,7 +241,17 @@
 	}
 
 	.RESNotification a {
-		color: #8ecbff;
+		color: var(--rsm-accent);
+	}
+
+	.RESNotificationHeader.is-untitled .RESCloseButton {
+		&::after { color: #9ba7b4; }
+
+		&:hover,
+		&:focus-visible { background: rgb(255 255 255 / 10%); }
+
+		&:hover::after,
+		&:focus-visible::after { color: #fff; }
 	}
 }
 
