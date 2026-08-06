@@ -40,9 +40,8 @@ test('oldRedditRedirect injects an old/www/sh host toggle with active-state mark
 });
 
 test('no shipped in-page surface uses a pill or fully-rounded backdrop', () => {
-	// Only partials res.scss actually imports. lib/css/modules also holds
-	// leftovers for modules stripped in v0.1.0 (filteReddit, neverEndingReddit)
-	// which are never compiled into the bundle.
+	// Only partials res.scss actually imports, so an unreferenced leftover can
+	// never fail this for a rule that does not ship.
 	const res = read('lib/css/res.scss');
 	const shipped = [...res.matchAll(/@import 'modules\/(\w+)';/g)].map(m => `_${m[1]}.scss`);
 	assert.ok(shipped.length > 20, `expected the module imports to be found, got ${shipped.length}`);
