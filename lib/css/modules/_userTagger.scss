@@ -1,7 +1,6 @@
 // RES-Slim user tagger module styles. Scoped under .rsm-userTagger-* class
 // names so the host page's existing tagline layout (and any subreddit custom
 // CSS) is not disturbed.
-//
 // Two surfaces with different rules: the trigger and badge are inline in
 // reddit's tagline and use the ink tokens so they survive a light page, while
 // the popover paints its own dark surface and uses the overlay tokens.

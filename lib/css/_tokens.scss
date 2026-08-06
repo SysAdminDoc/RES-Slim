@@ -1,14 +1,11 @@
 // RES-Slim in-page design tokens.
-//
 // Every surface RES-Slim injects into old.reddit (toasts, popovers, panels,
 // inline badges, overlay dialogs) draws from this one palette. Before this
 // existed each module hardcoded its own greys, its own blue and its own radius,
 // so eleven panels rendered as eleven slightly different products.
-//
 // These are dark-chrome tokens on purpose. RES-Slim overlays sit on top of a
 // host page whose background we do not control, so they are always dark, high
 // contrast, and elevated — the same way a browser's own popovers are.
-//
 // Custom properties only. Nothing here paints, so importing it cannot affect
 // reddit's own styling; a rule has to opt in by referencing a token.
 
@@ -60,17 +57,14 @@
 	--rsm-success-text: #a9e9c4;
 	--rsm-success-soft: color-mix(in srgb, var(--rsm-success) 14%, transparent);
 	--rsm-success-line: color-mix(in srgb, var(--rsm-success) 45%, transparent);
-
 	--rsm-warning: #d29922;
 	--rsm-warning-text: #f0cd7a;
 	--rsm-warning-soft: color-mix(in srgb, var(--rsm-warning) 16%, transparent);
 	--rsm-warning-line: color-mix(in srgb, var(--rsm-warning) 45%, transparent);
-
 	--rsm-danger: #f85149;
 	--rsm-danger-text: #ffb7b1;
 	--rsm-danger-soft: color-mix(in srgb, var(--rsm-danger) 14%, transparent);
 	--rsm-danger-line: color-mix(in srgb, var(--rsm-danger) 45%, transparent);
-
 	--rsm-info: #8ecbff;
 	--rsm-info-text: #c6e4ff;
 	--rsm-info-soft: color-mix(in srgb, var(--rsm-info) 14%, transparent);
@@ -107,7 +101,6 @@
 	// only when nightMode or pageTheme is on. These tokens flip with the page;
 	// the overlay tokens above never flip, because a floating panel paints its
 	// own background and is dark by definition.
-	//
 	// This distinction was the single biggest defect in the in-page UI: every
 	// inline chip was authored against dark reddit, so on a default install they
 	// rendered near-white text on a 6%-white fill over a white page — around
@@ -146,7 +139,6 @@ html.res-pageTheme {
 	--rsm-ink-warning: #f0cd7a;
 	--rsm-ink-danger: #ffb7b1;
 	--rsm-ink-info: #93c5fd;
-
 	--rsm-tint: 18%;
 	--rsm-tint-line: 38%;
 }

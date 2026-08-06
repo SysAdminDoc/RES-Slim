@@ -1,6 +1,5 @@
 // RES-Slim: badge that surfaces the number of promoted posts hidden this page-load.
 // Lives in the existing #header-bottom-right cluster so it sits next to mail/userbar.
-//
 // The base colour used to be the dark-theme value (#ffb06a, about 1.9:1 on a
 // white header) with a nightMode override making it lighter still. The ink
 // tokens already flip with the page, so one declaration covers both.

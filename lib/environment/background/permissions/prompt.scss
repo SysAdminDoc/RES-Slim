@@ -1,5 +1,4 @@
 // Styles for the optional-permissions prompt page.
-//
 // These used to live in an inline <style> block in prompt.html. The Chrome MV3
 // manifest declares no style-src, so default-src 'self' applied to styles and
 // the browser refused the whole block — the screen that asks a user to grant
@@ -8,6 +7,7 @@
 
 :root {
 	color-scheme: dark;
+
 	--prompt-bg: #0d1117;
 	--prompt-panel: #161b22;
 	--prompt-panel-alt: #11161d;
@@ -26,6 +26,7 @@
 	--prompt-radius-sm: 6px;
 	--prompt-radius-md: 8px;
 	--prompt-shadow: 0 18px 50px rgb(0 0 0 / 34%);
+
 	/* Derived from the accent, so the ring can never drift to a
 	   different hue than the button it surrounds. */
 	--prompt-accent-line: color-mix(in srgb, var(--prompt-accent) 45%, transparent);
@@ -242,6 +243,7 @@ a {
 
 @media (width <= 520px) {
 	body { place-items: start center; }
+
 	.permissionHeader,
 	.permissionBody { padding: 16px; }
 	.permissionActions { align-items: stretch; }
