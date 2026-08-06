@@ -81,6 +81,7 @@ package-lock.json
 CLAUDE.md
 
 ## Temp test scratch ##
+tests/unit/.tmp-short-description/
 tests/unit/.tmp-snapshot/
 tests/unit/.tmp-outbound/
 tests/unit/.tmp-limiter/
