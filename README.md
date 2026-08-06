@@ -29,7 +29,23 @@ yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
 
-Load unpacked from `dist/chrome/` in Chrome, or `dist/firefox/` in Firefox.
+## Install (Chrome)
+
+The repo ships no loadable extension — `dist/` is generated. Build it first:
+
+```bash
+yarn install
+yarn once
+```
+
+Then `chrome://extensions` → enable **Developer mode** → **Load unpacked** → select `dist/chrome/`.
+
+Firefox: `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** → pick any file in `dist/firefox/`.
+
+Two things that look like bugs but aren't:
+
+- **Do not point Chrome at the repo's `chrome/` folder.** That manifest is a build template — `"name": "__name__"`, `"version": "__version__"` — and Chrome rejects it with *Invalid value for 'version'*. Only `dist/chrome/` is loadable.
+- **`--load-extension` on the command line no longer works** in Google Chrome stable (it logs `--load-extension is not allowed in Google Chrome, ignoring` and continues without the extension). Use the Load-unpacked UI above; for scripted checks use a Chrome for Testing / Chromium build, which still honours the flag.
 
 ## Project planning
 
