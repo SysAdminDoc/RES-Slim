@@ -11,15 +11,22 @@ const scss = read('lib/environment/background/permissions/prompt.scss');
 const entry = read('lib/environment/background/permissions/prompt.entry.js');
 const buildScript = read('build.js');
 const manifest = JSON.parse(read('chrome/manifest.json'));
+const firefoxManifest = JSON.parse(read('firefox/manifest.json'));
 
 test('the prompt page carries no inline style or script, which the manifest CSP forbids', () => {
-	// The manifest declares script-src but no style-src, so `default-src 'self'`
-	// governs styles. An inline <style> block is therefore refused outright — the
-	// prompt shipped as unstyled raw HTML until this was split into a stylesheet.
-	const csp = manifest.content_security_policy.extension_pages;
-	assert.doesNotMatch(csp, /style-src[^;]*unsafe-inline/,
-		'the fix is a real stylesheet, not a loosened policy');
-	assert.match(csp, /default-src 'self'/);
+	// Neither manifest declares style-src, so `default-src 'self'` governs styles
+	// in both. An inline <style> block is therefore refused outright — the prompt
+	// shipped as unstyled raw HTML until this was split into a stylesheet.
+	// Chrome MV3 nests the policy under extension_pages; Firefox MV2 is a string.
+	const chromeCsp = manifest.content_security_policy.extension_pages;
+	const firefoxCsp = firefoxManifest.content_security_policy;
+
+	for (const [name, csp] of [['chrome', chromeCsp], ['firefox', firefoxCsp]]) {
+		assert.equal(typeof csp, 'string', `${name} manifest must declare a CSP`);
+		assert.match(csp, /default-src 'self'/, `${name} CSP must keep default-src 'self'`);
+		assert.doesNotMatch(csp, /style-src[^;]*unsafe-inline/,
+			`${name}: the fix is a real stylesheet, not a loosened policy`);
+	}
 
 	assert.doesNotMatch(html, /<style[\s>]/, 'inline <style> is blocked by the extension CSP');
 	assert.doesNotMatch(html, /\sstyle="/, 'inline style attributes are blocked by the same directive');
