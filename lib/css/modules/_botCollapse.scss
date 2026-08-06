@@ -6,16 +6,19 @@
 	margin-left: 4px;
 	padding: 0 5px;
 	min-height: 14px;
-	font: 600 10px/14px 'Helvetica Neue', Arial, sans-serif;
+	font: 600 10px/14px var(--rsm-font);
 	letter-spacing: 0.03em;
 	text-transform: uppercase;
 	color: #fff;
 	background: #525252;
 	border: 1px solid rgb(255 255 255 / 14%);
-	border-radius: 3px;
+	border-radius: var(--rsm-radius-xs);
 	pointer-events: none;
 	vertical-align: baseline;
 
+	// Badge fills stay solid and deliberately darker than the status tokens:
+	// these sit on an unthemed reddit page, so they carry white label text and
+	// need >=4.5:1 on their own rather than tinting whatever is behind them.
 	&--automod {
 		background: #b45309;
 		border-color: #92400e;
@@ -35,16 +38,21 @@
 	margin-left: 4px;
 	padding: 0 6px;
 	min-height: 14px;
-	font: 11px/14px 'Helvetica Neue', Arial, sans-serif;
-	color: #93c5fd;
+	font: 11px/14px var(--rsm-font);
+	color: #1d4ed8;
 	background: rgb(59 130 246 / 14%);
 	border: 1px solid rgb(59 130 246 / 35%);
-	border-radius: 3px;
-	transition: background .12s ease-out;
+	border-radius: var(--rsm-radius-xs);
+	transition: background var(--rsm-motion-fast) var(--rsm-ease);
 
-	&:hover,
-	&:focus-visible {
+	&:hover {
 		background: rgb(59 130 246 / 28%);
-		outline: none;
 	}
+}
+
+// The reveal chip is injected into the comment body, so it inherits whatever
+// the page theme sets. Give it a readable label on both.
+body.res-nightmode .rsm-botCollapse-reveal,
+html.res-pageTheme .rsm-botCollapse-reveal {
+	color: #93c5fd;
 }

@@ -1,4 +1,9 @@
-// perSubSort module styles. v0.10.6.
+// perSubSort module styles.
+//
+// The "remember sort" control is injected next to reddit's own tab menu, so it
+// uses the on-page ink tokens. It also has to be a real target: the old rule
+// gave it a 12px label in a 2px-tall box, which is well under the 24px minimum
+// for a pointer target.
 
 .rsm-perSubSort-save {
 	display: inline-flex !important;
@@ -6,26 +11,41 @@
 	margin-left: 8px;
 
 	> a {
-		color: #fbbf24;
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		min-height: 24px;
+		padding: 0 8px;
+		color: var(--rsm-ink-warning);
 		font-size: 12px;
 		text-decoration: none;
-		padding: 2px 8px;
-		border-radius: 4px;
-		background: rgb(251 191 36 / 10%);
-		border: 1px solid rgb(251 191 36 / 30%);
-		transition: background .12s ease-out;
+		border-radius: var(--rsm-radius-xs);
+		background: color-mix(in srgb, var(--rsm-ink-warning) 10%, transparent);
+		border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) 30%, transparent);
+		transition: background var(--rsm-motion-fast) var(--rsm-ease);
 
-		&:hover,
-		&:focus-visible {
-			background: rgb(251 191 36 / 22%);
-			outline: none;
+		&:hover {
+			background: color-mix(in srgb, var(--rsm-ink-warning) 22%, transparent);
 		}
+	}
+
+	// Outcome states. The label already changes text; colour carries the same
+	// meaning a second way so the result is not conveyed by wording alone.
+	&[data-rsm-saved='saved'] > a {
+		color: var(--rsm-ink-success);
+		background: color-mix(in srgb, var(--rsm-ink-success) 12%, transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-success) 34%, transparent);
+	}
+
+	&[data-rsm-saved='error'] > a {
+		color: var(--rsm-ink-danger);
+		background: color-mix(in srgb, var(--rsm-ink-danger) 12%, transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-danger) 34%, transparent);
 	}
 }
 
 .rsm-perSubSort-star {
 	display: inline-block;
-	color: #fbbf24;
 	margin-right: 3px;
 	font-size: 13px;
 	line-height: 1;

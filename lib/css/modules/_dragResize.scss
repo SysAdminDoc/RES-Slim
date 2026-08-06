@@ -14,10 +14,8 @@
 	transition: opacity .12s ease-out;
 	z-index: 5;
 
-	&:hover,
-	&:focus-visible {
+	&:hover {
 		opacity: 0.95;
-		outline: none;
 	}
 }
 

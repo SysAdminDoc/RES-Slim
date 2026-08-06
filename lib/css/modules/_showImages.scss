@@ -190,13 +190,13 @@ img {
 		min-width: 30px;
 		min-height: 30px;
 		border: none;
-		border-radius: 7px;
+		border-radius: var(--rsm-radius-md);
 		margin: 0 !important;
 		background: transparent;
 		padding: 0;
 		filter: saturate(0);
 		line-height: 0;
-		transition: background-color .12s ease, filter .12s ease;
+		transition: background-color var(--rsm-motion-fast) var(--rsm-ease), filter var(--rsm-motion-fast) var(--rsm-ease);
 
 		&::after {
 			cursor: pointer;
@@ -209,7 +209,6 @@ img {
 		&:focus-visible {
 			background: rgba(255, 255, 255, .12);
 			filter: saturate(.35);
-			outline: none;
 		}
 
 		&:hover::after,

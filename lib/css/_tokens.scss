@@ -1,0 +1,180 @@
+// RES-Slim in-page design tokens.
+//
+// Every surface RES-Slim injects into old.reddit (toasts, popovers, panels,
+// inline badges, overlay dialogs) draws from this one palette. Before this
+// existed each module hardcoded its own greys, its own blue and its own radius,
+// so eleven panels rendered as eleven slightly different products.
+//
+// These are dark-chrome tokens on purpose. RES-Slim overlays sit on top of a
+// host page whose background we do not control, so they are always dark, high
+// contrast, and elevated — the same way a browser's own popovers are.
+//
+// Custom properties only. Nothing here paints, so importing it cannot affect
+// reddit's own styling; a rule has to opt in by referencing a token.
+
+:root {
+	// ---- Typography ---------------------------------------------------------
+	--rsm-font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, blinkmacsystemfont, roboto, helvetica, arial, sans-serif;
+	--rsm-font-mono: consolas, 'Liberation Mono', menlo, monospace;
+
+	// ---- Surfaces -----------------------------------------------------------
+	--rsm-surface: #0e141d;
+	--rsm-surface-raised: #131b26;
+	--rsm-surface-sunken: #090d14;
+	--rsm-surface-panel: linear-gradient(180deg, rgb(18 24 34 / 98%), rgb(10 14 22 / 98%));
+	--rsm-scrim: rgb(4 6 10 / 72%);
+
+	// Fills that sit on top of a surface (buttons, rows, wells).
+	--rsm-fill-subtle: rgb(255 255 255 / 4%);
+	--rsm-fill: rgb(255 255 255 / 6%);
+	--rsm-fill-hover: rgb(255 255 255 / 10%);
+
+	// ---- Borders ------------------------------------------------------------
+	--rsm-border-subtle: rgb(148 163 184 / 14%);
+	--rsm-border: rgb(148 163 184 / 22%);
+	--rsm-border-strong: rgb(148 163 184 / 38%);
+
+	// ---- Text ---------------------------------------------------------------
+	// Contrast against --rsm-surface (#0e141d): strong 18.4:1, base 15.2:1,
+	// muted 10.6:1, soft 6.4:1. All clear WCAG AA for body text.
+	--rsm-text-strong: #fff;
+	--rsm-text: #e9f0f8;
+	--rsm-text-muted: #c9d5e2;
+	--rsm-text-soft: #97a5b6;
+
+	// ---- Accent -------------------------------------------------------------
+	// One accent, derived. Override --rsm-accent alone and every tint follows.
+	--rsm-accent: #8ecbff;
+	--rsm-accent-soft: color-mix(in srgb, var(--rsm-accent) 14%, transparent);
+	--rsm-accent-strong: color-mix(in srgb, var(--rsm-accent) 28%, transparent);
+	--rsm-accent-line: color-mix(in srgb, var(--rsm-accent) 58%, transparent);
+
+	// The RES-Slim orange is an identity mark (logo bar, brand rule), never a
+	// generic interactive colour — that is what --rsm-accent is for.
+	--rsm-brand: #ff7a18;
+
+	// ---- Semantic status ----------------------------------------------------
+	// Same four hues everywhere: green = done, amber = caution, red = failure,
+	// blue = neutral information. Each has a text tone, a fill and a line.
+	--rsm-success: #5cc489;
+	--rsm-success-text: #a9e9c4;
+	--rsm-success-soft: color-mix(in srgb, var(--rsm-success) 14%, transparent);
+	--rsm-success-line: color-mix(in srgb, var(--rsm-success) 45%, transparent);
+
+	--rsm-warning: #d29922;
+	--rsm-warning-text: #f0cd7a;
+	--rsm-warning-soft: color-mix(in srgb, var(--rsm-warning) 16%, transparent);
+	--rsm-warning-line: color-mix(in srgb, var(--rsm-warning) 45%, transparent);
+
+	--rsm-danger: #f85149;
+	--rsm-danger-text: #ffb7b1;
+	--rsm-danger-soft: color-mix(in srgb, var(--rsm-danger) 14%, transparent);
+	--rsm-danger-line: color-mix(in srgb, var(--rsm-danger) 45%, transparent);
+
+	--rsm-info: #8ecbff;
+	--rsm-info-text: #c6e4ff;
+	--rsm-info-soft: color-mix(in srgb, var(--rsm-info) 14%, transparent);
+	--rsm-info-line: color-mix(in srgb, var(--rsm-info) 45%, transparent);
+
+	// ---- Radii --------------------------------------------------------------
+	// The whole scale. Nothing rounder than 12px, no pills — a RES-Slim control
+	// should read as part of the browser chrome, not as a marketing button.
+	--rsm-radius-xs: 4px;
+	--rsm-radius-sm: 6px;
+	--rsm-radius-md: 8px;
+	--rsm-radius-lg: 10px;
+	--rsm-radius-xl: 12px;
+
+	// ---- Elevation ----------------------------------------------------------
+	// Three steps, matched to how far off the page a thing floats.
+	--rsm-shadow-sm: 0 4px 12px rgb(0 0 0 / 28%);
+	--rsm-shadow-md: 0 12px 32px rgb(0 0 0 / 38%);
+	--rsm-shadow-lg: 0 24px 70px rgb(0 0 0 / 48%);
+
+	// ---- Focus --------------------------------------------------------------
+	--rsm-focus-width: 2px;
+	--rsm-focus-offset: 2px;
+
+	// ---- Motion -------------------------------------------------------------
+	--rsm-motion-fast: 120ms;
+	--rsm-motion: 160ms;
+	--rsm-motion-slow: 240ms;
+	--rsm-ease: cubic-bezier(.2, .6, .3, 1);
+}
+
+// ---- On-page (inline) tokens ------------------------------------------------
+// Chips, badges and inline buttons are injected *into* reddit's own markup, so
+// they inherit the page background — white on default old.reddit, dark only
+// when nightMode or pageTheme is on. These tokens flip with the page; the
+// overlay tokens above never flip, because a floating panel paints its own
+// background and is dark by definition.
+//
+// This distinction was the single biggest defect in the in-page UI: every inline
+// chip was authored against dark reddit, so on a default install they rendered
+// near-white text on a 6%-white fill over a white page — around 1.5:1, i.e.
+// invisible. Anything inline must use --rsm-ink-*, never --rsm-text-*.
+:root {
+	--rsm-ink: #1a1a1b;
+	--rsm-ink-muted: #4a5568;
+	--rsm-chip-fill: rgb(0 0 0 / 5%);
+	--rsm-chip-fill-hover: rgb(0 0 0 / 9%);
+	--rsm-chip-line: rgb(0 0 0 / 16%);
+
+	// Status inks, darkened for a light page. All >= 4.5:1 on white.
+	--rsm-ink-success: #157f4a;
+	--rsm-ink-warning: #8f5104;
+	--rsm-ink-danger: #b3261e;
+	--rsm-ink-info: #1d4ed8;
+
+	// How hard a status tint paints behind inline text.
+	--rsm-tint: 12%;
+	--rsm-tint-line: 34%;
+}
+
+body.res-nightmode,
+html.res-pageTheme {
+	--rsm-ink: #e9f0f8;
+	--rsm-ink-muted: #b3c1d1;
+	--rsm-chip-fill: rgb(255 255 255 / 6%);
+	--rsm-chip-fill-hover: rgb(255 255 255 / 12%);
+	--rsm-chip-line: rgb(255 255 255 / 14%);
+
+	// Status inks, lightened for a dark page. All >= 4.5:1 on #0e141d.
+	--rsm-ink-success: #7ee2a8;
+	--rsm-ink-warning: #f0cd7a;
+	--rsm-ink-danger: #ffb7b1;
+	--rsm-ink-info: #93c5fd;
+
+	--rsm-tint: 18%;
+	--rsm-tint-line: 38%;
+}
+
+// When the user has opted into the pageTheme skin, RES-Slim's own overlays
+// borrow that palette's accent so the extension reads as one product with the
+// page instead of a blue panel floating over a purple theme.
+html.res-pageTheme {
+	--rsm-accent: var(--rsm-th-accent, #8ecbff);
+}
+
+// ---- Focus visibility -------------------------------------------------------
+// Every RES-Slim control gets the same ring, and it is an outline rather than a
+// box-shadow so an overflow:hidden ancestor can never clip it away. Several
+// modules used to collapse `:hover, :focus-visible` into one rule and then set
+// `outline: none`, which left keyboard users with no focus indicator at all.
+[class*='rsm-']:focus-visible {
+	outline: var(--rsm-focus-width) solid var(--rsm-accent);
+	outline-offset: var(--rsm-focus-offset);
+}
+
+// ---- Reduced motion ---------------------------------------------------------
+// One global honour of the OS preference, replacing the per-module blocks that
+// each covered only their own selectors and drifted out of sync.
+@media (prefers-reduced-motion: reduce) {
+	[class*='rsm-'],
+	[class*='rsm-']::before,
+	[class*='rsm-']::after {
+		animation-duration: 1ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 1ms !important;
+	}
+}

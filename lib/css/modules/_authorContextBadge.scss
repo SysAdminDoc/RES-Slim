@@ -1,36 +1,41 @@
-// authorContextBadge module styles. v0.10.4.
+// authorContextBadge module styles.
+//
+// Inline chip: it sits inside reddit's own comment markup, so it uses the
+// on-page ink tokens rather than the overlay ones. The risk tints are built by
+// mixing the status colour into the page background, which keeps the label
+// readable on white and on a dark skin without two sets of rules.
 
 .rsm-authorBadge {
 	display: inline-flex;
 	align-items: center;
 	margin-left: 4px;
 	padding: 0 5px;
-	min-height: 13px;
-	font: 500 10px/13px 'Helvetica Neue', Arial, sans-serif;
+	min-height: 14px;
+	font: 500 10px/14px var(--rsm-font);
 	letter-spacing: 0.01em;
-	color: #cbd5e1;
-	background: rgb(255 255 255 / 6%);
-	border: 1px solid rgb(255 255 255 / 14%);
-	border-radius: 3px;
+	color: var(--rsm-ink-muted);
+	background: var(--rsm-chip-fill);
+	border: 1px solid var(--rsm-chip-line);
+	border-radius: var(--rsm-radius-xs);
 	vertical-align: baseline;
 	pointer-events: none;
 	white-space: nowrap;
 
 	&[data-rsm-risk='new'] {
-		color: #fee2e2;
-		background: rgb(239 68 68 / 18%);
-		border-color: rgb(239 68 68 / 35%);
+		color: var(--rsm-ink-danger);
+		background: color-mix(in srgb, var(--rsm-ink-danger) var(--rsm-tint), transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-danger) var(--rsm-tint-line), transparent);
 	}
 
 	&[data-rsm-risk='young'] {
-		color: #fde68a;
-		background: rgb(245 158 11 / 18%);
-		border-color: rgb(245 158 11 / 35%);
+		color: var(--rsm-ink-warning);
+		background: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint), transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint-line), transparent);
 	}
 
 	&[data-rsm-risk='mature'] {
-		color: #d1fae5;
-		background: rgb(16 185 129 / 14%);
-		border-color: rgb(16 185 129 / 28%);
+		color: var(--rsm-ink-success);
+		background: color-mix(in srgb, var(--rsm-ink-success) var(--rsm-tint), transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-success) var(--rsm-tint-line), transparent);
 	}
 }
