@@ -38,6 +38,9 @@
 	"productivityCategory": {
 		"message": "Productivity"
 	},
+	"privacyCategory": {
+		"message": "Privacy"
+	},
 	"coreCategory": {
 		"message": "Core"
 	},
@@ -2706,15 +2709,6 @@
 	"settingsConsoleChangesGroup": {
 		"message": "Staged changes"
 	},
-	"settingsConsoleUtilityRailAria": {
-		"message": "Settings console controls"
-	},
-	"settingsConsoleStatusTitle": {
-		"message": "Status"
-	},
-	"settingsConsoleStatusMeta": {
-		"message": "Save, revert, and staged-change state"
-	},
 	"settingsConsoleDisplayTitle": {
 		"message": "Display"
 	},
@@ -2735,12 +2729,6 @@
 	},
 	"settingsConsoleModulesAria": {
 		"message": "Settings modules"
-	},
-	"settingsConsoleFindTitle": {
-		"message": "Find"
-	},
-	"settingsConsoleFindMeta": {
-		"message": "Search modules and settings"
 	},
 	"settingsConsoleFindLabel": {
 		"message": "Find a Setting"
@@ -2853,6 +2841,39 @@
 	"settingsConsoleBrowseByCategory": {
 		"message": "Browse by category"
 	},
+	"settingsConsoleTabsAria": {
+		"message": "Settings categories"
+	},
+	"settingsConsoleTabAbout": {
+		"message": "About"
+	},
+	"settingsConsoleTabConsole": {
+		"message": "Console"
+	},
+	"settingsConsoleTabConsoleTitle": {
+		"message": "Theme, density, backups, and advanced settings for this console"
+	},
+	"settingsConsoleTabSearch": {
+		"message": "Search results"
+	},
+	"settingsConsoleTabModuleCountOne": {
+		"message": "$1 — $2 module"
+	},
+	"settingsConsoleTabModuleCountMany": {
+		"message": "$1 — $2 modules"
+	},
+	"settingsConsoleTabStagedSuffix": {
+		"message": ", has unsaved changes"
+	},
+	"settingsConsoleConsolePrefsTitle": {
+		"message": "Console preferences"
+	},
+	"settingsConsoleConsolePrefsSummary": {
+		"message": "How this settings console looks and behaves. Nothing here changes Reddit itself."
+	},
+	"settingsConsoleCategoryEnabledMeta": {
+		"message": "$1 of $2 on"
+	},
 	"settingsConsoleNoModulesMatch": {
 		"message": "No modules match the current view."
 	},
@@ -2901,12 +2922,6 @@
 	"settingsConsoleStagedCountMany": {
 		"message": "$1 staged"
 	},
-	"settingsConsoleCategorySummaryOne": {
-		"message": "$1 category"
-	},
-	"settingsConsoleCategorySummaryMany": {
-		"message": "$1 categories"
-	},
 	"settingsConsoleShowingEnabledOne": {
 		"message": "Showing $1 enabled module"
 	},
@@ -2924,12 +2939,6 @@
 	},
 	"settingsConsoleShowingModifiedMany": {
 		"message": "Showing $1 modified modules"
-	},
-	"settingsConsoleInCategoryOne": {
-		"message": " in $1 category"
-	},
-	"settingsConsoleInCategoryMany": {
-		"message": " in $1 categories"
 	},
 	"settingsConsoleStagedModulesOne": {
 		"message": "$1 staged"

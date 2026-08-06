@@ -192,35 +192,68 @@ test('settings console reduce-motion toggle is wired through template, controlle
 	assert.equal(typeof locale.settingsConsoleReduceMotionActive?.message, 'string');
 });
 
-test('settings console uses the command-center utility rail layout', () => {
+test('console-level controls live in the Console tab, not a third column', () => {
+	// These panels used to sit in a permanent right-hand rail, which put four
+	// separate control regions on screen at once. The panels survive; the rail
+	// does not.
 	const template = read('lib/options/templates.js');
 	const controller = read('lib/options/settingsConsole.js');
 	const styles = read('lib/options/options.scss');
 	const locale = JSON.parse(read('locales/locales/en.json'));
 
-	assert.match(template, /id="RESConsoleUtilityRail"/);
-	assert.match(template, /utilityPanel--status/);
+	assert.doesNotMatch(template, /RESConsoleUtilityRail/);
+	assert.doesNotMatch(styles, /RESConsoleUtilityRail/);
+
+	assert.match(template, /id="RESConsolePrefs"[\s\S]{0,200}role="tabpanel"[\s\S]{0,40}hidden/);
 	assert.match(template, /utilityPanel--display/);
 	assert.match(template, /utilityPanel--data/);
-	assert.match(template, /id="RESGlobalStageBar"[\s\S]*?class="globalStageBar/);
+	assert.match(template, /utilityPanel--advanced/);
+	assert.match(template, /utilityPanel--build/);
 	assert.match(template, /id="RESThemeSelector"[\s\S]*?class="themeSelector/);
-	assert.match(styles, /#RESConsoleContent[\s\S]{0,220}grid-template-columns: minmax\(270px, 312px\) minmax\(0, 1fr\) minmax\(284px, 328px\)/);
-	assert.match(styles, /#RESConsoleUtilityRail[\s\S]{0,260}border-left: 1px solid var\(--options-border-strong\)/);
-	assert.match(styles, /@media \(width <= 1240px\)[\s\S]{0,500}#RESConsoleUtilityRail/);
-	assert.match(styles, /@media \(width <= 680px\)[\s\S]{0,160}html\[res-options\][\s\S]{0,420}#RESConsoleUtilityRail[\s\S]{0,120}grid-auto-flow: row/);
+
+	// Save state stays in the header, visible from every tab — parking it
+	// behind the Console tab would hide unsaved changes.
+	assert.match(template, /class="consoleHeaderActions"[\s\S]{0,600}id="RESGlobalStageBar"/);
+	assert.match(template, /class="consoleHeaderActions"[\s\S]{0,900}id="RESGlobalSave"/);
+
+	assert.match(styles, /#RESConsoleContent[\s\S]{0,220}grid-template-columns: minmax\(270px, 312px\) minmax\(0, 1fr\);/);
 	assert.match(controller, /setSidebarCollapsed\(moduleID \? moduleID !== Search\.module\.moduleID : true\)/);
 
 	for (const key of [
-		'settingsConsoleUtilityRailAria',
-		'settingsConsoleStatusTitle',
-		'settingsConsoleStatusMeta',
 		'settingsConsoleDisplayTitle',
 		'settingsConsoleDisplayMeta',
 		'settingsConsoleDataTitle',
 		'settingsConsoleDataMeta',
 		'settingsConsoleBuildLabel',
+		'settingsConsoleConsolePrefsTitle',
+		'settingsConsoleConsolePrefsSummary',
 	]) {
 		assert.equal(typeof locale[key]?.message, 'string', `${key} should be localized`);
 		assert.notEqual(locale[key].message.trim(), '', `${key} should not be empty`);
 	}
+});
+
+test("night mode's blanket button rule cannot reach into the settings console", () => {
+	// res.css is loaded on the options page and <html> carries res-nightmode, so
+	// `.res-nightmode button` (0,1,1) outranked every class-based button style in
+	// options.scss (0,1,0). The filter chips, theme swatches, Export/Import and
+	// the category tabs all rendered as grey outset UA buttons because of it.
+	// The exclusion lives in :where() so Reddit's own buttons keep their
+	// specificity and their look.
+	const nightMode = read('lib/css/modules/_nightMode.scss');
+	const rule = nightMode.slice(
+		nightMode.indexOf("button:not(:where(#RESConsoleContainer *))"),
+		nightMode.indexOf('background-color: hsl(0, 0%, 30%);') + 40,
+	);
+
+	assert.ok(rule, 'the night-mode button rule should still exist');
+	for (const selector of ['button', "input[type='button']", "input[type='submit']", "input[type='reset']"]) {
+		assert.ok(
+			rule.includes(`${selector}:not(:where(#RESConsoleContainer *))`),
+			`${selector} must exclude the settings console`,
+		);
+	}
+	// Bare `:not(#RESConsoleContainer *)` would add an ID to the selector and
+	// make the rule stronger on Reddit, which is the opposite of the intent.
+	assert.doesNotMatch(rule, /:not\(#RESConsoleContainer/);
 });

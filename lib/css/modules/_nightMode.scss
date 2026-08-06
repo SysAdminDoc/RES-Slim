@@ -434,10 +434,17 @@ $title-link-visited-color: hsl(0, 0%, 65%);
 		z-index: 1;
 	}
 
-	button,
-	input[type='button'],
-	input[type='submit'],
-	input[type='reset'] {
+	// Reddit's own form buttons. The settings console loads res.css too and
+	// carries res-nightmode on <html>, so without the exclusion this rule
+	// reaches inside it — and at (0,1,1) it outranks every class-based button
+	// style in options.scss, repainting the console's filter chips, theme
+	// swatches, Export/Import and category tabs as grey outset UA buttons.
+	// The exclusion sits in :where() so it costs no specificity and Reddit's
+	// buttons keep behaving exactly as before.
+	button:not(:where(#RESConsoleContainer *)),
+	input[type='button']:not(:where(#RESConsoleContainer *)),
+	input[type='submit']:not(:where(#RESConsoleContainer *)),
+	input[type='reset']:not(:where(#RESConsoleContainer *)) {
 		color: #fff;
 		border: 1px outset hsl(0, 0%, 50%);
 		background-color: hsl(0, 0%, 30%);
