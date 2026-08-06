@@ -91,10 +91,13 @@
 }
 
 .rsm-userTagger-popover {
-	position: absolute;
+	// Fixed, not absolute. reddit gives `.entry` `overflow: hidden`, which clips
+	// an absolutely positioned descendant — the entry is shorter than this
+	// popover, so its Save / Clear / Cancel row was cut off and unclickable on a
+	// post tagline. A fixed element resolves against the viewport instead, so
+	// that clip does not apply. The module sets left/top in viewport coordinates.
+	position: fixed;
 	z-index: 9999;
-	top: calc(100% + 6px);
-	left: 0;
 	padding: 12px;
 	width: min(280px, calc(100vw - 24px));
 	background: var(--rsm-surface);
@@ -104,14 +107,17 @@
 	box-shadow: var(--rsm-shadow-md), 0 2px 6px rgb(0 0 0 / 35%);
 	font: 12px/1.4 var(--rsm-font);
 
+	// Placement state hooks. The module now writes exact viewport coordinates,
+	// so these must not set right/bottom themselves — they would fight the
+	// computed left/top. They stay as markers for the direction chosen, and
+	// shift the shadow so the popover reads as hanging from the correct edge.
 	&.is-flipped {
-		right: 0;
-		left: auto;
+		transform-origin: top right;
 	}
 
 	&.is-above {
-		top: auto;
-		bottom: calc(100% + 6px);
+		transform-origin: bottom left;
+		box-shadow: var(--rsm-shadow-md), 0 -2px 6px rgb(0 0 0 / 35%);
 	}
 
 	&-header {
