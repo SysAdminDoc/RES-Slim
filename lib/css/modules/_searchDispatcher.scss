@@ -1,22 +1,43 @@
 // RES-Slim: inline target selector appended to the #search form by
 // the searchDispatcher module.
+// Scoped through #search on purpose. The nightMode reskin declares
+// `.res-nightmode #search select { color: #1a1a1a }` so reddit's own search
+// select stays readable on the white field background the browser gives it.
+// That selector outranks a bare class, so a `.rsm-search-dispatcher { color }`
+// rule lost silently and this control rendered dark text on its own dark tint —
+// measured at 1.1:1 on a real thread page with nightMode on.
+// A form control also cannot lean on the page ground the way a chip can: the
+// browser paints a <select> on its own field background. So this sets an opaque
+// background and its matching foreground together, instead of tinting over
+// whatever happens to be behind it.
 
+#search select.rsm-search-dispatcher,
 .rsm-search-dispatcher {
 	display: block;
 	width: 100%;
 	box-sizing: border-box;
 	margin-top: 4px;
 	padding: 3px 6px;
-	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) 28%, transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) 45%, transparent);
 	border-radius: var(--rsm-radius-xs);
-	background: color-mix(in srgb, var(--rsm-ink-warning) 10%, transparent);
+	background-color: color-mix(in srgb, var(--rsm-ink-warning) 12%, var(--rsm-page));
 	color: var(--rsm-ink);
 	font-size: 11px;
 	font-weight: 600;
 	vertical-align: middle;
 	cursor: pointer;
+}
 
-	&:hover { background: color-mix(in srgb, var(--rsm-ink-warning) 18%, transparent); }
+#search select.rsm-search-dispatcher:hover,
+.rsm-search-dispatcher:hover {
+	background-color: color-mix(in srgb, var(--rsm-ink-warning) 22%, var(--rsm-page));
+}
+
+// The dropdown list is painted by the browser rather than the page, so its
+// options need the same explicit pairing or they inherit nightMode's dark ink.
+#search select.rsm-search-dispatcher option {
+	background-color: var(--rsm-page);
+	color: var(--rsm-ink);
 }
 
 @media (width <= 720px) {

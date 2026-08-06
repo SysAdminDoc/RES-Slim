@@ -108,6 +108,11 @@
 	// --rsm-text-*.
 	--rsm-ink: #1a1a1b;
 	--rsm-ink-muted: #4a5568;
+	// Opaque counterpart to --rsm-chip-fill. Form controls need it: the browser
+	// paints a <select> on its own field background, and nightMode restyles
+	// reddit's controls with id-level selectors, so a translucent fill there
+	// composites over something this stylesheet does not control.
+	--rsm-page: #fff;
 	--rsm-chip-fill: rgb(0 0 0 / 5%);
 	--rsm-chip-fill-hover: rgb(0 0 0 / 9%);
 	--rsm-chip-line: rgb(0 0 0 / 16%);
@@ -130,6 +135,7 @@ body.res-nightmode,
 html.res-pageTheme {
 	--rsm-ink: #e9f0f8;
 	--rsm-ink-muted: #b3c1d1;
+	--rsm-page: #1a1c20;
 	--rsm-chip-fill: rgb(255 255 255 / 6%);
 	--rsm-chip-fill-hover: rgb(255 255 255 / 12%);
 	--rsm-chip-line: rgb(255 255 255 / 14%);
