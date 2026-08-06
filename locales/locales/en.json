@@ -4887,5 +4887,11 @@
 	},
 	"settingsConsoleThemeRosePine": {
 		"message": "Rose Pine"
+	},
+	"searchNoResultsTitle": {
+		"message": "No settings match"
+	},
+	"searchNoResultsHint": {
+		"message": "Try a shorter word, a module name, or a setting name. Advanced settings are only searched when \"Show advanced options\" is on."
 	}
 }

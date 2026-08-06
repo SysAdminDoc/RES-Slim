@@ -1053,6 +1053,12 @@ li {
 }
 
 #RESConsoleContainer.is-search-workspace .moduleDescription { max-width: none; }
+
+// Search renders into .moduleDescription, so the options canvas below it has
+// nothing to show. It was still painting its card border and background around
+// its own hidden "No settings here" message, which left an empty 42px rectangle
+// under every set of search results.
+#RESConsoleContainer.is-search-workspace .workspaceCanvas { display: none; }
 #RESConsoleContainer.is-search-workspace .moduleDescription > :is(#SearchRES-results-container, #SearchRES-boilerplate) { max-width: none; }
 
 .workspaceCanvas {
@@ -1515,8 +1521,11 @@ li {
 .deleteButton { color: #ffb7b1; }
 .handle { cursor: grab; }
 
+// Shown and hidden via the `hidden` attribute, which the container rule at the
+// top of this file already enforces. It must not carry its own `display: none`
+// — that is what made the results panel unreachable, because the module could
+// only ever clear an inline style that was never what hid it.
 #SearchRES-results-container {
-	display: none;
 	margin-top: 8px;
 
 	+ #SearchRES-boilerplate {
@@ -1524,6 +1533,29 @@ li {
 		padding-top: 18px;
 		border-top: 1px solid var(--options-border);
 	}
+}
+
+#SearchRES-empty {
+	padding: 20px 16px;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-md);
+	background: var(--options-panel-alt);
+	text-align: center;
+}
+
+.SearchRES-empty-title {
+	margin: 0;
+	color: var(--options-text);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.SearchRES-empty-hint {
+	margin: 6px auto 0;
+	max-width: 46ch;
+	color: var(--options-text-soft);
+	font-size: 12px;
+	line-height: 1.5;
 }
 
 #SearchRES-count {
