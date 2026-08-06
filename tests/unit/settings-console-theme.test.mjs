@@ -75,7 +75,9 @@ test('non-default settings themes expose complete token overrides', () => {
 		'--options-text-muted',
 		'--options-text-soft',
 		'--options-accent',
-		'--options-accent-soft',
+		// --options-accent-soft is deliberately absent: it and the other accent
+		// tints are derived once in :root from --options-accent, so a theme that
+		// redeclared it would opt itself out of the derivation.
 		'--options-accent-strong',
 	];
 

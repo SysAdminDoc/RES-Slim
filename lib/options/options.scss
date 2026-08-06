@@ -13,7 +13,6 @@
 	--options-text-muted: #a6b3c2;
 	--options-text-soft: #7d8a99;
 	--options-accent: #ff7a18;
-	--options-accent-soft: rgb(255 122 24 / 16%);
 	--options-accent-strong: #ffb06a;
 	--options-success: #3fb950;
 	--options-warning: #d29922;
@@ -24,7 +23,25 @@
 	--options-radius-sm: 6px;
 	--options-radius-md: 8px;
 	--options-radius-lg: 10px;
-	--options-focus-ring: 0 0 0 3px rgb(124 192 255 / 18%);
+
+	// The RES-Slim orange is an identity mark. It stays orange in every theme
+	// because it marks the logo, not interactive state — which is precisely why
+	// it must not be reused for the accent washes it had leaked into.
+	--options-brand: #ff7a18;
+
+	// Everything below is derived from --options-accent, so a theme only has to
+	// redefine the accent and every tint, line, selection and focus ring follows
+	// it. These were previously hardcoded to graphite's blue, which meant seven
+	// of the eight themes drew blue borders around accent-coloured fills — most
+	// visibly on the default OLED theme, where an orange chip sat inside a blue
+	// outline and the focus ring glowed blue over an orange button.
+	--options-accent-soft: color-mix(in srgb, var(--options-accent) 15%, transparent);
+	--options-accent-ghost: color-mix(in srgb, var(--options-accent) 7%, transparent);
+	--options-accent-tint: color-mix(in srgb, var(--options-accent) 10%, transparent);
+	--options-accent-line: color-mix(in srgb, var(--options-accent) 30%, transparent);
+	--options-accent-line-strong: color-mix(in srgb, var(--options-accent) 45%, transparent);
+	--options-selection: color-mix(in srgb, var(--options-accent) 26%, transparent);
+	--options-focus-ring: 0 0 0 3px color-mix(in srgb, var(--options-accent) 22%, transparent);
 }
 
 html[data-settings-theme='graphite'] {
@@ -40,7 +57,6 @@ html[data-settings-theme='graphite'] {
 	--options-text-muted: #9ba7b4;
 	--options-text-soft: #7d8894;
 	--options-accent: #58a6ff;
-	--options-accent-soft: rgb(88 166 255 / 14%);
 	--options-accent-strong: #7cc0ff;
 }
 
@@ -57,7 +73,6 @@ html[data-settings-theme='midnight'] {
 	--options-text-muted: #9db0c5;
 	--options-text-soft: #77889d;
 	--options-accent: #58c3ff;
-	--options-accent-soft: rgb(88 195 255 / 16%);
 	--options-accent-strong: #8cddff;
 }
 
@@ -74,7 +89,6 @@ html[data-settings-theme='forest'] {
 	--options-text-muted: #9ab4a4;
 	--options-text-soft: #789181;
 	--options-accent: #4ed59a;
-	--options-accent-soft: rgb(78 213 154 / 15%);
 	--options-accent-strong: #83efbd;
 }
 
@@ -91,7 +105,6 @@ html[data-settings-theme='ember'] {
 	--options-text-muted: #c3a59a;
 	--options-text-soft: #9e7f73;
 	--options-accent: #ff9b57;
-	--options-accent-soft: rgb(255 155 87 / 14%);
 	--options-accent-strong: #ffc08f;
 }
 
@@ -108,7 +121,6 @@ html[data-settings-theme='catppuccin'] {
 	--options-text-muted: #a6adc8;
 	--options-text-soft: #7f849c;
 	--options-accent: #cba6f7;
-	--options-accent-soft: rgb(203 166 247 / 14%);
 	--options-accent-strong: #dbc0fa;
 }
 
@@ -125,7 +137,6 @@ html[data-settings-theme='tokyonight'] {
 	--options-text-muted: #9aa5ce;
 	--options-text-soft: #737aa2;
 	--options-accent: #7aa2f7;
-	--options-accent-soft: rgb(122 162 247 / 14%);
 	--options-accent-strong: #a9c1f9;
 }
 
@@ -142,7 +153,6 @@ html[data-settings-theme='rosepine'] {
 	--options-text-muted: #908caa;
 	--options-text-soft: #6e6a86;
 	--options-accent: #c4a7e7;
-	--options-accent-soft: rgb(196 167 231 / 14%);
 	--options-accent-strong: #d5c4ef;
 }
 
@@ -259,7 +269,7 @@ li {
 }
 
 ::selection {
-	background: rgb(88 166 255 / 24%);
+	background: var(--options-selection);
 	color: var(--options-text);
 }
 
@@ -338,7 +348,7 @@ li {
 	inset: auto 8px 5px 8px;
 	height: 3px;
 	border-radius: var(--options-radius-xs);
-	background: #ff8b3d;
+	background: var(--options-brand);
 }
 
 .consoleBrandText { min-width: 0; }
@@ -569,7 +579,7 @@ li {
 }
 
 .globalSaveButton {
-	border-color: rgb(88 166 255 / 45%);
+	border-color: var(--options-accent-line-strong);
 	background: var(--options-accent-soft);
 	color: var(--options-accent-strong);
 
@@ -720,7 +730,7 @@ li {
 }
 
 .filterChip.is-active {
-	border-color: rgb(88 166 255 / 42%);
+	border-color: var(--options-accent-line-strong);
 	background: var(--options-accent-soft);
 	color: var(--options-accent-strong);
 }
@@ -787,7 +797,7 @@ li {
 .RESConfigPanelCategory.active .categoryHeadingLabel,
 .RESConfigPanelCategory.active .categoryCount {
 	color: var(--options-accent-strong);
-	border-color: rgb(88 166 255 / 42%);
+	border-color: var(--options-accent-line-strong);
 }
 
 .categoryModules {
@@ -832,7 +842,7 @@ li {
 }
 
 .moduleButton.enabled { color: var(--options-text); }
-.moduleButton.has-staged-changes:not(.active) { background: rgb(88 166 255 / 7%); }
+.moduleButton.has-staged-changes:not(.active) { background: var(--options-accent-ghost); }
 
 .moduleButtonHeader {
 	display: flex;
@@ -854,8 +864,8 @@ li {
 
 	min-height: 20px;
 	padding: 0 6px;
-	border: 1px solid rgb(88 166 255 / 30%);
-	background: rgb(88 166 255 / 10%);
+	border: 1px solid var(--options-accent-line);
+	background: var(--options-accent-tint);
 	color: var(--options-accent-strong);
 	font-size: 10px;
 	font-weight: 700;
@@ -895,7 +905,7 @@ li {
 }
 
 .moduleRowToggle.is-on {
-	border-color: rgb(88 166 255 / 45%);
+	border-color: var(--options-accent-line-strong);
 	background: var(--options-accent-soft);
 }
 
@@ -1069,9 +1079,9 @@ li {
 	grid-row: span 2;
 	width: 26px;
 	height: 26px;
-	border: 1px solid rgb(88 166 255 / 28%);
+	border: 1px solid var(--options-accent-line);
 	border-radius: var(--options-radius-sm);
-	background: rgb(88 166 255 / 10%);
+	background: var(--options-accent-tint);
 
 	&::before {
 		content: '';
@@ -1179,7 +1189,7 @@ li {
 	}
 
 	&.highlight {
-		background: rgb(88 166 255 / 7%);
+		background: var(--options-accent-ghost);
 		box-shadow: inset 2px 0 0 var(--options-accent);
 	}
 
@@ -1311,7 +1321,7 @@ li {
 
 #RESConsoleContainer :is(button, a, input, select, textarea, .moduleButton, .moduleRowToggle, .toggleButton) {
 	touch-action: manipulation;
-	-webkit-tap-highlight-color: rgb(88 166 255 / 18%);
+	-webkit-tap-highlight-color: var(--options-accent-tint);
 }
 
 #RESConsoleContainer a { color: var(--options-accent-strong); }
@@ -1368,7 +1378,7 @@ li {
 }
 
 #RESConsoleContainer .toggleButton.enabled .toggleThumb {
-	border-color: rgb(88 166 255 / 45%);
+	border-color: var(--options-accent-line-strong);
 	background: var(--options-accent-soft);
 }
 
@@ -1575,9 +1585,9 @@ li {
 #SearchRES-results-hidden {
 	margin-top: 12px;
 	padding: 12px 14px;
-	border: 1px solid rgb(88 166 255 / 28%);
+	border: 1px solid var(--options-accent-line);
 	border-radius: 10px;
-	background: rgb(88 166 255 / 8%);
+	background: var(--options-accent-ghost);
 	color: var(--options-text-muted);
 }
 
@@ -1878,8 +1888,8 @@ html[data-reduced-motion='reduce'] { @include console-reduced-motion; }
 html[res-options] {
 #RESConsoleContainer {
 	background:
-		linear-gradient(90deg, rgb(255 122 24 / 4%) 0, transparent 280px),
-		linear-gradient(180deg, rgb(88 166 255 / 5%) 0, transparent 320px),
+		linear-gradient(90deg, var(--options-accent-ghost) 0, transparent 280px),
+		linear-gradient(180deg, var(--options-accent-ghost) 0, transparent 320px),
 		var(--options-bg);
 }
 
@@ -1905,9 +1915,9 @@ html[res-options] {
 .res-logo {
 	width: 54px;
 	height: 34px;
-	border-color: rgb(255 122 24 / 30%);
+	border-color: color-mix(in srgb, var(--options-brand) 30%, transparent);
 	background:
-		linear-gradient(135deg, rgb(255 122 24 / 14%), transparent 44%),
+		linear-gradient(135deg, color-mix(in srgb, var(--options-brand) 14%, transparent), transparent 44%),
 		var(--options-panel-alt);
 	box-shadow: inset 0 0 0 1px rgb(255 255 255 / 3%);
 }
@@ -1981,7 +1991,7 @@ html[res-options] {
 }
 
 .utilityPanel--status {
-	background: linear-gradient(180deg, rgb(88 166 255 / 6%), transparent 100%);
+	background: linear-gradient(180deg, var(--options-accent-ghost), transparent 100%);
 }
 
 .utilityPanel--build {
@@ -2164,7 +2174,7 @@ html[res-options] {
 	border: 1px solid var(--options-border);
 	border-radius: var(--options-radius-md);
 	background:
-		linear-gradient(135deg, rgb(255 122 24 / 6%), transparent 38%),
+		linear-gradient(135deg, var(--options-accent-ghost), transparent 38%),
 		var(--options-panel-alt);
 	box-shadow: var(--options-shadow-soft);
 }

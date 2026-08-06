@@ -60,6 +60,24 @@ function parseColor(value) {
 	throw new Error(`Unsupported color value: ${value}`);
 }
 
+// Accent tints are declared once in :root as color-mix() over the theme's own
+// --options-accent, so resolving one needs the accent from the theme block
+// rather than a literal in it. Mixing a colour with `transparent` in sRGB is
+// exactly "same colour at N% alpha", which is what the CSS engine does.
+function resolveAccentMix(value, accent) {
+	const mix = value.trim().match(/^color-mix\(in srgb,\s*var\(--options-accent\)\s*([\d.]+)%,\s*transparent\)$/);
+	if (!mix) return null;
+	return { ...accent, a: Number(mix[1]) / 100 };
+}
+
+function readAccentTint(name, themeBlock, rootBlock) {
+	const accent = parseColor(readToken(themeBlock, '--options-accent'));
+	const declared = readToken(rootBlock, name);
+	const resolved = resolveAccentMix(declared, accent);
+	assert.ok(resolved, `${name} is expected to be derived from --options-accent, got: ${declared}`);
+	return resolved;
+}
+
 function flattenOver(top, base) {
 	if (top.a >= 1) return top;
 	const a = top.a;
@@ -130,14 +148,34 @@ for (const theme of THEMES) {
 	});
 }
 
-test('accent-soft overlay remains legible when flattened over the theme background', () => {
+test('accent tints remain legible when flattened over the theme background', () => {
+	const root = extractBlock('oled');
 	for (const theme of THEMES) {
 		const block = extractBlock(theme);
 		const bg = parseColor(readToken(block, '--options-bg'));
-		const accentSoft = parseColor(readToken(block, '--options-accent-soft'));
-		const flattened = flattenOver(accentSoft, bg);
 		const text = parseColor(readToken(block, '--options-text'));
-		const ratio = contrast(text, flattened);
-		assert.ok(ratio >= TEXT_AA, `${theme}: --options-text on flattened accent-soft = ${ratio.toFixed(2)}:1`);
+		// Every accent-derived fill a label can sit on, checked per theme. The
+		// tints are declared once and derived, so this now covers all three
+		// rather than only the one that used to be spelled out per theme.
+		for (const name of ['--options-accent-soft', '--options-accent-tint', '--options-accent-ghost']) {
+			const flattened = flattenOver(readAccentTint(name, block, root), bg);
+			const ratio = contrast(text, flattened);
+			assert.ok(ratio >= TEXT_AA, `${theme}: --options-text on flattened ${name} = ${ratio.toFixed(2)}:1`);
+		}
+	}
+});
+
+test('the focus ring is accent-derived in every theme, never a fixed hue', () => {
+	const root = extractBlock('oled');
+	const ring = readToken(root, '--options-focus-ring');
+	assert.match(ring, /color-mix\(in srgb, var\(--options-accent\)/,
+		'focus ring must follow the theme accent — it was previously a hardcoded blue in all eight themes');
+	// A theme that redefines the accent must not also redeclare the tints, or
+	// the derivation silently stops applying to it.
+	for (const theme of THEMES.filter(t => t !== 'oled')) {
+		const block = extractBlock(theme);
+		for (const name of ['--options-accent-soft', '--options-accent-tint', '--options-focus-ring', '--options-selection']) {
+			assert.ok(!block.includes(`${name}:`), `${theme} must inherit ${name} from :root instead of redeclaring it`);
+		}
 	}
 });
