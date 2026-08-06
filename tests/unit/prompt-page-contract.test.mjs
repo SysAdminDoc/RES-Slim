@@ -53,6 +53,40 @@ test('the prompt does not point at upstream RES resources', () => {
 	assert.doesNotMatch(html, /redditenhancementsuite/i);
 });
 
+test('the prompt adopts the accent of the theme chosen in the settings console', () => {
+	const presets = read('lib/constants/settingsThemes.js');
+	// One definition of the key and of each accent, read by both surfaces.
+	assert.match(presets, /SETTINGS_THEME_STORAGE_KEY = 'res-settings-theme'/);
+	assert.match(presets, /export function getSettingsThemeAccent/);
+
+	assert.match(entry, /SETTINGS_THEME_STORAGE_KEY/);
+	assert.match(entry, /getSettingsThemeAccent\(theme\)/);
+	assert.match(entry, /setProperty\('--prompt-accent'/);
+	// Storage can be unavailable; the CSS fallback has to survive that.
+	assert.match(entry, /catch \(e\) \{[\s\S]{0,220}?return;/);
+
+	// Every accent-derived value must follow --prompt-accent, or re-theming the
+	// page would leave graphite blue behind in the eyebrow, links and focus ring.
+	// The focus ring carries box-shadow offsets before its colour, so allow
+	// anything between the token name and the color-mix() that supplies the hue.
+	for (const token of ['--prompt-accent-soft', '--prompt-accent-strong', '--prompt-accent-line', '--prompt-focus-ring']) {
+		assert.match(scss, new RegExp(`${token}:[^;]*color-mix\\(in srgb, var\\(--prompt-accent\\)`),
+			`${token} must derive from --prompt-accent`);
+	}
+
+	// Each preset the console offers must supply an accent for the prompt to use.
+	const ids = [...presets.matchAll(/\{ id: '([a-z]+)'[^}]*accent: '(#[0-9a-f]{6})'/g)].map(m => m[1]);
+	assert.equal(ids.length, 8, `expected all 8 presets to declare an accent, got ${ids.length}`);
+});
+
+test('the prompt draws the RS monogram rather than the upstream alien bitmap', () => {
+	// res.css ships `.res-logo { background-image: url(icon60x30.png) }` for the
+	// content script. The prompt loads res.css but not options.css, so it picked
+	// up the alien while the settings console drew a monogram.
+	assert.match(scss, /\.permissionHeader \.res-logo::before \{[\s\S]{0,80}content: 'RS';/);
+	assert.match(scss, /background-image: none/);
+});
+
 test('focusable controls on the prompt have a visible focus ring', () => {
 	assert.match(scss, /#request:focus-visible,[\s\S]{0,80}summary:focus-visible,[\s\S]{0,80}a:focus-visible/);
 	assert.match(scss, /--prompt-focus-ring: 0 0 0 3px color-mix\(in srgb, var\(--prompt-accent\)/,

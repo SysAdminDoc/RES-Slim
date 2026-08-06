@@ -17,9 +17,15 @@
 	--prompt-text: #e6edf3;
 	--prompt-muted: #9ba7b4;
 	--prompt-soft: #7d8894;
+	// The accent is overwritten inline by prompt.entry.js with whichever theme
+	// the user picked in the settings console; this is the fallback for a first
+	// run, or when localStorage is unavailable. Every other accent value is
+	// derived from it, so one assignment re-themes the whole page.
 	--prompt-accent: #58a6ff;
-	--prompt-accent-soft: rgb(88 166 255 / 14%);
-	--prompt-accent-strong: #7cc0ff;
+	--prompt-accent-soft: color-mix(in srgb, var(--prompt-accent) 14%, transparent);
+	// Lifted toward white so it stays legible on the dark panel whatever hue the
+	// theme supplies — the eyebrow, links and focus outline all use it.
+	--prompt-accent-strong: color-mix(in srgb, var(--prompt-accent) 72%, #fff);
 	--prompt-success: #3fb950;
 	--prompt-warning: #d29922;
 	--prompt-danger: #f85149;
@@ -72,9 +78,44 @@ body {
 	background: var(--prompt-panel-alt);
 }
 
+// This page loads res.css but not options.css, so it was picking up the
+// content-script `.res-logo`, which is the upstream RES alien bitmap. The
+// settings console draws an RS monogram in CSS instead; the same mark is drawn
+// here so the two extension pages introduce themselves identically.
 .permissionHeader .res-logo {
-	margin: 0;
+	position: relative;
+	display: inline-grid;
+	place-items: center;
 	flex: 0 0 auto;
+	margin: 0;
+	width: 56px;
+	height: 28px;
+	border: 1px solid var(--prompt-border);
+	border-radius: var(--prompt-radius-md);
+	overflow: hidden;
+	background-color: var(--prompt-panel-alt);
+	background-image: none;
+	color: var(--prompt-text);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+}
+
+.permissionHeader .res-logo::before {
+	content: 'RS';
+	position: relative;
+	z-index: 1;
+}
+
+// The orange bar is the identity mark and stays orange in every theme, exactly
+// as it does in the console.
+.permissionHeader .res-logo::after {
+	content: '';
+	position: absolute;
+	inset: auto 8px 5px 8px;
+	height: 3px;
+	border-radius: 4px;
+	background: #ff7a18;
 }
 
 h1 {

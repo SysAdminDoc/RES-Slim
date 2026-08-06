@@ -20,7 +20,7 @@ const themes = [
 test('settings console theme picker is wired through template, controller, styles, and locale', () => {
 	const template = read('lib/options/templates.js');
 	const controller = read('lib/options/settingsConsole.js');
-	const presets = read('lib/core/theme/settingsThemePresets.js');
+	const presets = read('lib/constants/settingsThemes.js');
 	const styles = read('lib/options/options.scss');
 	const locale = JSON.parse(read('locales/locales/en.json'));
 
@@ -28,7 +28,11 @@ test('settings console theme picker is wired through template, controller, style
 	assert.match(template, /role="group"/);
 	assert.match(template, /aria-pressed/);
 	assert.match(template, /SETTINGS_THEME_PRESETS/);
-	assert.match(controller, /SETTINGS_THEME_STORAGE_KEY = 'res-settings-theme'/);
+	// The storage key lives in the shared presets module so the permissions
+	// prompt can read the same value and paint itself with the chosen accent,
+	// rather than each surface hardcoding its own copy.
+	assert.match(read('lib/constants/settingsThemes.js'), /SETTINGS_THEME_STORAGE_KEY = 'res-settings-theme'/);
+	assert.match(controller, /SETTINGS_THEME_STORAGE_KEY,/);
 	assert.match(controller, /normalizeSettingsTheme/);
 	assert.match(presets, /DEFAULT_SETTINGS_THEME = 'oled'/);
 
