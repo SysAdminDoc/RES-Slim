@@ -9,33 +9,79 @@
 	width: min(380px, calc(100vw - 28px));
 	z-index: $zindex-notifications + 1;
 	pointer-events: none;
-	color: #eef5ff;
-	font: 13px/1.45 'Segoe UI Variable Text', 'Segoe UI', arial, sans-serif;
+	color: var(--rsm-text);
+	font: 13px/1.45 var(--rsm-font);
 }
 
 .rsm-toast {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto auto;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
 	align-items: center;
 	gap: 10px;
 	padding: 12px;
-	border: 1px solid rgb(148 163 184 / 22%);
-	border-left: 3px solid #ff7a18;
-	border-radius: 8px;
-	background: linear-gradient(180deg, rgb(16 22 32 / 96%), rgb(9 13 20 / 96%));
-	box-shadow: 0 18px 48px rgb(0 0 0 / 38%);
+	border: 1px solid var(--rsm-border);
+	border-left: 3px solid var(--rsm-brand);
+	border-radius: var(--rsm-radius-md);
+	background: var(--rsm-surface-panel);
+	box-shadow: var(--rsm-shadow-md);
 	opacity: 1;
 	pointer-events: auto;
 	transform: translateY(0);
-	transition: opacity 160ms ease, transform 160ms ease, border-color 160ms ease;
+	transition:
+		opacity var(--rsm-motion) var(--rsm-ease),
+		transform var(--rsm-motion) var(--rsm-ease),
+		border-color var(--rsm-motion) var(--rsm-ease);
+	// Entering from the right edge it lives on, rather than materialising.
+	animation: rsm-toast-in var(--rsm-motion) var(--rsm-ease);
 
-	&.is-success { border-left-color: #5cc489; }
-	&.is-warning { border-left-color: #d29922; }
-	&.is-error { border-left-color: #ff5f57; }
+	&.is-success { border-left-color: var(--rsm-success); }
+	&.is-warning { border-left-color: var(--rsm-warning); }
+	&.is-error { border-left-color: var(--rsm-danger); }
 
 	&.is-exiting {
 		opacity: 0;
 		transform: translateY(6px);
+	}
+}
+
+// Severity is carried by a glyph as well as the stripe colour, so the
+// difference between a success and an error does not depend on seeing colour.
+.rsm-toast-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	border-radius: var(--rsm-radius-xs);
+	font: 700 11px/1 var(--rsm-font);
+	color: var(--rsm-text-strong);
+	background: var(--rsm-fill);
+
+	.rsm-toast.is-success & {
+		color: var(--rsm-success-text);
+		background: var(--rsm-success-soft);
+	}
+
+	.rsm-toast.is-warning & {
+		color: var(--rsm-warning-text);
+		background: var(--rsm-warning-soft);
+	}
+
+	.rsm-toast.is-error & {
+		color: var(--rsm-danger-text);
+		background: var(--rsm-danger-soft);
+	}
+}
+
+@keyframes rsm-toast-in {
+	from {
+		opacity: 0;
+		transform: translateX(12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: none;
 	}
 }
 
@@ -46,41 +92,45 @@
 }
 
 .rsm-toast-title {
-	color: #fff;
+	color: var(--rsm-text-strong);
 	font-size: 12px;
 	font-weight: 700;
 }
 
 .rsm-toast-message {
 	overflow-wrap: anywhere;
-	color: #c9d5e2;
+	color: var(--rsm-text-muted);
 }
 
 .rsm-toast-action,
 .rsm-toast-close,
 .rsm-error-log-close {
-	border: 1px solid rgb(148 163 184 / 22%);
-	border-radius: 7px;
-	background: rgb(255 255 255 / 6%);
-	color: #eef5ff;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill);
+	color: var(--rsm-text);
 	cursor: pointer;
-	transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+	transition:
+		background-color var(--rsm-motion-fast) var(--rsm-ease),
+		border-color var(--rsm-motion-fast) var(--rsm-ease);
 
-	&:hover,
-	&:focus-visible {
-		border-color: rgb(142 203 255 / 58%);
-		background: rgb(142 203 255 / 14%);
-		outline: none;
+	&:hover {
+		border-color: var(--rsm-accent-line);
+		background: var(--rsm-accent-soft);
 	}
 
-	&:focus-visible {
-		box-shadow: 0 0 0 2px rgb(142 203 255 / 32%);
+	&:active {
+		background: var(--rsm-accent-strong);
 	}
 }
 
 .rsm-toast-action {
 	min-height: 30px;
 	padding: 0 10px;
+	font-weight: 600;
 }
 
 .rsm-toast-close {
@@ -88,9 +138,12 @@
 	height: 30px;
 	padding: 0;
 
+	// A real multiplication sign, not a lowercase letter x.
 	&::before {
-		content: 'x';
+		content: '\00d7';
+		font-size: 15px;
 		font-weight: 700;
+		line-height: 1;
 	}
 }
 
@@ -102,16 +155,19 @@
 	grid-template-rows: auto minmax(0, 1fr);
 	width: min(520px, calc(100vw - 28px));
 	max-height: min(560px, calc(100vh - 28px));
-	border: 1px solid rgb(148 163 184 / 24%);
-	border-radius: 8px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-md);
 	background: rgb(8 12 18 / 98%);
-	box-shadow: 0 24px 70px rgb(0 0 0 / 48%);
-	color: #e6edf3;
+	box-shadow: var(--rsm-shadow-lg);
+	color: var(--rsm-text);
+	font: 13px/1.45 var(--rsm-font);
 	z-index: $zindex-notifications + 2;
 	pointer-events: none;
 	opacity: 0;
 	transform: translateY(8px);
-	transition: opacity 160ms ease, transform 160ms ease;
+	transition:
+		opacity var(--rsm-motion) var(--rsm-ease),
+		transform var(--rsm-motion) var(--rsm-ease);
 
 	&.is-active {
 		pointer-events: auto;
@@ -126,12 +182,13 @@
 	justify-content: space-between;
 	gap: 12px;
 	padding: 12px 14px;
-	border-bottom: 1px solid rgb(148 163 184 / 16%);
+	border-bottom: 1px solid var(--rsm-border-subtle);
 
 	h2 {
 		margin: 0;
 		font-size: 13px;
 		font-weight: 700;
+		color: var(--rsm-text-strong);
 	}
 }
 
@@ -155,19 +212,28 @@
 	gap: 4px;
 	min-width: 0;
 	padding: 10px;
-	border: 1px solid rgb(148 163 184 / 14%);
-	border-radius: 7px;
-	background: rgb(255 255 255 / 4%);
+	border: 1px solid var(--rsm-border-subtle);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill-subtle);
+}
+
+// Nothing has gone wrong: the empty log is good news, so it reads as reassurance
+// rather than as a failed load.
+.rsm-error-empty {
+	justify-items: center;
+	padding: 20px 14px;
+	color: var(--rsm-text-soft);
+	text-align: center;
 }
 
 .rsm-error-title {
 	overflow-wrap: anywhere;
-	color: #fff;
+	color: var(--rsm-text-strong);
 	font-size: 12px;
 }
 
 .rsm-error-meta {
-	color: #96a4b5;
+	color: var(--rsm-text-soft);
 	font-size: 11px;
 }
 
@@ -175,17 +241,7 @@
 	overflow: auto;
 	max-height: 160px;
 	margin: 4px 0 0;
-	color: #c9d5e2;
-	font: 11px/1.45 Consolas, 'Liberation Mono', monospace;
+	color: var(--rsm-text-muted);
+	font: 11px/1.45 var(--rsm-font-mono);
 	white-space: pre-wrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.rsm-toast,
-	.rsm-error-log-panel,
-	.rsm-toast-action,
-	.rsm-toast-close,
-	.rsm-error-log-close {
-		transition: none;
-	}
 }

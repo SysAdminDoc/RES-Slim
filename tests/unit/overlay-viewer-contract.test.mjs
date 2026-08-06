@@ -66,7 +66,14 @@ test('overlayViewer SCSS ships in the bundle', () => {
 	assert.match(scss, /#rsm-overlayViewer-toolbar/);
 	assert.match(scss, /#rsm-overlayViewer-status/);
 	assert.match(scss, /\[data-state='error'\]/);
-	assert.match(scss, /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/overlayViewer'/);
+	// Reduced motion is honoured once in the token layer for every rsm- surface
+	// rather than per module, so the viewer's fade, rise and loading sweep are
+	// all covered by the shared rule. Assert the rule and the import that pulls
+	// it in ahead of the modules.
+	assert.match(resScss, /@import 'tokens'/);
+	const tokens = fs.readFileSync(path.join(repoRoot, 'lib/css/_tokens.scss'), 'utf8');
+	assert.match(tokens, /prefers-reduced-motion: reduce/);
+	assert.match(tokens, /\[id\^='rsm-'\]::before/);
 });

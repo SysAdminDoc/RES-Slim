@@ -13,6 +13,7 @@ const errorLog = read('lib/core/errors/errorLog.js');
 const registry = read('lib/core/registry/featureRegistry.js');
 const resCss = read('lib/css/res.scss');
 const toastStyles = read('lib/css/modules/_toastHost.scss');
+const tokenStyles = read('lib/css/_tokens.scss');
 const optionsStyles = read('lib/options/options.scss');
 
 test('document-start foreground entry applies and cleans up OLED anti-FOUC classes', () => {
@@ -67,10 +68,15 @@ test('toast and error-log styles are dark-only, scoped, and reduced-motion aware
 	assert.match(toastStyles, /pointer-events: none/);
 	assert.match(toastStyles, /\.rsm-toast/);
 	assert.match(toastStyles, /pointer-events: auto/);
-	assert.match(toastStyles, /background: linear-gradient\(180deg, rgb\(16 22 32/);
+	// The dark panel gradient and the reduced-motion honour both moved into the
+	// shared token layer so every RES-Slim surface inherits them; assert they
+	// still exist there rather than re-declared per module.
+	assert.match(toastStyles, /background: var\(--rsm-surface-panel\)/);
+	assert.match(tokenStyles, /--rsm-surface-panel: linear-gradient\(180deg, rgb\(18 24 34/);
 	assert.match(toastStyles, /\.rsm-error-log-panel/);
 	assert.match(toastStyles, /&\.is-active \{/);
-	assert.match(toastStyles, /@media \(prefers-reduced-motion: reduce\)/);
+	assert.match(tokenStyles, /@media \(prefers-reduced-motion: reduce\)/);
+	assert.match(tokenStyles, /transition-duration: 1ms !important/);
 	assert.doesNotMatch(toastStyles, /#fff;[\s\S]*background: #fff/);
 });
 
