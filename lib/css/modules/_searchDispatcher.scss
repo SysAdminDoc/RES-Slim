@@ -6,27 +6,17 @@
 	width: 100%;
 	box-sizing: border-box;
 	margin-top: 4px;
-	padding: 2px 6px;
-	border: 1px solid rgb(255 122 24 / 28%);
-	border-radius: 4px;
-	background: rgb(255 122 24 / 8%);
-	color: inherit;
+	padding: 3px 6px;
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) 28%, transparent);
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-ink-warning) 10%, transparent);
+	color: var(--rsm-ink);
 	font-size: 11px;
 	font-weight: 600;
 	vertical-align: middle;
 	cursor: pointer;
 
-	&:hover { background: rgb(255 122 24 / 16%); }
-
-	&:focus-visible {
-		outline: 2px solid #ffb06a;
-		outline-offset: 1px;
-	}
-}
-
-body.res-nightmode .rsm-search-dispatcher {
-	background: rgb(255 122 24 / 16%);
-	color: #ffd9b8;
+	&:hover { background: color-mix(in srgb, var(--rsm-ink-warning) 18%, transparent); }
 }
 
 @media (width <= 720px) {

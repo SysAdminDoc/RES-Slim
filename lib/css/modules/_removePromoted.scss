@@ -1,5 +1,9 @@
 // RES-Slim: badge that surfaces the number of promoted posts hidden this page-load.
 // Lives in the existing #header-bottom-right cluster so it sits next to mail/userbar.
+//
+// The base colour used to be the dark-theme value (#ffb06a, about 1.9:1 on a
+// white header) with a nightMode override making it lighter still. The ink
+// tokens already flip with the page, so one declaration covers both.
 
 .rsm-promoted-hidden-badge {
 	display: inline-flex;
@@ -9,10 +13,10 @@
 	height: 18px;
 	margin-left: 6px;
 	padding: 0 6px;
-	border: 1px solid rgb(255 122 24 / 35%);
-	border-radius: 4px;
-	background: rgb(255 122 24 / 14%);
-	color: #ffb06a;
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint-line), transparent);
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint), transparent);
+	color: var(--rsm-ink-warning);
 	font-family: inherit;
 	font-size: 11px;
 	font-weight: 600;
@@ -24,10 +28,4 @@
 
 	&:empty,
 	&[hidden] { display: none; }
-}
-
-body.res-nightmode .rsm-promoted-hidden-badge {
-	border-color: rgb(255 122 24 / 45%);
-	background: rgb(255 122 24 / 22%);
-	color: #ffd9b8;
 }

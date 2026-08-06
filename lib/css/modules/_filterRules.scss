@@ -1,13 +1,14 @@
 // RES-Slim: small inline badge attached to .tagline by the filterRules
-// 'badge' action.
+// 'badge' action. Inline, so it uses the ink tokens.
 
 .rsm-filter-badge {
 	display: inline-block;
 	margin-left: 6px;
 	padding: 1px 6px;
-	border-radius: 4px;
-	background: rgb(255 122 24 / 20%);
-	color: #ffb06a;
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint), transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint-line), transparent);
+	color: var(--rsm-ink-warning);
 	font-size: 10px;
 	font-weight: 600;
 	text-transform: uppercase;

@@ -33,7 +33,30 @@ test('oldRedditRedirect injects an old/www/sh host toggle with active-state mark
 	assert.match(source, /classList\.add\('is-active'\)/);
 	const css = read('lib/css/modules/_oldRedditRedirect.scss');
 	assert.match(css, /\.rsm-host-toggle/);
-	assert.match(css, /border-radius:\s*4px/);
+	// The point of this assertion is the no-pill rule, so check that directly
+	// rather than pinning one literal. Radii come from the shared scale.
+	assert.match(css, /border-radius: var\(--rsm-radius-xs\)/);
+	assert.doesNotMatch(css, /border-radius:\s*(9{3,}px|50%|100%)/);
+});
+
+test('no shipped in-page surface uses a pill or fully-rounded backdrop', () => {
+	// Only partials res.scss actually imports. lib/css/modules also holds
+	// leftovers for modules stripped in v0.1.0 (filteReddit, neverEndingReddit)
+	// which are never compiled into the bundle.
+	const res = read('lib/css/res.scss');
+	const shipped = [...res.matchAll(/@import 'modules\/(\w+)';/g)].map(m => `_${m[1]}.scss`);
+	assert.ok(shipped.length > 20, `expected the module imports to be found, got ${shipped.length}`);
+
+	const offenders = [];
+	for (const file of shipped) {
+		const full = path.join(repoRoot, 'lib/css/modules', file);
+		if (!fs.existsSync(full)) continue;
+		const css = fs.readFileSync(full, 'utf8');
+		for (const [, value] of css.matchAll(/border-radius:\s*([^;]+);/g)) {
+			if (/9{3,}px|50%|100%/.test(value)) offenders.push(`${file}: ${value.trim()}`);
+		}
+	}
+	assert.deepEqual(offenders, [], `pill radii found:\n${offenders.join('\n')}`);
 });
 
 test('oldRedditRedirect CSS partial is wired into res.scss', () => {

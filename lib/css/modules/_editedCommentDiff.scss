@@ -1,28 +1,43 @@
+// editedCommentDiff module styles.
+//
+// Inline in the comment tree. The diff body used to paint a 60%-opaque dark
+// panel over whatever the page background was, which came out mid-grey on a
+// light reddit and left the insert/delete tints barely distinguishable.
+
 .rsm-editedDiff-link {
 	font-size: 11px;
-	color: #8ab4f8;
+	color: var(--rsm-ink-info);
 	cursor: pointer;
+
+	&:hover { text-decoration: underline; }
 }
 
 .rsm-editedDiff-body {
 	margin: 6px 0;
 	padding: 8px 10px;
-	border-left: 3px solid rgba(138, 180, 248, 0.5);
-	background: rgba(30, 32, 38, 0.6);
-	border-radius: 0 6px 6px 0;
+	border-left: 3px solid var(--rsm-ink-info);
+	background: var(--rsm-chip-fill);
+	border-radius: 0 var(--rsm-radius-sm) var(--rsm-radius-sm) 0;
+	color: var(--rsm-ink);
 	font-size: 13px;
 	line-height: 1.5;
 	white-space: pre-wrap;
 	word-break: break-word;
 
+	// Added and removed text are marked by an underline and a strikethrough as
+	// well as a tint, so the diff is still readable without colour vision.
 	ins.rsm-diff-ins {
-		background: rgba(70, 140, 80, 0.35);
-		color: #b5e8b8;
-		text-decoration: none;
+		background: color-mix(in srgb, var(--rsm-ink-success) 22%, transparent);
+		color: var(--rsm-ink);
+		text-decoration: underline;
+		text-decoration-color: var(--rsm-ink-success);
+		text-decoration-thickness: 2px;
 	}
 
 	del.rsm-diff-del {
-		background: rgba(150, 60, 60, 0.35);
-		color: #f0a6a6;
+		background: color-mix(in srgb, var(--rsm-ink-danger) 22%, transparent);
+		color: var(--rsm-ink);
+		text-decoration: line-through;
+		text-decoration-color: var(--rsm-ink-danger);
 	}
 }

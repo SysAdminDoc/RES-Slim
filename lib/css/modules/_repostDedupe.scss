@@ -1,14 +1,19 @@
+// RES-Slim: inline marker on posts detected as reposts of an earlier link.
+// Inline, so it uses the ink tokens — the old #f0d0a0 on a pale wash sat at
+// roughly 1.5:1 on a default reddit.
+
 .rsm-repost-badge {
 	display: inline-block;
 	margin-left: 6px;
 	padding: 0 6px;
 	font-size: 10px;
+	font-weight: 600;
 	line-height: 16px;
 	vertical-align: middle;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	color: #f0d0a0;
-	background: rgba(120, 90, 40, 0.5);
-	border: 1px solid rgba(240, 208, 160, 0.35);
-	border-radius: 4px;
+	color: var(--rsm-ink-warning);
+	background: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint), transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint-line), transparent);
+	border-radius: var(--rsm-radius-xs);
 }

@@ -1,28 +1,35 @@
-// arcticShift module styles. v0.12.1.
+// arcticShift module styles.
+//
+// Inline in the comment tree, so it uses the ink tokens. The restored body in
+// particular was #d1d5db text on a 6%-blue wash: on a default (light) reddit
+// that is roughly 1.4:1, so the recovered comment — the entire point of the
+// module — was invisible unless a dark skin was on.
 
 .rsm-arcticShift-link {
-	color: #93c5fd;
+	color: var(--rsm-ink-info);
 	font-size: 11px;
 
 	&:hover { text-decoration: underline; }
 }
 
 .rsm-arcticShift-restored {
-	border-left: 3px solid #60a5fa;
-	padding: 4px 8px;
+	border-left: 3px solid var(--rsm-ink-info);
+	padding: 6px 10px;
 	margin: 4px 0;
-	color: #d1d5db;
-	background: rgb(96 165 250 / 6%);
-	border-radius: 0 4px 4px 0;
+	color: var(--rsm-ink);
+	background: color-mix(in srgb, var(--rsm-ink-info) 8%, transparent);
+	border-radius: 0 var(--rsm-radius-xs) var(--rsm-radius-xs) 0;
 	font-size: 13px;
 	white-space: pre-wrap;
 
+	// Provenance pill: says where the recovered text came from, so restored
+	// content is never mistaken for what reddit itself served.
 	&::before {
 		content: 'Arctic Shift';
 		display: inline-block;
 		margin-right: 8px;
 		padding: 0 4px;
-		font: 600 9px/12px 'Helvetica Neue', Arial, sans-serif;
+		font: 600 9px/12px var(--rsm-font);
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
 		color: #1e3a8a;

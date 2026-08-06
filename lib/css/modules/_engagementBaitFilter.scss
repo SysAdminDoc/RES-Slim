@@ -1,11 +1,16 @@
+// RES-Slim: inline badge marking posts whose titles match ragebait patterns.
+// Inline on the listing, so it uses the ink tokens rather than the overlay set.
+
 .rsm-bait-badge {
 	display: inline-block;
 	margin-left: 6px;
 	padding: 1px 6px;
 	font-size: 10px;
+	font-weight: 600;
 	line-height: 14px;
-	border-radius: 4px;
-	background: rgba(255, 69, 0, 0.25);
-	color: #ff8a65;
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint), transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-warning) var(--rsm-tint-line), transparent);
+	color: var(--rsm-ink-warning);
 	vertical-align: middle;
 }

@@ -100,28 +100,30 @@
 	--rsm-motion: 160ms;
 	--rsm-motion-slow: 240ms;
 	--rsm-ease: cubic-bezier(.2, .6, .3, 1);
-}
 
-// ---- On-page (inline) tokens ------------------------------------------------
-// Chips, badges and inline buttons are injected *into* reddit's own markup, so
-// they inherit the page background — white on default old.reddit, dark only
-// when nightMode or pageTheme is on. These tokens flip with the page; the
-// overlay tokens above never flip, because a floating panel paints its own
-// background and is dark by definition.
-//
-// This distinction was the single biggest defect in the in-page UI: every inline
-// chip was authored against dark reddit, so on a default install they rendered
-// near-white text on a 6%-white fill over a white page — around 1.5:1, i.e.
-// invisible. Anything inline must use --rsm-ink-*, never --rsm-text-*.
-:root {
+	// ---- On-page (inline) tokens --------------------------------------------
+	// Chips, badges and inline buttons are injected *into* reddit's own markup,
+	// so they inherit the page background — white on default old.reddit, dark
+	// only when nightMode or pageTheme is on. These tokens flip with the page;
+	// the overlay tokens above never flip, because a floating panel paints its
+	// own background and is dark by definition.
+	//
+	// This distinction was the single biggest defect in the in-page UI: every
+	// inline chip was authored against dark reddit, so on a default install they
+	// rendered near-white text on a 6%-white fill over a white page — around
+	// 1.5:1, i.e. invisible. Anything inline must use --rsm-ink-*, never
+	// --rsm-text-*.
 	--rsm-ink: #1a1a1b;
 	--rsm-ink-muted: #4a5568;
 	--rsm-chip-fill: rgb(0 0 0 / 5%);
 	--rsm-chip-fill-hover: rgb(0 0 0 / 9%);
 	--rsm-chip-line: rgb(0 0 0 / 16%);
 
-	// Status inks, darkened for a light page. All >= 4.5:1 on white.
-	--rsm-ink-success: #157f4a;
+	// Status inks, darkened for a light page. Each is checked against its own
+	// tinted fill rather than against bare white, because that tint is what the
+	// label actually sits on — #157f4a clears 4.5:1 on white but only reaches
+	// 3.8:1 once the 12% green wash is behind it.
+	--rsm-ink-success: #0f6238;
 	--rsm-ink-warning: #8f5104;
 	--rsm-ink-danger: #b3261e;
 	--rsm-ink-info: #1d4ed8;
