@@ -1,6 +1,10 @@
-// RES-Slim: small toolbar pill injected into .commentarea .menuarea by
-// the autoRefreshComments module, plus highlight styling for freshly
-// spliced comments.
+// RES-Slim: small toolbar control injected into .commentarea .menuarea by the
+// autoRefreshComments module, plus highlight styling for freshly spliced
+// comments.
+//
+// All of this is inline in reddit's own chrome, so it uses the ink tokens. The
+// status colours in particular were pale-on-pale before — a "success" pill in
+// #bbf7d0 over a white menu bar was effectively invisible.
 
 .rsm-auto-refresh-host {
 	display: inline-flex;
@@ -16,70 +20,89 @@
 	justify-content: center;
 	min-height: 24px;
 	padding: 0 9px;
-	border: 1px solid rgb(255 122 24 / 35%);
-	border-radius: 4px;
-	background: rgb(255 122 24 / 8%);
+	border: 1px solid color-mix(in srgb, var(--rsm-brand) 35%, transparent);
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-brand) 8%, transparent);
 	color: inherit;
 	font-size: 11px;
 	font-weight: 600;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background .12s ease-out, border-color .12s ease-out, color .12s ease-out;
+	transition:
+		background var(--rsm-motion-fast) var(--rsm-ease),
+		border-color var(--rsm-motion-fast) var(--rsm-ease),
+		color var(--rsm-motion-fast) var(--rsm-ease);
 
-	&:hover,
-	&:focus-visible {
-		background: rgb(255 122 24 / 16%);
-		outline: 2px solid rgb(255 122 24 / 40%);
-		outline-offset: 2px;
+	&:hover {
+		background: color-mix(in srgb, var(--rsm-brand) 16%, transparent);
 	}
 
+	// On is a filled state rather than a slightly darker tint, so whether
+	// auto-refresh is running is readable at a glance.
 	&.is-on {
-		border-color: #ff7a18;
-		background: rgb(255 122 24 / 26%);
-		color: #ffd9b8;
+		border-color: var(--rsm-brand);
+		background: color-mix(in srgb, var(--rsm-brand) 26%, transparent);
+		color: var(--rsm-ink);
 	}
 }
 
 .rsm-auto-refresh-status {
 	display: inline-flex;
 	align-items: center;
+	gap: 5px;
 	min-height: 22px;
 	padding: 0 8px;
-	color: #9ca3af;
-	background: rgb(0 0 0 / 14%);
-	border: 1px solid rgb(255 255 255 / 8%);
-	border-radius: 4px;
+	color: var(--rsm-ink-muted);
+	background: var(--rsm-chip-fill);
+	border: 1px solid var(--rsm-chip-line);
+	border-radius: var(--rsm-radius-xs);
 	font-size: 11px;
 	font-weight: 600;
 	white-space: nowrap;
 
+	// Each state also gets a leading dot, so the four states are distinguishable
+	// without relying on the text colour.
+	&::before {
+		content: '';
+		width: 6px;
+		height: 6px;
+		border-radius: var(--rsm-radius-xs);
+		background: currentcolor;
+	}
+
 	&[data-state='checking'],
 	&[data-state='active'] {
-		color: #fed7aa;
-		border-color: rgb(255 122 24 / 20%);
+		color: var(--rsm-ink-warning);
+		border-color: color-mix(in srgb, var(--rsm-ink-warning) 30%, transparent);
+	}
+
+	// Only the live poll pulses; a settled result stays still.
+	&[data-state='checking']::before {
+		animation: rsm-auto-refresh-blink 1.2s var(--rsm-ease) infinite;
 	}
 
 	&[data-state='success'] {
-		color: #bbf7d0;
-		border-color: rgb(34 197 94 / 22%);
+		color: var(--rsm-ink-success);
+		border-color: color-mix(in srgb, var(--rsm-ink-success) 30%, transparent);
 	}
 
 	&[data-state='error'] {
-		color: #fecaca;
-		border-color: rgb(248 113 113 / 26%);
-		background: rgb(127 29 29 / 14%);
+		color: var(--rsm-ink-danger);
+		border-color: color-mix(in srgb, var(--rsm-ink-danger) 34%, transparent);
+		background: color-mix(in srgb, var(--rsm-ink-danger) 10%, transparent);
 	}
+}
+
+@keyframes rsm-auto-refresh-blink {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.3; }
 }
 
 .rsm-auto-refresh-new {
 	margin: 6px 0;
 	padding: 7px 9px;
-	border-left: 3px solid #ff7a18;
-	background: rgb(255 122 24 / 12%);
-	border-radius: 0 6px 6px 0;
-	box-shadow: 0 8px 18px rgb(0 0 0 / 10%);
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.rsm-auto-refresh-toggle { transition: none; }
+	border-left: 3px solid var(--rsm-brand);
+	background: color-mix(in srgb, var(--rsm-brand) 12%, transparent);
+	border-radius: 0 var(--rsm-radius-sm) var(--rsm-radius-sm) 0;
+	box-shadow: var(--rsm-shadow-sm);
 }

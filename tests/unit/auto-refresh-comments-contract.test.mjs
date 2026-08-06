@@ -64,7 +64,9 @@ test('autoRefreshComments SCSS styles the status companion and focus states', ()
 	assert.match(scss, /\[data-state='checking'\]/);
 	assert.match(scss, /\[data-state='success'\]/);
 	assert.match(scss, /\[data-state='error'\]/);
-	assert.match(scss, /prefers-reduced-motion: reduce/);
+	// Reduced motion is honoured once for every rsm- surface in the token layer
+	// rather than re-declared per module.
+	assert.match(read('lib/css/_tokens.scss'), /prefers-reduced-motion: reduce/);
 });
 
 test('autoRefreshComments sanitizes newly fetched comment HTML', () => {

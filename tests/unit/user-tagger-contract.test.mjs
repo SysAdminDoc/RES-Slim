@@ -132,8 +132,13 @@ test('userTagger popover exposes dialog semantics, status feedback, and trigger 
 	assert.match(mod, /setAttribute\('aria-haspopup', 'dialog'\)/);
 	assert.match(mod, /setAttribute\('aria-expanded', 'false'\)/);
 	assert.match(mod, /setAttribute\('aria-controls', dialogId\)/);
-	assert.match(mod, /setPopoverBusy\(pop, true, 'Saving tag\.\.\.'\)/);
-	assert.match(mod, /Could not save\. Try again\./);
+	assert.match(mod, /setPopoverBusy\(pop, true, 'Saving tag…'\)/);
+	// Failures report an outcome state as well as a message, so the status line
+	// is coloured rather than relying on wording alone.
+	assert.match(mod, /setPopoverBusy\(pop, false, "Couldn't save[^"]*", 'error'\)/);
+	// The failure message says what state the data is actually in, not just that
+	// something went wrong.
+	assert.match(mod, /the tag is still only in this box/);
 });
 
 test('userTagger positions the popover against viewport edges', () => {

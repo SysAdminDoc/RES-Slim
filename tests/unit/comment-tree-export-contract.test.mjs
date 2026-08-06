@@ -141,7 +141,9 @@ test('commentTreeExport SCSS ships in the bundle', () => {
 	const scss = fs.readFileSync(scssPath, 'utf8');
 	assert.match(scss, /\[aria-expanded='true'\]/);
 	assert.match(scss, /&:disabled/);
-	assert.match(scss, /prefers-reduced-motion: reduce/);
+	// Reduced motion is honoured once for every rsm- surface in the token layer
+	// rather than re-declared per module.
+	assert.match(fs.readFileSync(path.join(repoRoot, 'lib/css/_tokens.scss'), 'utf8'), /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/commentTreeExport'/);
 });

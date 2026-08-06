@@ -1,7 +1,10 @@
 // RES-Slim user tagger module styles. Scoped under .rsm-userTagger-* class
 // names so the host page's existing tagline layout (and any subreddit custom
-// CSS) is not disturbed. v0.10.1 rewrite — replaces the stripped upstream RES
-// userTagger surface with a local-only popover editor.
+// CSS) is not disturbed.
+//
+// Two surfaces with different rules: the trigger and badge are inline in
+// reddit's tagline and use the ink tokens so they survive a light page, while
+// the popover paints its own dark surface and uses the overlay tokens.
 
 .rsm-userTagger-host {
 	display: inline-flex;
@@ -13,34 +16,49 @@
 .rsm-userTagger-btn {
 	all: unset;
 	cursor: pointer;
+	position: relative;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	width: 14px;
 	height: 14px;
 	margin-left: 3px;
-	font: 11px/1 'Helvetica Neue', Arial, sans-serif;
-	color: rgb(255 255 255 / 65%);
-	background: rgb(255 255 255 / 8%);
-	border: 1px solid rgb(255 255 255 / 15%);
-	border-radius: 3px;
-	opacity: 0.45;
-	transition: opacity .12s ease-out, background .12s ease-out, border-color .12s ease-out;
+	font: 11px/1 var(--rsm-font);
+	color: var(--rsm-ink-muted);
+	background: var(--rsm-chip-fill);
+	border: 1px solid var(--rsm-chip-line);
+	border-radius: var(--rsm-radius-xs);
+	opacity: 0.55;
+	transition:
+		opacity var(--rsm-motion-fast) var(--rsm-ease),
+		background var(--rsm-motion-fast) var(--rsm-ease),
+		border-color var(--rsm-motion-fast) var(--rsm-ease);
 
-	&:hover,
+	// The visible chip has to stay 14px to sit in reddit's tagline, but a 14px
+	// pointer target is well under the 24px minimum. An invisible overlay grows
+	// the hit area without touching the layout around it.
+	&::after {
+		content: '';
+		position: absolute;
+		inset: -5px;
+	}
+
+	&:hover {
+		opacity: 1;
+		background: var(--rsm-chip-fill-hover);
+		border-color: var(--rsm-ink-info);
+	}
+
+	// Keyboard focus must not depend on hovering to become visible.
 	&:focus-visible {
 		opacity: 1;
-		background: rgb(255 255 255 / 16%);
-		border-color: rgb(147 197 253 / 42%);
-		outline: 2px solid rgb(96 165 250 / 42%);
-		outline-offset: 2px;
 	}
 
 	&[aria-expanded='true'] {
 		opacity: 1;
-		color: #dbeafe;
-		background: rgb(59 130 246 / 22%);
-		border-color: rgb(96 165 250 / 38%);
+		color: var(--rsm-ink-info);
+		background: color-mix(in srgb, var(--rsm-ink-info) 18%, transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-info) 38%, transparent);
 	}
 }
 
@@ -50,12 +68,15 @@
 	margin-left: 4px;
 	padding: 0 5px;
 	min-height: 14px;
-	font: 600 10px/14px 'Helvetica Neue', Arial, sans-serif;
+	font: 600 10px/14px var(--rsm-font);
 	letter-spacing: 0.02em;
+	// Fill and foreground are both set inline by the module: the user picks the
+	// colour and the module computes a contrasting label for it. These are only
+	// the pre-paint defaults.
 	color: #fff;
-	background: #5b8def;
+	background: #3f6fd4;
 	border: 1px solid transparent;
-	border-radius: 3px;
+	border-radius: var(--rsm-radius-xs);
 	white-space: nowrap;
 	max-width: 18ch;
 	overflow: hidden;
@@ -77,12 +98,12 @@
 	left: 0;
 	padding: 12px;
 	width: min(280px, calc(100vw - 24px));
-	background: #10141b;
-	color: #e5e7eb;
-	border: 1px solid rgb(255 255 255 / 12%);
-	border-radius: 8px;
-	box-shadow: 0 16px 42px rgb(0 0 0 / 50%), 0 2px 6px rgb(0 0 0 / 35%);
-	font: 12px/1.4 'Helvetica Neue', Arial, sans-serif;
+	background: var(--rsm-surface);
+	color: var(--rsm-text);
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-md);
+	box-shadow: var(--rsm-shadow-md), 0 2px 6px rgb(0 0 0 / 35%);
+	font: 12px/1.4 var(--rsm-font);
 
 	&.is-flipped {
 		right: 0;
@@ -97,19 +118,19 @@
 	&-header {
 		margin-bottom: 10px;
 		padding-bottom: 8px;
-		border-bottom: 1px solid rgb(255 255 255 / 8%);
+		border-bottom: 1px solid var(--rsm-border-subtle);
 	}
 
 	&-title {
 		margin: 0;
-		color: #f8fafc;
+		color: var(--rsm-text-strong);
 		font-size: 13px;
 		line-height: 1.25;
 	}
 
 	&-subtitle {
 		margin: 2px 0 0;
-		color: #94a3b8;
+		color: var(--rsm-text-soft);
 		font-size: 11px;
 	}
 
@@ -119,24 +140,27 @@
 		align-items: center;
 		gap: 6px;
 		margin-bottom: 8px;
-		color: #cbd5e1;
+		color: var(--rsm-text-muted);
 		font-weight: 600;
 	}
 
 	&-tag {
 		flex: 1;
 		min-width: 0;
-		padding: 4px 6px;
+		padding: 5px 6px;
 		font: inherit;
 		color: inherit;
-		background: rgb(255 255 255 / 6%);
-		border: 1px solid rgb(255 255 255 / 14%);
-		border-radius: 4px;
+		background: var(--rsm-fill);
+		border: 1px solid var(--rsm-border);
+		border-radius: var(--rsm-radius-xs);
+		transition: border-color var(--rsm-motion-fast) var(--rsm-ease);
+
+		&::placeholder { color: var(--rsm-text-soft); }
+
+		&:hover { border-color: var(--rsm-border-strong); }
 
 		&:focus-visible {
-			outline: 2px solid rgb(96 165 250 / 58%);
-			outline-offset: 2px;
-			border-color: rgb(147 197 253 / 42%);
+			border-color: var(--rsm-accent-line);
 		}
 	}
 
@@ -145,8 +169,8 @@
 		height: 28px;
 		padding: 0;
 		background: transparent;
-		border: 1px solid rgb(255 255 255 / 14%);
-		border-radius: 4px;
+		border: 1px solid var(--rsm-border);
+		border-radius: var(--rsm-radius-xs);
 		cursor: pointer;
 	}
 
@@ -154,22 +178,25 @@
 		grid-template-columns: auto 1fr;
 		align-items: start;
 		padding: 7px 8px;
-		background: rgb(255 255 255 / 4%);
-		border: 1px solid rgb(255 255 255 / 8%);
-		border-radius: 6px;
+		background: var(--rsm-fill-subtle);
+		border: 1px solid var(--rsm-border-subtle);
+		border-radius: var(--rsm-radius-sm);
 		font-weight: 500;
 	}
 
 	&-ignore {
 		margin: 1px 0 0;
-		accent-color: #60a5fa;
+		accent-color: var(--rsm-accent);
 	}
 
 	&-status {
 		min-height: 16px;
 		margin: 8px 0 0;
-		color: #94a3b8;
+		color: var(--rsm-text-soft);
 		font-size: 11px;
+
+		&[data-state='error'] { color: var(--rsm-danger-text); }
+		&[data-state='saved'] { color: var(--rsm-success-text); }
 	}
 
 	&-actions {
@@ -184,53 +211,60 @@
 	&-cancel {
 		all: unset;
 		cursor: pointer;
-		min-height: 26px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 28px;
 		padding: 0 10px;
-		border-radius: 4px;
-		font: 600 11px/1 'Helvetica Neue', Arial, sans-serif;
-		border: 1px solid rgb(255 255 255 / 14%);
-		transition: background .12s ease-out, border-color .12s ease-out, color .12s ease-out;
-
-		&:focus-visible {
-			outline: 2px solid rgb(96 165 250 / 58%);
-			outline-offset: 2px;
-		}
+		border-radius: var(--rsm-radius-xs);
+		font: 600 11px/1 var(--rsm-font);
+		border: 1px solid var(--rsm-border);
+		transition:
+			background var(--rsm-motion-fast) var(--rsm-ease),
+			border-color var(--rsm-motion-fast) var(--rsm-ease),
+			color var(--rsm-motion-fast) var(--rsm-ease);
 
 		&:disabled {
 			cursor: progress;
-			opacity: 0.68;
+			opacity: 0.6;
 		}
 	}
 
+	// Save is the primary action and the only filled button, so the thing to do
+	// is obvious without reading all three labels.
 	&-save {
 		background: #2563eb;
 		color: #fff;
 		border-color: #1d4ed8;
 
-		&:hover { background: #1d4ed8; }
+		&:hover:not(:disabled) { background: #1d4ed8; }
+		&:active:not(:disabled) { background: #1e40af; }
 	}
 
+	// Clear removes the tag, so it reads as destructive but stays quieter than
+	// save — it is not the expected action.
 	&-clear {
-		background: #7f1d1d;
-		color: #fff;
-		border-color: #991b1b;
+		background: var(--rsm-danger-soft);
+		color: var(--rsm-danger-text);
+		border-color: var(--rsm-danger-line);
 
-		&:hover { background: #991b1b; }
+		&:hover:not(:disabled) {
+			background: color-mix(in srgb, var(--rsm-danger) 26%, transparent);
+			color: #fff;
+		}
 	}
 
 	&-cancel {
-		background: rgb(255 255 255 / 6%);
-		color: #d1d5db;
+		background: var(--rsm-fill);
+		color: var(--rsm-text-muted);
 
-		&:hover { background: rgb(255 255 255 / 12%); }
+		&:hover:not(:disabled) {
+			background: var(--rsm-fill-hover);
+			color: var(--rsm-text);
+		}
 	}
 
 	&[aria-busy='true'] &-status {
-		color: #bfdbfe;
+		color: var(--rsm-info-text);
 	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.rsm-userTagger-btn,
-	.rsm-userTagger-popover button { transition: none; }
 }

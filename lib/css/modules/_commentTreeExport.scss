@@ -1,4 +1,7 @@
-// commentTreeExport module styles. v0.12.3.
+// commentTreeExport module styles.
+//
+// The trigger sits inline in reddit's comment menu (ink tokens, must survive a
+// white page); the menu it opens is a floating dark surface (overlay tokens).
 
 #rsm-commentTreeExport-host {
 	position: relative;
@@ -12,29 +15,28 @@
 	align-items: center;
 	min-height: 24px;
 	box-sizing: border-box;
-	color: #93c5fd;
+	color: var(--rsm-ink-info);
 	font-size: 12px;
 	font-weight: 600;
 	text-decoration: none;
 	padding: 0 9px;
-	border-radius: 4px;
-	background: rgb(59 130 246 / 12%);
-	border: 1px solid rgb(59 130 246 / 28%);
-	transition: background .12s ease-out, border-color .12s ease-out, color .12s ease-out;
+	border-radius: var(--rsm-radius-xs);
+	background: color-mix(in srgb, var(--rsm-ink-info) 10%, transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-info) 28%, transparent);
+	transition:
+		background var(--rsm-motion-fast) var(--rsm-ease),
+		border-color var(--rsm-motion-fast) var(--rsm-ease);
 
-	&:hover,
-	&:focus-visible {
-		color: #dbeafe;
-		background: rgb(59 130 246 / 24%);
-		border-color: rgb(147 197 253 / 44%);
-		outline: 2px solid rgb(96 165 250 / 48%);
-		outline-offset: 2px;
+	&:hover {
+		background: color-mix(in srgb, var(--rsm-ink-info) 20%, transparent);
+		border-color: color-mix(in srgb, var(--rsm-ink-info) 44%, transparent);
 	}
 
+	// Open state has to differ from hover, or the menu being open is invisible
+	// the moment the pointer moves away.
 	&[aria-expanded='true'] {
-		color: #dbeafe;
-		background: rgb(59 130 246 / 24%);
-		border-color: rgb(147 197 253 / 44%);
+		background: color-mix(in srgb, var(--rsm-ink-info) 24%, transparent);
+		border-color: var(--rsm-ink-info);
 	}
 }
 
@@ -45,12 +47,12 @@
 	z-index: 9999;
 	min-width: 168px;
 	padding: 5px;
-	background: #10141b;
-	color: #e5e7eb;
-	border: 1px solid rgb(255 255 255 / 12%);
-	border-radius: 8px;
-	box-shadow: 0 14px 36px rgb(0 0 0 / 48%);
-	font: 12px/1.4 'Helvetica Neue', Arial, sans-serif;
+	background: var(--rsm-surface);
+	color: var(--rsm-text);
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-md);
+	box-shadow: var(--rsm-shadow-md);
+	font: 12px/1.4 var(--rsm-font);
 
 	> button {
 		all: unset;
@@ -61,26 +63,27 @@
 		width: 100%;
 		min-height: 30px;
 		padding: 0 10px;
-		border-radius: 4px;
-		color: #dbe3ef;
-		transition: background .12s ease-out, color .12s ease-out;
+		border-radius: var(--rsm-radius-xs);
+		color: var(--rsm-text-muted);
+		transition:
+			background var(--rsm-motion-fast) var(--rsm-ease),
+			color var(--rsm-motion-fast) var(--rsm-ease);
 
-		&:hover,
+		&:hover:not(:disabled) {
+			color: var(--rsm-text-strong);
+			background: var(--rsm-fill-hover);
+		}
+
+		// The focus ring is inset here: a menu item spans the full menu width,
+		// so an offset ring would be clipped by the menu's own padding.
 		&:focus-visible {
-			color: #fff;
-			background: rgb(255 255 255 / 10%);
-			outline: 2px solid rgb(96 165 250 / 48%);
-			outline-offset: 1px;
+			outline-offset: -1px;
+			background: var(--rsm-fill);
 		}
 
 		&:disabled {
 			cursor: progress;
-			opacity: 0.72;
+			opacity: 0.65;
 		}
 	}
-}
-
-@media (prefers-reduced-motion: reduce) {
-	.rsm-commentTreeExport-host-trigger,
-	.rsm-commentTreeExport-host-menu > button { transition: none; }
 }

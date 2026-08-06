@@ -1,4 +1,7 @@
 // RES-Slim: inline top-comments preview block.
+//
+// The panel is keyed to the brand orange rather than the accent because it is
+// previewing reddit's own content inline, and the rule reads as a pull-quote.
 
 .rsm-tcp-link {
 	font-weight: 600;
@@ -20,13 +23,13 @@
 	margin: 8px 0 0;
 	padding: 10px 12px;
 	max-width: 760px;
-	background: rgb(10 13 18 / 78%);
-	border: 1px solid rgb(255 122 24 / 18%);
-	border-left: 3px solid rgb(255 122 24 / 70%);
-	border-radius: 0 8px 8px 0;
-	box-shadow: 0 8px 24px rgb(0 0 0 / 16%);
-	color: #d7dde7;
-	font: 12px/1.48 'Helvetica Neue', Arial, sans-serif;
+	background: var(--rsm-surface-panel);
+	border: 1px solid color-mix(in srgb, var(--rsm-brand) 18%, transparent);
+	border-left: 3px solid color-mix(in srgb, var(--rsm-brand) 70%, transparent);
+	border-radius: 0 var(--rsm-radius-md) var(--rsm-radius-md) 0;
+	box-shadow: var(--rsm-shadow-sm);
+	color: var(--rsm-text-muted);
+	font: 12px/1.48 var(--rsm-font);
 
 	&[hidden] { display: none; }
 }
@@ -40,9 +43,10 @@
 }
 
 .rsm-tcp-title {
-	color: #fed7aa;
+	color: var(--rsm-text);
 	font-size: 11px;
 	font-weight: 700;
+	letter-spacing: 0.04em;
 	text-transform: uppercase;
 }
 
@@ -50,22 +54,30 @@
 	&--loading,
 	&--empty,
 	&--error {
-		padding: 7px 9px;
-		color: #aeb8c7;
-		background: rgb(255 255 255 / 4%);
-		border: 1px solid rgb(255 255 255 / 8%);
-		border-radius: 6px;
+		padding: 9px;
+		color: var(--rsm-text-soft);
+		background: var(--rsm-fill-subtle);
+		border: 1px solid var(--rsm-border-subtle);
+		border-radius: var(--rsm-radius-sm);
 	}
 
+	// Loading pulses so it is distinguishable from an empty result at a glance,
+	// rather than differing only in wording.
 	&--loading {
-		color: #fed7aa;
+		color: var(--rsm-text-muted);
+		animation: rsm-tcp-pulse 1.6s var(--rsm-ease) infinite;
 	}
 
 	&--error {
-		color: #fecaca;
-		background: rgb(127 29 29 / 18%);
-		border-color: rgb(248 113 113 / 24%);
+		color: var(--rsm-danger-text);
+		background: var(--rsm-danger-soft);
+		border-color: var(--rsm-danger-line);
 	}
+}
+
+@keyframes rsm-tcp-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.55; }
 }
 
 .rsm-tcp-list {
@@ -76,20 +88,16 @@
 
 .rsm-tcp-comment {
 	padding: 7px 0;
-	border-bottom: 1px solid rgb(255 122 24 / 16%);
+	border-bottom: 1px solid color-mix(in srgb, var(--rsm-brand) 16%, transparent);
 
 	&:last-child { border-bottom: 0; }
 }
 
 .rsm-tcp-meta {
 	display: block;
-	color: rgb(255 122 24 / 75%);
+	color: color-mix(in srgb, var(--rsm-brand) 75%, var(--rsm-text));
 	font-weight: 600;
 	font-size: 11px;
 }
 
 .rsm-tcp-body p { margin: 2px 0; }
-
-@media (prefers-reduced-motion: reduce) {
-	.rsm-tcp-link { transition: none; }
-}
