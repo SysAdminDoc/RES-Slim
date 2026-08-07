@@ -794,6 +794,18 @@
       "url": "https://github.com/facebook/flow/issues/34"
     },
     {
+      "file": "lib/utils/autoTranslate.js",
+      "url": "https://old.reddit.com"
+    },
+    {
+      "file": "lib/utils/autoTranslate.js",
+      "url": "https://old.reddit.com"
+    },
+    {
+      "file": "lib/utils/brokenLinks.js",
+      "url": "https://old.reddit.com"
+    },
+    {
       "file": "lib/utils/cobalt.js",
       "url": "https://${v}"
     },
@@ -854,8 +866,44 @@
       "url": "https://old.reddit.com"
     },
     {
+      "file": "lib/utils/reverseImageSearch.js",
+      "url": "https://lens.google.com/uploadbyurl?url=${encodeURIComponent(url"
+    },
+    {
+      "file": "lib/utils/reverseImageSearch.js",
+      "url": "https://saucenao.com/search.php?url=${encodeURIComponent(url"
+    },
+    {
+      "file": "lib/utils/reverseImageSearch.js",
+      "url": "https://tineye.com/search?url=${encodeURIComponent(url"
+    },
+    {
+      "file": "lib/utils/reverseImageSearch.js",
+      "url": "https://www.bing.com/images/search?view=detailv2&iss=sbi&q=imgurl:${encodeURIComponent(url"
+    },
+    {
+      "file": "lib/utils/reverseImageSearch.js",
+      "url": "https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(url"
+    },
+    {
       "file": "lib/utils/savedBackup.js",
       "url": "https://old.reddit.com/user/${user}/saved.json"
+    },
+    {
+      "file": "lib/utils/searchScope.js",
+      "url": "https://old.reddit.com"
+    },
+    {
+      "file": "lib/utils/searchScope.js",
+      "url": "https://old.reddit.com"
+    },
+    {
+      "file": "lib/utils/searchScope.js",
+      "url": "https://old.reddit.com"
+    },
+    {
+      "file": "lib/utils/visitedPosts.js",
+      "url": "https://old.reddit.com"
     },
     {
       "file": "lib/utils/wayback.js",

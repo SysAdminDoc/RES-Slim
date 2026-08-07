@@ -14,8 +14,11 @@ const scss = read('lib/css/modules/_hideAll.scss');
 // page-world checks below run against code with comments stripped.
 const modCode = mod
 	.replace(/\/\*[\s\S]*?\*\//g, '')
-	.split('\n')
-	.map(line => line.replace(/(^|\s)\/\/.*$/, '$1'))
+	// Split on \r?\n and strip with a character class rather than `.*$`: on a CRLF
+	// checkout the trailing \r is not a line terminator to `.`, so `$` never
+	// matches and every line comment survives, silently disarming the checks below.
+	.split(/\r?\n/)
+	.map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1'))
 	.join('\n');
 
 test('hideAll is registered in the module index', () => {

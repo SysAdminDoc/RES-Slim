@@ -81,6 +81,9 @@ package-lock.json
 CLAUDE.md
 
 ## Temp test scratch ##
+# One glob covers every suite; the explicit list below predates it and is
+# kept so an existing checkout does not suddenly show these as untracked.
+tests/unit/.tmp-*/
 tests/unit/.tmp-short-description/
 tests/unit/.tmp-snapshot/
 tests/unit/.tmp-outbound/
