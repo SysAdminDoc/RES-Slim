@@ -55,7 +55,7 @@
     },
     {
       "file": "lib/modules/cobaltDownloader.js",
-      "url": "https://api.cobalt.tools"
+      "url": "https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md"
     },
     {
       "file": "lib/modules/commentSortBy.js",
@@ -675,10 +675,6 @@
     },
     {
       "file": "lib/modules/imgurFlatten.js",
-      "url": "https://ri.bcow.xyz"
-    },
-    {
-      "file": "lib/modules/imgurFlatten.js",
       "url": "https://rimgo.codeberg.page/"
     },
     {
@@ -811,7 +807,7 @@
     },
     {
       "file": "lib/utils/cobalt.js",
-      "url": "https://api.cobalt.tools"
+      "url": "https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md"
     },
     {
       "file": "lib/utils/commentTreeExport.js",
@@ -835,7 +831,15 @@
     },
     {
       "file": "lib/utils/imgurFlatten.js",
-      "url": "https://ri.bcow.xyz"
+      "url": "https://imgur.artemislena.eu"
+    },
+    {
+      "file": "lib/utils/imgurFlatten.js",
+      "url": "https://rimgo.ducks.party"
+    },
+    {
+      "file": "lib/utils/imgurFlatten.js",
+      "url": "https://rimgo.pussthecat.org"
     },
     {
       "file": "lib/utils/keycode.js",

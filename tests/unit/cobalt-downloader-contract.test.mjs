@@ -23,8 +23,12 @@ const {
 	looksLikeStreamUrl,
 } = await import(pathToFileURL(modulePath).href);
 
-test('parseInstanceList splits, sanitizes, dedupes, and always yields a default', () => {
-	assert.deepEqual(parseInstanceList(''), [DEFAULT_INSTANCE]);
+test('parseInstanceList splits, sanitizes, dedupes, and yields nothing when unset', () => {
+	// Empty means "not configured", NOT "fall back to a public instance". The
+	// module has to be able to tell those apart to show its empty state.
+	assert.deepEqual(parseInstanceList(''), []);
+	assert.deepEqual(parseInstanceList('   \n , '), []);
+	assert.deepEqual(parseInstanceList(null), []);
 	assert.deepEqual(
 		parseInstanceList('cobalt.example.com, https://c2.example.com\nc2.example.com'),
 		['https://cobalt.example.com', 'https://c2.example.com'],
@@ -79,8 +83,27 @@ test('buildRequestBody produces the exact shape the cobalt API expects', () => {
 	});
 });
 
+test('no cobalt instance ships by default', () => {
+	// The hosted instances use bot protection and the project documents them as
+	// not intended for third-party use; the previous default also happened to be
+	// YouTube-blocked, so it violated the terms AND did not work.
+	assert.equal(DEFAULT_INSTANCE, '');
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/cobaltDownloader.js'), 'utf8');
+	assert.doesNotMatch(mod, /api\.cobalt\.tools/);
+	assert.match(mod, /instance: \{[\s\S]{0,80}value: '',/);
+});
+
+test('an unconfigured module reports that rather than failing a request', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/cobaltDownloader.js'), 'utf8');
+	assert.match(mod, /if \(!instances\.length\) \{/);
+	assert.match(mod, /no instance configured/);
+	assert.match(mod, /SELF_HOSTING_DOCS/);
+	// The empty-state check must come before the attempt loop, or the user sees
+	// "all instances failed", which reads like an outage.
+	assert.ok(mod.indexOf('if (!instances.length)') < mod.indexOf('for (let i = 0; i < instances.length'));
+});
+
 test('sanitizeInstance normalises scheme + trailing slash + falls back', () => {
-	assert.equal(DEFAULT_INSTANCE, 'https://api.cobalt.tools');
 	assert.equal(sanitizeInstance(''), DEFAULT_INSTANCE);
 	assert.equal(sanitizeInstance('api.example.com/'), 'https://api.example.com');
 	assert.equal(sanitizeInstance('http://api.example.com//'), 'http://api.example.com');

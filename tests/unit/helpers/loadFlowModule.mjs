@@ -28,3 +28,23 @@ export async function loadFlowModule(relativePath, name) {
 
 	return import(pathToFileURL(outPath).href);
 }
+
+// Source with comments removed.
+//
+// Contracts of the form "this module never calls X" must run against code, not
+// prose: every module header here names the userscript or endpoint it replaced,
+// so the unstripped source contains the very strings the assertion forbids.
+//
+// Two traps this exists to stop repeating. The naive strip —
+// `line.replace(/(^|\s)\/\/.*$/, '$1')` after splitting on a bare LF — is a
+// silent no-op on a CRLF checkout, because `.` does not match the trailing CR so
+// `$` never matches. And a caller who forgets to strip at all gets a green test
+// that proves nothing. Pair every use with an assertion that the *unstripped*
+// source still contains the string, so the stripper is proven to have run.
+export function codeOnly(source) {
+	return String(source)
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.split(/\r?\n/)
+		.map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1'))
+		.join('\n');
+}
