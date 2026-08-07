@@ -28,7 +28,7 @@
       "matches": [
         "https://*.reddit.com/*"
       ],
-      "all_frames": true,
+      "all_frames": false,
       "exclude_matches": [
         "https://mod.reddit.com/*",
         "https://ads.reddit.com/*",

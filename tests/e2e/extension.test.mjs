@@ -221,6 +221,81 @@ test('the options page runs only the modules it explicitly allows', async t => {
 	assert.deepEqual(pageErrors, [], 'options page must load without uncaught errors');
 });
 
+// `all_frames` was `true`, inherited from upstream RES, which used it for its
+// embedded-comments mode. This fork never enters that mode: `foreground.entry.js`
+// refuses to initialise in any subframe unless the URL carries `embedded=true`,
+// and **nothing in this repo ever sets that parameter**. So every reddit-origin
+// subframe was parsing 1.36 MB of JavaScript for a script that bailed on line 30,
+// and applying 287 KB of stylesheet that nothing had asked for.
+//
+// Now `false`. The entry guard is deliberately kept — it is the thing that made
+// this safe to change, and it is what would still hold if the manifest regressed.
+// This test asserts both halves, because either alone would let the other rot.
+test('the extension does not reach into reddit-origin subframes', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+
+	const page = await context.newPage();
+	// Console output from every frame, including the subframe.
+	const messages = [];
+	page.on('console', m => messages.push(m.text()));
+	const frameHtml = '<!doctype html><html><head></head><body><p>framed</p></body></html>';
+	const topHtml = servableCapture().replace('</body>', '<iframe id="probe" src="https://old.reddit.com/framed-probe"></iframe></body>');
+
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (url.includes('/framed-probe')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: frameHtml });
+		}
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: topHtml });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/r/codex/comments/1th66mb/this_has_to_stop/', { waitUntil: 'domcontentloaded' });
+
+	// The top frame must still be taken over — otherwise every assertion below
+	// passes against an extension that simply is not running.
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	const frame = await (await page.waitForSelector('#probe')).contentFrame();
+	await frame.waitForLoadState('domcontentloaded');
+
+	const initialised = await frame.evaluate(() => document.documentElement.classList.contains('res'));
+	assert.equal(initialised, false, 'the subframe must not be taken over');
+
+	// `initialised` alone does not discriminate: the entry guard already bailed in
+	// subframes, so it was false under `all_frames: true` as well. What changes is
+	// whether the 1.36 MB bundle is parsed and evaluated there at all — and the
+	// guard announces itself when it fires, which is the observable difference.
+	//
+	// Not `document.styleSheets`: content-script CSS is injected into an isolated
+	// origin and never appears there, so asserting a count of zero would have been
+	// true either way.
+	assert.deepEqual(
+		messages.filter(m => m.includes('Preventing initalization of RES')),
+		[],
+		'the bundle should never have been evaluated in the subframe — if the guard is talking, the script ran',
+	);
+
+	// Pinned last, after the observed behaviour: asserting the manifest field first
+	// would short-circuit the only assertions that can tell whether the change
+	// actually did anything.
+	assert.equal(
+		assertBuilt().content_scripts[0].all_frames,
+		false,
+		'a subframe has no reason to receive the bundle — nothing in this repo sets embedded=true',
+	);
+	assert.match(
+		fs.readFileSync(path.join(repoRoot, 'lib', 'foreground.entry.js'), 'utf8'),
+		/window !== window\.parent/,
+		'keep the runtime guard too: it is what made all_frames:false safe, and the backstop if the manifest regresses',
+	);
+});
+
 test('the content script initialises on a real old.reddit document', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
