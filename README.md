@@ -29,9 +29,16 @@ yarn install
 yarn test       # focused fixture checks
 yarn test:show-images
 yarn test:privacy
+yarn test:e2e   # loads the built extension in Chromium (headless) and drives it
 yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
+
+`yarn test:e2e` rebuilds first, then launches Playwright's Chromium with
+`dist/chrome/` loaded and checks that the service worker registers, the settings
+console renders, and the content script initialises on a served old.reddit
+document. It needs no display and no network. Screenshots land in
+`tests/e2e/screenshots/`. Set `RES_E2E_HEADED=1` to watch it run.
 
 ## Install (Chrome)
 

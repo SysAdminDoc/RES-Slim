@@ -82,6 +82,19 @@ test('primary stable selectors avoid old Reddit churn-prone styling classes', ()
 	assert.match(surfaceBlock('post'), /\.link\.even/);
 });
 
+// `appType()` in lib/utils/currentLocation.js reports 'r2' (old reddit) purely on
+// the presence of the xmlns attribute, and falls back to 'd2x' (the redesign)
+// without it — and ~40 modules declare `module.include = ['r2']`, so on 'd2x' they
+// never run. Both fixtures shipped without the attribute the real captures carry,
+// which meant every assertion in this file described a document the product would
+// have treated as new reddit. Found by the e2e harness, pinned here because this
+// file is what the rest of the suite trusts.
+test('fixtures carry the marker that makes the extension treat them as old reddit', () => {
+	for (const [name, fixture] of [['frontpage', frontpageFixture], ['thread', threadFixture]]) {
+		assert.match(fixture, /<html[^>]*\sxmlns="http:\/\/www\.w3\.org\/1999\/xhtml"/, `${name} fixture must declare the old-reddit xmlns`);
+	}
+});
+
 test('MHTML-derived fixtures preserve front page and thread DOM surfaces', () => {
 	assert.match(frontpageFixture, /Derived from reddit_ the front page of the internet\.mhtml/);
 	assert.match(frontpageFixture, /<body class="listing-page/);
