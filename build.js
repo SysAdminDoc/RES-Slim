@@ -16,15 +16,39 @@ import packageInfo from './package.json' with { type: 'json' };
 
 const DASHJS_SHA256 = '66dff6f83ec1e22418f3fa17a2b2b9b21b7b3ffc290fd17a6a6595678c35ed9b';
 
+// The supported floor has exactly one source: `browserslist` in package.json.
+//
+// It used to be declared twice — hardcoded here, and in a `browserslist` field
+// that nothing read — and the two disagreed (chrome 114/firefox 115 here against
+// chrome 114/firefox 119 there). Since this copy is what actually reaches
+// esbuild's `target` and the Firefox manifest's `strict_min_version`, the
+// package.json values were decoration, and any support claim based on them was
+// unverified. `browsersMinVersions()` reads them, so a change in one place cannot
+// leave the other behind.
+function browserMinVersions() {
+	const parsed = {};
+	for (const entry of packageInfo.browserslist) {
+		const [name, version] = String(entry).trim().split(/\s+/);
+		if (!name || !version) throw new Error(`Unparseable browserslist entry: "${entry}"`);
+		parsed[name] = version.includes('.') ? version : `${version}.0`;
+	}
+	for (const required of ['chrome', 'firefox']) {
+		if (!parsed[required]) throw new Error(`browserslist in package.json must declare a "${required}" floor`);
+	}
+	return parsed;
+}
+
+const minVersions = browserMinVersions();
+
 const targets = {
 	chrome: {
 		browserName: 'chrome',
-		browserMinVersion: '114.0',
+		browserMinVersion: minVersions.chrome,
 		manifest: './chrome/manifest.json',
 	},
 	firefox: {
 		browserName: 'firefox',
-		browserMinVersion: '115.0',
+		browserMinVersion: minVersions.firefox,
 		manifest: './firefox/manifest.json',
 	},
 }
