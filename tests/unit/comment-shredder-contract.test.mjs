@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
+import { codeOnly, loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const cs = await loadFlowModule('lib/utils/commentShredder.js', 'comment-shredder');
+const { summariseOutcome } = cs;
 const mod = readRepoFile('lib/modules/commentShredder.js');
 
 const DAY = 86400000;
@@ -175,4 +176,51 @@ test('the module is off, preview-first, and asks before deleting', () => {
 
 test('the module never uses a blocking dialog', () => {
 	assert.doesNotMatch(mod, /\bwindow\.confirm\(|\balert\(/);
+});
+
+// The outcome summary. A run makes hundreds of writes at 1-2/s and reddit 429s
+// hard, so "overwrite landed, delete failed" is the likely failure — not the
+// exotic one. The previous version shared one try block between the two calls and
+// reported that state as "left alone", which is the opposite of the truth: the
+// original text is permanently gone and the comment is still publicly visible.
+test('a comment that was overwritten but not deleted is never described as untouched', () => {
+	const message = summariseOutcome({ overwritten: 1, deleted: 0, stranded: 1, untouched: 0 });
+
+	assert.ok(!/left alone/i.test(message), `must not claim an overwritten comment was left alone: ${message}`);
+	assert.ok(!/untouched|unchanged/i.test(message), `must not claim an overwritten comment is unchanged: ${message}`);
+	assert.match(message, /original text is gone/i, 'must say the content is destroyed');
+	assert.match(message, /still visible/i, 'must say the comment is still public');
+	assert.match(message, /run again/i, 'must tell the user how to finish the job');
+});
+
+test('the two failure modes are reported separately and never conflated', () => {
+	const message = summariseOutcome({ overwritten: 3, deleted: 2, stranded: 1, untouched: 4 });
+
+	assert.match(message, /Overwrote 3, deleted 2\./);
+	assert.match(message, /\b1\b[^.]*overwritten but could not be deleted/i, 'the stranded count is reported on its own');
+	assert.match(message, /\b4\b[^.]*could not be overwritten/i, 'the genuinely untouched count is reported on its own');
+});
+
+test('a clean run says nothing alarming', () => {
+	const message = summariseOutcome({ overwritten: 10, deleted: 10, stranded: 0, untouched: 0 });
+
+	assert.equal(message, 'Overwrote 10, deleted 10. Reload the page to see the result.');
+});
+
+test('singular and plural agree, because this message is read under stress', () => {
+	assert.match(summariseOutcome({ overwritten: 1, deleted: 0, stranded: 1, untouched: 0 }), /1 was overwritten but could not be deleted/);
+	assert.match(summariseOutcome({ overwritten: 2, deleted: 0, stranded: 2, untouched: 0 }), /2 were overwritten but could not be deleted/);
+	assert.match(summariseOutcome({ overwritten: 0, deleted: 0, stranded: 0, untouched: 1 }), /1 could not be overwritten and was left unchanged/);
+	assert.match(summariseOutcome({ overwritten: 0, deleted: 0, stranded: 0, untouched: 2 }), /2 could not be overwritten and were left unchanged/);
+});
+
+// The module must route through the helper rather than rebuilding the sentence,
+// and must not share a try block between the overwrite and the delete again.
+test('execute tracks stranded and untouched as distinct outcomes', () => {
+	const source = codeOnly(readRepoFile('lib/modules/commentShredder.js'));
+
+	assert.ok(source.includes('summariseOutcome('), 'the module should use the shared summary helper');
+	assert.match(source, /stranded\+\+/, 'a failed delete after a successful overwrite must be counted as stranded');
+	assert.match(source, /untouched\+\+/, 'a failed overwrite must be counted separately');
+	assert.ok(!/failed\+\+/.test(source), 'the old single failure counter should be gone');
 });
