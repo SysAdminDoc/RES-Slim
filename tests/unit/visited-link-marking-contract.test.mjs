@@ -132,3 +132,32 @@ test('the link scanner restores the mark for every link it examines', () => {
 		'the call must be near the top of checkElementForMedia, before any early return can skip it',
 	);
 });
+
+// The mark must not be an opacity dim. Opacity blends text toward the background
+// and so cuts contrast directly — the first version took old.reddit's link blue
+// from 4.49:1 to 2.58:1 and nightMode's from 8.02:1 to 4.24:1, both below AA —
+// and it is the one property a theme cannot correct for.
+test('the visited mark does not reduce text contrast', () => {
+	const scss = readRepoFile('lib/css/modules/_showImages.scss');
+	const rule = scss.slice(scss.indexOf(`a.${VISITED_CLASS}`));
+	const block = rule.slice(0, rule.indexOf('}') + 1);
+
+	assert.ok(block.length, 'sanity: the visited-link rule should exist');
+	assert.ok(!/\bopacity\s*:/.test(block), `the mark must not dim the link text: ${block}`);
+	assert.ok(!/\bfilter\s*:/.test(block), 'filter has the same contrast-reducing effect as opacity');
+});
+
+test('the visited mark is a shape, not colour alone', () => {
+	const scss = readRepoFile('lib/css/modules/_showImages.scss');
+	const rule = scss.slice(scss.indexOf(`a.${VISITED_CLASS}`));
+	const block = rule.slice(0, rule.indexOf('}') + 1);
+
+	// A pseudo-element drawn in currentColor adds a mark without touching the
+	// text's own colour, so it survives every theme with no per-skin variant.
+	assert.match(block, /::before|::after/, 'the mark should be a drawn pseudo-element');
+	assert.match(block, /currentcolor/i, 'drawing in currentColor is what makes it theme-proof');
+	assert.ok(
+		!/\bcolor\s*:\s*#/.test(block),
+		'a hardcoded colour would be wrong in at least one of the six pageTheme palettes',
+	);
+});

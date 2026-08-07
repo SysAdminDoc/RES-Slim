@@ -184,3 +184,45 @@ test('an invalid expiry window falls back to the default instead of dropping eve
 		assert.deepEqual(expiredKeys(map, bad, now), [], `expiry window ${String(bad)} must not expire a day-old entry`);
 	}
 });
+
+// The query is not dropped wholesale. It was, and that collapsed every
+// `youtube.com/watch?v=<id>` into one key — so expanding a single video marked
+// every YouTube link on the site as visited. showImages ships a YouTube handler,
+// so this was reachable, not theoretical.
+test('params that identify the resource are kept, so distinct media stay distinct', () => {
+	const a = 'https://www.youtube.com/watch?v=AAAAAAAAAAA';
+	const b = 'https://www.youtube.com/watch?v=BBBBBBBBBBB';
+
+	assert.notEqual(normalizeUrl(a), normalizeUrl(b), 'two different videos must not share a key');
+	assert.equal(isVisited(markVisited({}, a, Date.now()), b), false, 'expanding one video must not mark another');
+
+	// Same shape for any query-keyed host.
+	assert.notEqual(normalizeUrl('https://www.google.com/search?q=cats'), normalizeUrl('https://www.google.com/search?q=dogs'));
+});
+
+test('volatile params are still stripped, so one image matches itself', () => {
+	const image = 'https://i.imgur.com/abc123.png';
+	const map = markVisited({}, image, Date.now());
+
+	for (const variant of [
+		`${image}?utm_source=reddit&utm_medium=web`,
+		`${image}?s=abcdef0123456789`,
+		`${image}?width=320&height=240&format=pjpg&auto=webp`,
+		`${image}?fbclid=xyz`,
+		`${image}#top`,
+	]) {
+		assert.equal(isVisited(map, variant), true, `${variant} should match the same image`);
+	}
+});
+
+test('param order does not split one resource into two entries', () => {
+	assert.equal(
+		normalizeUrl('https://example.com/a?b=2&a=1'),
+		normalizeUrl('https://example.com/a?a=1&b=2'),
+		'the key must be order-independent, or the same URL stores twice',
+	);
+});
+
+test('a stripped-to-nothing query leaves no trailing separator', () => {
+	assert.equal(normalizeUrl('https://i.imgur.com/abc.png?utm_source=x'), 'i.imgur.com/abc.png');
+});

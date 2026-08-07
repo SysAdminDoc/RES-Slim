@@ -721,22 +721,23 @@ blockquote.bluesky-embed {
 // `:visited` painting, which the `history` permission used to buy: RES wrote the
 // URL into the real browsing history so Chrome would recolour the link. That is
 // a wildly disproportionate permission for a colour, so the set is local now —
-// and since Chrome deliberately hides `:visited` from script, the colour has to
-// be applied explicitly.
-// Deliberately understated, and it inherits rather than setting a colour of its
-// own, so it works on reddit's default theme, `nightMode` and every `pageTheme`
-// palette without needing a variant per skin.
-a.res-visited-link {
-	opacity: 0.65;
-
-	&:hover,
-	&:focus-visible {
-		opacity: 1;
-	}
-}
-
-@media (prefers-reduced-motion: no-preference) {
-	a.res-visited-link {
-		transition: opacity 120ms ease-out;
-	}
+// and since Chrome deliberately hides `:visited` from script, the mark has to be
+// applied explicitly.
+// It is a marker, not a dim. The first version used `opacity: 0.65`, which blends
+// text toward the background and so cuts contrast directly: old.reddit’s link
+// blue went from 4.49:1 to 2.58:1, and nightMode’s from 8.02:1 to 4.24:1 — both
+// below AA, and opacity is the one property a theme cannot correct for. A shape
+// drawn in `currentColor` costs the text nothing, works on every theme without a
+// per-skin variant, and does not rely on colour alone to carry the meaning.
+a.res-visited-link::before {
+	content: "";
+	display: inline-block;
+	width: 0.4em;
+	height: 0.4em;
+	margin-right: 0.35em;
+	vertical-align: baseline;
+	// From the shared scale, not a pill: the repo forbids fully-rounded backdrops
+	// in shipped in-page surfaces and a contract enforces it.
+	border-radius: var(--rsm-radius-xs);
+	background: currentcolor;
 }
