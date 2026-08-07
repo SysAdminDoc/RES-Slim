@@ -391,7 +391,7 @@
     },
     {
       "file": "lib/modules/hosts/pastebin.js",
-      "url": "https://pastebin.com/embed_iframe.php?i=${id}"
+      "url": "https://pastebin.com/embed_iframe/${id}"
     },
     {
       "file": "lib/modules/hosts/peertube.js",

@@ -34,7 +34,7 @@
 		"dayjs": "1.11.21",
 		"dompurify": "3.4.13",
 		"fast-levenshtein": "3.0.0",
-		"snudown-js": "4.0.1",
+		"snudown-js": "4.1.0",
 		"tinycolor2": "1.6.0"
 	},
 	"resolutions": {

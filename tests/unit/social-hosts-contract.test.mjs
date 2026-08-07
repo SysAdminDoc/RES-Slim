@@ -66,6 +66,26 @@ test('oEmbed social handlers sanitize remote HTML before attaching', () => {
 
 test('bluesky detects full post URLs and validates oEmbed payload shape', () => {
 	const src = readHost('bluesky');
-	assert.ok(src.includes('/profile\\/[\\w.-]+\\/post\\/[\\w.-]+'), 'full Bluesky post path');
 	assert.match(src, /typeof post\.html !== 'string'/);
+
+	// Pull the shipped regex out and run it rather than pinning its text: the
+	// previous version of this test asserted an exact character class, so it
+	// failed on a deliberate widening while telling you nothing about behaviour.
+	// Rebuilt with `new RegExp` from the captured body and flags rather than
+	// eval’d, so this never executes source text from the file it is checking.
+	const literal = src.match(/detect: \(\{ href \}\) => \(\/(.*)\/([a-z]*)\)\.exec\(href\)/);
+	assert.ok(literal, 'could not find the detect regex');
+	const detect = new RegExp(literal[1], literal[2]);
+
+	assert.ok(detect.test('https://bsky.app/profile/user.bsky.social/post/3kabc123'), 'handle-addressed post');
+	// bsky also serves post URLs addressed by DID, which contains colons. A
+	// [\w.-] profile class excluded those, so they were never detected at all
+	// (upstream #5561).
+	assert.ok(detect.test('https://bsky.app/profile/did:plc:abc123xyz/post/3kabc123'), 'DID-addressed post');
+	assert.ok(detect.test('https://bsky.app/profile/user.bsky.social/post/3kabc123?ref=x'), 'query string');
+
+	// Still narrow enough to reject non-posts.
+	assert.equal(detect.test('https://bsky.app/profile/user.bsky.social'), false, 'profile page is not a post');
+	assert.equal(detect.test('https://bsky.app/profile/a/post/b/extra'), false, 'trailing path');
+	assert.equal(detect.test('https://example.com/profile/a/post/b'), false, 'wrong host');
 });
