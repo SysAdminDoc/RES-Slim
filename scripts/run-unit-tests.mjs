@@ -27,6 +27,24 @@ const unitDir = path.join(repoRoot, 'tests', 'unit');
 // take a deliberate edit here.
 const MINIMUM_FILES = 100;
 
+// Every `loadModule` / `bundleEntry` call writes an esbuild bundle into
+// `tests/unit/.tmp-<label>/` and nothing has ever removed them. Ninety-five had
+// accumulated, and they are gitignored, so nobody saw them.
+//
+// That is not just untidiness. A locale-key scan reading `lib/` and `tests/` found
+// `.tmp-bundle-sw-probe/background.entry.js`, which inlines the whole locale file,
+// and therefore reported all 1,631 keys as used — a check reading its own build
+// output, which cannot fail. Clearing them before the run means a stale bundle can
+// never be read as source, and the tree does not grow.
+//
+// Before rather than after: after would race a suite that is still writing, and a
+// crashed run would leave them behind anyway.
+for (const entry of fs.readdirSync(unitDir, { withFileTypes: true })) {
+	if (entry.isDirectory() && entry.name.startsWith('.tmp-')) {
+		fs.rmSync(path.join(unitDir, entry.name), { recursive: true, force: true });
+	}
+}
+
 const files = fs.readdirSync(unitDir)
 	.filter(name => name.endsWith('.test.mjs'))
 	.sort()
