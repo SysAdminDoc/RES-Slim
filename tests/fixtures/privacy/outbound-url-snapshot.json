@@ -686,6 +686,14 @@
       "url": "http://127.0.0.1:7860"
     },
     {
+      "file": "lib/modules/localCompanion.js",
+      "url": "http://127.0.0.1/*"
+    },
+    {
+      "file": "lib/modules/localCompanion.js",
+      "url": "http://localhost/*"
+    },
+    {
       "file": "lib/modules/noParticipation.js",
       "url": "https://reddit.com/rules"
     },

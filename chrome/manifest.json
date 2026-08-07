@@ -61,7 +61,7 @@
     }
   ],
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; script-src 'self'; img-src 'self' data:; connect-src https:; font-src 'self' data:; frame-ancestors https://*.reddit.com"
+    "extension_pages": "default-src 'self'; script-src 'self'; img-src 'self' data:; connect-src https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; frame-ancestors https://*.reddit.com"
   },
   "permissions": [
     "tabs",
@@ -77,6 +77,8 @@
     "https://*.reddit.com/*"
   ],
   "optional_host_permissions":[
+    "http://localhost/*",
+    "http://127.0.0.1/*",
     "https://publish.twitter.com/oembed",
     "https://backend.deviantart.com/oembed",
     "https://api.gyazo.com/api/oembed",

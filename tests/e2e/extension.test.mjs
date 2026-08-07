@@ -15,6 +15,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createServer } from 'node:http';
 
 import { launchWithExtension, extensionUrl, assertBuilt, repoRoot, saveScreenshotDir } from './harness.mjs';
 
@@ -71,6 +72,52 @@ test('the built extension loads and its service worker registers', async t => {
 		return got && got.data;
 	}, token);
 	assert.equal(roundTrip, 'alive', 'background worker must serve its own message listeners');
+});
+
+// Every cross-origin request the extension makes is proxied through the service
+// worker's `ajax` listener, so the `extension_pages` CSP governs all of them —
+// including the ones a *content script* appears to make. That is not obvious, and
+// getting it wrong is silent: a blocked fetch is an ordinary `TypeError: Failed
+// to fetch`, indistinguishable from the host being down.
+//
+// `connect-src https:` therefore blocked every http request, and `localCompanion`
+// talks to `http://127.0.0.1:7860` by design — so that module could never have
+// worked. Only a real browser can prove this either way; jsdom has no CSP.
+test('the service worker CSP permits the origins the extension actually fetches', async t => {
+	const { worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// `fetch` from the worker, reporting whether the request was allowed to leave.
+	// A CSP refusal and a dead host both surface as `TypeError: Failed to fetch`,
+	// which is why the localhost cases below are asserted against a live server.
+	const attempt = url => worker.evaluate(async u => {
+		try {
+			await fetch(u, { method: 'GET' });
+			return true;
+		} catch (e) {
+			return false;
+		}
+	}, url);
+
+	// CORS headers on purpose. There are two independent gates between the worker
+	// and a localhost helper, and both fail as the same `TypeError: Failed to
+	// fetch`: the CSP, and CORS. This test is about the CSP, so CORS is satisfied
+	// here to isolate it — the CORS half is handled in the product by
+	// `localCompanion` requesting the localhost origin as an optional permission,
+	// which a headless test cannot grant.
+	const server = createServer((req, res) => {
+		res.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
+		res.end('{"ok":true}');
+	});
+	await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+	t.after(() => new Promise(resolve => server.close(resolve)));
+	const { port } = server.address();
+
+	// A live local server: if these fail it is CSP, not the network.
+	assert.equal(await attempt(`http://127.0.0.1:${port}/health`), true, 'localCompanion talks to http://127.0.0.1 and cannot work without it');
+	assert.equal(await attempt(`http://localhost:${port}/health`), true, 'the companion URL may be spelled localhost too');
+
+	assert.equal(await attempt('https://old.reddit.com/api/me.json'), true, 'reddit itself must remain reachable');
 });
 
 test('the settings console renders in the options page', async t => {

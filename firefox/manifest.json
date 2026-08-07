@@ -66,7 +66,7 @@
 		],
 		"run_at": "document_start"
 	}],
-	"content_security_policy": "default-src 'self'; img-src 'self' data:; connect-src https:; font-src 'self' data:; frame-ancestors https://*.reddit.com",
+	"content_security_policy": "default-src 'self'; img-src 'self' data:; connect-src https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; frame-ancestors https://*.reddit.com",
 	"permissions": [
 		"https://*.reddit.com/*",
 		"tabs",
@@ -77,6 +77,9 @@
 	"optional_permissions": [
 		"downloads",
 		"geolocation",
+
+		"http://localhost/*",
+		"http://127.0.0.1/*",
 
 		"https://publish.twitter.com/oembed",
 		"https://backend.deviantart.com/oembed",
