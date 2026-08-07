@@ -101,23 +101,33 @@ test('a module that runs everywhere is deliberate, not an omission', () => {
 	// extension's own options page — `matchesPageLocation()` short-circuits to true
 	// when `includes.length` is 0. Modules that touch reddit's DOM were twice found
 	// running there (v0.3.5, v0.4.0). This pins the current set so a *new* module
-	// cannot join it silently; shrinking the list is the open roadmap item.
+	// cannot join it silently.
+	//
+	// There are **three** scoping mechanisms, not two. The first version of this
+	// test checked only `include` and `exclude`, and so reported `noParticipation`
+	// as unscoped when it is in fact gated by `module.shouldRun = () =>
+	// isNpHostname(location.hostname)` — the framework checks `shouldRun` before
+	// running any stage. Over-reporting is not harmless: it sent an audit chasing a
+	// bug that did not exist, and a list that cries wolf stops being read.
 	const EXPECTED_GLOBAL = [
-		'RESMenu', 'commentDepth', 'hover', 'newCommentCount', 'nightMode',
-		'noParticipation', 'notifications', 'requestPermissions',
-		'search', 'settingsNavigation', 'sourceSnudown',
-		'subredditBlacklist', 'version',
+		'RESMenu', 'hover', 'newCommentCount', 'nightMode',
+		'notifications', 'requestPermissions',
+		'search', 'settingsNavigation', 'version',
 	].sort();
 
+	const overridesShouldRun = module => String(module.shouldRun).replace(/\s/g, '') !== '()=>true';
+
 	const actual = all
-		.filter(module => (!module.include || !module.include.length) && (!module.exclude || !module.exclude.length))
+		.filter(module => (!module.include || !module.include.length))
+		.filter(module => (!module.exclude || !module.exclude.length))
+		.filter(module => !overridesShouldRun(module))
 		.map(module => module.moduleID)
 		.sort();
 
 	assert.deepEqual(
 		actual,
 		EXPECTED_GLOBAL,
-		'a module with neither include nor exclude runs on every page including the options page — add `module.include`, or update this list if it is intentional',
+		'a module with no include, no exclude and no shouldRun runs on every page including the options page — scope it, or update this list if running everywhere is intentional',
 	);
 });
 
