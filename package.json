@@ -32,10 +32,13 @@
 	"dependencies": {
 		"dashjs": "4.7.4",
 		"dayjs": "1.11.21",
-		"dompurify": "3.4.11",
+		"dompurify": "3.4.13",
 		"fast-levenshtein": "3.0.0",
 		"snudown-js": "4.0.1",
 		"tinycolor2": "1.6.0"
+	},
+	"resolutions": {
+		"postcss": "8.5.26"
 	},
 	"devDependencies": {
 		"@babel/core": "7.25.2",
@@ -60,7 +63,7 @@
 		"flow-bin": "0.84.0",
 		"flow-remove-types": "2.246.0",
 		"jszip": "3.10.1",
-		"postcss": "8.4.45",
+		"postcss": "8.5.26",
 		"rimraf": "6.0.1",
 		"semver": "7.6.3",
 		"stylelint": "16.6.1",
