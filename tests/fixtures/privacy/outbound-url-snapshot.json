@@ -902,6 +902,10 @@
       "url": "https://old.reddit.com"
     },
     {
+      "file": "lib/utils/visitedLinks.js",
+      "url": "https://old.reddit.com"
+    },
+    {
       "file": "lib/utils/visitedPosts.js",
       "url": "https://old.reddit.com"
     },

@@ -65,7 +65,6 @@
   },
   "permissions": [
     "tabs",
-    "history",
     "storage",
     "unlimitedStorage",
     "scripting"

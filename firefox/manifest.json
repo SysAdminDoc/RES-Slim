@@ -70,7 +70,6 @@
 	"permissions": [
 		"https://*.reddit.com/*",
 		"tabs",
-		"history",
 		"storage",
 		"scripting",
 		"unlimitedStorage"
