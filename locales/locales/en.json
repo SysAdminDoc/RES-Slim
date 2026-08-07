@@ -3217,7 +3217,7 @@
 		"description": "As in 'x-posted from /r/subreddit'"
 	},
 	"nightModeDesc": {
-		"message": "A darker, more eye-friendly version of Reddit suited for night browsing.\n\nNote: Using this on/off switch will disable all features of the night mode module completely.\nTo simply turn off night mode, use the nightModeOn switch below."
+		"message": "A darker, more eye-friendly version of Reddit suited for night browsing.\n\nNote: this on/off switch disables every feature of the night mode module. To keep the rest and only turn the dark theme off, use the \"Night Mode On\" switch below."
 	},
 	"nightModeNightModeOnTitle": {
 		"message": "Night Mode On"
@@ -4679,7 +4679,7 @@
 		"message": "Sfw History"
 	},
 	"showImagesSfwHistoryDesc": {
-		"message": "Keeps NSFW links from being added to your browser history *by the markVisited feature*\n\n***This does not change your basic browser behavior. If you click on a link then it will still be added to your history normally. This is not a substitute for using your browser's privacy mode.***"
+		"message": "Keeps NSFW links out of the local visited set that \"Mark Visited\" records, so they are not marked as seen on later visits.\n\nThis does not change your browser’s own behaviour: clicking a link still adds it to your browser history as normal. It is not a substitute for a private window."
 	},
 	"showImagesGalleryRememberWidthTitle": {
 		"message": "Gallery Remember Width"
@@ -4715,7 +4715,7 @@
 		"message": "Auto Expand Types"
 	},
 	"showImagesAutoExpandTypesDesc": {
-		"message": "Media types to be automatically expanded when using \"show images\" or autoExpandSelfText."
+		"message": "Media types to expand automatically for \"Show Images\" and \"Auto Expand Self Text\"."
 	},
 	"showImagesAutoExpandSelfTextTitle": {
 		"message": "Auto Expand Self Text"
