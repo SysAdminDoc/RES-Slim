@@ -127,6 +127,8 @@ test('the settings console renders in the options page', async t => {
 	const page = await context.newPage();
 	const pageErrors = [];
 	page.on('pageerror', e => pageErrors.push(String(e)));
+	const missingKeyReports = [];
+	page.on('console', m => { if (m.text().includes('Missing locale key')) missingKeyReports.push(m.text()); });
 
 	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
@@ -141,8 +143,41 @@ test('the settings console renders in the options page', async t => {
 
 	// A missing locale key renders as the key itself rather than throwing, which is
 	// how `privacyCategory` once shipped visible in a sidebar heading.
-	const bodyText = await page.locator('body').innerText();
-	assert.ok(!/\b[a-z]+[A-Z][A-Za-z]*Category\b/.test(bodyText), 'no raw i18n keys should be visible in the console');
+	//
+	// Every tab, not just the one the console opens on. Checking the default view
+	// alone would miss a key living in any of the other categories — which is most
+	// of them, and which is exactly the exposure when 1,086 unused keys are pruned
+	// out of the locale file.
+	// Compared against the real key list, not a guessed shape. A shape regex has a
+	// blind spot by construction: the first version of this required a
+	// Category/Name/Desc/Title suffix and so could not see `settingsConsoleTabAbout`,
+	// which is a tab label and about the most visible string in the console. The key
+	// list cannot have that problem.
+	const localeKeys = Object.keys(JSON.parse(fs.readFileSync(path.join(repoRoot, 'locales', 'locales', 'en.json'), 'utf8')))
+		// Two keys are ordinary English words — `yes` and `no` — and the console says
+		// "no" for legitimate reasons. Requiring an interior capital keeps the check
+		// honest about what it covers rather than reporting the word 'no' forever.
+		.filter(key => /[a-z][A-Z]/.test(key));
+	assert.ok(localeKeys.length > 100, 'the locale file must load, or this checks nothing');
+
+	// `:not([hidden])` because the console keeps a hidden `__search` tab in the
+	// tablist that exists to host search results and is never clickable.
+	const tabHandles = await page.locator('[role="tablist"] [role="tab"]:not([hidden])').all();
+	assert.ok(tabHandles.length > 1, 'there should be several categories to walk');
+
+	for (const tab of tabHandles) {
+		await tab.click(); // eslint-disable-line no-await-in-loop
+		await page.waitForTimeout(120); // eslint-disable-line no-await-in-loop
+		const text = await page.locator('#RESConsoleContainer').innerText(); // eslint-disable-line no-await-in-loop
+		const words = new Set(text.split(/[^A-Za-z0-9_]+/));
+		const leaked = localeKeys.filter(key => words.has(key));
+		assert.deepEqual(leaked, [], `locale key rendered as its own name: ${leaked.join(', ')}`);
+	}
+
+	// The walk above can only read text. i18n() itself reports a miss in
+	// development, which covers the keys that render somewhere a text scrape cannot
+	// see — a title attribute, a toast that is not currently showing.
+	assert.deepEqual(missingKeyReports, [], 'i18n() reported a missing key while the console was open');
 
 	assert.deepEqual(pageErrors, [], 'options page must load without uncaught errors');
 

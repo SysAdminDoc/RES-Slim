@@ -73,8 +73,31 @@ if (missing.length) {
 	process.exit(1);
 }
 
-const unused = [...known].filter(key => !used.has(key));
-console.log(
-	`i18n: ${used.size} of ${known.size} keys referenced, 0 missing. ` +
-	`${unused.length} unused (untidy, not a defect — see the roadmap item on pruning them).`,
-);
+// The unused count needs the OPPOSITE definition to the missing check above.
+// 63 of the `i18n()` calls take a variable — `i18n(mod.moduleName)`,
+// `i18n(option.title)` — whose value is a literal elsewhere in the tree, and the
+// narrow scan cannot see those. Using it to decide deletions would have removed
+// 435 live keys. So: a key counts as used if it appears anywhere at all.
+//
+// Excluding `tests/unit/.tmp-*`, which is the bundler's scratch output. It inlines
+// the whole locale file, so a scan that reads it reports every key as used — which
+// is exactly what the first attempt at this reported, all 1,631 of them.
+function readAll(dir) {
+	if (!fs.existsSync(dir)) return '';
+	return fs.readdirSync(dir, { withFileTypes: true }).map(entry => {
+		if (entry.name.startsWith('.tmp-') || entry.name === 'node_modules') return '';
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) return readAll(full);
+		return /\.(js|mjs|json|scss|html)$/.test(entry.name) ? fs.readFileSync(full, 'utf8') : '';
+	}).join('\n');
+}
+
+const haystack = [readAll(libRoot), readAll(path.join(repoRoot, 'tests'))].join('\n');
+const escapeForRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Word-bounded so `hoverName` does not keep `hover` alive.
+const unused = [...known].filter(key => !new RegExp(`\\b${escapeForRegExp(key)}\\b`).test(haystack));
+console.log(`i18n: ${known.size} keys, 0 missing, ${unused.length} unused.`);
+
+if (process.argv.includes('--list-unused')) {
+	for (const key of unused) console.log(key);
+}
