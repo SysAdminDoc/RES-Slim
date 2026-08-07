@@ -50,13 +50,24 @@ test('buildCodeBlockHtml emits a pre>code with an escaped language label', () =>
 	assert.match(html, /<code class="language-py">print\(1\)<\/code>/);
 });
 
+test('fencedCodeBlocks is registered and styled', () => {
+	const index = read('lib/modules/index.js');
+	assert.match(index, /import \{ module as fencedCodeBlocks \} from '\.\/fencedCodeBlocks';/);
+	assert.match(index, /^\s*fencedCodeBlocks,/m);
+	assert.match(read('lib/css/res.scss'), /@import 'modules\/fencedCodeBlocks';/);
+});
+
 test('escapeHtml neutralizes markup', () => {
 	assert.equal(escapeHtml('<b>&"\'</b>'), '&lt;b&gt;&amp;&quot;&#39;&lt;/b&gt;');
 });
 
-test('fencedCodeBlocks module is registered, disabled by default, and styled', () => {
+test('fencedCodeBlocks is on by default, with highlighting opt-in', () => {
 	const mod = read('lib/modules/fencedCodeBlocks.js');
-	assert.match(mod, /module\.disabledByDefault = true;/);
+	// old.reddit renders a fenced block as literal text with the backticks
+	// showing, so this is a fix rather than a preference. Colouring the block is
+	// a preference, and stays off.
+	assert.doesNotMatch(mod, /module\.disabledByDefault/);
+	assert.match(mod, /highlight: \{[\s\S]{0,200}value: false,/);
 	assert.match(mod, /buildCodeBlockHtml\(parsed\.lang, parsed\.code, highlight\)/);
 	assert.match(mod, /setTrustedHTML\(md,/);
 

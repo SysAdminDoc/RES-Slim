@@ -26,7 +26,6 @@ const targets = {
 		browserName: 'firefox',
 		browserMinVersion: '115.0',
 		manifest: './firefox/manifest.json',
-		noSourcemap: true,
 	},
 }
 
@@ -96,7 +95,7 @@ async function addDirectoryToZip(zip, sourceDir, currentDir = sourceDir) {
 	}));
 }
 
-async function buildForBrowser(targetName, { manifest, noSourcemap, browserName, browserMinVersion }) {
+async function buildForBrowser(targetName, { manifest, browserName, browserMinVersion }) {
 	const context = {
 		entryPoints: {
 			'foreground.entry': './lib/foreground.entry.js',
@@ -108,7 +107,12 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 			res: './lib/css/res.scss',
 			prompt: './lib/environment/background/permissions/prompt.scss',
 		},
-		sourcemap: !isProduction || !noSourcemap,
+		// Dev keeps sourcemaps; production never emits them for either target.
+		// This used to be `!isProduction || !noSourcemap`, which is true for any
+		// target that does not set noSourcemap — i.e. Chrome — so the production
+		// Chrome zip shipped .map files carrying the full original sources and came
+		// out at more than double the Firefox one.
+		sourcemap: !isProduction,
 		outdir: `./dist/${targetName}/`,
 		bundle: true,
 		format: 'iife',
@@ -185,36 +189,33 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 						return { contents: text, loader: 'copy' };
 					});
 				},
-			}, options.zip ? {
-				name: 'zip-build',
-				setup(build) {
-					const sourceDir = `./dist/${targetName}/`;
-					const outPath = './dist/zip';
-					build.onEnd(async () => {
-						const zip = new JSZip();
-						await addDirectoryToZip(zip, sourceDir);
-
-						const zipContent = await zip.generateAsync({ compression: 'DEFLATE', type: 'nodebuffer' });
-						await fs.promises.mkdir(outPath, { recursive: true })
-						await fs.promises.writeFile(`${outPath}/${targetName}.zip`, zipContent);
-						console.log(`emitted zip file for ${targetName}`);
-					})
-				},
-			} : undefined,
+			},
 			isProduction ? {
 				name: 'bundle-budget',
 				setup(build) {
 					build.onEnd(async () => {
+						// Covers the two largest shipped assets as well as the entry
+						// scripts: res.css is injected into every frame at document_start
+						// and was ungated, as was the vendored dash player.
 						const budgets = {
 							'foreground.entry.js': 1_800_000,
 							'options.entry.js': 1_900_000,
 							'background.entry.js': 400_000,
+							'res.css': 400_000,
+							'options.css': 120_000,
+							'dash.mediaplayer.min.js': 800_000,
 						};
 						const violations = [];
 						for (const [file, limit] of Object.entries(budgets)) {
 							const filePath = `./dist/${targetName}/${file}`;
 							const stat = await fs.promises.stat(filePath).catch(() => null);
-							if (!stat) continue;
+							if (!stat) {
+								// A budget that skips missing files passes for a build that
+								// never produced the file, which is the failure it exists to
+								// catch.
+								violations.push(`${file}: missing from the build output`);
+								continue;
+							}
 							if (stat.size > limit) {
 								violations.push(`${file}: ${(stat.size / 1024).toFixed(0)}KB exceeds budget of ${(limit / 1024).toFixed(0)}KB`);
 							}
@@ -249,6 +250,18 @@ async function buildForBrowser(targetName, { manifest, noSourcemap, browserName,
 		console.log(`building ${targetName}`);
 		const result = await esbuild.build(context)
 		fs.writeFileSync(`dist/esbuild-meta-${targetName}.json`, JSON.stringify(result.metafile))
+
+		// Only reached when every onEnd gate passed — esbuild.build() rejects
+		// otherwise — so a build that blew its bundle budget or failed the dashjs
+		// integrity check leaves no shippable zip behind.
+		if (options.zip) {
+			const zip = new JSZip();
+			await addDirectoryToZip(zip, `./dist/${targetName}/`);
+			const zipContent = await zip.generateAsync({ compression: 'DEFLATE', type: 'nodebuffer' });
+			await fs.promises.mkdir('./dist/zip', { recursive: true });
+			await fs.promises.writeFile(`./dist/zip/${targetName}.zip`, zipContent);
+			console.log(`emitted zip file for ${targetName}`);
+		}
 	}
 }
 

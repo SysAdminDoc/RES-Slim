@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { codeOnly } from './helpers/loadFlowModule.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
@@ -48,4 +49,82 @@ test('Firefox manifest does not advertise unsupported Android compatibility', ()
 	const firefoxManifest = JSON.parse(read('firefox/manifest.json'));
 
 	assert.equal(firefoxManifest.browser_specific_settings.gecko_android, undefined);
+});
+
+test('the release build produces both browser targets', () => {
+	// `--browsers` defaults to chrome alone, so the documented release command
+	// used to emit a Chrome-only artifact while the release notes promised two.
+	const packageInfo = JSON.parse(read('package.json'));
+	assert.match(packageInfo.scripts.build, /--browsers chrome,firefox/);
+});
+
+test('production emits no sourcemaps for either target', () => {
+	const build = read('build.js');
+	// The old expression, `!isProduction || !noSourcemap`, is true for any target
+	// that does not set noSourcemap — i.e. Chrome — so the Chrome zip shipped
+	// .map files carrying every original source and came out at more than double
+	// the Firefox one.
+	assert.match(build, /sourcemap: !isProduction,/);
+	assert.doesNotMatch(build, /sourcemap: !isProduction \|\| !noSourcemap/);
+	// The per-target flag is gone rather than left as dead config that reads as
+	// if it still controls something. Checked against comment-stripped source,
+	// since the comment above deliberately names the old expression.
+	assert.match(build, /noSourcemap/, 'the comment should still record what changed');
+	assert.doesNotMatch(codeOnly(build), /noSourcemap/);
+});
+
+test('zipping happens after the gates, not as a plugin among them', () => {
+	const build = read('build.js');
+	// esbuild runs every onEnd callback and aggregates their errors, so a zip
+	// plugin merely *registered* after the budget and integrity gates would still
+	// write an artifact for a build that failed one. Zipping after
+	// esbuild.build() resolves is the only ordering that cannot leave a
+	// shippable zip behind for a rejected build.
+	assert.doesNotMatch(build, /name: 'zip-build'/);
+	assert.match(build, /const result = await esbuild\.build\(context\)/);
+	const buildAt = build.indexOf('const result = await esbuild.build(context)');
+	const zipAt = build.indexOf('if (options.zip) {');
+	assert.ok(zipAt > buildAt, 'zipping must follow the awaited build');
+});
+
+test('the bundle budget covers the two largest shipped assets', () => {
+	const build = read('build.js');
+	// res.css is injected into every frame at document_start and was ungated, as
+	// was the vendored dash player — together larger than every budgeted script.
+	assert.match(build, /'res\.css': /);
+	assert.match(build, /'dash\.mediaplayer\.min\.js': /);
+	assert.match(build, /'options\.css': /);
+});
+
+test('a budgeted file that is missing fails the build', () => {
+	const build = read('build.js');
+	// `.catch(() => null)` plus `continue` meant a renamed or never-built
+	// entrypoint passed the gate silently — the exact case the gate exists for.
+	assert.doesNotMatch(build, /if \(!stat\) continue;/);
+	assert.match(build, /missing from the build output/);
+});
+
+test('the Firefox build has its own add-on ID', () => {
+	// Shipping upstream RES's AMO ID makes the fork collide with an installed RES
+	// on Firefox, so the two cannot be side-loaded together.
+	for (const file of ['firefox/manifest.json', 'firefox/beta/manifest.json']) {
+		const manifest = JSON.parse(read(file));
+		const { id } = manifest.browser_specific_settings.gecko;
+		assert.notEqual(id, 'jid1-xUfzOsOFlzSOXg@jetpack', `${file} still ships upstream RES's add-on ID`);
+		assert.equal(id, 'res-slim@sysadmindoc', file);
+	}
+});
+
+test('both Firefox manifests declare that no data is collected', () => {
+	// AMO has auto-rejected submissions without this key since 2025-11-03. A
+	// no-telemetry extension is the trivial case, so its absence was pure
+	// paperwork blocking any Firefox distribution.
+	for (const file of ['firefox/manifest.json', 'firefox/beta/manifest.json']) {
+		const manifest = JSON.parse(read(file));
+		assert.deepEqual(
+			manifest.browser_specific_settings.gecko.data_collection_permissions,
+			{ required: ['none'] },
+			file,
+		);
+	}
 });
