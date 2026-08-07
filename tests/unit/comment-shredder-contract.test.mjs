@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { codeOnly, loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
+import { loadModule, installDom } from './helpers/loadModule.mjs';
+
+installDom();
 
 const cs = await loadFlowModule('lib/utils/commentShredder.js', 'comment-shredder');
 const { summariseOutcome } = cs;
@@ -223,4 +226,152 @@ test('execute tracks stranded and untouched as distinct outcomes', () => {
 	assert.match(source, /stranded\+\+/, 'a failed delete after a successful overwrite must be counted as stranded');
 	assert.match(source, /untouched\+\+/, 'a failed overwrite must be counted separately');
 	assert.ok(!/failed\+\+/.test(source), 'the old single failure counter should be gone');
+});
+
+// --- stop and progress, executed ------------------------------------------
+//
+// The regex above proves the counters are written; it cannot prove that pressing
+// Stop actually stops anything, nor that it stops in the right *place*. A stop
+// that landed between a comment's overwrite and its delete would manufacture the
+// stranded state — content destroyed, comment still visible — which is the exact
+// failure the two-try split exists to report rather than cause.
+
+const Shredder = await loadModule('lib/modules/commentShredder.js', 'comment-shredder-exec');
+
+// The module is `include: ['profile']` and its options are read directly off the
+// module object, so the registry copy is the one to configure.
+const shredderModule = Shredder.__registry.getUnchecked('commentShredder');
+
+// A limiter that runs immediately: the rate limiting is tested elsewhere and here
+// it would only make the test slow.
+const passthroughLimiter = { schedule: fn => fn() };
+
+const fakeSelected = n => Array.from({ length: n }, (unused, i) => ({ item: { fullname: `t1_c${i}` } }));
+
+function recordRequests() {
+	const calls = [];
+	globalThis.__fetchHook = (url, init) => {
+		calls.push(String(url));
+		return Promise.resolve(new Response('{"json":{"errors":[]}}', {
+			status: 200,
+			headers: { 'content-type': 'application/json' },
+		}));
+	};
+	return calls;
+}
+
+function controls({ stopAfter = Infinity } = {}) {
+	const progress = [];
+	let finished = null;
+	return {
+		progress,
+		get finished() { return finished; },
+		onProgress(n) { progress.push(n); },
+		shouldStop: () => progress.length >= stopAfter,
+		finish(message) { finished = message; },
+	};
+}
+
+test('Stop before the first comment sends nothing at all', async () => {
+	const calls = recordRequests();
+	const c = controls({ stopAfter: 0 });
+
+	await Shredder.execute(fakeSelected(5), 'modhash', passthroughLimiter, c);
+
+	assert.deepEqual(calls, [], 'a stop requested before the loop must not destroy anything');
+	assert.match(c.finished, /^Stopped\./, 'the panel must say it stopped, not report a completed run');
+	assert.match(c.finished, /5 were not attempted/, 'silence about the remainder reads as "there was nothing left"');
+
+	globalThis.__fetchHook = null;
+});
+
+test('Stop lands between comments, never between a comment\'s overwrite and its delete', async () => {
+	const calls = recordRequests();
+	// deleteAfterOverwrite is the default, but assert it rather than assume — with
+	// it off, this test would pass while proving nothing about the pairing.
+	assert.equal(shredderModule.options.deleteAfterOverwrite.value, true);
+
+	const c = controls({ stopAfter: 1 });
+	await Shredder.execute(fakeSelected(5), 'modhash', passthroughLimiter, c);
+
+	assert.equal(calls.length, 2, `exactly one comment should have been processed, saw ${calls.join(', ')}`);
+	assert.match(calls[0], /editusertext/, 'the overwrite must come first');
+	assert.match(calls[1], /\/api\/del/, 'and its delete must still happen — stopping in between strands the comment');
+
+	assert.match(c.finished, /Overwrote 1, deleted 1\./);
+	assert.match(c.finished, /4 were not attempted/);
+
+	globalThis.__fetchHook = null;
+});
+
+test('progress is reported per comment, before the work rather than after', async () => {
+	recordRequests();
+	const c = controls();
+
+	await Shredder.execute(fakeSelected(3), 'modhash', passthroughLimiter, c);
+
+	assert.deepEqual(c.progress, [1, 2, 3], 'the count must advance during the run, not once at the end');
+	assert.ok(!/Stopped/.test(c.finished), 'a run that was never stopped must not claim it was');
+	assert.match(c.finished, /Overwrote 3, deleted 3\./);
+
+	globalThis.__fetchHook = null;
+});
+
+test('a stopped run and a completed run do not read the same', () => {
+	const counts = { overwritten: 2, deleted: 2, stranded: 0, untouched: 0 };
+
+	const completed = summariseOutcome(counts);
+	const halted = summariseOutcome({ ...counts, stopped: true, remaining: 98 });
+
+	assert.notEqual(completed, halted);
+	assert.ok(!/Stopped/.test(completed));
+	assert.match(halted, /Stopped\./);
+	assert.match(halted, /98 were not attempted/);
+	// A stop with nothing left is a finished run in all but name; it must not
+	// claim a remainder it does not have.
+	assert.ok(!/not attempted/.test(summariseOutcome({ ...counts, stopped: true, remaining: 0 })));
+});
+
+test('the panel shows a live count and a working Stop button', () => {
+	let captured = null;
+	const panel = Shredder.confirmPanel(3, c => { captured = c; });
+	document.body.append(panel);
+
+	const input = panel.querySelector('input[type="text"]');
+	const buttons = Array.from(panel.querySelectorAll('button'));
+	const shred = buttons.find(b => b.textContent === 'Shred');
+	const stop = buttons.find(b => b.textContent === 'Stop');
+
+	assert.ok(shred && stop, 'the panel must offer both a start and a stop');
+	assert.equal(shred.disabled, true, 'the destructive button must start disabled');
+	assert.equal(stop.hidden, true, 'Stop is meaningless before a run starts');
+
+	// The typed confirmation still gates the start.
+	input.value = 'delete';
+	input.dispatchEvent(new window.Event('input'));
+	assert.equal(shred.disabled, true, 'the confirmation is case-sensitive on purpose');
+	input.value = 'DELETE';
+	input.dispatchEvent(new window.Event('input'));
+	assert.equal(shred.disabled, false);
+
+	shred.click();
+	assert.ok(captured, 'confirming must hand the run its controls');
+	assert.equal(stop.hidden, false, 'Stop must appear for the duration of the run');
+
+	const status = panel.querySelector('[role="status"]');
+	assert.ok(status && !status.hidden, 'a minutes-long irreversible run needs a visible status line');
+	assert.match(status.textContent, /0 of 3/);
+
+	captured.onProgress(2);
+	assert.match(status.textContent, /2 of 3/, 'the count must advance as the run proceeds');
+
+	assert.equal(captured.shouldStop(), false);
+	stop.click();
+	assert.equal(captured.shouldStop(), true, 'pressing Stop must be what the loop reads');
+
+	captured.finish('Stopped. Overwrote 2, deleted 2.');
+	assert.equal(stop.hidden, true, 'Stop must not linger after the run ends');
+	assert.match(status.textContent, /Stopped\./, 'the outcome belongs in the panel the user is looking at');
+
+	panel.remove();
 });
