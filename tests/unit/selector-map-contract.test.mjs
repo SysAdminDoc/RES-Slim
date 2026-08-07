@@ -2,13 +2,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
 const selectors = read('lib/core/dom/selectors.js');
-const findElement = read('lib/core/dom/findElement.js');
-const waitForElement = read('lib/core/dom/waitForElement.js');
+const { findSurface, matchedSelectorFor, getSurfaceSelectorList, getStableSelector } =
+	await loadFlowModule('lib/core/dom/selectors.js', 'selectors');
 const trustedHtml = read('lib/core/dom/trustedHtml.js');
 const frontpageFixture = read('tests/fixtures/mhtml/frontpage.html');
 const threadFixture = read('tests/fixtures/mhtml/thread.html');
@@ -112,22 +113,59 @@ test('MHTML-derived fixtures preserve front page and thread DOM surfaces', () =>
 	assert.match(threadFixture, /class="child"/);
 });
 
-test('selector helper strategy supports self-healing lookups without full-document mutation scans', () => {
+test('high-churn surfaces are enumerated', () => {
 	assert.match(selectors, /highChurnSurfaces = Object\.freeze\(\[/);
 	for (const surfaceName of ['expando', 'commentChildren', 'composerForm', 'reportForm', 'settingsOverlay']) {
 		assert.match(selectors, new RegExp(`'${surfaceName}'`));
 	}
-
-	assert.match(findElement, /root\.querySelector\(selector\)/);
-	assert.match(findElement, /root\.querySelectorAll\(selector\)/);
-	assert.match(findElement, /getSurfaceSelectorList\(surfaceName\)/);
-	assert.match(waitForElement, /new MutationObserver/);
-	assert.match(waitForElement, /mutation\.addedNodes/);
-	assert.match(waitForElement, /findInAddedNode\(node, selectorList\)/);
-	assert.match(waitForElement, /backoffMs/);
-	assert.doesNotMatch(waitForElement, /document\.querySelectorAll/);
 });
 
+test('findSurface falls back through the list in order', () => {
+	// The point of the map: a module that hardcodes one selector silently
+	// no-ops when Reddit renames a class — nothing throws, the feature just
+	// stops appearing. Exercised against a stub root rather than asserted about,
+	// because the ordering is the whole behaviour.
+	const list = getSurfaceSelectorList('header');
+	assert.ok(list.length > 1, 'header needs at least one fallback to be worth resolving');
+
+	const element = { nodeType: 1 };
+	const rootMatching = matched => ({ querySelector: sel => (sel === matched ? element : null) });
+
+	// Stable selector present: used directly.
+	assert.equal(matchedSelectorFor('header', rootMatching(list[0])), list[0]);
+	// Stable selector gone, fallback present: resolves anyway.
+	assert.equal(matchedSelectorFor('header', rootMatching(list[1])), list[1]);
+	// Nothing matches: null rather than a throw, so a caller can degrade.
+	assert.equal(matchedSelectorFor('header', { querySelector: () => null }), null);
+});
+
+test('findSurface returns only real elements', () => {
+	// querySelector on a detached or exotic root can hand back a non-element;
+	// returning it would push the failure into the caller. The check is on
+	// nodeType, not `instanceof HTMLElement`, because a content script can be
+	// handed an element from another realm where instanceof is false.
+	const notAnElement = { nodeType: 3 };
+	assert.equal(findSurface('header', { querySelector: () => notAnElement }), null);
+
+	const realElement = { nodeType: 1 };
+	assert.equal(findSurface('header', { querySelector: () => realElement }), realElement);
+});
+
+test('an unknown surface name fails loudly', () => {
+	// A typo must not resolve to null and look like "not on this page".
+	assert.throws(() => getSurfaceSelectorList('nosuchsurface'), /Unknown old Reddit surface/);
+	assert.throws(() => getStableSelector('nosuchsurface'), /Unknown old Reddit surface/);
+});
+
+test('the selector map is actually used by shipping code', () => {
+	// It was built and left unimported, which made it a liability rather than the
+	// resilience asset it was written to be.
+	const hideAll = read('lib/modules/hideAll.js');
+	const randomSubreddit = read('lib/modules/randomSubreddit.js');
+	assert.match(hideAll, /import \{ findSurface \} from '\.\.\/core\/dom\/selectors'/);
+	assert.match(hideAll, /findSurface\('header'\)/);
+	assert.match(randomSubreddit, /findSurface\('subredditBar'\)/);
+});
 test('TrustedTypes helper centralizes all HTML injection primitives', () => {
 	assert.match(trustedHtml, /trustedTypes\.createPolicy\(POLICY_NAME/);
 	assert.match(trustedHtml, /createTrustedHTML\(html: string\)/);
