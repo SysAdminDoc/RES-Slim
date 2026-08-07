@@ -1,7 +1,7 @@
 {
 	"title": "RES-Slim",
 	"name": "res-slim",
-	"version": "0.21.0",
+	"version": "0.22.0",
 	"description": "Stripped-down RES fork: comment tweaks and media expandos only, old.reddit.com",
 	"author": "RES-Slim (fork of Reddit Enhancement Suite contributors)",
 	"license": "GPL-3.0",
