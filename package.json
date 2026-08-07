@@ -27,6 +27,8 @@
 		"test:bundle": "node build.js --mode production --browsers chrome",
 		"lint": "node scripts/lint-baseline.mjs && yarn stylelint && node scripts/i18n-lint.mjs",
 		"lint:i18n": "node scripts/i18n-lint.mjs",
+		"flow": "node scripts/flow-baseline.mjs",
+		"flow:baseline": "node scripts/flow-baseline.mjs --update",
 		"lint:baseline": "node scripts/lint-baseline.mjs --update",
 		"check:endpoints": "node scripts/check-endpoints.mjs"
 	},
