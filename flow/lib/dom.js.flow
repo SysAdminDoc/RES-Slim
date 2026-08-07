@@ -1,5 +1,21 @@
 /* @flow */
 
+// Post-2018 globals and type aliases. Flow 0.84 predates all of these, and the
+// resulting "Cannot resolve name" errors are noise that hides the real findings
+// in `yarn flow`. Declared as narrowly as the code needs, not exhaustively.
+declare type InsertPosition = 'beforebegin' | 'afterbegin' | 'beforeend' | 'afterend';
+
+// The DOM's ParentNode mixin, used as a parameter type by helpers that accept
+// either the document or a subtree root. Flow 0.84 has no name for it.
+declare type ParentNode = Document | DocumentFragment | Element;
+
+// The IndexedDB surface used by lib/utils/indexedDb.js. `any` rather than a full
+// libdef: a wrong-but-detailed type is worse than an honest opaque one, and the
+// wrappers around it are typed themselves.
+declare var indexedDB: any;
+
+// CSS.escape, used when building selectors from reddit-supplied ids.
+declare var CSS: {| escape(value: string): string |};
 // Make event.target an HTMLElement
 // this is unsound for `window.addEventListener`
 // but it's better than having to downcast every single event target
@@ -153,6 +169,13 @@ after(...nodes: Array<string | Node>): void;
 before(...nodes: Array<string | Node>): void;
 replaceWith(...nodes: Array<string | Node>): void;
 remove(): void;
+
+	// Standardised after Flow 0.84 shipped (2018), so absent from its builtin lib.
+	// This class shadows that builtin, and HTMLElement extends it, so declaring them
+	// here is enough. Each is used by this codebase — do not add speculatively; an
+	// unused declaration is a claim nothing checks.
+	replaceChildren(...nodes: Array<string | Node>): void;
+	toggleAttribute(name: string, force?: boolean): boolean;
 }
 
 declare class DocumentFragment extends Node {
