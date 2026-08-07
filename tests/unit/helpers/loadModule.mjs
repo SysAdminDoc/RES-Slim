@@ -40,9 +40,54 @@ globalThis.chrome = globalThis.chrome || {
 		onMessage: listeners(),
 		onInstalled: listeners(),
 	},
-	storage: { local: { get: (k, cb) => cb && cb({}), set: (i, cb) => cb && cb() } },
+	// A real in-memory store, not a sink. A stub whose get() always returns {}
+	// makes every storage-backed assertion vacuous — the code under test writes,
+	// reads nothing back, and the test either passes for the wrong reason or fails
+	// for a reason that has nothing to do with the product.
+	//
+	// Mirrors the chrome.storage.local shapes lib/environment/foreground/storage.js
+	// actually calls: get(null) for everything, get({key: default}) for defaults,
+	// set(items), remove(keyOrKeys), clear().
+	storage: { local: (() => {
+		const data = new Map();
+		const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+		return {
+			get(keys, cb) {
+				const out = {};
+				if (keys === null || keys === undefined) {
+					for (const [k, v] of data) out[k] = clone(v);
+				} else if (typeof keys === 'string') {
+					out[keys] = data.has(keys) ? clone(data.get(keys)) : undefined;
+				} else if (Array.isArray(keys)) {
+					for (const k of keys) if (data.has(k)) out[k] = clone(data.get(k));
+				} else {
+					for (const [k, fallback] of Object.entries(keys)) {
+						out[k] = data.has(k) ? clone(data.get(k)) : fallback;
+					}
+				}
+				if (cb) cb(out);
+			},
+			set(items, cb) {
+				for (const [k, v] of Object.entries(items)) data.set(k, clone(v));
+				if (cb) cb();
+			},
+			remove(keys, cb) {
+				for (const k of [].concat(keys)) data.delete(k);
+				if (cb) cb();
+			},
+			clear(cb) {
+				data.clear();
+				if (cb) cb();
+			},
+		};
+	})() },
 	tabs: { create: noop, query: (q, cb) => cb && cb([]), sendMessage: noop },
 	i18n: { getMessage: k => k },
+	// isPrivateBrowsing() reads this. Missing, it throws from inside a
+	// fire-and-forget promise, which node:test reports as activity *after* the
+	// test ended rather than as a failure — so the test looks green-ish and the
+	// real error is a footnote.
+	extension: { inIncognitoContext: false },
 };
 })();
 `;
@@ -159,7 +204,19 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 	const posix = p => p.split(path.sep).join('/');
 	const toTarget = posix(path.join(repoRoot, relativePath));
 	const toRegistry = posix(path.join(repoRoot, 'lib', 'core', 'modules', 'modules.js'));
-	fs.writeFileSync(entryFile, `import ${JSON.stringify(toRegistry)};\nexport * from ${JSON.stringify(toTarget)};\n`);
+	//
+	// The registry is also re-exported as `__registry`. Two `loadModule` calls
+	// produce two independent bundles, so a module object reached through one is a
+	// *different object* from the one the other bundle's code closes over — setting
+	// an option on it changes nothing the code under test can see. Reaching the
+	// registry through the same bundle is the only way to mutate the options a
+	// module actually reads.
+	fs.writeFileSync(entryFile, [
+		`import * as __registry from ${JSON.stringify(toRegistry)};`,
+		'export { __registry };',
+		`export * from ${JSON.stringify(toTarget)};`,
+		'',
+	].join('\n'));
 
 	await esbuild.build({
 		entryPoints: [entryFile],
