@@ -1,7 +1,7 @@
 {
 	"title": "RES-Slim",
 	"name": "res-slim",
-	"version": "0.20.0",
+	"version": "0.21.0",
 	"description": "Stripped-down RES fork: comment tweaks and media expandos only, old.reddit.com",
 	"author": "RES-Slim (fork of Reddit Enhancement Suite contributors)",
 	"license": "GPL-3.0",
@@ -23,7 +23,8 @@
 		"eslint": "eslint .",
 		"stylelint": "stylelint lib/**/*.scss",
 		"test:bundle": "node build.js --mode production --browsers chrome",
-		"lint": "yarn eslint && yarn stylelint"
+		"lint": "yarn eslint && yarn stylelint",
+		"check:endpoints": "node scripts/check-endpoints.mjs"
 	},
 	"browserslist": [
 		"chrome 114",

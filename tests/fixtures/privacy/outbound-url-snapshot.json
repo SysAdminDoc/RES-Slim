@@ -838,10 +838,6 @@
       "url": "https://rimgo.ducks.party"
     },
     {
-      "file": "lib/utils/imgurFlatten.js",
-      "url": "https://rimgo.pussthecat.org"
-    },
-    {
       "file": "lib/utils/keycode.js",
       "url": "https://github.com/facebook/flow/issues/380"
     },
