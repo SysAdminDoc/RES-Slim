@@ -80,6 +80,53 @@ html.res-pageTheme--rosepine {
 	--rsm-th-border: rgba(224, 222, 244, 0.12);
 }
 
+// Nord: polar night for the surfaces, snow storm for text, frost for links.
+html.res-pageTheme--nord {
+	--rsm-th-bg: #2e3440;
+	--rsm-th-bg-elev: #3b4252;
+	--rsm-th-bg-raise: #3f4859;
+	--rsm-th-txt: #d8dee9;
+	--rsm-th-txt-strong: #eceff4;
+	--rsm-th-link: #88c0d0;
+	--rsm-th-border: rgba(216, 222, 233, 0.12);
+}
+
+html.res-pageTheme--dracula {
+	--rsm-th-bg: #282a36;
+	--rsm-th-bg-elev: #343746;
+	--rsm-th-bg-raise: #383b4b;
+	--rsm-th-txt: #f8f8f2;
+	--rsm-th-txt-strong: #fff;
+	--rsm-th-link: #bd93f9;
+	--rsm-th-border: rgba(248, 248, 242, 0.12);
+}
+
+html.res-pageTheme--gruvbox {
+	--rsm-th-bg: #282828;
+	--rsm-th-bg-elev: #32302f;
+	--rsm-th-bg-raise: #3c3836;
+	--rsm-th-txt: #ebdbb2;
+	--rsm-th-txt-strong: #fbf1c7;
+	--rsm-th-link: #8ec07c;
+	--rsm-th-border: rgba(235, 219, 178, 0.12);
+}
+
+// Solarized deviates from canon, deliberately. Its own spec targets a lower
+// contrast than WCAG AA: base1 (#93a1a1), the lightest content grey, measures
+// 3.6:1 on base02, and the canonical blue link (#268bd2) is 3.1:1 on a raised
+// surface. The surfaces are kept — they are what makes it recognisably Solarized
+// — and the foregrounds are lightened until they clear AA. A link the user has to
+// squint at is a defect, not a theme.
+html.res-pageTheme--solarized {
+	--rsm-th-bg: #002b36;
+	--rsm-th-bg-elev: #073642;
+	--rsm-th-bg-raise: #0d4552;
+	--rsm-th-txt: #a2aeae;
+	--rsm-th-txt-strong: #eee8d5;
+	--rsm-th-link: #64bab4;
+	--rsm-th-border: rgba(147, 161, 161, 0.12);
+}
+
 // ---- Base surface ---------------------------------------------------------
 
 html.res-pageTheme body,

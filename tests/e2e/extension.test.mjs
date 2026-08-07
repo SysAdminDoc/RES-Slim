@@ -381,6 +381,55 @@ test('a fresh install is greeted once, and only once', async t => {
 	assert.equal(await greeting(), null, 'a greeting that reappears on every page load is an advert');
 });
 
+// A pageTheme palette has to actually paint the page.
+//
+// The document_start anti-FOUC style sets `:root.rsm-theme-oled body` to a
+// hardcoded OLED background so the page is not white before the theme loads. That
+// selector has the *same specificity* as pageTheme's `html.res-pageTheme body`,
+// and it is appended to `<head>` after the content-script stylesheet, so it won on
+// source order — every palette's background was silently replaced with OLED black,
+// and had been since the module shipped.
+//
+// No unit test can see this. It is not in the SCSS, not in the module, and not in
+// the class list: both rules are present and correct, and the cascade decides.
+test('an enabled pageTheme palette paints its own background', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const html = servableCapture();
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	// From the service worker: the page's main world has no `chrome.storage`.
+	await worker.evaluate(() => new Promise(resolve => chrome.storage.local.set({
+		'RES.modulePrefs': { pageTheme: true },
+		'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, accent: { value: '#8a5cff' } },
+	}, resolve)));
+
+	await page.goto('https://old.reddit.com/r/codex/comments/1th66mb/x/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--gruvbox'), null, { timeout: 30000 });
+	await page.waitForTimeout(1500);
+
+	const painted = await page.evaluate(() => ({
+		body: getComputedStyle(document.body).backgroundColor,
+		token: getComputedStyle(document.documentElement).getPropertyValue('--rsm-th-bg').trim(),
+		antiFoucStyle: !!document.getElementById('rsm-anti-fouc-style'),
+	}));
+
+	// The token resolving proves the palette block loaded; it does NOT prove the
+	// page is painted with it, which was the whole bug.
+	assert.equal(painted.token, '#282828', 'the gruvbox palette block must be in res.css');
+	assert.equal(painted.body, 'rgb(40, 40, 40)', 'the body must actually be painted #282828, not the anti-FOUC OLED black');
+	assert.equal(painted.antiFoucStyle, false, 'the early style has done its job once a real palette is applied');
+});
+
 test('the content script initialises on a real old.reddit document', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

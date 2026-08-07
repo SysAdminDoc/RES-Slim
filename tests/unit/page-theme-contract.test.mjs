@@ -25,7 +25,7 @@ test('normalizeTheme falls back to oled for unknown values', () => {
 test('desiredThemeClasses always yields master + exactly one palette class', () => {
 	const base = desiredThemeClasses({ theme: 'graphite' });
 	assert.deepEqual(base, ['res-pageTheme', 'res-pageTheme--graphite']);
-	const paletteClasses = base.filter(c => /^res-pageTheme--(oled|graphite|midnight|catppuccin|tokyonight|rosepine)$/.test(c));
+	const paletteClasses = base.filter(c => /^res-pageTheme--(oled|graphite|midnight|catppuccin|tokyonight|rosepine|nord|dracula|gruvbox|solarized)$/.test(c));
 	assert.equal(paletteClasses.length, 1);
 });
 
