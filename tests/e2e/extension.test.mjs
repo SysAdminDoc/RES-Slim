@@ -150,6 +150,77 @@ test('the settings console renders in the options page', async t => {
 	await page.screenshot({ path: path.join(dir, 'settings-console.png'), fullPage: false });
 });
 
+// What actually keeps the nine `include`-less modules off the extension's own
+// options page — and it is not `include`.
+//
+// `module-registry-contract` pins nine modules that declare no `include`, no
+// `exclude` and no `shouldRun`, on the stated grounds that such a module "runs on
+// every page including the options page". Driving the real page says otherwise:
+// `lib/options/options.entry.js` pushes an explicit allowlist into
+// `allowedModules`, and `isRunning()` checks that *before* all three scoping
+// mechanisms. It is a fourth gate and the tightest of them.
+//
+// Two things follow, and both need a test rather than a comment:
+//
+//   1. The allowlist is one unguarded line. Appending to it silently re-opens the
+//      class of bug this repo shipped in v0.3.5 and again in v0.4.0. No unit
+//      contract can see it — `allowedModules` is empty at import time and is only
+//      filled by the options entrypoint, which no unit test runs.
+//   2. The `onInit` and `always` stages are dispatched with
+//      `skipEnabledCheck: true`, so they bypass `isRunning` *entirely* — allowlist,
+//      include, exclude and shouldRun alike. Each such handler is therefore
+//      responsible for its own gating, and three modules reach the options page
+//      through that door. All three were read and are correctly self-gated
+//      (`pageTheme.always` and `systemThemeSync.always` re-check
+//      `Modules.isRunning`; `showImages.onInit` checks `isAppType('r2')`), but a
+//      *new* `always` handler that forgets would arrive here unannounced.
+//
+// Measured with the module profiler rather than DOM artefacts. Artefacts are the
+// wrong instrument: `RESMenu` running on the options page still injects no gear,
+// because `addFloater`'s containers require `isAppType('r2')` or `'d2x'` — so
+// "the gear is absent" is true whether the gate holds or not.
+test('the options page runs only the modules it explicitly allows', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'load' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	// `window.rsmDiagnostics` is published by `lib/core/init.js` once `afterLoad`
+	// resolves, and reports one entry per module that had a stage invoked.
+	await page.waitForFunction(() => typeof window.rsmDiagnostics === 'function', null, { timeout: 30000 });
+
+	const ran = await page.evaluate(() => window.rsmDiagnostics()
+		.map(m => `${m.moduleID}:${Object.keys(m.stages).sort().join('+')}`)
+		.sort());
+
+	assert.deepEqual(ran, [
+		// Allowlisted by options.entry.js — these are meant to run.
+		'nightMode:always+onInit',
+		'notifications:go',
+		// Reached only through the two gate-bypassing stages, and self-gated.
+		'pageTheme:always+onInit',
+		'showImages:onInit',
+		'systemThemeSync:always',
+	], 'a module reaching the options page that is not in this list has escaped both the allowlist and its own self-gating');
+
+	// Guard against the list above passing vacuously if the console never booted:
+	// an empty profile would fail the deepEqual, but a *partial* one might not read
+	// as suspicious, so assert the two visible effects of the allowlisted pair.
+	const painted = await page.evaluate(() => ({
+		nightMode: document.documentElement.classList.contains('res-nightmode'),
+		notifications: !!document.querySelector('#RESNotifications'),
+	}));
+	assert.equal(painted.nightMode, true, 'nightMode is what makes the console dark');
+	assert.equal(painted.notifications, true, 'the console reports save failures through the notifications host');
+
+	assert.deepEqual(pageErrors, [], 'options page must load without uncaught errors');
+});
+
 test('the content script initialises on a real old.reddit document', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

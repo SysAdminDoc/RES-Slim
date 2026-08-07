@@ -97,18 +97,28 @@ test('option types are drawable by the settings console', () => {
 });
 
 test('a module that runs everywhere is deliberate, not an omission', () => {
-	// An empty `include` means "run on every page", and that includes the
-	// extension's own options page — `matchesPageLocation()` short-circuits to true
-	// when `includes.length` is 0. Modules that touch reddit's DOM were twice found
-	// running there (v0.3.5, v0.4.0). This pins the current set so a *new* module
-	// cannot join it silently.
+	// An empty `include` means "run on every reddit page" — `matchesPageLocation()`
+	// short-circuits to true when `includes.length` is 0, and the content script
+	// matches `https://*.reddit.com/*`, so an unscoped module runs on new reddit as
+	// well as old. This pins the current set so a *new* module cannot join it
+	// silently.
 	//
-	// There are **three** scoping mechanisms, not two. The first version of this
-	// test checked only `include` and `exclude`, and so reported `noParticipation`
-	// as unscoped when it is in fact gated by `module.shouldRun = () =>
-	// isNpHostname(location.hostname)` — the framework checks `shouldRun` before
-	// running any stage. Over-reporting is not harmless: it sent an audit chasing a
-	// bug that did not exist, and a list that cries wolf stops being read.
+	// It does **not** mean the extension's own options page, and this comment used
+	// to say it did. `lib/options/options.entry.js` pushes an allowlist into
+	// `allowedModules`, which `isRunning()` checks ahead of everything else, so the
+	// options page runs exactly `nightMode` and `notifications`. Measured, not
+	// reasoned — see "the options page runs only the modules it explicitly allows"
+	// in tests/e2e/extension.test.mjs, which also covers the one real leak: the
+	// `onInit` and `always` stages are dispatched with `skipEnabledCheck: true` and
+	// bypass every gate, so those handlers must gate themselves. The v0.3.5 and
+	// v0.4.0 bugs predate that allowlist.
+	//
+	// There are **four** scoping mechanisms, then, and this check knows three of
+	// them. The first version knew only `include` and `exclude`, and so reported
+	// `noParticipation` as unscoped when it is in fact gated by `module.shouldRun =
+	// () => isNpHostname(location.hostname)` — the framework checks `shouldRun`
+	// before running any stage. Over-reporting is not harmless: it sent an audit
+	// chasing a bug that did not exist, and a list that cries wolf stops being read.
 	const EXPECTED_GLOBAL = [
 		'RESMenu', 'hover', 'newCommentCount', 'nightMode',
 		'notifications', 'requestPermissions',
