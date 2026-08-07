@@ -331,6 +331,56 @@ test('the extension does not reach into reddit-origin subframes', async t => {
 	);
 });
 
+// The first-run greeting, driven rather than reasoned about.
+//
+// Its first implementation inferred "fresh install" from an empty local store and
+// **could never fire**, because `migrate()` writes keys in the background before
+// the first page finishes loading. Every unit assertion on the predicate passed.
+// Only running the extension showed it, which is why this lives here.
+//
+// The harness creates a fresh user-data directory per launch, so `onInstalled`
+// fires with reason 'install' every time — exactly the condition under test.
+test('a fresh install is greeted once, and only once', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const html = servableCapture();
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const greeting = () => page.evaluate(() => {
+		const el = document.querySelector('.RESNotification[data-id*="first-run"]');
+		return el && {
+			text: el.innerText.replace(/\s+/g, ' ').trim(),
+			hasSettingsLink: !!el.querySelector('a[href*="res:settings"]'),
+		};
+	});
+
+	const load = async () => {
+		await page.goto('https://old.reddit.com/r/codex/comments/1th66mb/x/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		// `afterLoad` waits on `loadComplete`, then reads storage.
+		await page.waitForTimeout(3000);
+	};
+
+	await load();
+	const first = await greeting();
+	assert.ok(first, 'a fresh install should say something — this is the whole feature');
+	assert.match(first.text, /\d+ features are on by default/, 'the count is what a new user cannot see for themselves');
+	assert.equal(first.hasSettingsLink, true, 'and there must be a route to turning them off');
+	assert.ok(!/RES-Slim RES-Slim/.test(first.text), 'the header already says RES-Slim');
+
+	await load();
+	assert.equal(await greeting(), null, 'a greeting that reappears on every page load is an advert');
+});
+
 test('the content script initialises on a real old.reddit document', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
