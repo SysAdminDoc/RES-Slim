@@ -134,3 +134,4 @@ tests/unit/.tmp-page-theme/
 tests/e2e/screenshots/
 tests/unit/.tmp-mod-*/
 tests/unit/.tmp-module-stubs/
+tests/unit/.tmp-bundle-*/

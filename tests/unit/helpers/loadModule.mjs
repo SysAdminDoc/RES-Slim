@@ -31,14 +31,35 @@ const CHROME_STUB = `
 (() => {
 const noop = () => {};
 const listeners = () => ({ addListener: noop, removeListener: noop, hasListener: () => false });
+
+// Background message handlers are registered through chrome.runtime.onMessage,
+// and a test that wants to exercise one has no other way to reach it — the
+// modules do not export their listeners. Capturing them here is what lets a
+// contract *invoke* a background listener instead of pattern-matching it.
+globalThis.__chromeMessageListeners = [];
+// Every chrome.downloads.download call, so a test can assert a blocked request
+// never reached the API rather than only that a guard exists in source.
+globalThis.__chromeDownloads = [];
+
 globalThis.chrome = globalThis.chrome || {
 	runtime: {
 		id: 'res-slim-test',
 		getURL: p => 'chrome-extension://res-slim-test/' + String(p).replace(/^\\//, ''),
 		getManifest: () => ({ version: '0.0.0-test', name: 'RES-Slim' }),
 		sendMessage: (msg, cb) => { if (cb) cb({ data: undefined }); },
-		onMessage: listeners(),
+		onMessage: {
+			addListener: fn => { globalThis.__chromeMessageListeners.push(fn); },
+			removeListener: noop,
+			hasListener: () => false,
+		},
 		onInstalled: listeners(),
+		lastError: undefined,
+	},
+	downloads: {
+		download: (options, cb) => {
+			globalThis.__chromeDownloads.push(options);
+			if (cb) cb(1);
+		},
 	},
 	// A real in-memory store, not a sink. A stub whose get() always returns {}
 	// makes every storage-backed assertion vacuous — the code under test writes,
@@ -264,4 +285,52 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 
 	// Cache-bust so repeated loads in one process see fresh module state.
 	return import(`${pathToFileURL(outFile).href}?t=${fs.statSync(outFile).mtimeMs}`);
+}
+
+/**
+ * Bundle an entrypoint exactly as `build.js` would and return the code, without
+ * evaluating it and without the registry-first entry `loadModule` uses.
+ *
+ * For background code specifically: the background bundle must evaluate inside an
+ * MV3 service worker, which has no `document` and no `window`. The only honest
+ * way to check that is to run the real bundle in a context that lacks them —
+ * grepping one file for `document.` says nothing about the other few hundred
+ * modules the background graph pulls in.
+ */
+export async function bundleEntry(relativePath, name) {
+	const outDir = path.join(repoRoot, 'tests', 'unit', `.tmp-bundle-${name}`);
+	fs.mkdirSync(outDir, { recursive: true });
+	const outFile = path.join(outDir, `${path.basename(relativePath, '.js')}.js`);
+
+	await esbuild.build({
+		entryPoints: [path.join(repoRoot, relativePath)],
+		bundle: true,
+		// iife, like the shipped bundles — the wrapper is part of what evaluates.
+		format: 'iife',
+		platform: 'browser',
+		target: 'chrome125',
+		outfile: outFile,
+		logLevel: 'silent',
+		loader: { '.svg': 'dataurl', '.gif': 'dataurl', '.png': 'dataurl', '.woff': 'dataurl' },
+		plugins: [{
+			name: 'remove-flow-types',
+			setup(build) {
+				build.onLoad({ filter: /\.m?js$/ }, async args => ({
+					contents: flowRemoveTypes(await fs.promises.readFile(args.path, 'utf8'), { pretty: true }).toString(),
+					loader: 'js',
+				}));
+			},
+		}],
+		define: {
+			'process.env.NODE_ENV': '"test"',
+			'process.env.BUILD_TARGET': '"chrome"',
+			'process.env.buildToken': '"test"',
+			'process.env.name': '"RES-Slim"',
+			'process.env.author': '"test"',
+			'process.env.description': '"test"',
+			'process.env.version': '"0.0.0-test"',
+		},
+	});
+
+	return fs.readFileSync(outFile, 'utf8');
 }
