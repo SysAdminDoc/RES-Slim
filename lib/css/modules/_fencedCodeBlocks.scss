@@ -32,7 +32,10 @@ pre.rsm-fenced {
 	user-select: none;
 }
 
-.rsm-tok-comment { color: #6a737d; font-style: italic; }
+.rsm-tok-comment {
+	color: #6a737d;
+	font-style: italic;
+}
 .rsm-tok-string { color: #98c379; }
 .rsm-tok-number { color: #d19a66; }
 .rsm-tok-keyword { color: #c678dd; }

@@ -25,7 +25,8 @@
 		"eslint": "eslint .",
 		"stylelint": "stylelint lib/**/*.scss",
 		"test:bundle": "node build.js --mode production --browsers chrome",
-		"lint": "yarn eslint && yarn stylelint",
+		"lint": "node scripts/lint-baseline.mjs && yarn stylelint",
+		"lint:baseline": "node scripts/lint-baseline.mjs --update",
 		"check:endpoints": "node scripts/check-endpoints.mjs"
 	},
 	"browserslist": [

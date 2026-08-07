@@ -1,0 +1,23 @@
+{
+	"note": "Per-rule eslint error counts. Regenerate with `node scripts/lint-baseline.mjs --update` and commit the change.",
+	"total": 96,
+	"rules": {
+		"default-case": 1,
+		"eqeqeq": 21,
+		"flowtype/no-weak-types": 5,
+		"guard-for-in": 1,
+		"import/dynamic-import-chunkname": 1,
+		"import/no-restricted-paths": 2,
+		"no-await-in-loop": 6,
+		"no-constant-binary-expression": 1,
+		"no-control-regex": 2,
+		"no-eq-null": 21,
+		"no-restricted-syntax": 19,
+		"no-script-url": 1,
+		"no-useless-assign/no-useless-assign": 3,
+		"no-useless-concat": 1,
+		"prefer-reflect": 7,
+		"prefer-rest-params": 1,
+		"require-await": 3
+	}
+}
