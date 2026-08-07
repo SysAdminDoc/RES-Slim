@@ -195,6 +195,19 @@ test('the content script initialises on a real old.reddit document', async t => 
 	const thingCount = await page.locator('.thing').count();
 	assert.ok(thingCount > 0, 'captured thread should contain Things for modules to walk');
 
+	// The committed fixture's `#header-bottom-right` has no `ul`, which is the
+	// logged-out shape the floater's userMenu fallback exists to survive. It
+	// creates an empty one — and the separator used to be appended before every
+	// item unconditionally, so the first rendered as a dangling "| storage".
+	// Only visible in a real render; no unit contract can see it.
+	const userbarText = await page.evaluate(() => {
+		const bar = document.querySelector('#header-bottom-right');
+		return bar ? bar.textContent.replace(/\s+/g, ' ').trim() : null;
+	});
+	assert.notEqual(userbarText, null, 'the fixture should have a userbar to inject into');
+	assert.ok(!userbarText.startsWith('|'), `userbar must not start with a separator: ${userbarText}`);
+	assert.ok(!/\|\s*\|/.test(userbarText), `no doubled separators: ${userbarText}`);
+
 	assert.deepEqual(pageErrors, [], 'content script must initialise without uncaught errors');
 
 	const dir = saveScreenshotDir();
