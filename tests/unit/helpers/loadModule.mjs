@@ -190,7 +190,32 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 		if (!globalThis[name]) globalThis[name] = InertObserver;
 	}
 
+	installNetworkGuard();
+
 	return dom;
+}
+
+// Unit tests must not touch the network, and until this existed one silently did.
+//
+// The jsdom document is served from `https://old.reddit.com/`, so any module
+// fetching a reddit URL takes `ajax`'s *same-origin* branch — which calls global
+// `fetch` directly rather than proxying through the stubbed background. Node has
+// had a global fetch since 18, so the request simply went out: a contract written
+// to exercise a *failure* path was quietly succeeding against live reddit, taking
+// ~600ms a call and depending on someone else's uptime.
+//
+// The default is a rejection loud enough to name the offending URL. A test that
+// wants to control the response sets `globalThis.__fetchHook`.
+export function installNetworkGuard() {
+	globalThis.fetch = (...args) => {
+		if (typeof globalThis.__fetchHook === 'function') return globalThis.__fetchHook(...args);
+
+		const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || String(args[0]);
+		return Promise.reject(new Error(
+			`Unit tests must not hit the network (attempted ${url}). ` +
+			'Set globalThis.__fetchHook to control the response, and clear it when done.',
+		));
+	};
 }
 
 /**

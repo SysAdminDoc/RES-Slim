@@ -14,6 +14,7 @@ installDom();
 
 const NewCommentCount = await loadModule('lib/modules/newCommentCount.js', 'inherited-modules');
 const registry = NewCommentCount.__registry;
+const InfiniteScroll = await loadModule('lib/modules/infiniteScroll.js', 'inherited-infinite');
 const mod = id => registry.getUnchecked(id);
 
 function withOption(module, key, value, fn) {
@@ -187,4 +188,83 @@ test('newCommentCount is default-on and stores nothing in private browsing by de
 		false,
 		'recording browsing in a private window by default would be a privacy surprise',
 	);
+});
+
+// --- infiniteScroll failure handling ---------------------------------------
+//
+// The regression this covers: `loadNextPage`'s catch used to set the same
+// `stopped` flag as the two legitimate end-of-listing paths. One transient
+// failure — and reddit 429s aggressively — permanently disabled scrolling for the
+// rest of the page, with no retry and nothing distinguishing it from having
+// simply reached the end.
+//
+// `ajax` rejects in this environment (the stubbed chrome.runtime.sendMessage
+// returns no response, so the foreground ajax throws a FetchError), which is
+// exactly the failure path under test.
+
+function listingWithNextPage() {
+	document.body.innerHTML = `
+		<div class="sitetable linklisting"><div class="thing link"></div></div>
+		<span class="next-button"><a href="https://old.reddit.com/?after=t3_x">next</a></span>
+	`;
+}
+
+test('the retry backoff doubles per consecutive failure', () => {
+	const { backoffMs } = InfiniteScroll;
+
+	assert.equal(backoffMs(1), 2000);
+	assert.equal(backoffMs(2), 4000);
+	assert.equal(backoffMs(3), 8000);
+	// Defensive: a zero or negative count must not produce a negative delay.
+	assert.equal(backoffMs(0), 2000);
+	assert.ok(backoffMs(-1) > 0);
+});
+
+test('a single failure does not end the listing', async () => {
+	InfiniteScroll._resetForTest();
+	listingWithNextPage();
+	InfiniteScroll.module.contentStart();
+
+	await InfiniteScroll.loadNextPage();
+
+	assert.equal(
+		document.querySelector('.res-slim-infinite-exhausted'),
+		null,
+		'one failure must not be reported to the user as the end of the listing',
+	);
+});
+
+test('after the failure budget is spent, the user is told and offered a retry', async () => {
+	InfiniteScroll._resetForTest();
+	listingWithNextPage();
+	InfiniteScroll.module.contentStart();
+
+	// Each attempt sets a backoff, so clear it between calls the way elapsed time
+	// would. Without this the second and third attempts return immediately and the
+	// budget is never spent — which would make this test pass for the wrong reason.
+	for (let i = 0; i < InfiniteScroll.MAX_FAILURES; i++) {
+		InfiniteScroll._clearBackoffForTest();
+		await InfiniteScroll.loadNextPage(); // eslint-disable-line no-await-in-loop
+	}
+
+	const notice = document.querySelector('.res-slim-infinite-exhausted');
+	assert.ok(notice, 'giving up silently is indistinguishable from reaching the end of the listing');
+	assert.match(notice.textContent, /could not load/i, 'the notice must say what went wrong');
+
+	const retry = notice.querySelector('button');
+	assert.ok(retry, 'a rate limit clears on its own, so there must be a way to try again');
+	assert.match(retry.textContent, /try again/i);
+});
+
+test('the notice is not duplicated if the exhausted path is reached twice', async () => {
+	InfiniteScroll._resetForTest();
+	listingWithNextPage();
+	InfiniteScroll.module.contentStart();
+
+	for (let i = 0; i < InfiniteScroll.MAX_FAILURES + 2; i++) {
+		InfiniteScroll._clearBackoffForTest();
+		await InfiniteScroll.loadNextPage(); // eslint-disable-line no-await-in-loop
+	}
+
+	assert.equal(document.querySelectorAll('.res-slim-infinite-exhausted').length, 1);
 });
