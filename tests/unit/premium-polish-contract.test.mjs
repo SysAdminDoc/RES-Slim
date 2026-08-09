@@ -83,3 +83,35 @@ test('settings status feedback has premium busy and saved states', () => {
 	assert.doesNotMatch(styles, /border-radius: 999px/);
 	assert.doesNotMatch(styles, /backdrop-filter: blur\(4px\)/);
 });
+
+test('settings console uses the imagegen three-column navigation system', () => {
+	const template = read('lib/options/templates.js');
+	const controller = read('lib/options/settingsConsole.js');
+	const styles = read('lib/options/options.scss');
+	const locale = JSON.parse(read('locales/locales/en.json'));
+
+	assert.match(template, /id="RESPrimaryRail"/);
+	assert.match(template, /id="RESHeaderCategory"/);
+	assert.match(template, /id="RESConsoleBreadcrumb"/);
+	assert.match(template, /class="categoryTabIcon/);
+	assert.match(template, /id="RESModuleContextNote"/);
+	assert.match(styles, /--options-primary-rail:/);
+	assert.match(styles, /grid-template-columns: var\(--options-primary-rail\) var\(--options-module-rail\) minmax\(0, 1fr\)/);
+	assert.match(styles, /\.moduleRow:has\(\.moduleButton\.active\)/);
+	assert.match(styles, /is-console-prefs #RESConfigPanelModulesPane/);
+	assert.match(controller, /function updateConsoleBreadcrumb\(/);
+	assert.match(controller, /case NAMED_KEYS\.Down:/);
+	assert.match(controller, /case NAMED_KEYS\.Up:/);
+	assert.match(controller, /syncModuleOptionsInteractivity\(true\)/);
+
+	for (const key of [
+		'settingsConsoleDensityLabel',
+		'settingsConsoleDensityComfortable',
+		'settingsConsoleMotionLabel',
+		'settingsConsoleMotionSystem',
+		'settingsConsolePermissionsControlTitle',
+		'settingsConsolePrivacyLocalNote',
+	]) {
+		assert.equal(typeof locale[key]?.message, 'string', `${key} should be localized`);
+	}
+});

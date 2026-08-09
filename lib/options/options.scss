@@ -2531,3 +2531,1059 @@ html[res-options] {
 	}
 	}
 }
+
+/* v0.29.0 imagegen parity redesign — primary rail, module rail, workspace. */
+html[res-options]:root {
+	--options-primary-rail: 286px;
+	--options-module-rail: 276px;
+
+	#RESConsoleContainer {
+		grid-template-columns: var(--options-primary-rail) var(--options-module-rail) minmax(0, 1fr);
+		grid-template-rows: 84px minmax(0, 1fr);
+		background: var(--options-bg);
+	}
+
+	#RESPrimaryRail {
+		display: flex;
+		grid-column: 1;
+		grid-row: 1 / -1;
+		flex-direction: column;
+		min-width: 0;
+		min-height: 0;
+		border-right: 1px solid var(--options-border);
+		background: var(--options-panel-alt);
+	}
+
+	#RESPrimaryRail .consoleBrandBlock {
+		flex: 0 0 84px;
+		gap: 14px;
+		padding: 0 22px;
+		border-bottom: 1px solid var(--options-border);
+	}
+
+	#RESPrimaryRail .res-logo {
+		width: 48px;
+		height: 48px;
+		border-color: var(--options-brand);
+		border-radius: var(--options-radius-md);
+		background: transparent;
+		box-shadow: none;
+		font-size: 17px;
+		color: var(--options-brand);
+	}
+
+	#RESPrimaryRail .res-logo::after {
+		display: none;
+	}
+
+	#RESPrimaryRail .res-logo::before {
+		color: var(--options-brand);
+	}
+
+	#RESPrimaryRail .consoleBrandText h1 {
+		margin: 0;
+		font-size: 1.35rem;
+		font-weight: 720;
+		letter-spacing: -.02em;
+	}
+
+	#RESPrimaryRail .consoleSubtitle {
+		display: none;
+	}
+
+	#RESPrimaryRail .sidebarSearchBlock {
+		flex: 0 0 auto;
+		padding: 14px 18px 10px;
+		border: 0;
+	}
+
+	#RESPrimaryRail #SearchRES-input-container {
+		margin: 0;
+	}
+
+	#RESPrimaryRail #SearchRES-input {
+		min-height: 46px;
+		padding-left: 15px;
+		border-color: var(--options-border-strong);
+		border-radius: var(--options-radius-md);
+		background: transparent;
+		font-size: 14px;
+	}
+
+	#RESConsoleHeader {
+		grid-column: 2 / -1;
+		grid-row: 1;
+		min-width: 0;
+		border-bottom: 1px solid var(--options-border);
+		background: var(--options-bg);
+		box-shadow: none;
+	}
+
+	#RESConsoleTopBar.RESDialogTopBar {
+		display: grid;
+		grid-template-columns: var(--options-module-rail) minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0;
+		min-height: 84px;
+		padding: 0;
+	}
+
+	.consoleRailHeading {
+		display: flex;
+		align-items: center;
+		align-self: stretch;
+		padding: 0 20px;
+		border-right: 1px solid var(--options-border);
+		color: var(--options-text);
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: -.01em;
+	}
+
+	.consoleBreadcrumb {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 0;
+		font-size: 15px;
+		white-space: nowrap;
+		padding-left: 34px;
+	}
+
+	.consoleBreadcrumbCategory {
+		overflow: hidden;
+		color: var(--options-text-soft);
+		text-overflow: ellipsis;
+	}
+
+	.consoleBreadcrumbSeparator {
+		color: var(--options-border-strong);
+	}
+
+	.consoleBreadcrumbModule {
+		overflow: hidden;
+		color: var(--options-text);
+		font-weight: 650;
+		text-overflow: ellipsis;
+	}
+
+	.consoleHeaderActions {
+		flex-wrap: nowrap;
+		gap: 10px;
+		width: auto;
+		padding-right: 28px;
+	}
+
+	.consoleControlGroup + .consoleControlGroup {
+		padding-left: 0;
+		border-left: 0;
+	}
+
+	.globalStageBar {
+		min-height: 44px;
+		padding: 0 6px;
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+		color: var(--options-text-muted);
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	.globalStageBar.is-dirty,
+	.globalStageBar.is-saved,
+	.globalStageBar.is-attention {
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.globalStageIcon {
+		position: relative;
+		width: 18px;
+		height: 18px;
+		border: 1.5px solid currentcolor;
+		border-radius: 50%;
+		background: transparent;
+	}
+
+	.globalStageBar.is-saved .globalStageIcon::after {
+		content: '';
+		position: absolute;
+		left: 5px;
+		top: 3px;
+		width: 5px;
+		height: 8px;
+		border: solid currentcolor;
+		border-width: 0 1.5px 1.5px 0;
+		transform: rotate(45deg);
+	}
+
+	.globalSaveButton,
+	.globalDiscardButton,
+	.sidebarToggleButton {
+		min-height: 44px;
+		border-radius: var(--options-radius-md);
+	}
+
+	.globalSaveButton:not(:disabled) {
+		border-color: var(--options-accent);
+		background: var(--options-accent);
+		color: #fff;
+		font-weight: 700;
+	}
+
+	.globalSaveButton:not(:disabled):hover {
+		border-color: var(--options-accent-strong);
+		background: var(--options-accent-strong);
+		color: var(--options-bg);
+	}
+
+	#RESClose {
+		width: 44px;
+		height: 44px;
+		border-color: var(--options-border-strong);
+		background: transparent;
+	}
+
+	.categoryTabs {
+		display: flex;
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 6px 0 14px;
+		border: 0;
+		background: transparent;
+	}
+
+	.categoryTabsInner {
+		display: flex;
+		align-items: stretch;
+		justify-content: flex-start;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: 0;
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	.categoryTabsGroup {
+		align-items: stretch;
+		flex: 0 0 auto;
+		flex-direction: column;
+		gap: 0;
+		width: 100%;
+	}
+
+	.categoryTabsGroup--trailing {
+		margin: auto 14px 0;
+		padding-top: 8px;
+		width: auto;
+		border-top: 1px solid var(--options-border);
+	}
+
+	.categoryTab {
+		justify-content: flex-start;
+		gap: 12px;
+		width: 100%;
+		min-height: 51px;
+		padding: 0 18px;
+		border: 0;
+		border-left: 3px solid transparent;
+		border-radius: 0;
+		background: transparent;
+		color: var(--options-text-muted);
+		font-size: 14px;
+		font-weight: 560;
+		text-align: left;
+	}
+
+	.categoryTab:hover {
+		background: rgb(255 255 255 / 2%);
+		color: var(--options-text);
+	}
+
+	.categoryTab.is-active {
+		border-bottom: 0;
+		border-left-color: var(--options-accent);
+		background: var(--options-accent-ghost);
+		color: var(--options-accent-strong);
+	}
+
+	.categoryTabIcon {
+		display: inline-grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		flex: 0 0 26px;
+		color: var(--options-text-soft);
+		font: 600 17px/1 'Segoe UI Symbol', 'Segoe UI', sans-serif;
+	}
+
+	.categoryTabIcon--console {
+		font: 700 11px/1 ui-monospace, 'Cascadia Mono', consolas, monospace;
+	}
+
+	.categoryTab.is-active .categoryTabIcon {
+		color: var(--options-accent);
+	}
+
+	.categoryTabCount {
+		display: none;
+	}
+
+	.categoryTabStageDot {
+		margin-left: auto;
+	}
+
+	.categoryTab--console::before,
+	.categoryTab--search::before {
+		content: none;
+	}
+
+	#RESConsoleContent {
+		display: grid;
+		grid-column: 2 / -1;
+		grid-row: 2;
+		grid-template-columns: var(--options-module-rail) minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr);
+		background: var(--options-bg);
+	}
+
+	#RESConfigPanelModulesPane {
+		grid-column: 1;
+		grid-row: 1;
+		grid-template-rows: minmax(0, 1fr);
+		border-right: 1px solid var(--options-border);
+		background: var(--options-panel-alt);
+	}
+
+	.sidebarListBlock {
+		gap: 0;
+		padding: 0;
+	}
+
+	.sidebarSectionHeader {
+		display: none;
+	}
+
+	.sidebarSectionTitle {
+		color: var(--options-text);
+		font-size: 17px;
+		font-weight: 700;
+		letter-spacing: -.01em;
+		text-transform: none;
+	}
+
+	.sidebarSectionMeta,
+	.sidebarCountBadge {
+		display: none;
+	}
+
+	.filterChips {
+		display: none;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0;
+		padding: 7px 12px;
+		border-bottom: 1px solid var(--options-border);
+	}
+
+	.filterChip {
+		justify-content: center;
+		min-height: 30px;
+		padding: 0 4px;
+		border: 0;
+		border-bottom: 1px solid transparent;
+		border-radius: 0;
+		background: transparent;
+		font-size: 11px;
+	}
+
+	.filterChip:hover {
+		border-color: var(--options-border-strong);
+		background: transparent;
+	}
+
+	.filterChip.is-active {
+		border-color: var(--options-accent);
+		background: transparent;
+		color: var(--options-accent-strong);
+	}
+
+	.filterChipCount {
+		display: none;
+	}
+
+	#RESConfigPanelModulesEmpty {
+		padding: 18px;
+	}
+
+	#RESConfigPanelModulesList {
+		padding: 8px 0 18px;
+	}
+
+	.categoryModules {
+		gap: 0;
+		padding: 0;
+	}
+
+	.moduleRow {
+		display: block;
+	}
+
+	.moduleRow:has(.moduleButton.active) {
+		order: -1;
+	}
+
+	.moduleButton {
+		display: grid;
+		grid-template-columns: 20px minmax(0, 1fr);
+		gap: 12px;
+		align-items: center;
+		min-height: 54px;
+		padding: 7px 18px 7px 15px;
+		border-left: 3px solid transparent;
+		border-radius: 0;
+		color: var(--options-text-muted);
+	}
+
+	.moduleButton::before {
+		content: '';
+		width: 11px;
+		height: 11px;
+		margin: 0 auto;
+		border: 1px solid var(--options-text-soft);
+		border-radius: 50%;
+	}
+
+	.moduleButton:hover {
+		background: rgb(255 255 255 / 2%);
+		color: var(--options-text);
+		transform: none;
+	}
+
+	.moduleButton.active,
+	.moduleButton:focus-visible {
+		border-left-color: var(--options-accent);
+		background: var(--options-accent-ghost);
+		box-shadow: none;
+		color: var(--options-accent-strong);
+	}
+
+	.moduleButton.active::before {
+		border-color: var(--options-accent);
+		background: var(--options-accent);
+		box-shadow: 0 0 0 4px var(--options-accent-soft);
+	}
+
+	.moduleButtonHeader {
+		grid-column: 2;
+	}
+
+	.moduleButtonTitle {
+		font-size: 14px;
+		font-weight: 560;
+		line-height: 1.35;
+	}
+
+	.moduleButton small,
+	.moduleButtonStage,
+	.moduleRowToggle,
+	.moduleRowLock {
+		display: none;
+	}
+
+	#RESConfigPanelOptions {
+		grid-column: 2;
+		grid-row: 1;
+		background: var(--options-bg);
+	}
+
+	.workspaceShell {
+		gap: 0;
+		max-width: none;
+		margin: 0;
+		padding: 0 42px 40px;
+	}
+
+	.moduleHeader {
+		gap: 0;
+		padding: 36px 0 14px;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.moduleMetaRow,
+	.moduleOptionSummary,
+	.moduleKey {
+		display: none;
+	}
+
+	.moduleHeaderTopRow {
+		align-items: center;
+		gap: 28px;
+	}
+
+	.moduleName {
+		font-size: clamp(1.85rem, 2.5vw, 2.35rem);
+		font-weight: 720;
+		letter-spacing: -.035em;
+		line-height: 1.08;
+	}
+
+	.moduleHeaderUtility {
+		align-self: center;
+	}
+
+	.moduleToggle {
+		min-height: 44px;
+	}
+
+	.moduleDescription {
+		display: block;
+		max-width: 78ch;
+		padding: 0 0 30px;
+		border-bottom: 1px solid var(--options-border);
+		color: var(--options-text-muted);
+		font-size: 15px;
+		line-height: 1.65;
+	}
+
+	.moduleContextNote {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-height: 64px;
+		padding: 14px 0;
+		border-bottom: 1px solid var(--options-border);
+		color: var(--options-text-muted);
+		font-size: 14px;
+	}
+
+	.moduleContextNote::before {
+		content: '◇';
+		display: inline-grid;
+		place-items: center;
+		width: 28px;
+		height: 28px;
+		flex: 0 0 28px;
+		color: var(--options-text-muted);
+		font-size: 20px;
+	}
+
+	.workspaceCanvas {
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.optionContainer {
+		grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+		grid-template-rows: auto auto;
+		gap: 4px 28px;
+		min-height: 84px;
+		padding: 20px 0;
+		border-top: 0;
+		border-bottom: 1px solid var(--options-border);
+	}
+
+	.optionContainer:first-child {
+		padding-top: 20px;
+	}
+
+	.optionContainer:hover {
+		background: transparent;
+	}
+
+	.optionTitle {
+		grid-column: 1;
+		grid-row: 1;
+		align-self: end;
+		font-size: 15px;
+		font-weight: 600;
+	}
+
+	.optionKey {
+		display: none;
+	}
+
+	.optionDescription {
+		grid-column: 1;
+		grid-row: 2;
+		color: var(--options-text-soft);
+		font-size: 13px;
+		line-height: 1.45;
+	}
+
+	.optionSetting {
+		grid-column: 2;
+		grid-row: 1 / span 2;
+		align-self: center;
+		align-items: center;
+	}
+
+	.optionSetting > :is(input, select) {
+		max-width: 320px;
+		margin-left: auto;
+	}
+
+	.optionContainer.table,
+	.optionContainer.specialOptionType {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.optionContainer.table .optionSetting,
+	.optionContainer.specialOptionType .optionSetting,
+	.optionContainer.table .optionDescription,
+	.optionContainer.specialOptionType .optionDescription {
+		grid-column: 1;
+		grid-row: auto;
+	}
+
+	#RESConsoleContainer .toggleButton {
+		min-height: 44px;
+	}
+
+	#RESConsoleContainer .toggleButton .toggleThumb {
+		width: 48px;
+		min-width: 48px;
+		height: 28px;
+		flex-basis: 48px;
+		border-radius: 16px;
+	}
+
+	#RESConsoleContainer .toggleButton .toggleThumb::before {
+		top: 3px;
+		left: 3px;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+	}
+
+	#RESConsoleContainer .toggleButton.enabled .toggleThumb {
+		border-color: var(--options-accent);
+		background: var(--options-accent);
+	}
+
+	#RESConsoleContainer .toggleButton.enabled .toggleThumb::before {
+		background: #fff;
+		transform: translateX(20px);
+	}
+
+	#RESConsoleContainer .toggleButton .toggleLabel {
+		display: none;
+	}
+
+	#RESConsoleContainer :is(input[type='text'], input[type='password'], input[type='search'], select, textarea) {
+		min-height: 44px;
+		border-radius: var(--options-radius-md);
+		background: transparent;
+	}
+
+	.workspaceEmptyState {
+		place-items: center;
+		grid-template-columns: 1fr;
+		gap: 8px;
+		min-height: 280px;
+		padding: 34px;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		text-align: center;
+	}
+
+	.workspaceEmptyStateIcon {
+		grid-row: auto;
+		width: 50px;
+		height: 50px;
+		border-color: var(--options-border-strong);
+		border-radius: 50%;
+		background: transparent;
+	}
+
+	.workspaceEmptyStateIcon::before {
+		content: '\f013';
+		display: grid;
+		place-items: center;
+		width: 48px;
+		height: 48px;
+		margin: 0;
+		border: 0;
+		color: var(--options-text-muted);
+		font: normal 23px/1 Batch;
+		transform: none;
+	}
+
+	.workspaceEmptyState strong {
+		font-size: 18px;
+	}
+
+	#moduleOptionsScrim {
+		border: 0;
+		border-radius: 0;
+		background: color-mix(in srgb, var(--options-bg) 94%, transparent);
+		box-shadow: none;
+	}
+
+	#RESConsoleContainer.is-console-prefs #RESConfigPanelModulesPane,
+	#RESConsoleContainer.is-console-prefs #RESConfigPanelOptions {
+		display: none;
+	}
+
+	#RESConsoleContainer.is-console-prefs #RESConsoleContent {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	#RESConsoleContainer.is-console-prefs #RESGlobalSave:disabled {
+		display: none;
+	}
+
+	#RESConsoleContainer.is-console-prefs .consoleBreadcrumb {
+		visibility: hidden;
+	}
+
+	#RESConsolePrefs {
+		grid-column: 1;
+		grid-row: 1;
+		padding: 34px 42px 28px;
+		background: var(--options-bg);
+	}
+
+	.consolePrefsHeader {
+		max-width: none;
+		margin-bottom: 24px;
+		padding-bottom: 24px;
+		border-bottom: 1px solid var(--options-border);
+	}
+
+	.consolePrefsTitle {
+		font-size: clamp(1.85rem, 2.5vw, 2.35rem);
+		font-weight: 720;
+		letter-spacing: -.035em;
+	}
+
+	.consolePrefsSummary {
+		margin-top: 7px;
+		font-size: 15px;
+	}
+
+	.consolePrefsGrid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 0;
+	}
+
+	.consolePrefsGrid .utilityPanel {
+		display: grid;
+		gap: 16px;
+		padding: 22px 0;
+		border: 0;
+		border-bottom: 1px solid var(--options-border);
+		border-radius: 0;
+		background: transparent;
+	}
+
+	.utilityPanelTitle {
+		font-size: 17px;
+		font-weight: 680;
+		letter-spacing: -.01em;
+		text-transform: none;
+	}
+
+	.utilityPanelMeta {
+		font-size: 13px;
+	}
+
+	.consolePrefsGrid .themeSelector {
+		gap: 12px;
+	}
+
+	.consolePrefsGrid .themeSelectorOptions {
+		display: grid;
+		grid-template-columns: repeat(8, minmax(76px, 1fr));
+		gap: 10px;
+	}
+
+	.consolePrefsGrid .themeOption {
+		justify-content: center;
+		flex-direction: column;
+		gap: 7px;
+		min-height: 72px;
+		padding: 9px 6px;
+		border-color: var(--options-border-strong);
+		background: transparent;
+		font-size: 11px;
+	}
+
+	.consolePrefsGrid .themeOption.is-active {
+		border-color: var(--options-accent);
+		background: var(--options-accent-ghost);
+	}
+
+	.consolePrefsGrid .themeOptionSwatch {
+		width: 16px;
+		height: 16px;
+		border: 0;
+		border-radius: 50%;
+	}
+
+	.themeOptionSwatch--oled { background: #f1f3f5; }
+	.themeOptionSwatch--graphite { background: #6e7681; }
+	.themeOptionSwatch--midnight { background: #58a6ff; }
+	.themeOptionSwatch--forest { background: #4ed59a; }
+	.themeOptionSwatch--ember { background: #ff7a18; }
+	.themeOptionSwatch--catppuccin { background: #cba6f7; }
+	.themeOptionSwatch--tokyonight { background: #7aa2f7; }
+	.themeOptionSwatch--rosepine { background: #c4a7e7; }
+
+	.consolePrefsGrid .consoleControlGroup--display {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(180px, 260px));
+	}
+
+	.consolePrefsGrid :is(.settingsIoButton, .densityToggle, .motionToggle) {
+		min-height: 44px;
+		background: transparent;
+	}
+
+	.consolePrefsGrid :is(.densityToggle, .motionToggle) {
+		justify-content: space-between;
+	}
+
+	.consolePreferenceLabel {
+		color: var(--options-text);
+		font-weight: 600;
+	}
+
+	.consolePreferenceValue {
+		color: var(--options-text-soft);
+		font-weight: 500;
+	}
+
+	.consolePrefsGrid :is(.densityToggle, .motionToggle).is-active .consolePreferenceValue {
+		color: var(--options-accent-strong);
+	}
+
+	.utilityPanel--data .utilityActionStack,
+	.utilityPanel--errors .utilityActionStack {
+		justify-content: flex-start;
+	}
+
+	.moduleErrorLogOutput {
+		min-height: 96px;
+		border-color: var(--options-border-strong);
+		background: transparent;
+	}
+
+	.advancedOptionsPanel {
+		min-height: 48px;
+	}
+
+	#RESAllOptions {
+		appearance: none;
+		position: relative;
+		width: 48px;
+		height: 28px;
+		margin: 0;
+		border: 1px solid var(--options-border-strong);
+		border-radius: 16px;
+		background: var(--options-field);
+		cursor: pointer;
+	}
+
+	#RESAllOptions::before {
+		content: '';
+		position: absolute;
+		left: 3px;
+		top: 3px;
+		width: 20px;
+		height: 20px;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 120ms ease;
+	}
+
+	#RESAllOptions:checked {
+		border-color: var(--options-accent);
+		background: var(--options-accent);
+	}
+
+	#RESAllOptions:checked::before {
+		transform: translateX(20px);
+	}
+
+	.utilityPanel--build {
+		padding-bottom: 8px;
+		border-bottom: 0;
+	}
+}
+
+@media (width <= 1180px) {
+	html[res-options]:root {
+		--options-primary-rail: 238px;
+		--options-module-rail: 256px;
+
+		#RESPrimaryRail .consoleBrandBlock { padding: 0 16px; }
+		.categoryTab { padding: 0 14px; }
+
+		.workspaceShell {
+			padding-right: 30px;
+			padding-left: 30px;
+		}
+
+		#RESConsolePrefs {
+			padding-right: 30px;
+			padding-left: 30px;
+		}
+		.consolePrefsGrid .themeSelectorOptions { grid-template-columns: repeat(4, minmax(90px, 1fr)); }
+	}
+}
+
+@media (width <= 960px) {
+	html[res-options]:root {
+		--options-primary-rail: 78px;
+		--options-module-rail: 252px;
+
+		#RESPrimaryRail .consoleBrandBlock {
+			justify-content: center;
+			padding: 0;
+		}
+
+		#RESPrimaryRail .consoleBrandText,
+		.categoryTabLabel {
+			display: none;
+		}
+
+		#RESPrimaryRail .res-logo {
+			width: 44px;
+			height: 44px;
+			font-size: 14px;
+		}
+
+		#RESPrimaryRail .sidebarSearchBlock {
+			padding: 12px 16px 8px;
+		}
+
+		#RESPrimaryRail #SearchRES-input {
+			padding: 0;
+			color: transparent;
+			cursor: pointer;
+		}
+
+		#RESPrimaryRail #SearchRES-input::placeholder { color: transparent; }
+
+		#SearchRES-input-container::after {
+			right: 14px;
+		}
+
+		.categoryTab {
+			justify-content: center;
+			padding: 0;
+		}
+
+		.categoryTabStageDot {
+			position: absolute;
+			right: 8px;
+		}
+
+		.categoryTabsGroup--trailing {
+			margin-right: 10px;
+			margin-left: 10px;
+		}
+
+		.globalStageBar { display: none; }
+		.sidebarToggleButton { display: inline-flex; }
+		.moduleHeaderTopRow { grid-template-columns: minmax(0, 1fr) auto; }
+		.moduleHeaderUtility { justify-content: flex-end; }
+
+		#RESConsoleContainer.sidebar-collapsed #RESConfigPanelModulesPane { display: none; }
+		#RESConsoleContainer.sidebar-collapsed #RESConsoleContent { grid-template-columns: minmax(0, 1fr); }
+		#RESConsoleContainer.sidebar-collapsed #RESConfigPanelOptions { grid-column: 1; }
+
+		#RESConsoleTopBar.RESDialogTopBar {
+			padding-right: 18px;
+			padding-left: 22px;
+		}
+
+		.workspaceShell {
+			padding-right: 24px;
+			padding-left: 24px;
+		}
+
+		#RESConsolePrefs {
+			padding-right: 24px;
+			padding-left: 24px;
+		}
+	}
+}
+
+@media (width <= 700px) {
+	html[res-options]:root {
+		--options-primary-rail: 68px;
+
+		#RESConsoleContainer { grid-template-rows: 72px minmax(0, 1fr); }
+
+		#RESPrimaryRail .consoleBrandBlock { flex-basis: 72px; }
+		#RESHeaderCategory { display: none; }
+
+		#RESConsoleTopBar.RESDialogTopBar {
+			grid-template-columns: minmax(0, 1fr) auto;
+			min-height: 72px;
+			padding: 0 12px 0 18px;
+		}
+
+		.consoleBreadcrumbCategory,
+		.consoleBreadcrumbSeparator,
+		.globalStageBar {
+			display: none;
+		}
+
+		.consoleHeaderActions { gap: 6px; }
+		.globalSaveButton { padding: 0 10px; }
+
+		.sidebarToggleButton {
+			width: 44px;
+			padding: 0;
+			overflow: hidden;
+			font-size: 0;
+		}
+
+		.sidebarToggleButton::before {
+			content: '☰';
+			font-size: 18px;
+			line-height: 1;
+		}
+
+		#RESClose { flex-basis: 44px; }
+
+		.workspaceShell {
+			padding-right: 18px;
+			padding-left: 18px;
+		}
+		.moduleHeader { padding-top: 26px; }
+		.moduleHeaderTopRow { grid-template-columns: minmax(0, 1fr) auto; }
+		.moduleDescription { padding-bottom: 22px; }
+
+		.optionContainer {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: auto auto auto;
+			gap: 6px;
+		}
+
+		.optionSetting {
+			grid-column: 1;
+			grid-row: 3;
+			justify-content: flex-start;
+			margin-top: 8px;
+		}
+
+		.optionSetting > :is(input, select) { margin-left: 0; }
+		#RESConsolePrefs { padding: 26px 18px 20px; }
+		.consolePrefsGrid .themeSelectorOptions { grid-template-columns: repeat(2, minmax(100px, 1fr)); }
+		.consolePrefsGrid .consoleControlGroup--display { grid-template-columns: 1fr; }
+	}
+}

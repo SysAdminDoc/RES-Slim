@@ -849,13 +849,13 @@
         "message": "Theme, density, and motion"
     },
     "settingsConsoleDataTitle": {
-        "message": "Data"
+        "message": "Settings data"
     },
     "settingsConsoleDataMeta": {
         "message": "Portable JSON snapshots"
     },
     "settingsConsoleErrorsTitle": {
-        "message": "Module errors"
+        "message": "Module diagnostics"
     },
     "settingsConsoleErrorsMeta": {
         "message": "Failures stay on this device and are capped at 100 entries."
@@ -938,11 +938,29 @@
     "settingsConsoleDenseModeActive": {
         "message": "Dense mode on"
     },
+    "settingsConsoleDensityLabel": {
+        "message": "Density"
+    },
+    "settingsConsoleDensityComfortable": {
+        "message": "Comfortable"
+    },
+    "settingsConsoleDensityDense": {
+        "message": "Dense"
+    },
     "settingsConsoleReduceMotion": {
         "message": "Reduce motion"
     },
     "settingsConsoleReduceMotionActive": {
         "message": "Motion reduced"
+    },
+    "settingsConsoleMotionLabel": {
+        "message": "Motion"
+    },
+    "settingsConsoleMotionSystem": {
+        "message": "System"
+    },
+    "settingsConsoleMotionReduced": {
+        "message": "Reduced"
     },
     "settingsConsoleExport": {
         "message": "Export"
@@ -1132,6 +1150,15 @@
     },
     "settingsConsoleNoConfigurableOptionsAlwaysOn": {
         "message": "Always on • No configurable settings"
+    },
+    "settingsConsolePermissionsControlTitle": {
+        "message": "Permissions stay in your control"
+    },
+    "settingsConsolePermissionsControlCopy": {
+        "message": "RES-Slim requests only optional permissions tied to enabled features. You can revoke them at any time in your browser."
+    },
+    "settingsConsolePrivacyLocalNote": {
+        "message": "Runs locally. No browsing data leaves this device."
     },
     "settingsConsoleSettingCountOne": {
         "message": "$1 setting"

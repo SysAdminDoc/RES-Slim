@@ -25,6 +25,10 @@ import { launchWithExtension, extensionUrl, assertBuilt, repoRoot, saveScreensho
 // two ever disagree about old.reddit's shape, one of them is measuring nothing.
 const CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'thread.html');
 
+function screenshotSlug(value) {
+	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 // A capture taken from a browser that already had RES-Slim installed carries
 // res-* classes on <html>, and foreground.entry.js treats those as "already
 // initialised here" and bails. Serving such a capture unmodified would measure an
@@ -164,15 +168,80 @@ test('the settings console renders in the options page', async t => {
 	// tablist that exists to host search results and is never clickable.
 	const tabHandles = await page.locator('[role="tablist"] [role="tab"]:not([hidden])').all();
 	assert.ok(tabHandles.length > 1, 'there should be several categories to walk');
+	const dir = saveScreenshotDir();
+	const pageDir = path.join(dir, 'settings-pages');
+	fs.mkdirSync(pageDir, { recursive: true });
 
 	for (const tab of tabHandles) {
 		await tab.click(); // eslint-disable-line no-await-in-loop
 		await page.waitForTimeout(120); // eslint-disable-line no-await-in-loop
+		const label = (await tab.locator('.categoryTabLabel').innerText()).trim(); // eslint-disable-line no-await-in-loop
+		const category = await tab.getAttribute('data-category'); // eslint-disable-line no-await-in-loop
 		const text = await page.locator('#RESConsoleContainer').innerText(); // eslint-disable-line no-await-in-loop
 		const words = new Set(text.split(/[^A-Za-z0-9_]+/));
 		const leaked = localeKeys.filter(key => words.has(key));
 		assert.deepEqual(leaked, [], `locale key rendered as its own name: ${leaked.join(', ')}`);
+
+		const layout = await page.evaluate(() => ({ // eslint-disable-line no-await-in-loop
+			overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+			primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
+			moduleLeft: document.querySelector('#RESConfigPanelModulesPane').getBoundingClientRect().left,
+			moduleRight: document.querySelector('#RESConfigPanelModulesPane').getBoundingClientRect().right,
+			workspaceLeft: document.querySelector('#RESConfigPanelOptions').getBoundingClientRect().left,
+		}));
+		assert.ok(layout.overflow <= 1, `${label} should not overflow the viewport horizontally`);
+
+		if (category !== '__console') {
+			assert.ok(Math.abs(layout.primaryRight - layout.moduleLeft) <= 1, `${label} primary and module rails should meet cleanly`);
+			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), label); // eslint-disable-line no-await-in-loop
+			assert.ok(Math.abs(layout.moduleRight - layout.workspaceLeft) <= 1, `${label} module rail and workspace should meet cleanly`);
+			const selected = page.locator('.RESConfigPanelCategory.active .moduleButton.active');
+			assert.equal(await selected.count(), 1, `${label} should expose one selected module`); // eslint-disable-line no-await-in-loop
+			const [listBox, selectedBox] = await Promise.all([ // eslint-disable-line no-await-in-loop
+				page.locator('#RESConfigPanelModulesList').boundingBox(),
+				selected.boundingBox(),
+			]);
+			assert.ok(listBox && selectedBox && selectedBox.y <= listBox.y + 12, `${label} should pin its active module to the top of the rail`);
+			const optionInputs = page.locator('#allOptionsContainer input, #allOptionsContainer select, #allOptionsContainer textarea');
+			if (await page.locator('.moduleToggle').getAttribute('aria-pressed') === 'false' && await optionInputs.count()) { // eslint-disable-line no-await-in-loop
+				assert.equal(await page.locator('#allOptionsContainer').getAttribute('inert'), null, `${label} settings should remain configurable while its module is off`); // eslint-disable-line no-await-in-loop
+				assert.equal(await optionInputs.first().isEnabled(), true, `${label} should allow preparing options before enabling the module`); // eslint-disable-line no-await-in-loop
+			}
+		} else {
+			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), 'Console preferences'); // eslint-disable-line no-await-in-loop
+		}
+
+		await page.screenshot({ path: path.join(pageDir, `${screenshotSlug(label)}.png`), fullPage: false, animations: 'disabled' }); // eslint-disable-line no-await-in-loop
 	}
+
+	await page.setViewportSize({ width: 960, height: 900 });
+	await page.locator('#RESCategoryTab-appearanceCategory').click();
+	const compactLayout = await page.evaluate(() => ({
+		overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+		primaryWidth: document.querySelector('#RESPrimaryRail').getBoundingClientRect().width,
+		categoryLabelDisplay: getComputedStyle(document.querySelector('.categoryTabLabel')).display,
+		toggleDisplay: getComputedStyle(document.querySelector('#RESMobileSidebarToggle')).display,
+	}));
+	assert.ok(compactLayout.overflow <= 1, 'compact settings console should not overflow horizontally');
+	assert.ok(Math.abs(compactLayout.primaryWidth - 78) <= 1, 'compact settings console should reduce the primary rail to its icon width');
+	assert.equal(compactLayout.categoryLabelDisplay, 'none', 'compact settings console should replace category labels with icons');
+	assert.ok(['flex', 'inline-flex'].includes(compactLayout.toggleDisplay), 'compact settings console should expose the module-rail toggle');
+	await page.screenshot({ path: path.join(dir, 'settings-responsive-960.png'), fullPage: false, animations: 'disabled' });
+
+	await page.setViewportSize({ width: 700, height: 900 });
+	await page.locator('#RESMobileSidebarToggle').click();
+	const narrowLayout = await page.evaluate(() => ({
+		overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+		primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
+		workspaceLeft: document.querySelector('#RESConfigPanelOptions').getBoundingClientRect().left,
+		moduleDisplay: getComputedStyle(document.querySelector('#RESConfigPanelModulesPane')).display,
+		breadcrumbCategoryDisplay: getComputedStyle(document.querySelector('#RESBreadcrumbCategory')).display,
+	}));
+	assert.ok(narrowLayout.overflow <= 1, 'narrow settings console should not overflow horizontally');
+	assert.equal(narrowLayout.moduleDisplay, 'none', 'narrow settings console should collapse the module rail on request');
+	assert.ok(Math.abs(narrowLayout.primaryRight - narrowLayout.workspaceLeft) <= 1, 'collapsed narrow workspace should meet the primary rail');
+	assert.equal(narrowLayout.breadcrumbCategoryDisplay, 'none', 'narrow settings console should keep only the active module in its breadcrumb');
+	await page.screenshot({ path: path.join(dir, 'settings-responsive-700.png'), fullPage: false, animations: 'disabled' });
 
 	// The walk above can only read text. i18n() itself reports a miss in
 	// development, which covers the keys that render somewhere a text scrape cannot
@@ -181,8 +250,7 @@ test('the settings console renders in the options page', async t => {
 
 	assert.deepEqual(pageErrors, [], 'options page must load without uncaught errors');
 
-	const dir = saveScreenshotDir();
-	await page.screenshot({ path: path.join(dir, 'settings-console.png'), fullPage: false });
+	await page.screenshot({ path: path.join(dir, 'settings-console.png'), fullPage: false, animations: 'disabled' });
 });
 
 test('settings console themes and display controls work by keyboard', async t => {
@@ -220,19 +288,27 @@ test('settings console themes and display controls work by keyboard', async t =>
 	await density.focus();
 	await page.keyboard.press('Enter');
 	assert.equal(await page.locator('html').getAttribute('data-settings-density'), 'dense');
+	assert.equal(await page.locator('#RESDensityValue').innerText(), 'Dense');
 	await page.keyboard.press('Enter');
 	assert.equal(await page.locator('html').getAttribute('data-settings-density'), 'comfortable');
+	assert.equal(await page.locator('#RESDensityValue').innerText(), 'Comfortable');
 
 	const motion = page.locator('#RESMotionToggle');
 	await motion.focus();
 	await page.keyboard.press('Space');
 	assert.equal(await page.locator('html').getAttribute('data-reduced-motion'), 'reduce');
+	assert.equal(await page.locator('#RESMotionValue').innerText(), 'Reduced');
 	await page.keyboard.press('Space');
 	assert.equal(await page.locator('html').getAttribute('data-reduced-motion'), null);
+	assert.equal(await page.locator('#RESMotionValue').innerText(), 'System');
 
-	// The tablist's roving tabindex is also keyboard-driven: Left leaves the
-	// Console tab, and End returns to it without a pointer click.
+	// The vertical rail responds to Up/Down, while Left/Right remain aliases for
+	// users and tests that learned the previous horizontal tab strip.
 	await consoleTab.focus();
+	await page.keyboard.press('ArrowUp');
+	assert.notEqual(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
+	await page.keyboard.press('ArrowDown');
+	assert.equal(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
 	await page.keyboard.press('ArrowLeft');
 	assert.notEqual(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
 	await page.keyboard.press('End');
