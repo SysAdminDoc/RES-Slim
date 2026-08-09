@@ -2,6 +2,61 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.30.0 - 2026-08-08
+
+### Fixed
+
+- **The module error log rendered in the wrong font entirely.** The v0.29.0
+  settings redesign styled it with `font: 11px/1.45 var(--options-font-mono)`,
+  and no such custom property is defined anywhere in the tree. A `var()` with no
+  fallback and no definition makes the whole declaration invalid at
+  computed-value time, and `font` is inherited, so the textarea silently took the
+  console's 13px proportional Segoe UI instead of the 11px monospace it asks for.
+  Measured in a real browser before and after: `iiiiiiiiii` and `WWWWWWWWWW`
+  advanced 31.5px vs 121.4px before the fix and 60.5px vs 60.5px after.
+- **A test wrote a bait file into the live source tree and raced the suite.**
+  `injected-controls-a11y-contract` proved its scan can fail by writing
+  `lib/modules/__a11y_bait__.js` and deleting it. Node runs test files in
+  parallel, and `microcopy-contract` lists the same directory, so roughly one run
+  in three it listed the bait and then read it after the delete — failing with
+  `ENOENT` in a file that has nothing to do with accessibility. The scan already
+  took a directory argument, so the bait now goes to a temp directory; a crash no
+  longer leaves it in the repo either. Six consecutive clean runs, against three
+  failures in nine before.
+- The same scan's real-tree run had no guard that it found any files, so an empty
+  offender list was indistinguishable from an empty directory.
+
+### Added
+
+- **A gate for the whole class of bug.** `css-custom-property-contract` walks
+  every stylesheet, separates `var(--a)` from `var(--a, fallback)` by finding the
+  closing paren rather than by regex — `var(--a, var(--b))` nests, and a
+  top-level comma is the only thing distinguishing the two forms — and fails when
+  a hard dependency has no definition. Neither stylelint nor the build reports
+  this: an undefined property is valid CSS, it just does nothing. Bait-verified
+  against the shipped v0.29.0 stylesheet, which it fails on.
+
+### Changed
+
+- Two third-party reference files (`CSS.txt`, the 2010 `Reddit_Hide_All.user.js`
+  that `hideAll` was rewritten from) moved out of the repo root into
+  `.research/source-userscripts/`, where the rest of the reference captures live.
+
+### Verified
+
+- `yarn test`: 911/911 unit tests; headless `yarn test:e2e`: 9/9. `yarn lint`
+  remains at the recorded 96 pre-existing ESLint errors with clean style/i18n
+  gates, and `yarn flow` remains at its 124-error baseline.
+- The settings console was driven in a real browser and the error log's computed
+  font measured directly, rather than inferred from the stylesheet.
+- Production Chrome MV3 and Firefox MV2 unsigned packages build successfully.
+
+### Note
+
+- v0.28.0 and v0.29.0 were committed but never tagged or published. Both tags now
+  exist at their release commits; this release carries the artifacts for
+  everything since v0.27.0.
+
 ## v0.29.0 - 2026-08-08
 
 ### Changed
