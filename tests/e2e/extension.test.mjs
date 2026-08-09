@@ -185,6 +185,60 @@ test('the settings console renders in the options page', async t => {
 	await page.screenshot({ path: path.join(dir, 'settings-console.png'), fullPage: false });
 });
 
+test('settings console themes and display controls work by keyboard', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	const consoleTab = page.locator('#RESCategoryTab-console');
+	await consoleTab.focus();
+	await page.keyboard.press('Enter');
+	await page.waitForSelector('#RESConsolePrefs:not([hidden])');
+
+	const themeButtons = page.locator('#RESThemeSelector .themeOption');
+	assert.equal(await themeButtons.count(), 8, 'every settings theme should be reachable');
+	for (const theme of await themeButtons.evaluateAll(buttons => buttons.map(button => button.dataset.settingsTheme))) {
+		const button = page.locator(`#RESThemeSelector [data-settings-theme="${theme}"]`);
+		await button.focus();
+		await page.keyboard.press('Enter');
+		const state = await page.evaluate(() => {
+			const styles = getComputedStyle(document.documentElement);
+			return {
+				theme: document.documentElement.dataset.settingsTheme,
+				background: styles.getPropertyValue('--options-bg').trim(),
+				accent: styles.getPropertyValue('--options-accent').trim(),
+			};
+		});
+		assert.equal(state.theme, theme, `${theme} should apply from a focused button`);
+		assert.ok(state.background && state.accent, `${theme} should expose its live token set`);
+	}
+
+	const density = page.locator('#RESDensityToggle');
+	await density.focus();
+	await page.keyboard.press('Enter');
+	assert.equal(await page.locator('html').getAttribute('data-settings-density'), 'dense');
+	await page.keyboard.press('Enter');
+	assert.equal(await page.locator('html').getAttribute('data-settings-density'), 'comfortable');
+
+	const motion = page.locator('#RESMotionToggle');
+	await motion.focus();
+	await page.keyboard.press('Space');
+	assert.equal(await page.locator('html').getAttribute('data-reduced-motion'), 'reduce');
+	await page.keyboard.press('Space');
+	assert.equal(await page.locator('html').getAttribute('data-reduced-motion'), null);
+
+	// The tablist's roving tabindex is also keyboard-driven: Left leaves the
+	// Console tab, and End returns to it without a pointer click.
+	await consoleTab.focus();
+	await page.keyboard.press('ArrowLeft');
+	assert.notEqual(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
+	await page.keyboard.press('End');
+	assert.equal(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
+});
+
 // What actually keeps the nine `include`-less modules off the extension's own
 // options page — and it is not `include`.
 //
