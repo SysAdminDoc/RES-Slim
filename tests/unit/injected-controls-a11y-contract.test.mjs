@@ -14,6 +14,7 @@
 // last test here feeds it a deliberately unnamed button and requires a report.
 
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -70,10 +71,10 @@ function namedByHelper(source, scope, variable) {
 	});
 }
 
-function findUnnamedButtons() {
+function findUnnamedButtons(dir = modulesDir) {
 	const offenders = [];
 
-	for (const file of listModuleFiles()) {
+	for (const file of listModuleFiles(dir)) {
 		const relative = path.relative(repoRoot, file).replace(/\\/g, '/');
 		const source = fs.readFileSync(file, 'utf8');
 		const lines = source.split(/\r?\n/);
@@ -114,6 +115,11 @@ function findUnnamedButtons() {
 }
 
 test('no module injects a button without an accessible name', () => {
+	// An empty offender list is the pass condition, so an empty *file* list is
+	// indistinguishable from a clean tree. Now that the directory is a parameter,
+	// that is one typo away.
+	assert.ok(listModuleFiles().length > 100, `expected the module tree, found ${listModuleFiles().length} files`);
+
 	assert.deepEqual(
 		findUnnamedButtons(),
 		[],
@@ -150,10 +156,19 @@ test('a toggle reports its state, not only its next action', () => {
 });
 
 test('the scan reports a button that has no name', () => {
-	// The whole file is worthless if `findUnnamedButtons` cannot fail. Written to a
-	// real module file and removed again, because the scan walks the directory —
-	// a fixture elsewhere would not be looked at.
-	const bait = path.join(modulesDir, '__a11y_bait__.js');
+	// The whole file is worthless if `findUnnamedButtons` cannot fail, so it gets
+	// fed a deliberately unnamed button.
+	//
+	// The bait used to be written into the real `lib/modules/` and deleted again,
+	// on the reasoning that the scan walks that one directory. It does not — it
+	// walks whichever directory it is handed. Writing into the live source tree
+	// made this test race every other test that reads the same directory:
+	// `microcopy-contract` lists it, and node's runner runs files in parallel, so
+	// roughly one run in three it listed the bait and then read it after this
+	// `unlinkSync`, failing with ENOENT in a file that has nothing to do with
+	// accessibility. A crash here would also have left the bait in the repo.
+	const baitDir = fs.mkdtempSync(path.join(os.tmpdir(), 'res-slim-a11y-bait-'));
+	const bait = path.join(baitDir, '__a11y_bait__.js');
 	fs.writeFileSync(bait, [
 		'/* @flow */',
 		'export function build() {',
@@ -168,7 +183,7 @@ test('the scan reports a button that has no name', () => {
 	].join('\n'));
 
 	try {
-		const offenders = findUnnamedButtons();
+		const offenders = findUnnamedButtons(baitDir);
 		assert.ok(
 			offenders.some(o => o.includes('__a11y_bait__.js') && o.includes("createElement('button')")),
 			`the scan missed an unnamed createElement button: ${offenders.join(', ')}`,
@@ -178,8 +193,12 @@ test('the scan reports a button that has no name', () => {
 			`the scan missed an unnamed button literal: ${offenders.join(', ')}`,
 		);
 	} finally {
-		fs.unlinkSync(bait);
+		fs.rmSync(baitDir, { recursive: true, force: true });
 	}
 
 	assert.ok(!fs.existsSync(bait), 'the bait must not survive the test');
+	assert.ok(
+		!fs.existsSync(path.join(modulesDir, '__a11y_bait__.js')),
+		'the bait must never be written into the real module tree',
+	);
 });
