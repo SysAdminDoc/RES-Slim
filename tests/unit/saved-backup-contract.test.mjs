@@ -17,6 +17,10 @@ const {
 	buildSavedUrl,
 	mergeAndDedupe,
 	buildExport,
+	filterSavedItems,
+	listSavedTags,
+	mergeSavedRecords,
+	normalizeSavedTags,
 } = await import(pathToFileURL(modulePath).href);
 
 test('parseSavedPage extracts t1 and t3 items, falling back to selftext for posts', () => {
@@ -72,6 +76,38 @@ test('buildExport stamps schemaVersion, count, and an exportedAt timestamp', () 
 	assert.ok(exp.exportedAt > 0);
 });
 
+test('saved records preserve local tags across a sync merge', () => {
+	const existing = [{
+		fullname: 't1_a', kind: 't1', id: 'a', subreddit: 's', author: 'alice', permalink: '/a', createdUtc: 10,
+		body: 'old', title: '', url: '', score: 1, tags: ['Keep'], savedAt: 7, lastSeenAt: 8,
+	}];
+	const incoming = [{
+		fullname: 't1_a', kind: 't1', id: 'a', subreddit: 's', author: 'alice', permalink: '/a', createdUtc: 10,
+		body: 'new', title: '', url: '', score: 2,
+	}];
+	const merged = mergeSavedRecords(existing, incoming, 20);
+	assert.equal(merged.length, 1);
+	assert.equal(merged[0].body, 'new');
+	assert.deepEqual(merged[0].tags, ['Keep']);
+	assert.equal(merged[0].savedAt, 7);
+	assert.equal(merged[0].lastSeenAt, 20);
+});
+
+test('saved tag normalisation is bounded, deduplicated, and case-insensitive', () => {
+	assert.deepEqual(normalizeSavedTags([' work ', 'Work', '', 'read later']), ['work', 'read later']);
+});
+
+test('saved search covers content and exact tag filters', () => {
+	const items = mergeSavedRecords([], [
+		{ fullname: 't3_a', kind: 't3', id: 'a', subreddit: 'books', author: 'alice', permalink: '/a', createdUtc: 2, body: 'A novel', title: 'Reading list', url: '', score: 1 },
+		{ fullname: 't1_b', kind: 't1', id: 'b', subreddit: 'games', author: 'bob', permalink: '/b', createdUtc: 1, body: 'Speedrun notes', title: '', url: '', score: 2 },
+	], 30).map((item, index) => ({ ...item, tags: index ? ['later'] : ['keep'] }));
+	assert.deepEqual(filterSavedItems(items, 'novel', '').map(item => item.fullname), ['t3_a']);
+	assert.deepEqual(filterSavedItems(items, '', 'later').map(item => item.fullname), ['t1_b']);
+	assert.deepEqual(filterSavedItems(items, '', '__untagged__'), []);
+	assert.deepEqual(listSavedTags(items), ['keep', 'later']);
+});
+
 test('savedBackup module is registered and uses the helpers', () => {
 	const index = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
 	assert.match(index, /import \{ module as savedBackup \} from '\.\/savedBackup';/);
@@ -81,7 +117,27 @@ test('savedBackup module is registered and uses the helpers', () => {
 	assert.match(mod, /from '\.\.\/utils\/savedBackup'/);
 	assert.match(mod, /createRateLimiter\(/);
 	assert.match(mod, /buildSavedUrl\(/);
+	assert.match(mod, /loadSavedRecords\(/);
+	assert.match(mod, /mergeSavedRecordsIntoStore\(/);
+	assert.match(mod, /updateSavedRecordTags\(/);
+	assert.match(mod, /rsm-savedBackup-panel/);
 	for (const opt of ['pageLimit', 'maxPages']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
 	}
+});
+
+test('saved content gets its own IndexedDB store and dashboard row', () => {
+	const helper = fs.readFileSync(path.join(repoRoot, 'lib/utils/savedBackup.js'), 'utf8');
+	assert.match(helper, /rsm-savedContent/);
+	assert.match(helper, /createObjectStore\(SAVED_CONTENT_STORE_NAME, \{ keyPath: 'fullname' \}\)/);
+	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib/utils/storageDashboard.js'), 'utf8');
+	assert.match(dashboard, /Saved Content/);
+});
+
+test('saved manager styles are shipped', () => {
+	const scss = fs.readFileSync(path.join(repoRoot, 'lib/css/modules/_savedBackup.scss'), 'utf8');
+	const res = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
+	assert.match(scss, /\.rsm-savedBackup-panel/);
+	assert.match(scss, /\.rsm-savedBackup-tag-form/);
+	assert.match(res, /@import 'modules\/savedBackup'/);
 });

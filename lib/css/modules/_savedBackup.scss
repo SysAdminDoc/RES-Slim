@@ -1,0 +1,223 @@
+// Local saved-content manager. The panel never displays Reddit HTML directly:
+// the module writes text into these surfaces after IndexedDB reads.
+
+.rsm-savedBackup-panel {
+	position: fixed;
+	top: 48px;
+	right: 16px;
+	z-index: 1000;
+	display: grid;
+	grid-template-rows: auto auto auto auto minmax(0, 1fr);
+	width: min(620px, calc(100vw - 32px));
+	max-height: min(780px, calc(100vh - 64px));
+	padding: 14px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-md);
+	background: var(--rsm-surface-panel);
+	color: var(--rsm-text);
+	font: 13px/1.5 var(--rsm-font);
+	box-shadow: var(--rsm-shadow-lg);
+	box-sizing: border-box;
+}
+
+.rsm-savedBackup-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--rsm-border-subtle);
+}
+
+.rsm-savedBackup-title {
+	margin: 0;
+	color: var(--rsm-text-strong);
+	font-size: 15px;
+}
+
+.rsm-savedBackup-toolbar {
+	display: grid;
+	grid-template-columns: minmax(150px, 1fr) minmax(110px, 0.45fr) auto auto;
+	gap: 7px;
+	padding: 12px 0 8px;
+}
+
+.rsm-savedBackup-toolbar :is(input, select) {
+	min-width: 0;
+	min-height: 30px;
+	padding: 0 8px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill-subtle);
+	color: var(--rsm-text);
+	font: 12px/1 var(--rsm-font);
+}
+
+.rsm-savedBackup-toolbar :is(input, select):focus-visible,
+.rsm-savedBackup-tag-form input:focus-visible {
+	border-color: var(--rsm-accent-line);
+	outline: 2px solid var(--rsm-accent-line);
+	outline-offset: 2px;
+}
+
+.rsm-savedBackup-toolbar button,
+.rsm-savedBackup-close,
+.rsm-savedBackup-add-tag {
+	min-height: 30px;
+	padding: 0 9px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill);
+	color: var(--rsm-text-muted);
+	font: 700 11px/1 var(--rsm-font);
+	cursor: pointer;
+}
+
+.rsm-savedBackup-toolbar button:hover,
+.rsm-savedBackup-close:hover,
+.rsm-savedBackup-add-tag:hover {
+	border-color: var(--rsm-accent-line);
+	background: var(--rsm-accent-soft);
+	color: var(--rsm-text-strong);
+}
+
+.rsm-savedBackup-sync {
+	border-color: var(--rsm-accent-line);
+	background: var(--rsm-accent-soft);
+	color: var(--rsm-accent-strong);
+}
+
+.rsm-savedBackup-toolbar button:disabled {
+	opacity: 0.55;
+	cursor: wait;
+}
+
+.rsm-savedBackup-status,
+.rsm-savedBackup-meta {
+	min-height: 1.35em;
+	margin: 0;
+	color: var(--rsm-text-soft);
+	font-size: 11px;
+}
+
+.rsm-savedBackup-meta {
+	padding: 2px 0 8px;
+	color: var(--rsm-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+.rsm-savedBackup-list {
+	display: grid;
+	gap: 8px;
+	min-height: 0;
+	margin: 0;
+	padding: 0 4px 2px 0;
+	overflow-y: auto;
+	list-style: none;
+	overscroll-behavior: contain;
+}
+
+.rsm-savedBackup-item,
+.rsm-savedBackup-empty {
+	padding: 10px;
+	border: 1px solid var(--rsm-border-subtle);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill-subtle);
+}
+
+.rsm-savedBackup-item-title {
+	display: block;
+	color: var(--rsm-accent);
+	font-weight: 700;
+	line-height: 1.35;
+	text-decoration: none;
+}
+
+.rsm-savedBackup-item-title:hover,
+.rsm-savedBackup-item-title:focus-visible {
+	color: var(--rsm-text-strong);
+	text-decoration: underline;
+}
+
+.rsm-savedBackup-item-meta {
+	margin-top: 3px;
+	color: var(--rsm-text-soft);
+	font-size: 11px;
+}
+
+.rsm-savedBackup-item-summary {
+	margin: 7px 0 8px;
+	color: var(--rsm-text-muted);
+	font-size: 12px;
+	line-height: 1.45;
+}
+
+.rsm-savedBackup-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	min-height: 1px;
+}
+
+.rsm-savedBackup-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	min-height: 22px;
+	padding: 0 6px;
+	border: 1px solid var(--rsm-accent-line);
+	border-radius: var(--rsm-radius-xs);
+	background: var(--rsm-accent-soft);
+	color: var(--rsm-accent-strong);
+	font-size: 11px;
+}
+
+.rsm-savedBackup-tag-remove {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font-size: 14px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.rsm-savedBackup-tag-form {
+	display: flex;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.rsm-savedBackup-tag-form input {
+	min-width: 0;
+	flex: 1 1 auto;
+	min-height: 28px;
+	padding: 0 7px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-fill);
+	color: var(--rsm-text);
+	font: 12px/1 var(--rsm-font);
+}
+
+.rsm-savedBackup-empty {
+	color: var(--rsm-text-soft);
+	text-align: center;
+}
+
+@media (width <= 680px) {
+	.rsm-savedBackup-panel {
+		top: 12px;
+		right: 12px;
+		width: calc(100vw - 24px);
+		max-height: calc(100vh - 24px);
+	}
+
+	.rsm-savedBackup-toolbar {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.rsm-savedBackup-toolbar .rsm-savedBackup-search {
+		grid-column: 1 / -1;
+	}
+}
