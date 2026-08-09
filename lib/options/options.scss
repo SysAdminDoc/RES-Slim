@@ -846,7 +846,7 @@ li {
 	border-radius: var(--options-radius-sm);
 	background: var(--options-field);
 	color: var(--options-text-muted);
-	font: 11px/1.45 var(--options-font-mono);
+	font: 11px/1.45 ui-monospace, sfmono-regular, consolas, monospace;
 	resize: vertical;
 	box-sizing: border-box;
 }
