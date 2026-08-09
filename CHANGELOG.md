@@ -2,6 +2,32 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.29.0 - 2026-08-08
+
+### Changed
+
+- **Imagegen-led settings redesign.** All 11 settings categories plus Console
+  preferences now share a coordinated three-column system: persistent category
+  navigation, a focused module rail, a compact command bar, and an editorial
+  settings workspace. The implementation follows a dedicated mockup for every
+  menu page rather than applying a single generic restyle.
+- **Purpose-built page states.** Privacy modules expose a local-only trust row,
+  optional permissions have a deliberate control state, optionless modules have
+  an intentional empty state, and disabled modules remain configurable so a
+  setup can be prepared before enabling it.
+- **Responsive parity.** At compact widths the primary rail becomes icon-only;
+  at narrow widths the module rail collapses behind a keyboard-accessible menu
+  control while the workspace remains free of horizontal overflow.
+
+### Verified
+
+- Every page was rendered and reviewed headlessly at 1440x900, with additional
+  960px and 700px responsive captures and permanent geometry/overflow assertions.
+- `yarn test`: 909/909 unit tests; headless `yarn test:e2e`: 9/9. `yarn lint`
+  remains at the recorded 96 pre-existing ESLint errors with clean style/i18n
+  gates, and `yarn flow` remains at its 124-error baseline.
+- Production Chrome MV3 and Firefox MV2 unsigned packages build successfully.
+
 ## v0.28.0 - 2026-08-08
 
 ### Added
