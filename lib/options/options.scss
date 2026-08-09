@@ -838,6 +838,32 @@ li {
 	border-top: 0;
 }
 
+.moduleErrorLogOutput {
+	width: 100%;
+	min-height: 150px;
+	padding: 10px;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-sm);
+	background: var(--options-field);
+	color: var(--options-text-muted);
+	font: 11px/1.45 var(--options-font-mono);
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+.moduleErrorLogOutput:focus-visible {
+	border-color: var(--options-accent-line-strong);
+	outline: 2px solid var(--options-accent-line);
+	outline-offset: 2px;
+}
+
+.moduleErrorLogStatus {
+	min-height: 1.35em;
+	margin: 0;
+	color: var(--options-text-soft);
+	font-size: 11px;
+}
+
 #RESConfigPanelModulesPane {
 	display: grid;
 	grid-template-rows: auto minmax(0, 1fr) auto;

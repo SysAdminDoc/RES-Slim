@@ -854,6 +854,48 @@
     "settingsConsoleDataMeta": {
         "message": "Portable JSON snapshots"
     },
+    "settingsConsoleErrorsTitle": {
+        "message": "Module errors"
+    },
+    "settingsConsoleErrorsMeta": {
+        "message": "Failures stay on this device and are capped at 100 entries."
+    },
+    "settingsConsoleErrorsGroup": {
+        "message": "Module error log actions"
+    },
+    "settingsConsoleErrorsRefresh": {
+        "message": "Refresh"
+    },
+    "settingsConsoleErrorsCopy": {
+        "message": "Copy log"
+    },
+    "settingsConsoleErrorsClear": {
+        "message": "Clear log"
+    },
+    "settingsConsoleErrorsAria": {
+        "message": "Module error log"
+    },
+    "settingsConsoleErrorsEmpty": {
+        "message": "No module failures recorded."
+    },
+    "settingsConsoleErrorsReadFailed": {
+        "message": "Could not read the local error log."
+    },
+    "settingsConsoleErrorsCount": {
+        "message": "$1 module failure(s) recorded locally."
+    },
+    "settingsConsoleErrorsCopySuccess": {
+        "message": "Error log copied."
+    },
+    "settingsConsoleErrorsCopyFailed": {
+        "message": "Select the log text and copy it manually."
+    },
+    "settingsConsoleErrorsCleared": {
+        "message": "Module error log cleared."
+    },
+    "settingsConsoleErrorsClearFailed": {
+        "message": "Could not clear the local error log."
+    },
     "settingsConsoleBuildLabel": {
         "message": "Build"
     },
