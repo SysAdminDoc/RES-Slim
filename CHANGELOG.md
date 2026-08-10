@@ -1928,3 +1928,70 @@ Senior-engineer refactor pass — bug hunt + hardening + UX consistency, no new 
 - v0.3.4: version bump + changelog for settings workspace refinement
 - Refine settings workspace UX
 - v0.3.3: fresh extension icon set
+
+## Roadmap archive — 2026-08-10 — ROADMAP.md
+
+<details>
+<summary>Original roadmap snapshot</summary>
+
+```markdown
+# RES-Slim Roadmap
+
+RES-Slim is a personal, old.reddit-focused fork of Reddit Enhancement Suite, published publicly. This roadmap tracks actionable pending work only. Blocked items are in `Roadmap_Blocked.md`.
+
+## Planning Docs
+
+- Research synthesis: `RESEARCH.md`
+- Blocked items: `Roadmap_Blocked.md`
+- Historical roadmap: `docs/archive/roadmap/ROADMAP-2026-05-22.md`
+- Archived feature-gap research: `docs/archive/research/RESEARCH-FINDINGS.md`
+
+Shipped state is described by `README.md` and the commit history; there is no
+separate summary file.
+
+## Current Baseline
+
+- Current release: v0.30.0.
+- Test count: 911 unit + 9 e2e.
+- Chrome MV3 and Firefox MV2 extension builds remain the primary artifacts.
+- The product is old.reddit-first; new Reddit surfaces are compatibility handoffs only.
+- Every new feature must remain reversible, settings-gated where appropriate, privacy-preserving, and compatible with the existing no-light-theme/no-keyboard-shortcut/no-telemetry rules.
+
+## Active Items
+
+See "Research-Driven Additions" below (added 2026-08-06).
+
+## Research-Driven Additions
+
+Added 2026-08-06 from the research pass recorded in `RESEARCH.md`.
+
+### P0
+
+### P1
+
+### P2
+
+## Audit Findings — 2026-08-07
+
+Audit-only pass over v0.23.0. Baseline recorded: `yarn test` 811/811 pass,
+`yarn test:e2e` 4/4 pass, `yarn build` succeeds, `yarn eslint` 166 pre-existing
+errors, `yarn stylelint` 1 pre-existing error. Most findings below are in code
+shipped by v0.22.0/v0.23.0 — the newest code is the least-audited code.
+
+### P0
+
+### P1
+
+### P2
+
+### P3
+
+## Definition of Done
+
+- Active planning remains in this file.
+- Completed implementation notes go to `CHANGELOG.md`.
+- Blocked items go to `Roadmap_Blocked.md`.
+- Research conclusions go to `RESEARCH.md`.
+```
+
+</details>
