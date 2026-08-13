@@ -1714,5 +1714,8 @@
     },
     "fiveHundredPx": {
         "message": "500px"
+    },
+    "blueskyExpandoUnavailable": {
+        "message": "This Bluesky post could not be embedded. It may require signing in on Bluesky."
     }
 }

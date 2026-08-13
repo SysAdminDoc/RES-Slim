@@ -83,6 +83,7 @@ test('bluesky detects full post URLs and validates oEmbed payload shape', () => 
 	// (upstream #5561).
 	assert.ok(detect.test('https://bsky.app/profile/did:plc:abc123xyz/post/3kabc123'), 'DID-addressed post');
 	assert.ok(detect.test('https://bsky.app/profile/user.bsky.social/post/3kabc123?ref=x'), 'query string');
+	assert.ok(detect.test('https://bsky.app/profile/user.bsky.social/post/3kabc123/'), 'trailing slash');
 
 	// Still narrow enough to reject non-posts.
 	assert.equal(detect.test('https://bsky.app/profile/user.bsky.social'), false, 'profile page is not a post');

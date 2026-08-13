@@ -21,6 +21,11 @@ All notable changes to RES-Slim will be documented in this file.
   author context, crossposts, live comments, and subreddit rules. HTTP 429
   responses retry twice with bounded `Retry-After`/exponential backoff; page
   navigation and caller-owned request scopes can abort in-flight work.
+- Applicable RES v5.24.9–v5.24.10 fixes were selectively reimplemented without
+  merging the broader upstream fork. Combined-search text posts now expose their
+  canonical entry and title link, Bluesky accepts DID/trailing-slash post URLs
+  and degrades unavailable oEmbeds cleanly, and the retained Babel/lodash/
+  flatted/immutable toolchain packages carry the upstream updates.
 
 ### Verified
 
@@ -37,6 +42,10 @@ All notable changes to RES-Slim will be documented in this file.
   Chromium module exercise confirms the helper sends a credentialed, body-free
   GET to a read-only Reddit endpoint; the signed-in live browser independently
   returned HTTP 200 `application/json` for public subreddit metadata.
+- Executable module contracts cover combined-search normalization and Bluesky's
+  unavailable-oEmbed path. A signed-in live old-Reddit search returned 22
+  combined-search rows with `a.search-title` and no native `.entry` class,
+  matching the repaired fallback contract.
 
 ## v0.32.0 - 2026-08-13
 

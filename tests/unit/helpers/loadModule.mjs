@@ -129,8 +129,10 @@ export const Storage = {
 	set: async () => {},
 	delete: async () => {},
 	has: async () => false,
+	wrap: () => ({ get: async () => null, set: async () => {}, patch: async () => {}, delete: async () => {}, has: async () => false }),
 	wrapBlob: () => ({ get: async () => ({}), set: async () => {}, patch: async () => {} }),
 	wrapPrefix: () => ({ get: async () => null, set: async () => {}, delete: async () => {} }),
+	wrapPrefix2: () => ({ get: async () => null, set: async () => {}, delete: async () => {} }),
 };
 export const Session = { get: async () => null, set: async () => {}, has: async () => false, delete: async () => {} };
 export const XhrCache = { new: async () => {}, check: async () => null, clear: async () => {} };
@@ -224,8 +226,10 @@ export function installNetworkGuard() {
  * `name` scopes the output directory so parallel suites cannot overwrite each
  * other. `dom` installs a jsdom document first; `globals` is merged into
  * globalThis after that, so a test can override any piece of it.
+ * `exportDefault` exposes a target's default export as `__targetDefault`; it is
+ * opt-in because many utility targets intentionally have no default export.
  */
-export async function loadModule(relativePath, name, { globals = {}, dom, stubEnvironment = false } = {}) {
+export async function loadModule(relativePath, name, { globals = {}, dom, stubEnvironment = false, exportDefault = false } = {}) {
 	const stubs = await stubDir();
 	if (dom !== false) installDom(dom || {});
 	const outDir = path.join(repoRoot, 'tests', 'unit', `.tmp-mod-${name}`);
@@ -261,6 +265,7 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 		`import * as __registry from ${JSON.stringify(toRegistry)};`,
 		'export { __registry };',
 		`export * from ${JSON.stringify(toTarget)};`,
+		exportDefault ? `export { default as __targetDefault } from ${JSON.stringify(toTarget)};` : '',
 		'',
 	].join('\n'));
 
