@@ -31,6 +31,13 @@
 			"background.entry.js"
 		]
 	},
+	"declarative_net_request": {
+		"rule_resources": [{
+			"id": "reddit_ads",
+			"enabled": true,
+			"path": "ad-block.json"
+		}]
+	},
 	"content_scripts": [{
 		"matches": [
 			"https://*.reddit.com/*"
@@ -69,6 +76,7 @@
 	"content_security_policy": "default-src 'self'; img-src 'self' data:; connect-src https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; frame-ancestors https://*.reddit.com",
 	"permissions": [
 		"https://*.reddit.com/*",
+		"declarativeNetRequest",
 		"tabs",
 		"storage",
 		"scripting",

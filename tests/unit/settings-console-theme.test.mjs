@@ -8,6 +8,7 @@ const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
 const themes = [
 	'oled',
+	'paper',
 	'graphite',
 	'midnight',
 	'forest',
@@ -46,6 +47,7 @@ test('settings console theme picker is wired through template, controller, style
 		'settingsConsoleThemeGroup',
 		'settingsConsoleThemeLabel',
 		'settingsConsoleThemeOled',
+		'settingsConsoleThemePaper',
 		'settingsConsoleThemeGraphite',
 		'settingsConsoleThemeMidnight',
 		'settingsConsoleThemeForest',

@@ -182,6 +182,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 			copy({
 				assets: [
 					{ from: ['./LICENSE'], to: ['./'] },
+					{ from: ['./rules/ad-block.json'], to: ['./'] },
 					{ from: ['./images/css-off-small.png'], to: ['./'] },
 					{ from: ['./images/css-off.png'], to: ['./'] },
 					{ from: ['./images/css-on-small.png'], to: ['./'] },

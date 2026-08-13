@@ -1,0 +1,69 @@
+[
+	{
+		"id": 1,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"requestDomains": [
+				"alb.reddit.com",
+				"e.reddit.com",
+				"events.reddit.com",
+				"events.redditmedia.com",
+				"pixel.redditmedia.com",
+				"w3-reporting.reddit.com"
+			],
+			"initiatorDomains": ["reddit.com"],
+			"excludedResourceTypes": ["main_frame"]
+		}
+	},
+	{
+		"id": 2,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"regexFilter": "^https://(?:[^/]+\\.)?reddit\\.com/api/(?:event|v1/(?:page_view|clk))(?:[/?]|$)",
+			"initiatorDomains": ["reddit.com"],
+			"resourceTypes": ["xmlhttprequest", "ping"]
+		}
+	},
+	{
+		"id": 3,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"urlFilter": "||redditstatic.com/shreddit/assets/pix/ads/",
+			"initiatorDomains": ["reddit.com"],
+			"excludedResourceTypes": ["main_frame"]
+		}
+	},
+	{
+		"id": 4,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"regexFilter": "^https://(?:[^/]+\\.)?redditstatic\\.com/.*about-this-ad(?:[-./?]|$)",
+			"initiatorDomains": ["reddit.com"],
+			"excludedResourceTypes": ["main_frame"]
+		}
+	},
+	{
+		"id": 5,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"urlFilter": "||reddit.com/static/pixel.png",
+			"initiatorDomains": ["reddit.com"],
+			"resourceTypes": ["image"]
+		}
+	},
+	{
+		"id": 6,
+		"priority": 1,
+		"action": { "type": "block" },
+		"condition": {
+			"requestDomains": ["ads.reddit.com"],
+			"initiatorDomains": ["reddit.com"],
+			"excludedResourceTypes": ["main_frame"]
+		}
+	}
+]

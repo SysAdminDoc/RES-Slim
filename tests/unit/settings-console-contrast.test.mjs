@@ -6,7 +6,7 @@ import path from 'node:path';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const styles = fs.readFileSync(path.join(repoRoot, 'lib/options/options.scss'), 'utf8');
 
-const THEMES = ['oled', 'graphite', 'midnight', 'forest', 'ember', 'catppuccin', 'tokyonight', 'rosepine'];
+const THEMES = ['oled', 'paper', 'graphite', 'midnight', 'forest', 'ember', 'catppuccin', 'tokyonight', 'rosepine'];
 
 function extractBlock(theme) {
 	const re = theme === 'oled'
@@ -169,7 +169,7 @@ test('the focus ring is accent-derived in every theme, never a fixed hue', () =>
 	const root = extractBlock('oled');
 	const ring = readToken(root, '--options-focus-ring');
 	assert.match(ring, /color-mix\(in srgb, var\(--options-accent\)/,
-		'focus ring must follow the theme accent — it was previously a hardcoded blue in all eight themes');
+		'focus ring must follow the theme accent — it was previously hardcoded blue in every theme');
 	// A theme that redefines the accent must not also redeclare the tints, or
 	// the derivation silently stops applying to it.
 	for (const theme of THEMES.filter(t => t !== 'oled')) {

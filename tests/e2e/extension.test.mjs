@@ -172,6 +172,14 @@ test('the settings console renders in the options page', async t => {
 	const pageDir = path.join(dir, 'settings-pages');
 	fs.mkdirSync(pageDir, { recursive: true });
 
+	// The selected ImageGen direction is the optional Paper theme. OLED remains
+	// the product default; screenshots opt into Paper so parity is measured
+	// without changing an existing user's preference.
+	await page.locator('#RESCategoryTab-console').click();
+	await page.locator('[data-settings-theme="paper"]').click();
+	await page.locator('#RESCategoryTab-appearanceCategory').click();
+	await page.waitForTimeout(2600);
+
 	for (const tab of tabHandles) {
 		await tab.click(); // eslint-disable-line no-await-in-loop
 		await page.waitForTimeout(120); // eslint-disable-line no-await-in-loop
@@ -209,10 +217,39 @@ test('the settings console renders in the options page', async t => {
 			}
 		} else {
 			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), 'Console preferences'); // eslint-disable-line no-await-in-loop
+			const consoleLayout = await page.evaluate(() => ({ // eslint-disable-line no-await-in-loop
+				moduleDisplay: getComputedStyle(document.querySelector('#RESConfigPanelModulesPane')).display,
+				primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
+				prefsLeft: document.querySelector('#RESConsolePrefs').getBoundingClientRect().left,
+				advancedTop: document.querySelector('.utilityPanel--advanced').getBoundingClientRect().top,
+				viewportHeight: window.innerHeight,
+			}));
+			assert.equal(consoleLayout.moduleDisplay, 'none', 'Console preferences should not retain an empty module rail'); // eslint-disable-line no-await-in-loop
+			assert.ok(Math.abs(consoleLayout.primaryRight - consoleLayout.prefsLeft) <= 1, 'Console preferences should begin where the primary rail ends'); // eslint-disable-line no-await-in-loop
+			assert.ok(consoleLayout.advancedTop < consoleLayout.viewportHeight, 'Console preferences should expose Advanced options without an initial scroll'); // eslint-disable-line no-await-in-loop
 		}
 
 		await page.screenshot({ path: path.join(pageDir, `${screenshotSlug(label)}.png`), fullPage: false, animations: 'disabled' }); // eslint-disable-line no-await-in-loop
 	}
+
+	// Search is a material workspace state, not a permanent category. It spans
+	// the whole content area: keeping the previously selected category's module
+	// rail beside global results wastes space and implies a false relationship.
+	await page.locator('#SearchRES-input').fill('privacy');
+	await page.waitForSelector('#SearchRES-results-container:not([hidden])');
+	const searchLayout = await page.evaluate(() => ({
+		overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+		primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
+		workspaceLeft: document.querySelector('#RESConfigPanelOptions').getBoundingClientRect().left,
+		moduleDisplay: getComputedStyle(document.querySelector('#RESConfigPanelModulesPane')).display,
+		resultCount: document.querySelectorAll('.SearchRES-result-item:not(.advanced)').length,
+	}));
+	assert.ok(searchLayout.overflow <= 1, 'settings search should not overflow the viewport horizontally');
+	assert.equal(searchLayout.moduleDisplay, 'none', 'global search should not retain an unrelated category module rail');
+	assert.ok(Math.abs(searchLayout.primaryRight - searchLayout.workspaceLeft) <= 1, 'search workspace should begin where the primary rail ends');
+	assert.ok(searchLayout.resultCount > 0, 'privacy should return settings results');
+	await page.screenshot({ path: path.join(pageDir, 'search.png'), fullPage: false, animations: 'disabled' });
+	await page.locator('#SearchRES-input').fill('');
 
 	await page.setViewportSize({ width: 960, height: 900 });
 	await page.locator('#RESCategoryTab-appearanceCategory').click();
@@ -228,20 +265,19 @@ test('the settings console renders in the options page', async t => {
 	assert.ok(['flex', 'inline-flex'].includes(compactLayout.toggleDisplay), 'compact settings console should expose the module-rail toggle');
 	await page.screenshot({ path: path.join(dir, 'settings-responsive-960.png'), fullPage: false, animations: 'disabled' });
 
-	await page.setViewportSize({ width: 700, height: 900 });
-	await page.locator('#RESMobileSidebarToggle').click();
-	const narrowLayout = await page.evaluate(() => ({
+	await page.setViewportSize({ width: 1920, height: 1080 });
+	await page.locator('#RESCategoryTab-appearanceCategory').click();
+	const wideLayout = await page.evaluate(() => ({
 		overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-		primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
-		workspaceLeft: document.querySelector('#RESConfigPanelOptions').getBoundingClientRect().left,
+		primaryWidth: document.querySelector('#RESPrimaryRail').getBoundingClientRect().width,
+		moduleWidth: document.querySelector('#RESConfigPanelModulesPane').getBoundingClientRect().width,
 		moduleDisplay: getComputedStyle(document.querySelector('#RESConfigPanelModulesPane')).display,
-		breadcrumbCategoryDisplay: getComputedStyle(document.querySelector('#RESBreadcrumbCategory')).display,
 	}));
-	assert.ok(narrowLayout.overflow <= 1, 'narrow settings console should not overflow horizontally');
-	assert.equal(narrowLayout.moduleDisplay, 'none', 'narrow settings console should collapse the module rail on request');
-	assert.ok(Math.abs(narrowLayout.primaryRight - narrowLayout.workspaceLeft) <= 1, 'collapsed narrow workspace should meet the primary rail');
-	assert.equal(narrowLayout.breadcrumbCategoryDisplay, 'none', 'narrow settings console should keep only the active module in its breadcrumb');
-	await page.screenshot({ path: path.join(dir, 'settings-responsive-700.png'), fullPage: false, animations: 'disabled' });
+	assert.ok(wideLayout.overflow <= 1, 'wide desktop settings console should not overflow horizontally');
+	assert.ok(wideLayout.primaryWidth >= 280, 'wide desktop settings console should retain its labeled primary rail');
+	assert.ok(wideLayout.moduleWidth >= 270, 'wide desktop settings console should retain its module rail');
+	assert.equal(wideLayout.moduleDisplay, 'grid', 'wide desktop settings console should keep both navigation rails visible');
+	await page.screenshot({ path: path.join(dir, 'settings-desktop-1920.png'), fullPage: false, animations: 'disabled' });
 
 	// The walk above can only read text. i18n() itself reports a miss in
 	// development, which covers the keys that render somewhere a text scrape cannot
@@ -267,7 +303,7 @@ test('settings console themes and display controls work by keyboard', async t =>
 	await page.waitForSelector('#RESConsolePrefs:not([hidden])');
 
 	const themeButtons = page.locator('#RESThemeSelector .themeOption');
-	assert.equal(await themeButtons.count(), 8, 'every settings theme should be reachable');
+	assert.equal(await themeButtons.count(), 9, 'every settings theme should be reachable');
 	for (const theme of await themeButtons.evaluateAll(buttons => buttons.map(button => button.dataset.settingsTheme))) {
 		const button = page.locator(`#RESThemeSelector [data-settings-theme="${theme}"]`);
 		await button.focus();
@@ -558,6 +594,100 @@ test('an enabled pageTheme palette paints its own background', async t => {
 	assert.equal(painted.token, '#282828', 'the gruvbox palette block must be in res.css');
 	assert.equal(painted.body, 'rgb(40, 40, 40)', 'the body must actually be painted #282828, not the anti-FOUC OLED black');
 	assert.equal(painted.antiFoucStyle, false, 'the early style has done its job once a real palette is applied');
+});
+
+test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const optionsPage = await context.newPage();
+	await optionsPage.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	const enabledRulesets = await optionsPage.evaluate(() => chrome.declarativeNetRequest.getEnabledRulesets());
+	assert.ok(enabledRulesets.includes('reddit_ads'), 'the packaged reddit_ads ruleset must be enabled at runtime');
+	await optionsPage.close();
+
+	const page = await context.newPage();
+	const html = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>DNR probe</title></head><body class="listing-page"><main class="content" role="main"></main></body></html>';
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (url === 'https://alb.reddit.com/rsm-dnr-probe.png') return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.abort();
+	});
+
+	await page.goto('https://old.reddit.com/rsm-dnr-probe/', { waitUntil: 'domcontentloaded' });
+	const failedRequest = page.waitForEvent('requestfailed', {
+		predicate: request => request.url() === 'https://alb.reddit.com/rsm-dnr-probe.png',
+		timeout: 10000,
+	});
+	const imageResult = page.evaluate(() => new Promise(resolve => {
+		const probe = new Image();
+		probe.onload = () => resolve('loaded');
+		probe.onerror = () => resolve('blocked');
+		probe.src = 'https://alb.reddit.com/rsm-dnr-probe.png';
+		document.body.append(probe);
+	}));
+	const [request, result] = await Promise.all([failedRequest, imageResult]);
+
+	assert.equal(result, 'blocked', 'the ad-host probe must not load');
+	assert.match(request.failure()?.errorText || '', /ERR_BLOCKED_BY_CLIENT/, 'Chromium should attribute the failure to the extension ruleset');
+});
+
+test('promoted old Reddit records stay hidden across initial and asynchronous loads', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const initialPromoted = `
+		<div class="thing link promotedlink" data-fullname="t3_ad0001" data-subreddit="example" data-domain="example.com" data-author="advertiser">
+			<div class="entry"><p class="title"><a class="title" href="https://example.com/ad">Sponsored record</a></p></div>
+		</div>`;
+	const html = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'frontpage.html'), 'utf8')
+		.replace('<div id="siteTable" class="sitetable linklisting">', `<div id="siteTable" class="sitetable linklisting">${initialPromoted}`);
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForSelector('[data-fullname="t3_ad0001"][data-rsm-promoted-hidden="true"]', { state: 'attached' });
+
+	const initialState = await page.evaluate(() => ({
+		promotedDisplay: getComputedStyle(document.querySelector('[data-fullname="t3_ad0001"]')).display,
+		ordinaryDisplay: getComputedStyle(document.querySelector('[data-fullname="t3_frontpage01"]')).display,
+		badge: document.querySelector('[data-rsm-promoted-badge="true"]')?.textContent,
+	}));
+	assert.equal(initialState.promotedDisplay, 'none', 'server-rendered promoted records must be suppressed');
+	assert.notEqual(initialState.ordinaryDisplay, 'none', 'ordinary listing records must remain visible');
+	assert.equal(initialState.badge, '1', 'the visible diagnostic should count the initial promoted record');
+
+	await page.evaluate(() => {
+		const record = document.createElement('div');
+		record.className = 'thing link even';
+		record.dataset.fullname = 't3_ad0002';
+		record.dataset.subreddit = 'example';
+		record.dataset.domain = 'example.com';
+		record.dataset.author = 'advertiser';
+		record.innerHTML = '<div class="entry"><p class="title"><a class="title" href="https://alb.reddit.com/click">Async sponsored record</a><span class="promoted-tag">promoted</span></p></div>';
+		document.querySelector('#siteTable').append(record);
+	});
+	await page.waitForSelector('[data-fullname="t3_ad0002"][data-rsm-promoted-hidden="true"]', { state: 'attached' });
+
+	const asyncState = await page.evaluate(() => ({
+		display: getComputedStyle(document.querySelector('[data-fullname="t3_ad0002"]')).display,
+		badge: document.querySelector('[data-rsm-promoted-badge="true"]')?.textContent,
+		ordinaryPresent: !!document.querySelector('[data-fullname="t3_frontpage01"]'),
+	}));
+	assert.equal(asyncState.display, 'none', 'late-inserted promoted records must be suppressed');
+	assert.equal(asyncState.badge, '2', 'the diagnostic should include late-inserted promoted records');
+	assert.equal(asyncState.ordinaryPresent, true, 'late ad filtering must not remove ordinary posts');
 });
 
 test('the content script initialises on a real old.reddit document', async t => {

@@ -917,6 +917,9 @@
     "settingsConsoleThemeOled": {
         "message": "OLED"
     },
+    "settingsConsoleThemePaper": {
+        "message": "Paper"
+    },
     "settingsConsoleThemeGraphite": {
         "message": "Graphite"
     },
@@ -1705,5 +1708,11 @@
     },
     "searchNoResultsHint": {
         "message": "Try a shorter word, a module name, or a setting name. Advanced settings are only searched when \"Show advanced options\" is on."
+    },
+    "deviantART": {
+        "message": "deviantART"
+    },
+    "fiveHundredPx": {
+        "message": "500px"
     }
 }

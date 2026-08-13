@@ -23,6 +23,15 @@
   "background": {
     "service_worker": "background.entry.js"
   },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "reddit_ads",
+        "enabled": true,
+        "path": "ad-block.json"
+      }
+    ]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -64,6 +73,7 @@
     "extension_pages": "default-src 'self'; script-src 'self'; img-src 'self' data:; connect-src https: http://localhost:* http://127.0.0.1:*; font-src 'self' data:; frame-ancestors https://*.reddit.com"
   },
   "permissions": [
+    "declarativeNetRequest",
     "tabs",
     "storage",
     "unlimitedStorage",

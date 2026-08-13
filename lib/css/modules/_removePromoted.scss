@@ -1,3 +1,15 @@
+// First-party promoted records arrive inside the essential listing response, so
+// transport cannot be separated from ordinary posts. Hide every stable old-
+// reddit hook in CSS at document_start; the module removes/counts the same nodes
+// once parsed and catches asynchronous insertions.
+.thing.link.promoted,
+.thing.link.promotedlink,
+.thing.link[data-promoted='true'],
+.thing.link[data-adserver-imp-pixel],
+.thing.link[data-adserver-click-url] {
+	display: none !important;
+}
+
 // RES-Slim: badge that surfaces the number of promoted posts hidden this page-load.
 // Lives in the existing #header-bottom-right cluster so it sits next to mail/userbar.
 // The base colour used to be the dark-theme value (#ffb06a, about 1.9:1 on a

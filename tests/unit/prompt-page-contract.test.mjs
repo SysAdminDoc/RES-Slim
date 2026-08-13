@@ -76,7 +76,7 @@ test('the prompt adopts the accent of the theme chosen in the settings console',
 
 	// Each preset the console offers must supply an accent for the prompt to use.
 	const ids = [...presets.matchAll(/\{ id: '([a-z]+)'[^}]*accent: '(#[0-9a-f]{6})'/g)].map(m => m[1]);
-	assert.equal(ids.length, 8, `expected all 8 presets to declare an accent, got ${ids.length}`);
+	assert.equal(ids.length, 9, `expected all 9 presets to declare an accent, got ${ids.length}`);
 });
 
 test('the prompt draws the RS monogram rather than the upstream alien bitmap', () => {

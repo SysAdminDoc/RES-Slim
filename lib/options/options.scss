@@ -32,7 +32,7 @@
 	// Everything below is derived from --options-accent, so a theme only has to
 	// redefine the accent and every tint, line, selection and focus ring follows
 	// it. These were previously hardcoded to graphite's blue, which meant seven
-	// of the eight themes drew blue borders around accent-coloured fills — most
+	// of the settings themes drew blue borders around accent-coloured fills — most
 	// visibly on the default OLED theme, where an orange chip sat inside a blue
 	// outline and the focus ring glowed blue over an orange button.
 	--options-accent-soft: color-mix(in srgb, var(--options-accent) 15%, transparent);
@@ -42,6 +42,31 @@
 	--options-accent-line-strong: color-mix(in srgb, var(--options-accent) 45%, transparent);
 	--options-selection: color-mix(in srgb, var(--options-accent) 26%, transparent);
 	--options-focus-ring: 0 0 0 3px color-mix(in srgb, var(--options-accent) 22%, transparent);
+}
+
+// ImageGen-selected desktop direction: a warm, low-glare light option. OLED
+// remains the default so existing installs and defaults do not change.
+html[data-settings-theme='paper'] {
+	color-scheme: light;
+
+	--options-bg: #f8f7f3;
+	--options-panel: #fff;
+	--options-panel-alt: #fbfbfa;
+	--options-panel-raised: #fff;
+	--options-field: #fff;
+	--options-field-hover: #eef1f5;
+	--options-border: #d7dce4;
+	--options-border-strong: #98a4b5;
+	--options-text: #13213b;
+	--options-text-muted: #44546c;
+	--options-text-soft: #5f6f85;
+	--options-accent: #c2410c;
+	--options-accent-strong: #9a3412;
+	--options-success: #15803d;
+	--options-warning: #a16207;
+	--options-danger: #b91c1c;
+	--options-shadow: 0 18px 46px rgb(19 33 59 / 12%);
+	--options-shadow-soft: 0 8px 24px rgb(19 33 59 / 8%);
 }
 
 html[data-settings-theme='graphite'] {
@@ -3304,7 +3329,7 @@ html[res-options]:root {
 
 	.consolePrefsGrid .themeSelectorOptions {
 		display: grid;
-		grid-template-columns: repeat(8, minmax(76px, 1fr));
+		grid-template-columns: repeat(9, minmax(72px, 1fr));
 		gap: 10px;
 	}
 
@@ -3332,6 +3357,11 @@ html[res-options]:root {
 	}
 
 	.themeOptionSwatch--oled { background: #f1f3f5; }
+
+	.themeOptionSwatch--paper {
+		background: #f8f7f3;
+		box-shadow: inset 0 0 0 1px #98a4b5;
+	}
 	.themeOptionSwatch--graphite { background: #6e7681; }
 	.themeOptionSwatch--midnight { background: #58a6ff; }
 	.themeOptionSwatch--forest { background: #4ed59a; }
@@ -3585,5 +3615,238 @@ html[res-options]:root {
 		#RESConsolePrefs { padding: 26px 18px 20px; }
 		.consolePrefsGrid .themeSelectorOptions { grid-template-columns: repeat(2, minmax(100px, 1fr)); }
 		.consolePrefsGrid .consoleControlGroup--display { grid-template-columns: 1fr; }
+	}
+}
+
+/* v0.31.0 ImageGen parity refinement — explicit state, grouped controls, and
+   a search workspace that does not retain an unrelated module rail. The theme
+   attribute is installed during console bootstrap before these controls render. */
+html[res-options][data-settings-theme] {
+	.categoryTab:hover,
+	.moduleButton:hover {
+		background: var(--options-field-hover);
+	}
+
+	.globalStageBar.is-saved .globalStageIcon {
+		color: var(--options-success);
+	}
+
+	.globalStageText {
+		color: var(--options-text-muted);
+	}
+
+	#RESPrimaryRail .consoleBrandText h1,
+	.moduleName,
+	.optionTitle,
+	.consolePrefsTitle {
+		color: var(--options-text);
+	}
+
+	.moduleRow {
+		position: relative;
+	}
+
+	.moduleButton {
+		padding-right: 72px;
+	}
+
+	.moduleButton.enabled::before {
+		border-color: var(--options-accent);
+		background: var(--options-accent-soft);
+	}
+
+	.moduleButton.active.enabled::before {
+		background: var(--options-accent);
+	}
+
+	.moduleRowToggle,
+	.moduleRowLock {
+		position: absolute;
+		right: 12px;
+		top: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 42px;
+		height: 24px;
+		padding: 0 7px;
+		border: 1px solid var(--options-border-strong);
+		border-radius: var(--options-radius-sm);
+		background: var(--options-field);
+		color: var(--options-text-soft);
+		font-size: 10px;
+		font-weight: 700;
+		line-height: 1;
+		text-transform: none;
+		transform: translateY(-50%);
+	}
+
+	.moduleRowToggle:hover {
+		border-color: var(--options-accent);
+		background: var(--options-accent-ghost);
+		color: var(--options-accent-strong);
+	}
+
+	.moduleRowToggle.is-on,
+	.moduleRowLock {
+		border-color: var(--options-accent-line-strong);
+		background: var(--options-accent-ghost);
+		color: var(--options-accent-strong);
+	}
+
+	.moduleRowToggleThumb {
+		display: none;
+	}
+
+	.moduleRowToggleText::before {
+		content: attr(data-disabled-text);
+	}
+
+	.moduleRowToggle.is-on .moduleRowToggleText::before {
+		content: attr(data-enabled-text);
+	}
+
+	#RESConsoleContainer .toggleButton .toggleLabel {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 38px;
+		height: 28px;
+		padding: 0 8px;
+		border: 1px solid var(--options-border-strong);
+		border-radius: var(--options-radius-sm);
+		background: var(--options-field);
+		font-size: 11px;
+		font-weight: 700;
+		text-transform: none;
+	}
+
+	#RESConsoleContainer .toggleButton.enabled .toggleLabel {
+		border-color: var(--options-accent-line-strong);
+		background: var(--options-accent-ghost);
+	}
+
+	#allOptionsContainer:not(:empty) {
+		overflow: hidden;
+		margin-top: 18px;
+		border: 1px solid var(--options-border);
+		border-radius: var(--options-radius-md);
+		background: var(--options-panel);
+	}
+
+	#allOptionsContainer:not(:empty) .optionContainer {
+		padding: 20px 22px;
+	}
+
+	#allOptionsContainer:not(:empty) .optionContainer:last-child {
+		border-bottom: 0;
+	}
+
+	.consolePrefsGrid {
+		gap: 10px;
+	}
+
+	.consolePrefsGrid .utilityPanel {
+		gap: 10px;
+		padding: 14px 16px;
+		border: 1px solid var(--options-border);
+		border-radius: var(--options-radius-md);
+		background: var(--options-panel);
+	}
+
+	.consolePrefsGrid .utilityPanel--build {
+		padding: 8px 2px 0;
+		border: 0;
+		background: transparent;
+	}
+
+	#RESConsolePrefs {
+		padding-top: 22px;
+		padding-bottom: 16px;
+	}
+
+	.consolePrefsHeader {
+		margin-bottom: 14px;
+		padding-bottom: 14px;
+	}
+
+	.consolePrefsGrid .themeOption {
+		min-height: 58px;
+	}
+
+	.consolePrefsGrid :is(.settingsIoButton, .densityToggle, .motionToggle) {
+		min-height: 40px;
+	}
+
+	.moduleErrorLogOutput {
+		height: 80px;
+		min-height: 70px;
+	}
+
+	.consolePrefsGrid .utilityPanel--advanced {
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+	}
+
+	.consolePrefsGrid .utilityPanel--advanced .advancedOptionsPanel {
+		min-height: 40px;
+		padding: 0;
+		border: 0;
+	}
+
+	#RESConsoleContainer.is-search-workspace #RESConsoleTopBar.RESDialogTopBar {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	#RESConsoleContainer.is-search-workspace #RESHeaderCategory,
+	#RESConsoleContainer.is-search-workspace #RESConfigPanelModulesPane {
+		display: none;
+	}
+
+	#RESConsoleContainer.is-search-workspace #RESConsoleContent {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	#RESConsoleContainer.is-search-workspace #RESConfigPanelOptions {
+		grid-column: 1;
+	}
+
+	#RESConsoleContainer.is-search-workspace .workspaceShell {
+		padding-right: 58px;
+		padding-left: 58px;
+	}
+
+	#RESConsoleContainer.is-search-workspace .moduleDescription {
+		padding-bottom: 0;
+		border-bottom: 0;
+	}
+
+	#SearchRES-results {
+		overflow: hidden;
+		border: 1px solid var(--options-border);
+		border-radius: var(--options-radius-md);
+		background: var(--options-panel);
+	}
+
+	#SearchRES-results-container li {
+		position: relative;
+		padding: 18px 48px 18px 18px;
+		border-top: 1px solid var(--options-border);
+		background: var(--options-panel);
+	}
+
+	#SearchRES-results-container li:hover {
+		background: var(--options-field-hover);
+	}
+
+	#SearchRES-results-container li::after {
+		content: '›';
+		position: absolute;
+		right: 20px;
+		top: 50%;
+		color: var(--options-text-soft);
+		font-size: 28px;
+		line-height: 1;
+		transform: translateY(-50%);
 	}
 }
