@@ -664,6 +664,156 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	await page.screenshot({ path: path.join(dir, 'old-reddit-refined-listing.png'), fullPage: false });
 });
 
+test('refined old Reddit search uses focused cards and themed empty states', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.setViewportSize({ width: 1440, height: 900 });
+	const html = `<!doctype html>
+		<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+		<head>
+			<title>fixture search</title>
+			<style>
+				.search-expando.collapsed { position: relative; height: 45px; overflow: hidden; }
+				.search-expando.collapsed::before { position: absolute; inset: auto 0 0; height: 15px; content: ""; background: linear-gradient(transparent, #fff); }
+			</style>
+		</head>
+		<body class="combined-search-page loggedin search-page">
+			<div id="header" role="banner">
+				<div id="sr-header-area"><div class="width-clip"></div></div>
+				<div id="header-bottom-left"><span class="pagename"><a href="/search">search results</a></span></div>
+				<div id="header-bottom-right"><span class="user">fixture</span></div>
+			</div>
+			<div class="side">
+				<div class="spacer"><div class="sidebox submit"><div class="morelink"><a href="/submit">submit</a></div></div></div>
+			</div>
+			<div class="content" role="main">
+				<div class="searchpane raisedbox">
+					<h4>search</h4>
+					<div id="previoussearch">
+						<form action="/search" id="search" role="search">
+							<input type="text" name="q" value="privacy">
+							<button class="search-submit-button" type="submit" aria-label="Search"><span class="search-icon"></span></button>
+							<label><input type="checkbox" name="include_over_18">include NSFW results</label>
+							<p><a href="#" id="search_showmore">advanced search</a></p>
+						</form>
+					</div>
+				</div>
+				<div class="listing search-result-listing">
+					<div class="search-result-group">
+						<div class="contents">
+							<div class="search-result search-result-subreddit">
+								<header class="search-result-header"><a href="/r/fixture" class="search-title">Fixture community</a></header>
+								<div class="search-result-meta"><span class="fancy-toggle-button search-subscribe-button"><a class="option active add" href="#">join</a></span> a community for 10 years</div>
+								<div class="search-result-body">A useful public community result.</div>
+								<div class="search-result-footer"><a href="/r/fixture/search" class="search-link">search within r/fixture</a></div>
+							</div>
+						</div>
+					</div>
+					<div class="search-result-group">
+						<header class="search-result-group-header"><span class="search-header-label">posts</span></header>
+						<div class="contents">
+							<div class="search-result search-result-link has-thumbnail">
+								<a href="/r/fixture/comments/post" class="thumbnail"><img alt="" width="70" height="70"></a>
+								<div>
+									<header class="search-result-header"><a href="/r/fixture/comments/post" class="search-title">A <mark>privacy</mark> result</a></header>
+									<div class="search-result-meta">123 points · 42 comments · submitted today</div>
+									<div class="search-expando collapsed"><div class="search-result-body"><div class="md"><p>A long result excerpt that fades into the card surface instead of a white native gradient.</p></div></div></div>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="search-result-group empty-search-group">
+						<footer><p class="info">there doesn't seem to be anything here</p></footer>
+					</div>
+				</div>
+			</div>
+		</body>
+		</html>`;
+
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/search?q=privacy', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
+	await page.waitForTimeout(250);
+
+	const state = await page.evaluate(() => {
+		const styles = element => element ? getComputedStyle(element) : null;
+		const rect = element => element ? element.getBoundingClientRect() : null;
+		const side = document.querySelector('body > .side');
+		const content = document.querySelector('body > .content');
+		const searchpane = document.querySelector('.searchpane');
+		const submit = document.querySelector('.search-submit-button');
+		const result = document.querySelector('.search-result');
+		const postResult = document.querySelector('.search-result-link');
+		const postThumbnail = postResult?.querySelector('.thumbnail');
+		const title = result?.querySelector('.search-title');
+		const snippet = document.querySelector('.search-expando .md');
+		const expando = document.querySelector('.search-expando');
+		const empty = document.querySelector('.empty-search-group .info');
+		return {
+			sideDisplay: styles(side)?.display,
+			contentMarginRight: styles(content)?.marginRight,
+			searchpaneWidth: rect(searchpane)?.width,
+			searchpaneX: rect(searchpane)?.x,
+			listingX: rect(document.querySelector('.search-result-listing'))?.x,
+			submitSize: submit ? [rect(submit)?.width, rect(submit)?.height] : null,
+			resultWidth: rect(result)?.width,
+			resultBackground: styles(result)?.backgroundColor,
+			resultRadius: styles(result)?.borderRadius,
+			postResultHeight: rect(postResult)?.height,
+			postThumbnailSize: postThumbnail ? [rect(postThumbnail)?.width, rect(postThumbnail)?.height] : null,
+			postThumbnailFloat: styles(postThumbnail)?.float,
+			titleSize: styles(title)?.fontSize,
+			snippetBackground: styles(snippet)?.backgroundColor,
+			fade: expando ? getComputedStyle(expando, '::before').backgroundImage : null,
+			emptyBackground: styles(empty)?.backgroundColor,
+			emptyRadius: styles(empty)?.borderRadius,
+			emptyPadding: styles(empty)?.padding,
+			overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+		};
+	});
+
+	assert.equal(state.sideDisplay, 'none', 'declutter should remove search-only submission chrome');
+	assert.equal(state.contentMarginRight, '18px', 'focused search should reclaim the sidebar column');
+	assert.equal(state.searchpaneWidth, 1100, 'search controls should use the readable desktop content measure');
+	assert.ok(state.searchpaneX > 100, 'focused search should balance its readable measure in the viewport');
+	assert.equal(state.listingX, state.searchpaneX, 'query and results should share one centered column');
+	assert.deepEqual(state.submitSize, [42, 42], 'the search action should be an obvious square target');
+	assert.equal(state.resultWidth, 1100, 'search cards should align with the query surface');
+	assert.notEqual(state.resultBackground, 'rgba(0, 0, 0, 0)', 'results should sit on a visible surface');
+	assert.equal(state.resultRadius, '8px', 'search cards should use the same restrained radius as listings');
+	assert.ok(state.postResultHeight < 220, 'post result should stay compact');
+	assert.deepEqual(state.postThumbnailSize, [76, 58], 'post thumbnails should not depend on native float sizing');
+	assert.equal(state.postThumbnailFloat, 'left', 'post thumbnails should reserve a stable media column');
+	assert.equal(state.titleSize, '16px', 'result titles should lead the hierarchy');
+	assert.equal(state.snippetBackground, 'rgba(0, 0, 0, 0)', 'snippets should not draw a second dark rectangle');
+	assert.doesNotMatch(state.fade, /255, 255, 255/, 'collapsed excerpts must not fade to native white');
+	assert.match(state.fade, /17, 24, 33/, 'collapsed excerpts should fade into the Graphite card');
+	assert.notEqual(state.emptyBackground, 'rgba(0, 0, 0, 0)', 'empty results need a deliberate surface');
+	assert.equal(state.emptyRadius, '8px');
+	assert.equal(state.emptyPadding, '18px');
+	assert.equal(state.overflow, false, 'focused search should not create horizontal overflow');
+
+	const restoredSide = await page.evaluate(() => {
+		document.documentElement.classList.remove('res-pageTheme--declutter');
+		return getComputedStyle(document.querySelector('body > .side')).display;
+	});
+	assert.notEqual(restoredSide, 'none', 'search debloating must remain independently reversible');
+	await page.evaluate(() => document.documentElement.classList.add('res-pageTheme--declutter'));
+
+	const dir = saveScreenshotDir();
+	await page.screenshot({ path: path.join(dir, 'old-reddit-refined-search.png'), fullPage: false });
+});
+
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

@@ -4,6 +4,29 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Old Reddit's combined-search template now uses the refined Graphite hierarchy
+  instead of a narrow native results column. The query surface, subreddit and
+  post results, filters, highlights, collapsed excerpts, pagination, and empty
+  states share one centered 1100px desktop measure and the established card
+  system. With decluttering enabled, search-only submission chrome is removed
+  and its column is reclaimed; disabling decluttering restores it.
+- Search thumbnails now own their block/float geometry instead of depending on
+  old Reddit's native stylesheet. Collapsed text results fade into the active
+  theme surface rather than the native white gradient.
+
+### Verified
+
+- A signed-in live combined search was compared before and after at 1440×900
+  and 1920×1080. The current page returned 25 results, all controls and cards
+  aligned without horizontal overflow, long text excerpts stayed compact, and
+  the no-results query rendered two deliberate empty surfaces.
+- Chromium coverage now drives the real combined-search body class with the
+  extension loaded, proves focused mode is reversible, pins query/result and
+  thumbnail geometry, rejects a white excerpt fade, and verifies empty-state
+  treatment.
+
 ## v0.33.0 - 2026-08-13
 
 ### Changed

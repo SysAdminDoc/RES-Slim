@@ -12,7 +12,7 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Media tweaks**: `showImages` inline expando engine plus all 73 host handlers (imgur, youtube, reddit-native, Mastodon, Threads, etc.).
 
-**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, consistent controls, visible keyboard focus, and a debloated sidebar. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
+**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, a focused combined-search workspace, consistent controls, visible keyboard focus, and a debloated sidebar. Search uses a centered desktop measure, aligned query and result cards, themed excerpts and highlights, and deliberate empty states. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
 
 **Browsing**: `hideAll` — a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 

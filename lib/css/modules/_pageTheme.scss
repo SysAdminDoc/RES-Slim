@@ -680,6 +680,216 @@ html.res-pageTheme--refined .thing.stickied .title {
 	color: #8bd5a5;
 }
 
+// Combined search is a distinct old-Reddit template, not a #siteTable listing.
+// Give its query, result groups, result rows, and empty states the same hierarchy
+// as the refined feed instead of leaving a narrow low-contrast native column.
+html.res-pageTheme--refined.res-pageTheme--declutter body.combined-search-page > .side {
+	display: none;
+}
+
+html.res-pageTheme--refined.res-pageTheme--declutter body.combined-search-page > .content {
+	margin-right: 18px;
+}
+
+html.res-pageTheme--refined body.combined-search-page .searchpane.raisedbox {
+	box-sizing: border-box;
+	width: min(100%, 1100px);
+	margin: 0 auto 14px;
+	padding: 16px 18px;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined body.combined-search-page .searchpane > h4 {
+	margin: 0 0 8px;
+	color: var(--rsm-th-muted) !important;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.065em;
+	text-transform: uppercase;
+}
+
+html.res-pageTheme--refined body.combined-search-page #previoussearch {
+	width: 100%;
+}
+
+html.res-pageTheme--refined body.combined-search-page #previoussearch form {
+	display: grid;
+	box-sizing: border-box;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 8px 10px;
+	padding-right: 0;
+	align-items: center;
+}
+
+html.res-pageTheme--refined body.combined-search-page #previoussearch input[name="q"] {
+	width: 100%;
+	max-width: none;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-submit-button {
+	box-sizing: border-box;
+	width: 42px;
+	height: 42px;
+	min-height: 42px;
+	margin: 0;
+	padding: 0;
+	grid-row: 1;
+	grid-column: 2;
+}
+
+html.res-pageTheme--refined body.combined-search-page #previoussearch form > label,
+html.res-pageTheme--refined body.combined-search-page #previoussearch form > p,
+html.res-pageTheme--refined body.combined-search-page #moresearchinfo {
+	margin: 0;
+	grid-column: 1 / -1;
+	color: var(--rsm-th-muted);
+	font-size: 11px;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result-listing {
+	box-sizing: border-box;
+	width: min(100%, 1100px);
+	margin: 0 auto;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result-group {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	max-width: none;
+	margin: 0 0 18px;
+	padding: 0;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result-group-header {
+	box-sizing: border-box;
+	min-height: 34px;
+	margin: 0 0 10px;
+	padding: 0 2px 9px;
+	background: transparent;
+	border: 0;
+	border-bottom: 1px solid var(--rsm-th-border);
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-header-label {
+	color: var(--rsm-th-txt-strong);
+	font-size: 11px;
+	font-weight: 750;
+	letter-spacing: 0.065em;
+	text-transform: uppercase;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 86px;
+	margin: 0 0 8px;
+	padding: 12px 14px;
+	overflow: hidden;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result:hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 42%, var(--rsm-th-border));
+	box-shadow: 0 10px 30px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .search-title {
+	color: var(--rsm-th-link);
+	font-size: 16px;
+	font-weight: 650;
+	line-height: 1.35;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .search-result-meta {
+	margin-top: 4px;
+	color: var(--rsm-th-muted);
+	font-size: 11px;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .search-result-body {
+	max-width: 88ch;
+	margin-top: 6px;
+	color: var(--rsm-th-txt) !important;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .search-result-body,
+html.res-pageTheme--refined body.combined-search-page .search-result .search-result-body .md {
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .search-result-footer {
+	margin-top: 7px;
+	font-size: 11px;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .thumbnail {
+	display: block;
+	float: left;
+	box-sizing: border-box;
+	width: 76px;
+	height: 58px;
+	margin: 0 12px 0 0;
+	overflow: hidden;
+	background: var(--rsm-th-bg-raise);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 7px;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result .thumbnail img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result mark {
+	padding: 0 0.12em;
+	background: color-mix(in srgb, var(--rsm-th-accent) 24%, transparent);
+	border-radius: 4px;
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-subscribe-button .option {
+	box-sizing: border-box;
+	min-height: 26px;
+	padding: 4px 10px;
+	background: color-mix(in srgb, var(--rsm-th-accent) 16%, var(--rsm-th-bg-raise));
+	border: 1px solid color-mix(in srgb, var(--rsm-th-accent) 50%, var(--rsm-th-border));
+	border-radius: 4px;
+	color: var(--rsm-th-txt-strong);
+	font-weight: 700;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-expando.collapsed::before {
+	background-image: linear-gradient(to bottom, transparent, var(--rsm-th-bg-elev)) !important;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result:hover .search-expando.collapsed::before {
+	background-image: linear-gradient(to bottom, transparent, var(--rsm-th-bg-raise)) !important;
+}
+
+html.res-pageTheme--refined body.combined-search-page .search-result-group footer .info {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 18px;
+	background: var(--rsm-th-bg-elev);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	color: var(--rsm-th-muted);
+	font-size: 13px;
+}
+
 // Discussion pages prioritise reading: the post, composer, and top-level
 // comments are distinct surfaces; nested replies use a light guide instead of
 // multiplying heavy boxes at every depth.
@@ -897,6 +1107,7 @@ html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side:focus-w
 @media (prefers-reduced-motion: reduce) {
 	html.res-pageTheme--refined #siteTable > .thing.link,
 	html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link,
+	html.res-pageTheme--refined body.combined-search-page .search-result,
 	html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side {
 		transition: none;
 	}

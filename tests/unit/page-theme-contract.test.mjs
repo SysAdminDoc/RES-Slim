@@ -77,6 +77,11 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /\.side > \.spacer:has\(> \.sidebox\.create\)/);
 	assert.match(scss, /html\.res-pageTheme--refined #search input\[type="submit"\]/);
 	assert.match(scss, /\.commentarea \.comment > \.child/);
+	assert.match(scss, /body\.combined-search-page \.searchpane\.raisedbox/);
+	assert.match(scss, /body\.combined-search-page \.search-result-group/);
+	assert.match(scss, /body\.combined-search-page \.search-result \.search-title/);
+	assert.match(scss, /\.search-expando\.collapsed::before/);
+	assert.match(scss, /body\.combined-search-page \.search-result-group footer \.info/);
 	assert.match(scss, /:focus-visible/);
 	assert.match(read('lib/css/res.scss'), /@import 'modules\/pageTheme';/);
 });
