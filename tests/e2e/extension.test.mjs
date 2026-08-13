@@ -603,7 +603,7 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 
 	const page = await context.newPage();
 	const html = servableCapture(FRONT_CAPTURE)
-		.replace('<div class="midcol">', '<span class="rank">1</span><div class="midcol">');
+		.replace(/(<div class="midcol[^"]*">)/, '<span class="rank">1</span>$1');
 	await page.route('**/*', route => {
 		const url = route.request().url();
 		if (!/^https?:\/\//.test(url)) return route.continue();
@@ -831,7 +831,7 @@ test('promoted old Reddit records stay hidden across initial and asynchronous lo
 
 	const initialState = await page.evaluate(() => ({
 		promotedDisplay: getComputedStyle(document.querySelector('[data-fullname="t3_ad0001"]')).display,
-		ordinaryDisplay: getComputedStyle(document.querySelector('[data-fullname="t3_frontpage01"]')).display,
+		ordinaryDisplay: getComputedStyle(document.querySelector('[data-fullname="t3_post00000001"]')).display,
 		badge: document.querySelector('[data-rsm-promoted-badge="true"]')?.textContent,
 	}));
 	assert.equal(initialState.promotedDisplay, 'none', 'server-rendered promoted records must be suppressed');
@@ -853,7 +853,7 @@ test('promoted old Reddit records stay hidden across initial and asynchronous lo
 	const asyncState = await page.evaluate(() => ({
 		display: getComputedStyle(document.querySelector('[data-fullname="t3_ad0002"]')).display,
 		badge: document.querySelector('[data-rsm-promoted-badge="true"]')?.textContent,
-		ordinaryPresent: !!document.querySelector('[data-fullname="t3_frontpage01"]'),
+		ordinaryPresent: !!document.querySelector('[data-fullname="t3_post00000001"]'),
 	}));
 	assert.equal(asyncState.display, 'none', 'late-inserted promoted records must be suppressed');
 	assert.equal(asyncState.badge, '2', 'the diagnostic should include late-inserted promoted records');
@@ -1022,7 +1022,7 @@ test('a read-only Reddit JSON module sends authenticated requests through the sh
 		if (request.resourceType() === 'document' && url.includes('old.reddit.com')) {
 			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
 		}
-		if (url.includes('/r/example/comments/1/example.json')) {
+		if (url.includes('/r/fixture/comments/post0000001/fixture-post.json')) {
 			requests.push({
 				method: request.method(),
 				accept: request.headers().accept,

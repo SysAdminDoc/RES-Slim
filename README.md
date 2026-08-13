@@ -57,6 +57,21 @@ existing browser profile; one CSP reachability check requires outbound Reddit ac
 while the product-behavior fixtures are served locally. Screenshots land in
 `tests/e2e/screenshots/`. Set `RES_E2E_HEADED=1` to watch it run.
 
+### Refresh old Reddit fixtures
+
+Save a current public old-Reddit listing or discussion as HTML/MHTML, then run:
+
+```bash
+yarn fixture:import path/to/capture.html --kind frontpage --captured-at 2026-08-13T12:00:00Z
+yarn fixture:import path/to/capture.mhtml --kind thread --captured-at 2026-08-13T12:00:00Z
+```
+
+The importer refuses private Reddit surfaces and captures without the old-Reddit
+`xmlns` marker. It reduces the page to a deterministic structural fixture,
+replaces account/content identifiers and prose, strips executable or secret-
+shaped data, and permits no external host except `example.invalid`. Run
+`yarn test` and `yarn test:e2e` before committing refreshed fixtures.
+
 ## Install (Chrome)
 
 The repo ships no loadable extension — `dist/` is generated. Build it first:

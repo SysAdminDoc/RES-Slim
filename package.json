@@ -30,7 +30,8 @@
 		"flow": "node scripts/flow-baseline.mjs",
 		"flow:baseline": "node scripts/flow-baseline.mjs --update",
 		"lint:baseline": "node scripts/lint-baseline.mjs --update",
-		"check:endpoints": "node scripts/check-endpoints.mjs"
+		"check:endpoints": "node scripts/check-endpoints.mjs",
+		"fixture:import": "node scripts/import-old-reddit-fixture.mjs"
 	},
 	"browserslist": [
 		"chrome 125",

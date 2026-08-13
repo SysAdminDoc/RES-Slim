@@ -104,35 +104,34 @@ test('fixtures carry the marker that makes the extension treat them as old reddi
 	}
 });
 
-test('MHTML-derived fixtures preserve front page and thread DOM surfaces', () => {
-	assert.match(frontpageFixture, /Derived from reddit_ the front page of the internet\.mhtml/);
-	assert.match(frontpageFixture, /<body class="listing-page/);
-	assert.match(frontpageFixture, /id="sr-header-area"/);
-	assert.match(frontpageFixture, /id="header" role="banner"/);
-	assert.match(frontpageFixture, /id="header-bottom-right"/);
-	assert.match(frontpageFixture, /id="mail"/);
-	assert.match(frontpageFixture, /id="RESSettingsButton"/);
-	assert.match(frontpageFixture, /id="siteTable" class="sitetable linklisting"/);
-	assert.match(frontpageFixture, /class="thing link/);
-	assert.match(frontpageFixture, /data-fullname="t3_/);
-	assert.match(frontpageFixture, /data-permalink="/);
-	assert.match(frontpageFixture, /role="search"/);
-	assert.match(frontpageFixture, /name="q"/);
-	assert.match(frontpageFixture, /class="expando-button/);
-	assert.match(frontpageFixture, /class="side"/);
+test('fresh sanitized fixtures preserve front page and thread DOM surfaces', () => {
+	for (const fixture of [frontpageFixture, threadFixture]) {
+		assert.match(fixture, /Sanitized from capture\.html captured 2026-08-13T12:00:00\.000Z; structural fixture only; sha256:[a-f0-9]{12}/);
+	}
 
-	assert.match(threadFixture, /Derived from This has to stop, They are taking our limits/);
-	assert.match(threadFixture, /<body class="[^"]*comments-page[^"]*single-page/);
-	assert.match(threadFixture, /class="commentarea"/);
-	assert.match(threadFixture, /class="sitetable nestedlisting"/);
-	assert.match(threadFixture, /class="thing comment/);
-	assert.match(threadFixture, /data-author="/);
-	assert.match(threadFixture, /class="expand"/);
-	assert.match(threadFixture, /class="usertext-body"/);
-	assert.match(threadFixture, /form class="usertext"/);
-	assert.match(threadFixture, /textarea name="text"/);
-	assert.match(threadFixture, /class="reportform"/);
-	assert.match(threadFixture, /class="child"/);
+	const frontpage = new JSDOM(frontpageFixture).window.document;
+	assert.ok(frontpage.body.classList.contains('listing-page'));
+	assert.ok(frontpage.querySelector('#sr-header-area'));
+	assert.ok(frontpage.querySelector('#header[role="banner"]'));
+	assert.ok(frontpage.querySelector('#header-bottom-right'));
+	assert.ok(frontpage.querySelector('#mail'));
+	assert.ok(frontpage.querySelector('#siteTable.sitetable.linklisting'));
+	assert.ok(frontpage.querySelector('.thing.link[data-fullname^="t3_"][data-permalink]'));
+	assert.ok(frontpage.querySelector('#search[role="search"] input[name="q"]'));
+	assert.ok(frontpage.querySelector('.expando-button'));
+	assert.ok(frontpage.querySelector('.side'));
+
+	const thread = new JSDOM(threadFixture).window.document;
+	assert.ok(thread.body.classList.contains('comments-page'));
+	assert.ok(thread.body.classList.contains('single-page'));
+	assert.ok(thread.querySelector('.commentarea'));
+	assert.ok(thread.querySelector('.sitetable.nestedlisting'));
+	assert.ok(thread.querySelector('.thing.comment[data-author]'));
+	assert.ok(thread.querySelector('.expand'));
+	assert.ok(thread.querySelector('.usertext-body'));
+	assert.ok(thread.querySelector('form.usertext textarea[name="text"]'));
+	assert.ok(thread.querySelector('.reportform'));
+	assert.ok(thread.querySelector('.child'));
 });
 
 test('high-churn surfaces are enumerated', () => {
@@ -177,8 +176,8 @@ test('live diagnostics distinguish stable, fallback, and missing fixture variant
 	});
 	assert.deepEqual(selectorDriftForPage('linklist', fallbackRoot).map(finding => finding.surfaceName), ['listingFeed']);
 
-	const missingFixture = fallbackFixture.replace(/class="thing link /, 'class="thing ');
-	const missingRoot = new JSDOM(missingFixture).window.document;
+	const missingRoot = new JSDOM(fallbackFixture).window.document;
+	for (const post of missingRoot.querySelectorAll('.thing.link')) post.classList.remove('link');
 	assert.deepEqual(inspectSurfaceMatch('listingFeed', missingRoot), {
 		surfaceName: 'listingFeed',
 		status: 'missing',

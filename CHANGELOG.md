@@ -26,6 +26,11 @@ All notable changes to RES-Slim will be documented in this file.
   canonical entry and title link, Bluesky accepts DID/trailing-slash post URLs
   and degrades unavailable oEmbeds cleanly, and the retained Babel/lodash/
   flatted/immutable toolchain packages carry the upstream updates.
+- Fresh old-Reddit HTML or MHTML captures can now be imported through a
+  deterministic privacy gate. The importer rejects private surfaces, removes
+  executable and secret-shaped data, normalizes identities, content, routes,
+  and element IDs, preserves only bounded listing/discussion structure, and
+  replaces the May fixtures with sanitized August captures.
 
 ### Verified
 
@@ -46,6 +51,11 @@ All notable changes to RES-Slim will be documented in this file.
   unavailable-oEmbed path. A signed-in live old-Reddit search returned 22
   combined-search rows with `a.search-title` and no native `.entry` class,
   matching the repaired fallback contract.
+- Identity/secret bait, raw quoted-printable MHTML, deterministic output,
+  private-surface refusal, reviewed URL/ID allowlists, and current selector
+  surfaces are enforced in unit tests. The refreshed fixtures retain three
+  listing posts plus a non-archived thread composer and four nested comments;
+  all 15 extension e2e checks pass against them.
 
 ## v0.32.0 - 2026-08-13
 
