@@ -48,8 +48,9 @@ yarn build      # production build + zip -> dist/zip/
 `dist/chrome/` loaded and checks that the service worker is alive, the packaged
 ad rules block a real browser request, all settings states render, promoted
 records stay hidden across asynchronous insertion, and the content script
-initialises on a served old.reddit document. It needs no display and no external
-network. Screenshots land in
+initialises on a served old.reddit document. It needs no physical display or
+existing browser profile; one CSP reachability check requires outbound Reddit access,
+while the product-behavior fixtures are served locally. Screenshots land in
 `tests/e2e/screenshots/`. Set `RES_E2E_HEADED=1` to watch it run.
 
 ## Install (Chrome)
