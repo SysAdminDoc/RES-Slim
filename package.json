@@ -1,8 +1,8 @@
 {
 	"title": "RES-Slim",
 	"name": "res-slim",
-	"version": "0.30.0",
-	"description": "Stripped-down RES fork: comment tweaks and media expandos only, old.reddit.com",
+	"version": "0.31.0",
+	"description": "Desktop enhancements, privacy controls, and media tools for old.reddit.com",
 	"author": "RES-Slim (fork of Reddit Enhancement Suite contributors)",
 	"license": "GPL-3.0",
 	"private": true,

@@ -2,6 +2,57 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.31.0 - 2026-08-13
+
+### Added
+
+- **Request-time Reddit ad blocking.** Chrome MV3 and Firefox MV2 now package an
+  always-enabled static `declarativeNetRequest` ruleset scoped to Reddit
+  initiators. It blocks the observed ad click/measurement hosts, first-party
+  analytics paths, ad pixels, and `about-this-ad` assets without intercepting
+  requests in the extension process or touching top-level navigation.
+- **Paper settings theme.** The complete desktop settings console now has a
+  warm light option alongside its eight dark themes. Thirteen selected
+  1440×900 ImageGen references cover every category, Console preferences, and
+  the global-search state in `design/mockups/`.
+- Real-browser regression coverage now proves the packaged ruleset is enabled,
+  a Reddit-origin `alb.reddit.com` probe fails with
+  `ERR_BLOCKED_BY_CLIENT`, server-rendered and asynchronously inserted promoted
+  records remain hidden, ordinary posts survive, and every mockup has the
+  expected dimensions.
+
+### Changed
+
+- **Promoted records cannot flash or return on appended listings.** Stable old
+  Reddit ad hooks are suppressed by the document-start stylesheet, while the
+  always-enabled `removePromoted` module counts and marks those records and
+  catches nested promoted labels or `alb.reddit.com` links added later.
+- **Settings parity refinement.** Module rails expose explicit On/Off state,
+  option controls use matching state labels, related settings are grouped into
+  bordered rows, Console preferences fit its Advanced control in the initial
+  1440×900 viewport, and global search spans the workspace without an unrelated
+  module rail. The same structure was checked at 1920×1080.
+
+### Fixed
+
+- Returning from Console preferences to the already-selected module no longer
+  leaves the Console breadcrumb and header behind.
+- Settings search no longer reports missing English locale keys for deviantART
+  and 500px host modules.
+
+### Verified
+
+- `yarn test`: 917/917 unit tests; production-build Chromium e2e: 11/11.
+  The e2e pass covers service-worker aliveness, DNR blocking, initial and async
+  promoted records, every settings destination, keyboard operation, first run,
+  page-theme rendering, frame scoping, and old-Reddit content-script startup.
+- `yarn lint` matches the recorded 96-error ESLint baseline with clean Stylelint
+  and i18n gates (571 keys, 0 missing, 1 unused). `yarn flow` matches the
+  recorded 124-error baseline across 54 files.
+- Production Chrome MV3 and Firefox MV2 archives both report v0.31.0, contain
+  the six-rule `ad-block.json` static ruleset, contain no sourcemaps, and build
+  successfully. Firefox runtime behavior remains explicitly unverified.
+
 ## v0.30.0 - 2026-08-08
 
 ### Fixed
