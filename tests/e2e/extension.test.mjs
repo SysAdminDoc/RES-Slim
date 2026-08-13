@@ -675,6 +675,7 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 		<head>
 			<title>fixture search</title>
 			<style>
+				.search-result-link { display: flex; }
 				.search-expando.collapsed { position: relative; height: 45px; overflow: hidden; }
 				.search-expando.collapsed::before { position: absolute; inset: auto 0 0; height: 15px; content: ""; background: linear-gradient(transparent, #fff); }
 			</style>
@@ -772,6 +773,7 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 			postResultHeight: rect(postResult)?.height,
 			postThumbnailSize: postThumbnail ? [rect(postThumbnail)?.width, rect(postThumbnail)?.height] : null,
 			postThumbnailFloat: styles(postThumbnail)?.float,
+			postThumbnailFlexShrink: styles(postThumbnail)?.flexShrink,
 			titleSize: styles(title)?.fontSize,
 			snippetBackground: styles(snippet)?.backgroundColor,
 			fade: expando ? getComputedStyle(expando, '::before').backgroundImage : null,
@@ -794,6 +796,7 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 	assert.ok(state.postResultHeight < 220, 'post result should stay compact');
 	assert.deepEqual(state.postThumbnailSize, [76, 58], 'post thumbnails should not depend on native float sizing');
 	assert.equal(state.postThumbnailFloat, 'left', 'post thumbnails should reserve a stable media column');
+	assert.equal(state.postThumbnailFlexShrink, '0', 'native flex rows must not squeeze the media column');
 	assert.equal(state.titleSize, '16px', 'result titles should lead the hierarchy');
 	assert.equal(state.snippetBackground, 'rgba(0, 0, 0, 0)', 'snippets should not draw a second dark rectangle');
 	assert.doesNotMatch(state.fade, /255, 255, 255/, 'collapsed excerpts must not fade to native white');

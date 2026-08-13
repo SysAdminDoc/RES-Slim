@@ -14,9 +14,10 @@ All notable changes to RES-Slim will be documented in this file.
   states share one centered 1100px desktop measure and the established card
   system. With decluttering enabled, search-only submission chrome is removed
   and its column is reclaimed; disabling decluttering restores it.
-- Search thumbnails now own their block/float geometry instead of depending on
-  old Reddit's native stylesheet. Collapsed text results fade into the active
-  theme surface rather than the native white gradient.
+- Search thumbnails now own their block/float/flex geometry instead of depending
+  on old Reddit's native stylesheet, including its flex-row shrink behavior.
+  Collapsed text results fade into the active theme surface rather than the
+  native white gradient.
 
 ### Verified
 
