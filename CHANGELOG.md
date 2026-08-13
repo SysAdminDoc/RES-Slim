@@ -4,6 +4,8 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.34.0 - 2026-08-13
+
 ### Changed
 
 - Old Reddit's combined-search template now uses the refined Graphite hierarchy
