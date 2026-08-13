@@ -70,7 +70,10 @@ test('the .json fetch modules report blocked responses instead of failing silent
 		'lib/modules/authorContextBadge.js',
 		'lib/modules/autoRefreshComments.js',
 	]) {
-		assert.match(read(file), /notifyRedditApiBlocked\(/, `${file} should call notifyRedditApiBlocked`);
+		const source = read(file);
+		assert.match(source, /fetchRedditJson\(/, `${file} should use the shared JSON helper`);
+		assert.match(source, /onStatus: notifyRedditApiBlocked/, `${file} should pass the throttled block reporter`);
+		assert.doesNotMatch(source, /credentials:\s*['"]include['"]/, `${file} should not maintain its own credentials policy`);
 	}
 });
 

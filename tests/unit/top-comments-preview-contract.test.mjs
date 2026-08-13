@@ -17,7 +17,8 @@ test('topCommentsPreview is registered in the module index', () => {
 test('topCommentsPreview hits the comments JSON endpoint with depth + limit pinned', () => {
 	const source = read('lib/modules/topCommentsPreview.js');
 	assert.match(source, /\.json\?raw_json=1&sort=top&depth=1&limit=\$\{count\}/);
-	assert.match(source, /Accept: 'application\/json'/);
+	assert.match(source, /fetchRedditJson\(url/);
+	assert.match(source, /validate: isRedditListingPair/);
 });
 
 test('topCommentsPreview caches by permalink + count and rate-limits outbound fetches', () => {

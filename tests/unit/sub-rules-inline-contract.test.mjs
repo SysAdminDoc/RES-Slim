@@ -23,6 +23,7 @@ const stripped = helperSrc
 	.replace(/: \{ \[string\][^}]+\}/g, '')
 	.replace(/import.*Storage.*\n/g, '')
 	.replace(/import.*rateLimiter.*\n/g, '')
+	.replace(/import.*redditJson.*\n/g, '')
 	.replace(/const limiter[^;]+;/g, '')
 	.replace(/const CACHE_KEY[^;]+;/g, '')
 	.replace(/const CACHE_TTL[^;]+;/g, '')

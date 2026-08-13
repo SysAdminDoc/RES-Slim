@@ -16,6 +16,11 @@ All notable changes to RES-Slim will be documented in this file.
   existing local module-error log. Stable matches stay silent, fallback and
   missing matches are aggregated by page type, and repeat visits do not create
   duplicate entries or page toasts.
+- Authenticated Reddit JSON reads now share one credentials, content-type, and
+  response-shape policy across previews, exports, galleries, saved content,
+  author context, crossposts, live comments, and subreddit rules. HTTP 429
+  responses retry twice with bounded `Retry-After`/exponential backoff; page
+  navigation and caller-owned request scopes can abort in-flight work.
 
 ### Verified
 
@@ -27,6 +32,11 @@ All notable changes to RES-Slim will be documented in this file.
 - Canonical, fallback-only, and missing fixture variants exercise selector
   classification. Chromium confirms one fallback warning persists locally,
   remains deduplicated after navigation, and never appears as a toast.
+- Response fixtures cover valid JSON, wrong content types, malformed bodies,
+  shape mismatches, 401/403, bounded 429 retries, and abort during backoff. A
+  Chromium module exercise confirms the helper sends a credentialed, body-free
+  GET to a read-only Reddit endpoint; the signed-in live browser independently
+  returned HTTP 200 `application/json` for public subreddit metadata.
 
 ## v0.32.0 - 2026-08-13
 

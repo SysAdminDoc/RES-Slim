@@ -986,3 +986,64 @@ test('selector drift records one local diagnostic without a toast', async t => {
 	entries = await selectorEntries();
 	assert.equal(entries.length, 1, 'reloading the same drift must not duplicate its local warning');
 });
+
+test('a read-only Reddit JSON module sends authenticated requests through the shared helper', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await context.addCookies([{
+		name: 'reddit_session',
+		value: 'e2e-authenticated-fixture',
+		domain: '.reddit.com',
+		path: '/',
+		httpOnly: true,
+		secure: true,
+		sameSite: 'Lax',
+	}]);
+	const html = servableCapture(FRONT_CAPTURE);
+	const json = JSON.stringify([
+		{ data: { children: [{ kind: 't3', data: { name: 't3_public' } }] } },
+		{ data: { children: [{
+			kind: 't1',
+			data: {
+				author: 'fixture_reader',
+				score: 8,
+				body: 'Useful public answer',
+				body_html: '<div class="md"><p>Useful public answer</p></div>',
+			},
+		}] } },
+	]);
+	const requests = [];
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const request = route.request();
+		const url = request.url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (request.resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		if (url.includes('/r/example/comments/1/example.json')) {
+			requests.push({
+				method: request.method(),
+				accept: request.headers().accept,
+				cookie: request.headers().cookie || '',
+				body: request.postData(),
+			});
+			return route.fulfill({ status: 200, contentType: 'application/json; charset=utf-8', body: json });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('.rsm-tcp-link', { timeout: 30000 });
+	await page.locator('.rsm-tcp-link').first().click();
+	await page.waitForSelector('.rsm-tcp-content--ready', { timeout: 10000 });
+	assert.match(await page.locator('.rsm-tcp-content--ready').innerText(), /Useful public answer/);
+	assert.equal(requests.length, 1, 'one preview should make one Reddit JSON request');
+	assert.deepEqual(requests[0], {
+		method: 'GET',
+		accept: 'application/json',
+		cookie: 'reddit_session=e2e-authenticated-fixture',
+		body: null,
+	});
+});
