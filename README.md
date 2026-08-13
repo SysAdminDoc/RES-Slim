@@ -69,7 +69,7 @@ yarn fixture:import path/to/capture.mhtml --kind thread --captured-at 2026-08-13
 The importer refuses private Reddit surfaces and captures without the old-Reddit
 `xmlns` marker. It reduces the page to a deterministic structural fixture,
 replaces account/content identifiers and prose, strips executable or secret-
-shaped data, and permits no external host except `example.invalid`. Run
+shaped data, and permits only a reserved non-routable fixture host. Run
 `yarn test` and `yarn test:e2e` before committing refreshed fixtures.
 
 ## Install (Chrome)

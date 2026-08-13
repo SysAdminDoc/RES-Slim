@@ -603,7 +603,8 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 
 	const page = await context.newPage();
 	const html = servableCapture(FRONT_CAPTURE)
-		.replace(/(<div class="midcol[^"]*">)/, '<span class="rank">1</span>$1');
+		.replace(/(<div class="midcol[^"]*">)/, '<span class="rank">1</span>$1')
+		.replace('<div class="side">', '<div class="side"><div class="spacer rsm-e2e-hidden-spacer"><div class="account-activity-box"></div></div>');
 	await page.route('**/*', route => {
 		const url = route.request().url();
 		if (!/^https?:\/\//.test(url)) return route.continue();
@@ -622,6 +623,8 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 		const rank = firstThing?.querySelector('.rank');
 		const title = firstThing?.querySelector('a.title');
 		const header = document.querySelector('#header');
+		const searchSubmit = document.querySelector('#search input[type="submit"]');
+		const hiddenSidebarSpacer = document.querySelector('.rsm-e2e-hidden-spacer');
 		const styles = element => element ? getComputedStyle(element) : null;
 		return {
 			bodyBackground: styles(document.body)?.backgroundColor,
@@ -630,6 +633,9 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 			cardTitleSize: styles(title)?.fontSize,
 			headerPosition: styles(header)?.position,
 			rankDisplay: styles(rank)?.display,
+			searchSubmitPosition: styles(searchSubmit)?.position,
+			searchSubmitSize: searchSubmit ? [searchSubmit.getBoundingClientRect().width, searchSubmit.getBoundingClientRect().height] : null,
+			hiddenSidebarSpacerDisplay: styles(hiddenSidebarSpacer)?.display,
 			classes: document.documentElement.className,
 		};
 	});
@@ -641,6 +647,9 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	assert.equal(state.cardTitleSize, '16px', 'titles should lead the card hierarchy');
 	assert.equal(state.headerPosition, 'sticky', 'primary navigation should stay available while reading');
 	assert.equal(state.rankDisplay, 'none', 'declutter should remove redundant ordinal ranks');
+	assert.equal(state.searchSubmitPosition, 'absolute', 'the sprite-backed search action should stay inside the search field');
+	assert.deepEqual(state.searchSubmitSize, [22, 22], 'generic button styling must not expose adjacent search sprite cells');
+	assert.equal(state.hiddenSidebarSpacerDisplay, 'none', 'decluttering should remove wrappers around hidden sidebar clutter');
 
 	const firstTitle = page.locator('#siteTable > .thing.link a.title').first();
 	await firstTitle.focus();
@@ -909,15 +918,23 @@ test('the content script initialises on a real old.reddit document', async t => 
 	const discussionSurface = await page.evaluate(() => {
 		const comment = document.querySelector('.commentarea > .sitetable > .comment');
 		const body = comment?.querySelector('.md');
+		const nested = document.querySelector('.commentarea .comment .comment');
+		const child = nested?.closest('.child');
 		return {
 			commentRadius: comment ? getComputedStyle(comment).borderRadius : null,
 			commentBackground: comment ? getComputedStyle(comment).backgroundColor : null,
 			bodyBackground: body ? getComputedStyle(body).backgroundColor : null,
+			nestedBorderWidth: nested ? getComputedStyle(nested).borderLeftWidth : null,
+			childBorderWidth: child ? getComputedStyle(child).borderLeftWidth : null,
+			childMarginLeft: child ? getComputedStyle(child).marginLeft : null,
 		};
 	});
 	assert.equal(discussionSurface.commentRadius, '8px', 'top-level comments should read as distinct discussion cards');
 	assert.notEqual(discussionSurface.commentBackground, 'rgba(0, 0, 0, 0)', 'the top-level comment card needs a visible surface');
 	assert.equal(discussionSurface.bodyBackground, 'rgba(0, 0, 0, 0)', 'comment prose should not sit inside a second dark rectangle');
+	assert.equal(discussionSurface.nestedBorderWidth, '2px', 'nested replies should keep one clear depth guide');
+	assert.equal(discussionSurface.childBorderWidth, '0px', 'native dotted child borders should not duplicate the refined guide');
+	assert.equal(discussionSurface.childMarginLeft, '0px', 'nested replies should not pay for two separate indentation systems');
 
 	// The committed fixture's `#header-bottom-right` has no `ul`, which is the
 	// logged-out shape the floater's userMenu fallback exists to survive. It

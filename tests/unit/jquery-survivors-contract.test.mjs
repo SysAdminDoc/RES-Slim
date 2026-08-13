@@ -50,20 +50,25 @@ const JQUERY_ONLY = [
 	{ pattern: /\$\(\s*(?:document|window|'|")/, name: '$(…)', instead: 'querySelector / querySelectorAll' },
 ];
 
+function findJqueryOnlyCalls(relative, source) {
+	const offenders = [];
+	const lines = source.split(/\r?\n/);
+	lines.forEach((line, index) => {
+		// Comments describe the removal; they are not calls.
+		const code = line.replace(/\/\/[^\r\n]*$/, '');
+		for (const { pattern, name, instead } of JQUERY_ONLY) {
+			if (pattern.test(code)) offenders.push(`${relative}:${index + 1} ${name} — use ${instead}`);
+		}
+	});
+	return offenders;
+}
+
 test('no jQuery-only call survives in lib/', () => {
 	const offenders = [];
 
 	for (const file of listSources()) {
 		const relative = path.relative(repoRoot, file).replace(/\\/g, '/');
-		const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
-
-		lines.forEach((line, index) => {
-			// Comments describe the removal; they are not calls.
-			const code = line.replace(/\/\/[^\r\n]*$/, '');
-			for (const { pattern, name, instead } of JQUERY_ONLY) {
-				if (pattern.test(code)) offenders.push(`${relative}:${index + 1} ${name} — use ${instead}`);
-			}
-		});
+		offenders.push(...findJqueryOnlyCalls(relative, fs.readFileSync(file, 'utf8')));
 	}
 
 	assert.deepEqual(
@@ -75,22 +80,10 @@ test('no jQuery-only call survives in lib/', () => {
 
 test('the scan finds a jQuery call when there is one', () => {
 	// Without this the file above is a list of patterns nobody has confirmed match
-	// anything. Written into lib/ because the scan walks that tree.
-	const bait = path.join(libRoot, 'utils', '__jquery_bait__.js');
-	fs.writeFileSync(bait, ['/* @flow */', "export const x = el => el.addClass('y');", ''].join('\n'));
-
-	try {
-		const found = [];
-		for (const file of listSources()) {
-			const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
-			lines.forEach(line => {
-				if (/\.addClass\(/.test(line)) found.push(path.basename(file));
-			});
-		}
-		assert.ok(found.includes('__jquery_bait__.js'), 'the scan missed a planted jQuery call');
-	} finally {
-		fs.unlinkSync(bait);
-	}
+	// anything. Keep the bait in memory: the Node test runner executes files in
+	// parallel, so planting it in lib/ races every other repository-wide scanner.
+	const found = findJqueryOnlyCalls('__jquery_bait__.js', 'export const x = el => el.addClass(\'y\');');
+	assert.ok(found.some(line => line.startsWith('__jquery_bait__.js:')), 'the scan missed a planted jQuery call');
 });
 
 // --- the executing half ------------------------------------------------------

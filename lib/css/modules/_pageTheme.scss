@@ -240,6 +240,8 @@ html.res-pageTheme--declutter .nub,
 html.res-pageTheme--declutter .premium-banner-outer,
 html.res-pageTheme--declutter .redesign-beta-optin,
 html.res-pageTheme--declutter #sr-more-link,
+html.res-pageTheme--declutter .side > .spacer:has(> .sidebox.create),
+html.res-pageTheme--declutter .side > .spacer:has(> .account-activity-box),
 html.res-pageTheme--declutter .sidebox.create,
 html.res-pageTheme--declutter .account-activity-box,
 html.res-pageTheme--declutter .sidecontentbox.trophy-area,
@@ -478,6 +480,10 @@ html.res-pageTheme--refined .side > .spacer:has(> .sidebox.submit) {
 	box-shadow: none;
 }
 
+html.res-pageTheme--refined #search {
+	position: relative;
+}
+
 html.res-pageTheme--refined #search input[type="text"] {
 	box-sizing: border-box;
 	width: 100%;
@@ -491,6 +497,25 @@ html.res-pageTheme--refined #search input[type="text"] {
 
 html.res-pageTheme--refined #search input[type="text"]::placeholder {
 	color: var(--rsm-th-muted);
+}
+
+// Preserve the native sprite while keeping the generic button treatment from
+// exposing adjacent sprite cells or stretching the icon vertically.
+html.res-pageTheme--refined #search input[type="submit"] {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 22px;
+	height: 22px;
+	min-height: 22px;
+	padding: 0;
+	background-color: transparent !important;
+	border: 0 !important;
+	border-radius: 4px;
+	box-shadow: none;
+	color: transparent;
+	cursor: pointer;
+	font-size: 0;
 }
 
 html.res-pageTheme--refined .morelink {
@@ -716,6 +741,11 @@ html.res-pageTheme--refined .commentarea .comment .comment {
 	border-left: 2px solid var(--rsm-th-border) !important;
 	border-radius: 0 !important;
 	box-shadow: none;
+}
+
+html.res-pageTheme--refined .commentarea .comment > .child {
+	margin-left: 0;
+	border-left: 0 !important;
 }
 
 html.res-pageTheme--refined .comment .tagline,

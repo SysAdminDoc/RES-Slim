@@ -86,5 +86,6 @@ test('the committed structural fixtures pass the privacy gate and selector surfa
 		assert.ok(document.querySelector(`.${expected}`));
 		assert.ok(document.querySelector('#header[role="banner"]'));
 		assert.ok(document.querySelector('#search[role="search"] input[name="q"]'));
+		assert.ok(document.querySelector('#search[role="search"] input[type="submit"]'));
 	}
 });

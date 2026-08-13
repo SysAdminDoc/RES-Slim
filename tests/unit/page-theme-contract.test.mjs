@@ -73,6 +73,10 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /html\.res-pageTheme--refined #header/);
 	assert.match(scss, /html\.res-pageTheme--refined #siteTable > \.thing\.link/);
 	assert.match(scss, /html\.res-pageTheme--refined \.commentarea > \.sitetable > \.comment/);
+	assert.match(scss, /\.side > \.spacer:has\(> \.account-activity-box\)/);
+	assert.match(scss, /\.side > \.spacer:has\(> \.sidebox\.create\)/);
+	assert.match(scss, /html\.res-pageTheme--refined #search input\[type="submit"\]/);
+	assert.match(scss, /\.commentarea \.comment > \.child/);
 	assert.match(scss, /:focus-visible/);
 	assert.match(read('lib/css/res.scss'), /@import 'modules\/pageTheme';/);
 });

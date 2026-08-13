@@ -311,15 +311,12 @@ function projectStructuralFixture(document, kind) {
 		const search = sidebar.querySelector('#search');
 		sidebar.replaceChildren();
 		if (search) {
-			pruneToTargets(search, ['input[name="q"]']);
+			pruneToTargets(search, ['input[name="q"]', 'input[type="submit"]']);
 			const spacer = document.createElement('div');
 			spacer.className = 'spacer';
 			spacer.append(search);
 			sidebar.append(spacer);
 		}
-		const spacer = document.createElement('div');
-		spacer.className = 'spacer';
-		sidebar.append(spacer);
 	}
 
 	if (!content) return;

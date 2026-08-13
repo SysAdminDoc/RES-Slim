@@ -31,6 +31,9 @@ All notable changes to RES-Slim will be documented in this file.
   executable and secret-shaped data, normalizes identities, content, routes,
   and element IDs, preserves only bounded listing/discussion structure, and
   replaces the May fixtures with sanitized August captures.
+- The refined old-Reddit skin now removes sidebar cards whose decluttered child
+  is hidden, contains the native search sprite in a compact icon target, and
+  replaces doubled nested-comment rails with one tighter depth guide.
 
 ### Verified
 
@@ -56,6 +59,10 @@ All notable changes to RES-Slim will be documented in this file.
   surfaces are enforced in unit tests. The refreshed fixtures retain three
   listing posts plus a non-archived thread composer and four nested comments;
   all 15 extension e2e checks pass against them.
+- A signed-in live listing hid both obsolete sidebar wrappers, kept the search
+  action at 22×22, and rendered 25 cards without horizontal overflow. A current
+  100+ comment discussion retained its composer, top-level cards, and one guide
+  per nested depth without horizontal overflow.
 
 ## v0.32.0 - 2026-08-13
 
