@@ -15,10 +15,10 @@ const modulePath = path.join(tmpDir, 'pageTheme.mjs');
 fs.writeFileSync(modulePath, stripped);
 const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, sanitizeAccent } = await import(pathToFileURL(modulePath).href);
 
-test('normalizeTheme falls back to oled for unknown values', () => {
+test('normalizeTheme falls back to graphite for unknown values', () => {
 	assert.equal(normalizeTheme('catppuccin'), 'catppuccin');
-	assert.equal(normalizeTheme('does-not-exist'), 'oled');
-	assert.equal(normalizeTheme(null), 'oled');
+	assert.equal(normalizeTheme('does-not-exist'), 'graphite');
+	assert.equal(normalizeTheme(null), 'graphite');
 	for (const id of PAGE_THEME_IDS) assert.equal(normalizeTheme(id), id);
 });
 
@@ -30,12 +30,13 @@ test('desiredThemeClasses always yields master + exactly one palette class', () 
 });
 
 test('desiredThemeClasses appends only the enabled toggles', () => {
-	const all = desiredThemeClasses({ theme: 'oled', declutter: true, roundedCorners: true, collapseSidebar: true });
+	const all = desiredThemeClasses({ theme: 'oled', declutter: true, refinedLayout: true, roundedCorners: true, collapseSidebar: true });
 	assert.ok(all.includes('res-pageTheme--declutter'));
+	assert.ok(all.includes('res-pageTheme--refined'));
 	assert.ok(all.includes('res-pageTheme--rounded'));
 	assert.ok(all.includes('res-pageTheme--collapse-sidebar'));
 
-	const none = desiredThemeClasses({ theme: 'oled', declutter: false, roundedCorners: false, collapseSidebar: false });
+	const none = desiredThemeClasses({ theme: 'oled', declutter: false, refinedLayout: false, roundedCorners: false, collapseSidebar: false });
 	assert.deepEqual(none, ['res-pageTheme', 'res-pageTheme--oled']);
 });
 
@@ -49,9 +50,11 @@ test('sanitizeAccent accepts only hex colours', () => {
 	assert.equal(sanitizeAccent(''), null);
 });
 
-test('pageTheme module is registered, disabled by default, and reversible', () => {
+test('pageTheme module is registered, enabled by default, and reversible', () => {
 	const mod = read('lib/modules/pageTheme.js');
-	assert.match(mod, /module\.disabledByDefault = true;/);
+	assert.doesNotMatch(mod, /module\.disabledByDefault\s*=/);
+	assert.match(mod, /theme:\s*\{[\s\S]*?value: 'graphite'/);
+	assert.match(mod, /refinedLayout:\s*\{[\s\S]*?value: true/);
 	assert.match(mod, /if \(!Modules\.isRunning\(module\)\) \{\s*clearAll\(\);/);
 	assert.match(mod, /localStorage\.getItem\(CACHE_KEY\)/); // anti-FOUC early apply
 	assert.match(mod, /el\.style\.setProperty\('--rsm-th-accent', accent\)/);
@@ -67,5 +70,9 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 		assert.match(scss, new RegExp(`html\\.res-pageTheme--${id}\\b`), `palette for ${id}`);
 	}
 	assert.match(scss, /--rsm-th-accent/);
+	assert.match(scss, /html\.res-pageTheme--refined #header/);
+	assert.match(scss, /html\.res-pageTheme--refined #siteTable > \.thing\.link/);
+	assert.match(scss, /html\.res-pageTheme--refined \.commentarea > \.sitetable > \.comment/);
+	assert.match(scss, /:focus-visible/);
 	assert.match(read('lib/css/res.scss'), /@import 'modules\/pageTheme';/);
 });

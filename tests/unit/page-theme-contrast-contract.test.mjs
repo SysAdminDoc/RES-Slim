@@ -70,7 +70,7 @@ test('every palette in the enum has a stylesheet block', () => {
 	assert.ok(PAGE_THEME_IDS.length >= 10, `expected the full palette set, saw ${PAGE_THEME_IDS.length}`);
 	for (const id of PAGE_THEME_IDS) {
 		const tokens = palette(id);
-		for (const token of ['rsm-th-bg', 'rsm-th-bg-elev', 'rsm-th-bg-raise', 'rsm-th-txt', 'rsm-th-txt-strong', 'rsm-th-link']) {
+		for (const token of ['rsm-th-bg', 'rsm-th-bg-elev', 'rsm-th-bg-raise', 'rsm-th-txt', 'rsm-th-txt-strong', 'rsm-th-link', 'rsm-th-muted']) {
 			assert.ok(tokens[token], `${id} is missing --${token}`);
 		}
 	}
@@ -108,6 +108,20 @@ test('links clear AA on every surface of every palette', () => {
 	}
 
 	assert.deepEqual(failures, [], 'a link the user has to squint at is a defect, not a theme');
+});
+
+test('muted metadata still clears AA on every surface of every palette', () => {
+	const failures = [];
+
+	for (const id of PAGE_THEME_IDS) {
+		const t = palette(id);
+		for (const surface of ['rsm-th-bg', 'rsm-th-bg-elev', 'rsm-th-bg-raise']) {
+			const ratio = contrast(hex(t['rsm-th-muted']), hex(t[surface]));
+			if (ratio < AA) failures.push(`${id}: muted metadata on ${surface} is ${ratio.toFixed(2)}:1`);
+		}
+	}
+
+	assert.deepEqual(failures, [], 'small metadata needs full body-text contrast');
 });
 
 test('no palette is secretly light', () => {

@@ -8,14 +8,16 @@
 // by the module from the user's accent option, falling back to the value here.
 
 html.res-pageTheme {
-	--rsm-th-bg: #000;
-	--rsm-th-bg-elev: #121212;
-	--rsm-th-bg-raise: #1b1b1b;
-	--rsm-th-txt: #b8b6b6;
-	--rsm-th-txt-strong: #f2f2f2;
-	--rsm-th-link: #ccc;
-	--rsm-th-border: rgba(255, 255, 255, 0.09);
-	--rsm-th-accent: #8a5cff;
+	--rsm-th-bg: #0b0f14;
+	--rsm-th-bg-elev: #111821;
+	--rsm-th-bg-raise: #18212c;
+	--rsm-th-txt: #c5cfda;
+	--rsm-th-txt-strong: #f2f5f9;
+	--rsm-th-link: #91c7ff;
+	--rsm-th-muted: #98a6b5;
+	--rsm-th-border: #253243;
+	--rsm-th-shadow: rgba(0, 0, 0, 0.32);
+	--rsm-th-accent: #5aa9ff;
 }
 
 // ---- Palettes -------------------------------------------------------------
@@ -27,17 +29,19 @@ html.res-pageTheme--oled {
 	--rsm-th-txt: #b8b6b6;
 	--rsm-th-txt-strong: #f2f2f2;
 	--rsm-th-link: #ccc;
+	--rsm-th-muted: #a0a7af;
 	--rsm-th-border: rgba(255, 255, 255, 0.09);
 }
 
 html.res-pageTheme--graphite {
-	--rsm-th-bg: #0d1117;
-	--rsm-th-bg-elev: #161b22;
-	--rsm-th-bg-raise: #21262d;
-	--rsm-th-txt: #c9d1d9;
-	--rsm-th-txt-strong: #f0f6fc;
-	--rsm-th-link: #dbe3ec;
-	--rsm-th-border: rgba(240, 246, 252, 0.10);
+	--rsm-th-bg: #0b0f14;
+	--rsm-th-bg-elev: #111821;
+	--rsm-th-bg-raise: #18212c;
+	--rsm-th-txt: #c5cfda;
+	--rsm-th-txt-strong: #f2f5f9;
+	--rsm-th-link: #91c7ff;
+	--rsm-th-muted: #98a6b5;
+	--rsm-th-border: #253243;
 }
 
 html.res-pageTheme--midnight {
@@ -47,6 +51,7 @@ html.res-pageTheme--midnight {
 	--rsm-th-txt: #b3c2d1;
 	--rsm-th-txt-strong: #eaf2fb;
 	--rsm-th-link: #cdddec;
+	--rsm-th-muted: #94a9bd;
 	--rsm-th-border: rgba(180, 205, 230, 0.12);
 }
 
@@ -57,6 +62,7 @@ html.res-pageTheme--catppuccin {
 	--rsm-th-txt: #cdd6f4;
 	--rsm-th-txt-strong: #f5f5ff;
 	--rsm-th-link: #b4befe;
+	--rsm-th-muted: #b0b8d7;
 	--rsm-th-border: rgba(205, 214, 244, 0.12);
 }
 
@@ -67,6 +73,7 @@ html.res-pageTheme--tokyonight {
 	--rsm-th-txt: #c0caf5;
 	--rsm-th-txt-strong: #ecf0ff;
 	--rsm-th-link: #9aa5ce;
+	--rsm-th-muted: #aab4df;
 	--rsm-th-border: rgba(192, 202, 245, 0.12);
 }
 
@@ -77,6 +84,7 @@ html.res-pageTheme--rosepine {
 	--rsm-th-txt: #e0def4;
 	--rsm-th-txt-strong: #f7f5ff;
 	--rsm-th-link: #c4a7e7;
+	--rsm-th-muted: #b6b0d2;
 	--rsm-th-border: rgba(224, 222, 244, 0.12);
 }
 
@@ -88,6 +96,7 @@ html.res-pageTheme--nord {
 	--rsm-th-txt: #d8dee9;
 	--rsm-th-txt-strong: #eceff4;
 	--rsm-th-link: #88c0d0;
+	--rsm-th-muted: #b7c1d3;
 	--rsm-th-border: rgba(216, 222, 233, 0.12);
 }
 
@@ -98,6 +107,7 @@ html.res-pageTheme--dracula {
 	--rsm-th-txt: #f8f8f2;
 	--rsm-th-txt-strong: #fff;
 	--rsm-th-link: #bd93f9;
+	--rsm-th-muted: #c0c0bb;
 	--rsm-th-border: rgba(248, 248, 242, 0.12);
 }
 
@@ -108,6 +118,7 @@ html.res-pageTheme--gruvbox {
 	--rsm-th-txt: #ebdbb2;
 	--rsm-th-txt-strong: #fbf1c7;
 	--rsm-th-link: #8ec07c;
+	--rsm-th-muted: #c4b696;
 	--rsm-th-border: rgba(235, 219, 178, 0.12);
 }
 
@@ -124,6 +135,7 @@ html.res-pageTheme--solarized {
 	--rsm-th-txt: #a2aeae;
 	--rsm-th-txt-strong: #eee8d5;
 	--rsm-th-link: #64bab4;
+	--rsm-th-muted: #b0bcbc;
 	--rsm-th-border: rgba(147, 161, 161, 0.12);
 }
 
@@ -209,7 +221,7 @@ html.res-pageTheme--rounded .side .spacer,
 html.res-pageTheme--rounded .searchpane.raisedbox,
 html.res-pageTheme--rounded .expando,
 html.res-pageTheme--rounded .res-expandoBox {
-	border-radius: 6px;
+	border-radius: 8px;
 }
 
 // ---- Optional: declutter chrome cruft -------------------------------------
@@ -228,7 +240,10 @@ html.res-pageTheme--declutter .nub,
 html.res-pageTheme--declutter .premium-banner-outer,
 html.res-pageTheme--declutter .redesign-beta-optin,
 html.res-pageTheme--declutter #sr-more-link,
+html.res-pageTheme--declutter .sidebox.create,
+html.res-pageTheme--declutter .account-activity-box,
 html.res-pageTheme--declutter .sidecontentbox.trophy-area,
+html.res-pageTheme--declutter .thing.link > .rank,
 html.res-pageTheme--declutter .thing.promoted,
 html.res-pageTheme--declutter .thing.promotedlink {
 	display: none !important;
@@ -262,6 +277,597 @@ html.res-pageTheme--collapse-sidebar .side:hover {
 
 @media (prefers-reduced-motion: reduce) {
 	html.res-pageTheme--collapse-sidebar .side {
+		transition: none;
+	}
+}
+
+// ---- Optional: refined desktop layout ------------------------------------
+
+html.res-pageTheme--refined {
+	color-scheme: dark;
+	background: var(--rsm-th-bg);
+	scrollbar-color: var(--rsm-th-border) var(--rsm-th-bg);
+	scrollbar-width: thin;
+}
+
+html.res-pageTheme--refined body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-size: 14px;
+	line-height: 1.45;
+	letter-spacing: 0.005em;
+}
+
+html.res-pageTheme--refined ::selection {
+	background: color-mix(in srgb, var(--rsm-th-accent) 42%, transparent);
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined ::-webkit-scrollbar {
+	width: 10px;
+	height: 10px;
+}
+
+html.res-pageTheme--refined ::-webkit-scrollbar-track {
+	background: var(--rsm-th-bg);
+}
+
+html.res-pageTheme--refined ::-webkit-scrollbar-thumb {
+	background: var(--rsm-th-border);
+	border: 2px solid var(--rsm-th-bg);
+	border-radius: 8px;
+}
+
+html.res-pageTheme--refined :where(a, button, input, textarea, select, [tabindex]):focus-visible {
+	outline: 2px solid var(--rsm-th-accent) !important;
+	outline-offset: 2px;
+}
+
+// Turn the legacy three-row header into one calm, sticky navigation surface.
+html.res-pageTheme--refined #header {
+	position: sticky;
+	top: 0;
+	z-index: 100;
+	min-height: 84px;
+	border: 0;
+	border-bottom: 1px solid var(--rsm-th-border);
+	box-shadow: 0 8px 26px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined #sr-header-area {
+	box-sizing: border-box;
+	height: 28px;
+	padding: 0 12px;
+	overflow: hidden;
+	line-height: 28px;
+	white-space: nowrap;
+	border: 0;
+	border-bottom: 1px solid var(--rsm-th-border);
+}
+
+html.res-pageTheme--refined #sr-header-area .width-clip {
+	right: 0;
+}
+
+html.res-pageTheme--refined #sr-header-area a,
+html.res-pageTheme--refined #sr-header-area span {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.055em;
+	text-transform: uppercase;
+}
+
+html.res-pageTheme--refined #sr-header-area a {
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined #sr-header-area a:hover {
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined #header-bottom-left {
+	box-sizing: border-box;
+	display: flex;
+	height: 56px;
+	padding: 0 14px;
+	align-items: flex-end;
+	gap: 10px;
+}
+
+html.res-pageTheme--refined #header-img,
+html.res-pageTheme--refined #header-img-a {
+	max-height: 38px;
+	margin: 0 2px 8px 0;
+	filter: grayscale(1) invert(1) brightness(1.35);
+	opacity: 0.82;
+}
+
+html.res-pageTheme--refined .pagename {
+	margin: 0 4px 11px 0;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+}
+
+html.res-pageTheme--refined .pagename a {
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined #header .tabmenu {
+	display: flex;
+	margin: 0 0 8px;
+	align-items: center;
+	gap: 3px;
+}
+
+html.res-pageTheme--refined #header .tabmenu li {
+	margin: 0;
+}
+
+html.res-pageTheme--refined #header .tabmenu li a {
+	display: inline-flex;
+	min-height: 32px;
+	box-sizing: border-box;
+	padding: 0 10px;
+	align-items: center;
+	border: 1px solid transparent;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 650;
+	letter-spacing: 0.015em;
+}
+
+html.res-pageTheme--refined #header .tabmenu li a:hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: var(--rsm-th-border);
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined #header .tabmenu li.selected a {
+	background: color-mix(in srgb, var(--rsm-th-accent) 17%, var(--rsm-th-bg-elev)) !important;
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 48%, var(--rsm-th-border));
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined #header-bottom-right {
+	bottom: 9px;
+	right: 12px;
+	padding: 7px 10px;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 7px;
+	box-shadow: 0 6px 18px var(--rsm-th-shadow);
+	font-size: 11px;
+}
+
+html.res-pageTheme--refined #header-bottom-right a {
+	color: var(--rsm-th-muted);
+	font-weight: 600;
+}
+
+html.res-pageTheme--refined #header-bottom-right a:hover {
+	color: var(--rsm-th-txt-strong);
+}
+
+// Keep the familiar right rail, but give the feed the larger share of space.
+html.res-pageTheme--refined body > .content {
+	box-sizing: border-box;
+	margin: 18px 338px 40px 18px;
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined body > .side {
+	box-sizing: border-box;
+	width: 300px;
+	margin: 18px 18px 40px 0;
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined .side > .spacer {
+	box-sizing: border-box;
+	margin: 0 0 10px;
+	padding: 12px;
+	background: var(--rsm-th-bg-elev);
+	border: 1px solid var(--rsm-th-border);
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined .side > .spacer:has(> #search),
+html.res-pageTheme--refined .side > .spacer:has(> .sidebox.submit) {
+	padding: 0;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+}
+
+html.res-pageTheme--refined #search input[type="text"] {
+	box-sizing: border-box;
+	width: 100%;
+	height: 42px;
+	padding: 0 40px 0 13px;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 8px;
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+	font-size: 13px;
+}
+
+html.res-pageTheme--refined #search input[type="text"]::placeholder {
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .morelink {
+	height: 40px;
+	background: var(--rsm-th-bg-elev);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+	line-height: 40px;
+}
+
+html.res-pageTheme--refined .morelink:hover {
+	background: color-mix(in srgb, var(--rsm-th-accent) 14%, var(--rsm-th-bg-elev));
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 48%, var(--rsm-th-border));
+}
+
+html.res-pageTheme--refined .morelink a {
+	color: var(--rsm-th-txt-strong);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+html.res-pageTheme--refined .side .redditname,
+html.res-pageTheme--refined .side .redditname a {
+	color: var(--rsm-th-txt-strong);
+	font-family: inherit;
+	font-size: 20px;
+	font-weight: 750;
+}
+
+html.res-pageTheme--refined .side .titlebox,
+html.res-pageTheme--refined .side .titlebox .redditname,
+html.res-pageTheme--refined .side .titlebox .usertext-body .md,
+html.res-pageTheme--refined .side .linkinfo {
+	background: transparent !important;
+	border-color: var(--rsm-th-border) !important;
+}
+
+html.res-pageTheme--refined .side .md {
+	font-size: 13px;
+	line-height: 1.52;
+}
+
+html.res-pageTheme--refined .sidecontentbox .title,
+html.res-pageTheme--refined .side .titlebox .bottom {
+	color: var(--rsm-th-muted);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.065em;
+	text-transform: uppercase;
+}
+
+// Feed rows become quiet cards without sacrificing old Reddit's density.
+html.res-pageTheme--refined #siteTable > .thing.link,
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link {
+	box-sizing: border-box;
+	min-height: 76px;
+	margin: 0 0 8px;
+	padding: 11px 14px 10px 7px;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+html.res-pageTheme--refined #siteTable > .thing.link:hover,
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link:hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 42%, var(--rsm-th-border));
+	box-shadow: 0 10px 30px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined .thing.link .midcol {
+	box-sizing: border-box;
+	width: 42px;
+	margin: 1px 9px 0 0;
+}
+
+html.res-pageTheme--refined .thing.link .score {
+	color: var(--rsm-th-muted);
+	font-size: 11px;
+	font-weight: 700;
+}
+
+html.res-pageTheme--refined .thing.link .thumbnail {
+	width: 76px;
+	height: 58px;
+	margin: 0 12px 0 0;
+	overflow: hidden;
+	background-color: var(--rsm-th-bg-raise);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 7px;
+}
+
+html.res-pageTheme--refined .thing.link .thumbnail img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+html.res-pageTheme--refined .thing.link .entry {
+	padding: 1px 0;
+	overflow: hidden;
+}
+
+html.res-pageTheme--refined .thing.link .title {
+	font-size: 16px;
+	font-weight: 620;
+	line-height: 1.34;
+	text-decoration: none;
+}
+
+html.res-pageTheme--refined .thing.link .title:hover {
+	color: var(--rsm-th-txt-strong);
+	text-decoration: underline;
+	text-decoration-color: color-mix(in srgb, var(--rsm-th-accent) 60%, transparent);
+	text-underline-offset: 3px;
+}
+
+html.res-pageTheme--refined .thing.link .domain,
+html.res-pageTheme--refined .thing.link .tagline,
+html.res-pageTheme--refined .thing.link .tagline a,
+html.res-pageTheme--refined .thing.link .flat-list a {
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .thing.link .domain {
+	font-size: 10px;
+}
+
+html.res-pageTheme--refined .thing.link .tagline {
+	margin-top: 4px;
+	font-size: 11px;
+}
+
+html.res-pageTheme--refined .thing.link .flat-list {
+	margin-top: 5px;
+}
+
+html.res-pageTheme--refined .thing.link .flat-list li a,
+html.res-pageTheme--refined .comment .flat-list li a {
+	display: inline-flex;
+	min-height: 26px;
+	padding: 0 3px;
+	align-items: center;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+html.res-pageTheme--refined .thing.link .flat-list li a:hover,
+html.res-pageTheme--refined .comment .flat-list li a:hover {
+	background: var(--rsm-th-bg-raise);
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined .thing.stickied {
+	border-color: color-mix(in srgb, #78c896 55%, var(--rsm-th-border)) !important;
+}
+
+html.res-pageTheme--refined .thing.stickied .title {
+	color: #8bd5a5;
+}
+
+// Discussion pages prioritise reading: the post, composer, and top-level
+// comments are distinct surfaces; nested replies use a light guide instead of
+// multiplying heavy boxes at every depth.
+html.res-pageTheme--refined .commentarea {
+	margin-top: 18px;
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined .commentarea > .sitetable,
+html.res-pageTheme--refined .commentarea .nestedlisting,
+html.res-pageTheme--refined .commentarea .menuarea {
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined .commentarea .menuarea {
+	margin: 0 0 10px;
+	padding: 8px 0;
+	border: 0;
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .commentarea > .panestack-title {
+	margin: 0 0 10px;
+	padding: 0 0 10px;
+	border-bottom: 1px solid var(--rsm-th-border);
+}
+
+html.res-pageTheme--refined .commentarea > .panestack-title .title {
+	color: var(--rsm-th-txt-strong);
+	font-size: 17px;
+	font-weight: 700;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext {
+	box-sizing: border-box;
+	max-width: 820px;
+	margin: 0 0 16px;
+	padding: 12px;
+	background: var(--rsm-th-bg-elev);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+}
+
+html.res-pageTheme--refined .commentarea > .sitetable > .comment {
+	box-sizing: border-box;
+	margin: 0 0 10px;
+	padding: 12px 12px 10px;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 8px !important;
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined .commentarea .comment .comment {
+	margin: 8px 0 0 14px;
+	padding: 7px 0 0 12px;
+	background: transparent !important;
+	border: 0 !important;
+	border-left: 2px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none;
+}
+
+html.res-pageTheme--refined .comment .tagline,
+html.res-pageTheme--refined .comment .tagline a,
+html.res-pageTheme--refined .comment .flat-list a {
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .comment .tagline {
+	font-size: 11px;
+	line-height: 1.5;
+}
+
+html.res-pageTheme--refined .comment .author {
+	color: var(--rsm-th-link);
+	font-weight: 700;
+}
+
+html.res-pageTheme--refined .comment .md {
+	max-width: 86ch;
+	background: transparent !important;
+	font-size: 14px;
+	line-height: 1.62;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .usertext-body .md {
+	margin-top: 8px;
+	padding: 10px 12px;
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 7px;
+	color: var(--rsm-th-txt-strong) !important;
+}
+
+html.res-pageTheme--refined .comment .md p {
+	margin: 0.55em 0;
+}
+
+html.res-pageTheme--refined .comment .expand {
+	display: inline-flex;
+	min-width: 24px;
+	min-height: 24px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+}
+
+html.res-pageTheme--refined .comment .expand:hover {
+	background: var(--rsm-th-bg-raise);
+	color: var(--rsm-th-txt-strong);
+}
+
+// Inputs and buttons stop falling back to the platform-grey 2005 treatment.
+html.res-pageTheme--refined textarea,
+html.res-pageTheme--refined input[type="text"],
+html.res-pageTheme--refined input[type="password"],
+html.res-pageTheme--refined input[type="number"],
+html.res-pageTheme--refined select {
+	box-sizing: border-box;
+	min-height: 38px;
+	padding: 8px 10px;
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 7px;
+	color: var(--rsm-th-txt-strong) !important;
+	font: inherit;
+}
+
+html.res-pageTheme--refined textarea {
+	line-height: 1.55;
+	resize: vertical;
+}
+
+html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined input[type="button"]:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined input[type="submit"]:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined input[type="reset"]:not(:where(#RESConsoleContainer *)) {
+	min-height: 34px;
+	padding: 6px 12px;
+	background: var(--rsm-th-bg-raise);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 6px;
+	box-shadow: none;
+	color: var(--rsm-th-txt-strong);
+	font: inherit;
+	font-weight: 650;
+}
+
+html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined input[type="button"]:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined input[type="submit"]:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined input[type="reset"]:not(:where(#RESConsoleContainer *)):hover {
+	background: color-mix(in srgb, var(--rsm-th-accent) 15%, var(--rsm-th-bg-raise));
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 50%, var(--rsm-th-border));
+}
+
+// The optional collapsed rail overlays the content and also opens for keyboard
+// focus, rather than depending on hover alone.
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .content {
+	margin-right: 62px;
+}
+
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side {
+	position: fixed;
+	top: 42px;
+	right: 0;
+	width: 36px;
+	height: 36px;
+	margin: 50px 0 0;
+	padding: 0;
+	overflow: hidden;
+	opacity: 0.72;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-right: 0;
+	border-radius: 8px 0 0 8px;
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+	transition: width 150ms ease, height 150ms ease, opacity 150ms ease;
+}
+
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side:hover,
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side:focus-within {
+	width: 320px;
+	height: auto;
+	max-height: calc(100vh - 108px);
+	padding: 12px;
+	overflow: auto;
+	opacity: 1;
+}
+
+@media (width <= 1100px) {
+	html.res-pageTheme--refined body > .content {
+		margin-right: 292px;
+		margin-left: 12px;
+	}
+
+	html.res-pageTheme--refined body > .side {
+		width: 264px;
+		margin-right: 12px;
+	}
+
+	html.res-pageTheme--refined #header-bottom-right {
+		max-width: 310px;
+		overflow: hidden;
+		white-space: nowrap;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.res-pageTheme--refined #siteTable > .thing.link,
+	html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link,
+	html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side {
 		transition: none;
 	}
 }

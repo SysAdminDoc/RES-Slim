@@ -24,6 +24,7 @@ import { launchWithExtension, extensionUrl, assertBuilt, repoRoot, saveScreensho
 // same fixture the selector contracts assert against, which is the point — if the
 // two ever disagree about old.reddit's shape, one of them is measuring nothing.
 const CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'thread.html');
+const FRONT_CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'frontpage.html');
 
 function screenshotSlug(value) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -35,8 +36,8 @@ function screenshotSlug(value) {
 // inert page while looking like a clean pass, and would also satisfy this test's
 // own `res` assertion without the extension ever running. Stripped defensively
 // even though the committed fixture is currently clean.
-function servableCapture() {
-	const raw = fs.readFileSync(CAPTURE, 'utf8');
+function servableCapture(capture = CAPTURE) {
+	const raw = fs.readFileSync(capture, 'utf8');
 	const stripped = raw.replace(/<html([^>]*)class="([^"]*)"/i, (whole, attrs, classes) => {
 		const kept = classes.split(/\s+/).filter(c => c && !/^res(-|$)/.test(c)).join(' ');
 		return `<html${attrs}class="${kept}"`;
@@ -596,6 +597,64 @@ test('an enabled pageTheme palette paints its own background', async t => {
 	assert.equal(painted.antiFoucStyle, false, 'the early style has done its job once a real palette is applied');
 });
 
+test('the default old Reddit theme is refined, readable, and reversible', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const html = servableCapture(FRONT_CAPTURE)
+		.replace('<div class="midcol">', '<span class="rank">1</span><div class="midcol">');
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
+	await page.waitForTimeout(250);
+
+	const state = await page.evaluate(() => {
+		const firstThing = document.querySelector('#siteTable > .thing.link');
+		const rank = firstThing?.querySelector('.rank');
+		const title = firstThing?.querySelector('a.title');
+		const header = document.querySelector('#header');
+		const styles = element => element ? getComputedStyle(element) : null;
+		return {
+			bodyBackground: styles(document.body)?.backgroundColor,
+			cardBackground: styles(firstThing)?.backgroundColor,
+			cardRadius: styles(firstThing)?.borderRadius,
+			cardTitleSize: styles(title)?.fontSize,
+			headerPosition: styles(header)?.position,
+			rankDisplay: styles(rank)?.display,
+			classes: document.documentElement.className,
+		};
+	});
+
+	assert.match(state.classes, /\bres-pageTheme--graphite\b/, 'the default palette should avoid crushed OLED black');
+	assert.equal(state.bodyBackground, 'rgb(11, 15, 20)', 'Graphite should paint the page canvas');
+	assert.notEqual(state.cardBackground, 'rgba(0, 0, 0, 0)', 'listing Things should be real card surfaces');
+	assert.equal(state.cardRadius, '8px', 'cards should use the restrained desktop radius');
+	assert.equal(state.cardTitleSize, '16px', 'titles should lead the card hierarchy');
+	assert.equal(state.headerPosition, 'sticky', 'primary navigation should stay available while reading');
+	assert.equal(state.rankDisplay, 'none', 'declutter should remove redundant ordinal ranks');
+
+	const firstTitle = page.locator('#siteTable > .thing.link a.title').first();
+	await firstTitle.focus();
+	const focus = await firstTitle.evaluate(element => {
+		const style = getComputedStyle(element);
+		return { outlineStyle: style.outlineStyle, outlineWidth: style.outlineWidth };
+	});
+	assert.equal(focus.outlineStyle, 'solid', 'keyboard focus must remain visible on the refined skin');
+	assert.equal(focus.outlineWidth, '2px', 'focus should be stronger than a one-pixel border shift');
+
+	const dir = saveScreenshotDir();
+	await page.screenshot({ path: path.join(dir, 'old-reddit-refined-listing.png'), fullPage: false });
+});
+
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
@@ -719,6 +778,7 @@ test('the content script initialises on a real old.reddit document', async t => 
 	const classes = await page.evaluate(() => document.documentElement.className);
 	assert.match(classes, /\bres\b/, 'foreground entry should mark <html> as initialised');
 	assert.match(classes, /\bres-v\d/, 'version classes should be applied');
+	assert.match(classes, /\bres-pageTheme--refined\b/, 'the default old Reddit skin should include the refined layout');
 
 	// Initialising is not enough — the extension must also classify the page as
 	// *old* reddit. `appType()` (lib/utils/currentLocation.js) returns 'r2' only
@@ -734,6 +794,19 @@ test('the content script initialises on a real old.reddit document', async t => 
 	// were discovered.
 	const thingCount = await page.locator('.thing').count();
 	assert.ok(thingCount > 0, 'captured thread should contain Things for modules to walk');
+
+	const discussionSurface = await page.evaluate(() => {
+		const comment = document.querySelector('.commentarea > .sitetable > .comment');
+		const body = comment?.querySelector('.md');
+		return {
+			commentRadius: comment ? getComputedStyle(comment).borderRadius : null,
+			commentBackground: comment ? getComputedStyle(comment).backgroundColor : null,
+			bodyBackground: body ? getComputedStyle(body).backgroundColor : null,
+		};
+	});
+	assert.equal(discussionSurface.commentRadius, '8px', 'top-level comments should read as distinct discussion cards');
+	assert.notEqual(discussionSurface.commentBackground, 'rgba(0, 0, 0, 0)', 'the top-level comment card needs a visible surface');
+	assert.equal(discussionSurface.bodyBackground, 'rgba(0, 0, 0, 0)', 'comment prose should not sit inside a second dark rectangle');
 
 	// The committed fixture's `#header-bottom-right` has no `ul`, which is the
 	// logged-out shape the floater's userMenu fallback exists to survive. It
