@@ -18,6 +18,8 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Ads and measurement**: an always-on static `declarativeNetRequest` ruleset blocks separable Reddit ad assets, click trackers, pixels, and telemetry requests before load. Promoted records embedded in Reddit's essential first-party listing response are suppressed at `document_start`, counted locally, and rechecked as listings append. No claim is made that those inseparable records disappear from the listing response itself.
 
+**Old Reddit routing**: the optional `www.reddit.com` → `old.reddit.com` preference now installs a dynamic request rule, so the modern document does not download before the host changes. It preserves path, query, and fragment; leaves login, account, and advertising routes alone; and the header’s **www** link provides a one-page escape. The preference remains off by default.
+
 **Ecosystem parity (v0.20.0)**: fifteen modules rewritten from the most-installed old.reddit userscripts, all disabled by default except the two that only repair broken behaviour — `commentShredder` (bulk overwrite-and-delete of your own comments, preview-first with a typed confirmation), `usernameColors`, `systemThemeSync`, `autoLoadMoreComments`, `visitedPosts`, `searchScope`, `flairLinkify`, `reverseImageSearch`, `nsfwThumbnails`, `karmaHide`, `restoreVoteArrows`, `randomSubreddit`, `loginRedirectFix`, plus `brokenLinkFixer` and `preventAutoTranslate` on by default.
 
 **Infrastructure only**: menu, notifications, settingsNavigation, selectedEntry, version, requestPermissions.
@@ -30,7 +32,7 @@ The selected 1440×900 design references for all 11 categories, Console preferen
 
 ## Permissions and privacy
 
-RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local feature data in the browser profile. `declarativeNetRequest` is used only for the packaged Reddit-scoped block rules. Optional host permissions are requested only when a media provider or localhost companion needs one. The extension contains no analytics and sends no RES-Slim telemetry.
+RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local feature data in the browser profile. `declarativeNetRequest` is used for the packaged Reddit-scoped block rules and the user-controlled Old Reddit redirect described above. Optional host permissions are requested only when a media provider or localhost companion needs one. The extension contains no analytics and sends no RES-Slim telemetry.
 
 ## Build
 

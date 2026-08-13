@@ -694,6 +694,117 @@ test('the packaged ruleset blocks Reddit ad and measurement requests', async t =
 	assert.match(request.failure()?.errorText || '', /ERR_BLOCKED_BY_CLIENT/, 'Chromium should attribute the failure to the extension ruleset');
 });
 
+test('the opt-in Old Reddit redirect runs before modern document bytes load', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const optionsPage = await context.newPage();
+	await optionsPage.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+
+	const redirectRuleIds = [900001, 900002, 900003];
+	const redirectRuleId = redirectRuleIds.at(-1);
+	await optionsPage.evaluate(() => new Promise((resolve, reject) => {
+		chrome.storage.local.set({
+			'RESoptions.oldRedditRedirect': { autoRedirect: { value: true } },
+		}, () => {
+			if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+			else resolve();
+		});
+	}));
+
+	await optionsPage.waitForFunction(async ids => {
+		const rules = await chrome.declarativeNetRequest.getDynamicRules();
+		return ids.every(id => rules.some(rule => rule.id === id));
+	}, redirectRuleIds, { timeout: 10000 });
+
+	const installedRules = await optionsPage.evaluate(() => chrome.declarativeNetRequest.getDynamicRules());
+	const installedRedirect = installedRules.find(rule => rule.id === redirectRuleId);
+	assert.ok(installedRedirect, 'enabling the option must install the redirect rule');
+	assert.equal(installedRedirect.condition.urlFilter, '|https://www.reddit.com/');
+	assert.deepEqual(installedRedirect.condition.resourceTypes, ['main_frame']);
+	assert.deepEqual(installedRedirect.action.redirect.transform, { host: 'old.reddit.com', scheme: 'https' });
+
+	// `testMatchOutcome` is only available to unpacked builds, which is exactly
+	// what this harness launches. It proves Chromium accepted the protected-path
+	// and one-page escape rules instead of silently discarding their regexes.
+	const outcomes = await optionsPage.evaluate(async ids => {
+		const test = url => chrome.declarativeNetRequest.testMatchOutcome({ url, type: 'main_frame' });
+		const [ordinary, login, account, ads, escaped, oldHost, shHost] = await Promise.all([
+			test('https://www.reddit.com/r/codex/?sort=new'),
+			test('https://www.reddit.com/login/'),
+			test('https://www.reddit.com/account/register'),
+			test('https://www.reddit.com/ads/create'),
+			test('https://www.reddit.com/r/codex/?res_slim_redirect=off'),
+			test('https://old.reddit.com/r/codex/'),
+			test('https://sh.reddit.com/r/codex/'),
+		]);
+		const own = result => result.matchedRules.map(rule => rule.ruleId).filter(id => ids.includes(id));
+		return {
+			ordinary: own(ordinary),
+			login: own(login),
+			account: own(account),
+			ads: own(ads),
+			escaped: own(escaped),
+			oldHost: own(oldHost),
+			shHost: own(shHost),
+		};
+	}, redirectRuleIds);
+	assert.ok(outcomes.ordinary.includes(redirectRuleId), 'ordinary www routes must match the redirect');
+	for (const key of ['login', 'account', 'ads', 'escaped']) {
+		assert.ok(outcomes[key].some(id => id !== redirectRuleId), `${key} must match a higher-priority allow rule`);
+	}
+	assert.deepEqual(outcomes.oldHost, [], 'old.reddit.com must not match any redirect rule');
+	assert.deepEqual(outcomes.shHost, [], 'sh.reddit.com must not match any redirect rule');
+
+	const page = await context.newPage();
+	const wwwDocumentResponses = [];
+	page.on('response', response => {
+		if (response.request().resourceType() === 'document' && new URL(response.url()).hostname === 'www.reddit.com') {
+			wwwDocumentResponses.push(response.url());
+		}
+	});
+
+	const redirectedHtml = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Redirect target</title></head><body class="listing-page"><main id="redirect-target">old target loaded</main></body></html>';
+	await page.route('**/*', route => {
+		const request = route.request();
+		const url = request.url();
+		if (request.resourceType() === 'document' && url.startsWith('https://old.reddit.com/')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: redirectedHtml });
+		}
+		if (request.resourceType() === 'document' && url.startsWith('https://www.reddit.com/')) {
+			// DNR evaluates after interception continues. If the rule is absent this
+			// reaches Reddit and the response assertion below catches the leak.
+			return route.continue();
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/rsm-dnr-redirect/?sort=new#details', {
+		waitUntil: 'domcontentloaded',
+		timeout: 30000,
+	});
+	await page.waitForSelector('#redirect-target', { timeout: 10000 });
+	assert.equal(
+		page.url(),
+		'https://old.reddit.com/rsm-dnr-redirect/?sort=new#details',
+		'the transform must preserve path, query, and fragment while replacing only the host',
+	);
+	assert.deepEqual(wwwDocumentResponses, [], 'no modern Reddit document response may deliver bytes before the redirect');
+
+	await optionsPage.evaluate(() => new Promise((resolve, reject) => {
+		chrome.storage.local.set({
+			'RESoptions.oldRedditRedirect': { autoRedirect: { value: false } },
+		}, () => {
+			if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+			else resolve();
+		});
+	}));
+	await optionsPage.waitForFunction(async ids => {
+		const rules = await chrome.declarativeNetRequest.getDynamicRules();
+		return ids.every(id => !rules.some(rule => rule.id === id));
+	}, redirectRuleIds, { timeout: 10000 });
+});
+
 test('promoted old Reddit records stay hidden across initial and asynchronous loads', async t => {
 	const { context, dispose } = await launchWithExtension();
 	t.after(dispose);

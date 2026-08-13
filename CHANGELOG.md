@@ -2,6 +2,25 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- The opt-in `www.reddit.com` → `old.reddit.com` preference now uses a dynamic
+  main-frame request rule, replacing only the scheme and host before modern
+  Reddit returns document bytes. Path, query, and fragment survive intact;
+  account, login, and advertising routes are explicitly allowed; and the host
+  toggle’s **www** link provides a one-page escape. Disabling either the option
+  or its module removes the persistent rule.
+
+### Verified
+
+- Chromium accepted all three dynamic rules in the unpacked build. Browser
+  coverage toggles the preference on and off, confirms protected and escape
+  routes resolve through higher-priority allow rules, verifies old/sh hosts do
+  not match, and follows a real main-frame redirect with no `www.reddit.com`
+  document response before the old-Reddit fixture loads.
+
 ## v0.32.0 - 2026-08-13
 
 ### Changed

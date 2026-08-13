@@ -29,6 +29,10 @@ const listeners = () => ({ addListener: noop, removeListener: noop, hasListener:
 function workerGlobal() {
 	const scope = {
 		chrome: {
+			declarativeNetRequest: {
+				updateDynamicRules: (rules, cb) => cb && cb(),
+				getDynamicRules: cb => cb && cb([]),
+			},
 			runtime: {
 				id: 'res-slim-test',
 				getURL: p => `chrome-extension://res-slim-test/${p}`,
