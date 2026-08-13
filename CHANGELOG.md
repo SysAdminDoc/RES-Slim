@@ -4,6 +4,8 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.33.0 - 2026-08-13
+
 ### Changed
 
 - The opt-in `www.reddit.com` → `old.reddit.com` preference now uses a dynamic
