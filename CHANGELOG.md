@@ -2,6 +2,36 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.32.0 - 2026-08-13
+
+### Changed
+
+- **Old Reddit now opens in a refined Graphite desktop skin by default.** The
+  familiar server-rendered routes and controls remain intact, while the header,
+  feed, sidebar, post body, composer, and comments now share one restrained
+  dark-surface hierarchy. Users can disable the refined layout independently or
+  switch to any of the existing dark palettes.
+- The header is compact and sticky; listing Things render as readable cards;
+  redundant ordinal ranks and low-value sidebar chrome are removed; metadata and
+  actions remain visible but quiet; the subreddit sidebar uses coherent cards;
+  and comments use top-level surfaces with lightweight nested reply guides.
+- Graphite avoids crushed OLED black and uses a cooler blue accent. Typography,
+  form controls, buttons, scrollbars, hover states, reduced-motion behavior, and
+  keyboard focus now follow the same page token system.
+
+### Verified
+
+- A fresh signed-in old.reddit home feed, subreddit listing, and discussion were
+  audited at desktop size. The compiled theme was injected locally into the same
+  live DOM for visual comparison without changing Reddit account data.
+- `yarn test`: 918/918; `yarn test:e2e`: 12/12. New browser coverage asserts the
+  default Graphite canvas, sticky header, post-card hierarchy, decluttering,
+  visible focus ring, and discussion-card rendering. Every palette's body text,
+  links, and small metadata clear the WCAG AA contrast contract.
+- `yarn lint` matches the recorded 96-error ESLint baseline with clean Stylelint
+  and i18n gates. `yarn flow` matches the recorded 124-error baseline across 54
+  files.
+
 ## v0.31.0 - 2026-08-13
 
 ### Added
