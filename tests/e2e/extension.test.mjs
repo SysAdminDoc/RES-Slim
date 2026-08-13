@@ -937,3 +937,52 @@ test('the content script initialises on a real old.reddit document', async t => 
 	const dir = saveScreenshotDir();
 	await page.screenshot({ path: path.join(dir, 'thread.png'), fullPage: false });
 });
+
+test('selector drift records one local diagnostic without a toast', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = servableCapture(FRONT_CAPTURE).replace(
+		'id="siteTable" class="sitetable linklisting"',
+		'id="legacySiteTable" class="sitetable linklisting"',
+	);
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const load = async () => {
+		await page.goto('https://old.reddit.com/rsm-selector-drift/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	};
+	const selectorEntries = () => worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.moduleErrorLog', values => resolve(
+			(values['RES.moduleErrorLog'] || []).filter(entry => entry.moduleID === 'oldRedditSelectors'),
+		));
+	}));
+
+	await load();
+	let entries = [];
+	for (let attempt = 0; attempt < 50 && !entries.length; attempt++) {
+		await page.waitForTimeout(50); // eslint-disable-line no-await-in-loop
+		entries = await selectorEntries(); // eslint-disable-line no-await-in-loop
+	}
+	assert.equal(entries.length, 1, 'one aggregated selector warning should be persisted locally');
+	assert.equal(entries[0].stage, 'selector-drift:linklist');
+	assert.match(entries[0].message, /listingFeed matched fallback "\.linklisting \.thing\.link"/);
+	assert.equal(
+		await page.locator('.RESNotification').filter({ hasText: 'selector drift' }).count(),
+		0,
+		'selector health is a diagnostics-console concern, not a page toast',
+	);
+
+	await load();
+	await page.waitForTimeout(250);
+	entries = await selectorEntries();
+	assert.equal(entries.length, 1, 'reloading the same drift must not duplicate its local warning');
+});

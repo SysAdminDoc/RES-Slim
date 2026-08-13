@@ -12,6 +12,10 @@ All notable changes to RES-Slim will be documented in this file.
   account, login, and advertising routes are explicitly allowed; and the host
   toggle’s **www** link provides a one-page escape. Disabling either the option
   or its module removes the persistent rule.
+- Required listing and discussion surfaces now report selector drift through the
+  existing local module-error log. Stable matches stay silent, fallback and
+  missing matches are aggregated by page type, and repeat visits do not create
+  duplicate entries or page toasts.
 
 ### Verified
 
@@ -20,6 +24,9 @@ All notable changes to RES-Slim will be documented in this file.
   routes resolve through higher-priority allow rules, verifies old/sh hosts do
   not match, and follows a real main-frame redirect with no `www.reddit.com`
   document response before the old-Reddit fixture loads.
+- Canonical, fallback-only, and missing fixture variants exercise selector
+  classification. Chromium confirms one fallback warning persists locally,
+  remains deduplicated after navigation, and never appears as a toast.
 
 ## v0.32.0 - 2026-08-13
 

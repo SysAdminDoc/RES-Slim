@@ -51,6 +51,14 @@ test('appendModuleError prepends and caps newest entries', () => {
 	assert.deepEqual(result.map(entry => entry.moduleID), ['new', 'old-1']);
 });
 
+test('equivalent module errors can be deduplicated without losing distinct findings', () => {
+	const existing = Log.makeModuleErrorEntry('selectors', 'selector-drift:linklist', 'header fallback', 1);
+	const duplicate = Log.makeModuleErrorEntry('selectors', 'selector-drift:linklist', 'header fallback', 2);
+	const changed = Log.makeModuleErrorEntry('selectors', 'selector-drift:linklist', 'header missing', 3);
+	assert.equal(Log.hasEquivalentModuleError([existing], duplicate), true);
+	assert.equal(Log.hasEquivalentModuleError([existing], changed), false);
+});
+
 test('formatModuleErrorLog is copyable plain text with no HTML interpolation', () => {
 	const text = Log.formatModuleErrorLog([
 		Log.makeModuleErrorEntry('demo', 'go', { message: '<script>', stack: 'bad' }, 100),

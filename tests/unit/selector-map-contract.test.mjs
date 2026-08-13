@@ -8,8 +8,17 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
 const selectors = read('lib/core/dom/selectors.js');
-const { findSurface, matchedSelectorFor, getSurfaceSelectorList, getStableSelector } =
+const {
+	findSurface,
+	formatSelectorDriftMessage,
+	getSurfaceSelectorList,
+	getStableSelector,
+	inspectSurfaceMatch,
+	matchedSelectorFor,
+	selectorDriftForPage,
+} =
 	await loadFlowModule('lib/core/dom/selectors.js', 'selectors');
+const { JSDOM } = await import('jsdom');
 const trustedHtml = read('lib/core/dom/trustedHtml.js');
 const frontpageFixture = read('tests/fixtures/mhtml/frontpage.html');
 const threadFixture = read('tests/fixtures/mhtml/thread.html');
@@ -150,6 +159,34 @@ test('findSurface falls back through the list in order', () => {
 	assert.equal(matchedSelectorFor('header', rootMatching(list[1])), list[1]);
 	// Nothing matches: null rather than a throw, so a caller can degrade.
 	assert.equal(matchedSelectorFor('header', { querySelector: () => null }), null);
+});
+
+test('live diagnostics distinguish stable, fallback, and missing fixture variants', () => {
+	const stableRoot = new JSDOM(frontpageFixture).window.document;
+	assert.deepEqual(selectorDriftForPage('linklist', stableRoot), [], 'the canonical fixture should resolve every required surface stably');
+
+	const fallbackFixture = frontpageFixture.replace(
+		'id="siteTable" class="sitetable linklisting"',
+		'id="legacySiteTable" class="sitetable linklisting"',
+	);
+	const fallbackRoot = new JSDOM(fallbackFixture).window.document;
+	assert.deepEqual(inspectSurfaceMatch('listingFeed', fallbackRoot), {
+		surfaceName: 'listingFeed',
+		status: 'fallback',
+		selector: '.linklisting .thing.link',
+	});
+	assert.deepEqual(selectorDriftForPage('linklist', fallbackRoot).map(finding => finding.surfaceName), ['listingFeed']);
+
+	const missingFixture = fallbackFixture.replace(/class="thing link /, 'class="thing ');
+	const missingRoot = new JSDOM(missingFixture).window.document;
+	assert.deepEqual(inspectSurfaceMatch('listingFeed', missingRoot), {
+		surfaceName: 'listingFeed',
+		status: 'missing',
+		selector: null,
+	});
+	const message = formatSelectorDriftMessage('linklist', selectorDriftForPage('linklist', missingRoot));
+	assert.match(message, /listingFeed is missing/);
+	assert.deepEqual(selectorDriftForPage('prefs', missingRoot), [], 'unmapped page types must not produce false alarms');
 });
 
 test('findSurface returns only real elements', () => {
