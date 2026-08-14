@@ -329,7 +329,7 @@ html.res-pageTheme--refined #header {
 	position: sticky;
 	top: 0;
 	z-index: 100;
-	min-height: 84px;
+	min-height: 80px;
 	border: 0;
 	border-bottom: 1px solid var(--rsm-th-border);
 	box-shadow: 0 8px 26px var(--rsm-th-shadow);
@@ -337,10 +337,10 @@ html.res-pageTheme--refined #header {
 
 html.res-pageTheme--refined #sr-header-area {
 	box-sizing: border-box;
-	height: 28px;
+	height: 26px;
 	padding: 0 12px;
 	overflow: hidden;
-	line-height: 28px;
+	line-height: 26px;
 	white-space: nowrap;
 	border: 0;
 	border-bottom: 1px solid var(--rsm-th-border);
@@ -369,22 +369,22 @@ html.res-pageTheme--refined #sr-header-area a:hover {
 html.res-pageTheme--refined #header-bottom-left {
 	box-sizing: border-box;
 	display: flex;
-	height: 56px;
-	padding: 0 14px;
+	height: 54px;
+	padding: 0 12px;
 	align-items: flex-end;
-	gap: 10px;
+	gap: 8px;
 }
 
 html.res-pageTheme--refined #header-img,
 html.res-pageTheme--refined #header-img-a {
-	max-height: 38px;
-	margin: 0 2px 8px 0;
+	max-height: 36px;
+	margin: 0 2px 7px 0;
 	filter: grayscale(1) invert(1) brightness(1.35);
 	opacity: 0.82;
 }
 
 html.res-pageTheme--refined .pagename {
-	margin: 0 4px 11px 0;
+	margin: 0 4px 10px 0;
 	font-size: 15px;
 	font-weight: 700;
 	letter-spacing: 0.02em;
@@ -396,7 +396,7 @@ html.res-pageTheme--refined .pagename a {
 
 html.res-pageTheme--refined #header .tabmenu {
 	display: flex;
-	margin: 0 0 8px;
+	margin: 0 0 7px;
 	align-items: center;
 	gap: 3px;
 }
@@ -407,9 +407,9 @@ html.res-pageTheme--refined #header .tabmenu li {
 
 html.res-pageTheme--refined #header .tabmenu li a {
 	display: inline-flex;
-	min-height: 32px;
+	min-height: 30px;
 	box-sizing: border-box;
-	padding: 0 10px;
+	padding: 0 9px;
 	align-items: center;
 	border: 1px solid transparent;
 	border-radius: 6px;
@@ -431,9 +431,9 @@ html.res-pageTheme--refined #header .tabmenu li.selected a {
 }
 
 html.res-pageTheme--refined #header-bottom-right {
-	bottom: 9px;
-	right: 12px;
-	padding: 7px 10px;
+	bottom: 8px;
+	right: 10px;
+	padding: 6px 9px;
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 7px;
 	box-shadow: 0 6px 18px var(--rsm-th-shadow);
@@ -452,24 +452,24 @@ html.res-pageTheme--refined #header-bottom-right a:hover {
 // Keep the familiar right rail, but give the feed the larger share of space.
 html.res-pageTheme--refined body > .content {
 	box-sizing: border-box;
-	margin: 18px 338px 40px 18px;
+	margin: 14px 324px 32px 14px;
 	background: transparent !important;
 }
 
 html.res-pageTheme--refined body > .side {
 	box-sizing: border-box;
 	width: 300px;
-	margin: 18px 18px 40px 0;
+	margin: 14px 14px 32px 0;
 	background: transparent !important;
 }
 
 html.res-pageTheme--refined .side > .spacer {
 	box-sizing: border-box;
-	margin: 0 0 10px;
-	padding: 12px;
+	margin: 0 0 8px;
+	padding: 10px;
 	background: var(--rsm-th-bg-elev);
 	border: 1px solid var(--rsm-th-border);
-	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
 }
 
 html.res-pageTheme--refined .side > .spacer:has(> #search),
@@ -480,51 +480,137 @@ html.res-pageTheme--refined .side > .spacer:has(> .sidebox.submit) {
 	box-shadow: none;
 }
 
-html.res-pageTheme--refined #search {
+html.res-pageTheme--refined .side #search {
 	position: relative;
+	z-index: 2;
 }
 
-html.res-pageTheme--refined #search input[type="text"] {
+// The native submit sprite leaks an adjacent warning cell at modern display
+// densities. Use RES's bundled Batch search glyph while leaving a real 38px
+// submit control underneath it for mouse and keyboard activation.
+html.res-pageTheme--refined .side #search::after {
+	position: absolute;
+	top: 11px;
+	right: 11px;
+	z-index: 2;
+	color: var(--rsm-th-muted);
+	content: '\F094';
+	font: normal 16px/1 Batch;
+	pointer-events: none;
+}
+
+html.res-pageTheme--refined .side #search:focus-within::after {
+	color: var(--rsm-th-accent);
+}
+
+html.res-pageTheme--refined .side #search input[type="text"] {
 	box-sizing: border-box;
 	width: 100%;
-	height: 42px;
-	padding: 0 40px 0 13px;
+	height: 38px;
+	padding: 0 42px 0 12px;
 	border: 1px solid var(--rsm-th-border) !important;
-	border-radius: 8px;
-	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+	border-radius: 7px;
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
 	font-size: 13px;
 }
 
-html.res-pageTheme--refined #search input[type="text"]::placeholder {
+html.res-pageTheme--refined .side #search:has(.rsm-search-dispatcher) input[type="text"] {
+	padding-right: 142px;
+}
+
+html.res-pageTheme--refined .side #search input[type="text"]::placeholder {
 	color: var(--rsm-th-muted);
 }
 
-// Preserve the native sprite while keeping the generic button treatment from
-// exposing adjacent sprite cells or stretching the icon vertically.
-html.res-pageTheme--refined #search input[type="submit"] {
+html.res-pageTheme--refined .side #search input[type="submit"] {
 	position: absolute;
-	top: 10px;
-	right: 10px;
-	width: 22px;
-	height: 22px;
-	min-height: 22px;
+	top: 0;
+	right: 0;
+	width: 38px;
+	height: 38px;
+	min-height: 38px;
 	padding: 0;
-	background-color: transparent !important;
+	background: none !important;
 	border: 0 !important;
-	border-radius: 4px;
+	border-radius: 0 7px 7px 0;
 	box-shadow: none;
 	color: transparent;
 	cursor: pointer;
 	font-size: 0;
 }
 
+// The optional dispatcher belongs inside the field, not in a second full-width
+// row. This keeps search compact even when four destinations are enabled.
+html.res-pageTheme--refined .side #search select.rsm-search-dispatcher {
+	position: absolute;
+	top: 5px;
+	right: 42px;
+	z-index: 2;
+	box-sizing: border-box;
+	width: 88px;
+	height: 28px;
+	min-height: 28px;
+	margin: 0;
+	padding: 3px 22px 3px 8px;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 5px;
+	color: var(--rsm-th-txt) !important;
+	font-size: 10px;
+	font-weight: 650;
+}
+
+// Reddit reveals this helper on focus. Treat it as part of the control instead
+// of allowing the native orange infobar to interrupt the dark sidebar.
+html.res-pageTheme--refined .side #searchexpando {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 6px 0 0;
+	padding: 7px 9px 6px;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 7px;
+	box-shadow: 0 8px 22px var(--rsm-th-shadow);
+	color: var(--rsm-th-txt) !important;
+	font-size: 11px;
+	line-height: 1.4;
+}
+
+html.res-pageTheme--refined .side #searchexpando label {
+	display: flex;
+	min-height: 24px;
+	align-items: center;
+	gap: 7px;
+	color: var(--rsm-th-txt);
+	cursor: pointer;
+}
+
+html.res-pageTheme--refined .side #searchexpando input[type="checkbox"] {
+	width: 14px;
+	height: 14px;
+	min-height: 14px;
+	margin: 0;
+	accent-color: var(--rsm-th-accent);
+}
+
+html.res-pageTheme--refined .side #searchexpando p {
+	margin: 4px 0 0;
+	line-height: 1.4;
+}
+
+html.res-pageTheme--refined .side #searchexpando #search_showmore {
+	color: var(--rsm-th-link);
+	font-size: 10px;
+	font-weight: 650;
+}
+
 html.res-pageTheme--refined .morelink {
-	height: 40px;
+	height: 38px;
 	background: var(--rsm-th-bg-elev);
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 8px;
-	box-shadow: 0 8px 24px var(--rsm-th-shadow);
-	line-height: 40px;
+	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	line-height: 38px;
 }
 
 html.res-pageTheme--refined .morelink:hover {
@@ -701,12 +787,12 @@ html.res-pageTheme--refined .sidecontentbox .content .more {
 html.res-pageTheme--refined #siteTable > .thing.link,
 html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link {
 	box-sizing: border-box;
-	min-height: 76px;
-	margin: 0 0 8px;
-	padding: 11px 14px 10px 7px;
+	min-height: 72px;
+	margin: 0 0 6px;
+	padding: 10px 12px 9px 6px;
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 8px;
-	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	box-shadow: 0 5px 18px var(--rsm-th-shadow);
 	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
@@ -817,14 +903,14 @@ html.res-pageTheme--refined.res-pageTheme--declutter body.combined-search-page >
 }
 
 html.res-pageTheme--refined.res-pageTheme--declutter body.combined-search-page > .content {
-	margin-right: 18px;
+	margin-right: 14px;
 }
 
 html.res-pageTheme--refined body.combined-search-page .searchpane.raisedbox {
 	box-sizing: border-box;
 	width: min(100%, 1100px);
-	margin: 0 auto 14px;
-	padding: 16px 18px;
+	margin: 0 auto 12px;
+	padding: 14px 16px;
 	background: var(--rsm-th-bg-elev) !important;
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 8px;
@@ -848,21 +934,23 @@ html.res-pageTheme--refined body.combined-search-page #previoussearch form {
 	display: grid;
 	box-sizing: border-box;
 	grid-template-columns: minmax(0, 1fr) auto;
-	gap: 8px 10px;
+	gap: 6px 8px;
 	padding-right: 0;
 	align-items: center;
 }
 
 html.res-pageTheme--refined body.combined-search-page #previoussearch input[name="q"] {
 	width: 100%;
+	height: 38px;
 	max-width: none;
+	padding: 0 12px;
 }
 
 html.res-pageTheme--refined body.combined-search-page .search-submit-button {
 	box-sizing: border-box;
-	width: 42px;
-	height: 42px;
-	min-height: 42px;
+	width: 38px;
+	height: 38px;
+	min-height: 38px;
 	margin: 0;
 	padding: 0;
 	grid-row: 1;
@@ -889,15 +977,15 @@ html.res-pageTheme--refined body.combined-search-page .search-result-group {
 	width: 100%;
 	min-width: 0;
 	max-width: none;
-	margin: 0 0 18px;
+	margin: 0 0 14px;
 	padding: 0;
 }
 
 html.res-pageTheme--refined body.combined-search-page .search-result-group-header {
 	box-sizing: border-box;
-	min-height: 34px;
-	margin: 0 0 10px;
-	padding: 0 2px 9px;
+	min-height: 31px;
+	margin: 0 0 8px;
+	padding: 0 2px 7px;
 	background: transparent;
 	border: 0;
 	border-bottom: 1px solid var(--rsm-th-border);
@@ -915,9 +1003,9 @@ html.res-pageTheme--refined body.combined-search-page .search-header-label {
 html.res-pageTheme--refined body.combined-search-page .search-result {
 	box-sizing: border-box;
 	width: 100%;
-	min-height: 86px;
-	margin: 0 0 8px;
-	padding: 12px 14px;
+	min-height: 82px;
+	margin: 0 0 7px;
+	padding: 11px 13px;
 	overflow: hidden;
 	background: var(--rsm-th-bg-elev) !important;
 	border: 1px solid var(--rsm-th-border);
@@ -1217,12 +1305,12 @@ html.res-pageTheme--refined .commentarea > .usertext + .sitetable {
 
 html.res-pageTheme--refined .commentarea > .sitetable > .comment {
 	box-sizing: border-box;
-	margin: 0 0 10px;
-	padding: 12px 12px 10px;
+	margin: 0 0 8px;
+	padding: 10px;
 	background: var(--rsm-th-bg-elev) !important;
 	border: 1px solid var(--rsm-th-border) !important;
 	border-radius: 8px !important;
-	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	box-shadow: 0 5px 18px var(--rsm-th-shadow);
 	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
@@ -1413,13 +1501,13 @@ html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side:focus-w
 
 @media (width <= 1100px) {
 	html.res-pageTheme--refined body > .content {
-		margin-right: 292px;
-		margin-left: 12px;
+		margin-right: 284px;
+		margin-left: 10px;
 	}
 
 	html.res-pageTheme--refined body > .side {
 		width: 264px;
-		margin-right: 12px;
+		margin-right: 10px;
 	}
 
 	html.res-pageTheme--refined #header-bottom-right {

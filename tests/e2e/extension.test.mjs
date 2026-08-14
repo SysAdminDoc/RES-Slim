@@ -623,9 +623,16 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 		const rank = firstThing?.querySelector('.rank');
 		const title = firstThing?.querySelector('a.title');
 		const header = document.querySelector('#header');
+		const search = document.querySelector('.side #search');
+		const searchInput = search?.querySelector('input[type="text"]');
 		const searchSubmit = document.querySelector('#search input[type="submit"]');
+		const searchDispatcher = search?.querySelector('.rsm-search-dispatcher');
+		const searchExpando = search?.querySelector('#searchexpando');
 		const hiddenSidebarSpacer = document.querySelector('.rsm-e2e-hidden-spacer');
 		const styles = element => element ? getComputedStyle(element) : null;
+		const rect = element => element ? element.getBoundingClientRect() : null;
+		const closedSearchHeight = rect(search)?.height;
+		if (searchExpando instanceof HTMLElement) searchExpando.hidden = false;
 		return {
 			bodyBackground: styles(document.body)?.backgroundColor,
 			cardBackground: styles(firstThing)?.backgroundColor,
@@ -635,6 +642,22 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 			rankDisplay: styles(rank)?.display,
 			searchSubmitPosition: styles(searchSubmit)?.position,
 			searchSubmitSize: searchSubmit ? [searchSubmit.getBoundingClientRect().width, searchSubmit.getBoundingClientRect().height] : null,
+			searchSubmitBackground: styles(searchSubmit)?.backgroundImage,
+			searchInputSize: searchInput ? [rect(searchInput)?.width, rect(searchInput)?.height] : null,
+			searchInputPaddingRight: styles(searchInput)?.paddingRight,
+			searchIconContent: search ? getComputedStyle(search, '::after').content : null,
+			searchDispatcherPosition: styles(searchDispatcher)?.position,
+			searchDispatcherSize: searchDispatcher ? [rect(searchDispatcher)?.width, rect(searchDispatcher)?.height] : null,
+			searchDispatcherRight: styles(searchDispatcher)?.right,
+			closedSearchHeight,
+			expandedSearchHeight: rect(search)?.height,
+			searchExpandoBackground: styles(searchExpando)?.backgroundColor,
+			searchExpandoBorder: styles(searchExpando)?.borderColor,
+			searchExpandoRadius: styles(searchExpando)?.borderRadius,
+			searchExpandoGap: searchExpando && searchInput ? rect(searchExpando)?.top - rect(searchInput)?.bottom : null,
+			searchExpandoLabelHeight: rect(searchExpando?.querySelector('label'))?.height,
+			searchAdvancedSize: styles(searchExpando?.querySelector('#search_showmore'))?.fontSize,
+			searchInputBorder: styles(searchInput)?.borderColor,
 			hiddenSidebarSpacerDisplay: styles(hiddenSidebarSpacer)?.display,
 			classes: document.documentElement.className,
 		};
@@ -647,8 +670,23 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	assert.equal(state.cardTitleSize, '16px', 'titles should lead the card hierarchy');
 	assert.equal(state.headerPosition, 'sticky', 'primary navigation should stay available while reading');
 	assert.equal(state.rankDisplay, 'none', 'declutter should remove redundant ordinal ranks');
-	assert.equal(state.searchSubmitPosition, 'absolute', 'the sprite-backed search action should stay inside the search field');
-	assert.deepEqual(state.searchSubmitSize, [22, 22], 'generic button styling must not expose adjacent search sprite cells');
+	assert.equal(state.searchSubmitPosition, 'absolute', 'the search action should stay inside the search field');
+	assert.deepEqual(state.searchSubmitSize, [38, 38], 'the compact search action should keep a usable desktop target');
+	assert.equal(state.searchSubmitBackground, 'none', 'the leaking native sprite should not remain visible');
+	assert.deepEqual(state.searchInputSize, [300, 38], 'the sidebar search field should use the compact rail measure');
+	assert.equal(state.searchInputPaddingRight, '142px', 'search text should reserve room for the destination control');
+	assert.ok(state.searchIconContent.includes('\uF094'), 'the bundled Batch search glyph should replace the native sprite');
+	assert.equal(state.searchDispatcherPosition, 'absolute', 'the destination picker should live inside the field');
+	assert.deepEqual(state.searchDispatcherSize, [88, 28], 'the destination picker should remain compact');
+	assert.equal(state.searchDispatcherRight, '42px', 'the destination picker should leave the search action clear');
+	assert.equal(state.closedSearchHeight, 38, 'resting search should not consume a second row');
+	assert.ok(state.expandedSearchHeight > state.closedSearchHeight, 'the native helper should expand the form in flow');
+	assert.notEqual(state.searchExpandoBackground, 'rgba(0, 0, 0, 0)', 'the search helper should sit on a deliberate surface');
+	assert.equal(state.searchExpandoBorder, state.searchInputBorder, 'the search helper should use the active theme border instead of orange');
+	assert.equal(state.searchExpandoRadius, '7px', 'the search helper should match the field geometry');
+	assert.equal(state.searchExpandoGap, 6, 'the search helper should connect to the field with a compact gap');
+	assert.equal(state.searchExpandoLabelHeight, 24, 'search scope choices should remain easy to target');
+	assert.equal(state.searchAdvancedSize, '10px', 'advanced search should stay visible without dominating the rail');
 	assert.equal(state.hiddenSidebarSpacerDisplay, 'none', 'decluttering should remove wrappers around hidden sidebar clutter');
 
 	const firstTitle = page.locator('#siteTable > .thing.link a.title').first();
@@ -752,6 +790,7 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 		const side = document.querySelector('body > .side');
 		const content = document.querySelector('body > .content');
 		const searchpane = document.querySelector('.searchpane');
+		const query = document.querySelector('#previoussearch input[name="q"]');
 		const submit = document.querySelector('.search-submit-button');
 		const result = document.querySelector('.search-result');
 		const postResult = document.querySelector('.search-result-link');
@@ -765,7 +804,9 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 			contentMarginRight: styles(content)?.marginRight,
 			searchpaneWidth: rect(searchpane)?.width,
 			searchpaneX: rect(searchpane)?.x,
+			searchpanePadding: styles(searchpane)?.padding,
 			listingX: rect(document.querySelector('.search-result-listing'))?.x,
+			queryHeight: rect(query)?.height,
 			submitSize: submit ? [rect(submit)?.width, rect(submit)?.height] : null,
 			resultWidth: rect(result)?.width,
 			resultBackground: styles(result)?.backgroundColor,
@@ -785,11 +826,13 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 	});
 
 	assert.equal(state.sideDisplay, 'none', 'declutter should remove search-only submission chrome');
-	assert.equal(state.contentMarginRight, '18px', 'focused search should reclaim the sidebar column');
+	assert.equal(state.contentMarginRight, '14px', 'focused search should reclaim the sidebar column symmetrically');
 	assert.equal(state.searchpaneWidth, 1100, 'search controls should use the readable desktop content measure');
 	assert.ok(state.searchpaneX > 100, 'focused search should balance its readable measure in the viewport');
+	assert.equal(state.searchpanePadding, '14px 16px', 'the query surface should keep compact desktop padding');
 	assert.equal(state.listingX, state.searchpaneX, 'query and results should share one centered column');
-	assert.deepEqual(state.submitSize, [42, 42], 'the search action should be an obvious square target');
+	assert.equal(state.queryHeight, 38, 'the full search field should match the compact sidebar control');
+	assert.deepEqual(state.submitSize, [38, 38], 'the search action should align exactly with the query field');
 	assert.equal(state.resultWidth, 1100, 'search cards should align with the query surface');
 	assert.notEqual(state.resultBackground, 'rgba(0, 0, 0, 0)', 'results should sit on a visible surface');
 	assert.equal(state.resultRadius, '8px', 'search cards should use the same restrained radius as listings');

@@ -4,6 +4,24 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Old Reddit's sidebar search is now a compact 38px control with a clean
+  theme-aware icon, an inline destination picker, and a fully themed focus
+  helper instead of the native sprite and orange infobar.
+- Header, sidebar, listing, discussion, and combined-search spacing has been
+  tightened into a denser desktop rhythm while preserving readable targets and
+  the existing content hierarchy.
+
+### Verified
+
+- Signed-in visual audits covered the front page, a focused sidebar search,
+  combined search results, and a discussion page at desktop and 1100px widths;
+  all audited states remained free of horizontal overflow.
+- Browser contracts now pin the search field, action, destination picker,
+  helper surface, and combined-search geometry. All 937 unit tests and 16
+  extension browser tests pass.
+
 ## v0.35.0 - 2026-08-14
 
 ### Changed

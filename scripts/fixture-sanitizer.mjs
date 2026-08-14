@@ -69,6 +69,8 @@ const STATIC_STRUCTURAL_IDS = new Set([
 	'header-bottom-right',
 	'mail',
 	'search',
+	'searchexpando',
+	'search_showmore',
 	'siteTable',
 	'sr-header-area',
 	'sr-more-link',
@@ -625,6 +627,7 @@ export function assertSanitizedFixture(html) {
 				TEXT_PLACEHOLDERS.postTitle,
 				TEXT_PLACEHOLDERS.subreddit,
 				`r/${TEXT_PLACEHOLDERS.subreddit}`,
+				'Fixture control',
 				'Fixture content.',
 				'submitted by',
 			].includes(value)) continue;
