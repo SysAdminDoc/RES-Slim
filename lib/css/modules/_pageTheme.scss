@@ -546,6 +546,26 @@ html.res-pageTheme--refined .side .redditname a {
 	font-weight: 750;
 }
 
+html.res-pageTheme--refined .side .titlebox > .redditname {
+	margin: 0 0 10px;
+}
+
+html.res-pageTheme--refined .side .fancy-toggle-button .option.active {
+	display: inline-flex;
+	box-sizing: border-box;
+	min-height: 28px;
+	padding: 4px 9px;
+	align-items: center;
+	background: color-mix(in srgb, var(--rsm-th-accent) 15%, var(--rsm-th-bg-raise)) !important;
+	border: 1px solid color-mix(in srgb, var(--rsm-th-accent) 45%, var(--rsm-th-border)) !important;
+	border-radius: 4px;
+	color: var(--rsm-th-txt-strong) !important;
+	font-size: 10px;
+	font-weight: 750;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
 html.res-pageTheme--refined .side .titlebox,
 html.res-pageTheme--refined .side .titlebox .redditname,
 html.res-pageTheme--refined .side .titlebox .usertext-body .md,
@@ -554,9 +574,71 @@ html.res-pageTheme--refined .side .linkinfo {
 	border-color: var(--rsm-th-border) !important;
 }
 
+html.res-pageTheme--refined .side .linkinfo {
+	padding: 0;
+	border: 0 !important;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+html.res-pageTheme--refined .side .linkinfo .score {
+	display: block;
+	margin: 3px 0 9px;
+	color: var(--rsm-th-txt-strong);
+	font-size: 18px;
+	line-height: 1.25;
+}
+
+html.res-pageTheme--refined .side .linkinfo .shortlink {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 8px;
+	align-items: center;
+}
+
+html.res-pageTheme--refined .side .linkinfo .shortlink input {
+	width: 100%;
+	min-width: 0;
+}
+
 html.res-pageTheme--refined .side .md {
 	font-size: 13px;
 	line-height: 1.52;
+}
+
+html.res-pageTheme--refined .side .md h1,
+html.res-pageTheme--refined .side .md h2,
+html.res-pageTheme--refined .side .md h3 {
+	margin: 18px 0 8px;
+	color: var(--rsm-th-txt-strong);
+	line-height: 1.3;
+}
+
+html.res-pageTheme--refined .side .md h1,
+html.res-pageTheme--refined .side .md h2 {
+	font-size: 17px;
+}
+
+html.res-pageTheme--refined .side .md h3 {
+	font-size: 14px;
+}
+
+html.res-pageTheme--refined .side .md table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+html.res-pageTheme--refined .side .md th,
+html.res-pageTheme--refined .side .md td {
+	padding: 6px 8px;
+	background: color-mix(in srgb, var(--rsm-th-bg-raise) 58%, transparent);
+	border-color: var(--rsm-th-border);
+}
+
+html.res-pageTheme--refined .side .md hr {
+	height: 1px;
+	background: var(--rsm-th-border);
+	border: 0;
 }
 
 html.res-pageTheme--refined .sidecontentbox .title,
@@ -566,6 +648,53 @@ html.res-pageTheme--refined .side .titlebox .bottom {
 	font-weight: 700;
 	letter-spacing: 0.065em;
 	text-transform: uppercase;
+}
+
+html.res-pageTheme--refined .side .titlebox .bottom {
+	display: flex;
+	margin-top: 12px;
+	padding-top: 10px;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: 4px 10px;
+	border-top: 1px solid var(--rsm-th-border);
+	line-height: 1.4;
+}
+
+html.res-pageTheme--refined .side .titlebox .bottom .age {
+	margin-left: auto;
+}
+
+html.res-pageTheme--refined .sidecontentbox .content {
+	padding: 0;
+	background: transparent !important;
+	border: 0;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+html.res-pageTheme--refined .sidecontentbox .content li {
+	margin: 2px 0;
+}
+
+html.res-pageTheme--refined .sidecontentbox .message-button {
+	margin: 0 0 10px;
+}
+
+html.res-pageTheme--refined .sidecontentbox .message-button .c-btn {
+	display: inline-flex;
+	box-sizing: border-box;
+	min-height: 38px;
+	padding: 0 14px;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+}
+
+html.res-pageTheme--refined .sidecontentbox .content .more {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid var(--rsm-th-border);
 }
 
 // Feed rows become quiet cards without sacrificing old Reddit's density.
@@ -891,6 +1020,47 @@ html.res-pageTheme--refined body.combined-search-page .search-result-group foote
 	font-size: 13px;
 }
 
+// Once a post is open, its listing thumbnail is redundant. Reclaim that width
+// for a larger article title, a comfortable text measure, and centred media.
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link {
+	padding: 14px 18px 13px 8px;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link > .thumbnail {
+	display: none;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .title {
+	font-size: 20px;
+	font-weight: 650;
+	line-height: 1.35;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .tagline {
+	margin-top: 5px;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .expando {
+	box-sizing: border-box;
+	max-width: 100%;
+	margin-top: 12px;
+	overflow: auto;
+	background: var(--rsm-th-bg-raise);
+	border: 1px solid var(--rsm-th-border);
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .media-preview {
+	max-width: 100% !important;
+	margin: 0 auto;
+}
+
+html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .media-preview-content {
+	float: none;
+	width: fit-content;
+	max-width: 100%;
+	margin: 0 auto;
+}
+
 // Discussion pages prioritise reading: the post, composer, and top-level
 // comments are distinct surfaces; nested replies use a light guide instead of
 // multiplying heavy boxes at every depth.
@@ -906,32 +1076,143 @@ html.res-pageTheme--refined .commentarea .menuarea {
 }
 
 html.res-pageTheme--refined .commentarea .menuarea {
-	margin: 0 0 10px;
-	padding: 8px 0;
-	border: 0;
+	display: flex;
+	box-sizing: border-box;
+	min-height: 44px;
+	margin: 0 0 12px;
+	padding: 0 12px;
+	align-items: center;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
 	color: var(--rsm-th-muted);
 }
 
+html.res-pageTheme--refined .commentarea .menuarea .spacer:first-child {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+}
+
+html.res-pageTheme--refined .commentarea .dropdown-title {
+	color: var(--rsm-th-muted);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.055em;
+	text-transform: uppercase;
+}
+
+html.res-pageTheme--refined .commentarea .dropdown .selected {
+	display: inline-flex;
+	box-sizing: border-box;
+	min-height: 30px;
+	padding: 0 10px;
+	align-items: center;
+	background: var(--rsm-th-bg-raise);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 6px;
+	color: var(--rsm-th-txt-strong);
+	font-weight: 650;
+}
+
+html.res-pageTheme--refined .commentarea .drop-choices {
+	display: none;
+	position: absolute;
+	z-index: 101;
+	overflow: hidden;
+	background: var(--rsm-th-bg-elev);
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 6px;
+	box-shadow: 0 12px 30px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined .commentarea .drop-choices.inuse {
+	display: block;
+}
+
+html.res-pageTheme--refined .commentarea .drop-choices a.choice {
+	padding: 8px 12px;
+	color: var(--rsm-th-txt);
+}
+
 html.res-pageTheme--refined .commentarea > .panestack-title {
-	margin: 0 0 10px;
-	padding: 0 0 10px;
-	border-bottom: 1px solid var(--rsm-th-border);
+	display: flex;
+	min-height: 44px;
+	margin: 0;
+	padding: 0 2px;
+	align-items: center;
+	border: 0;
 }
 
 html.res-pageTheme--refined .commentarea > .panestack-title .title {
 	color: var(--rsm-th-txt-strong);
-	font-size: 17px;
+	font-size: 18px;
 	font-weight: 700;
 }
 
 html.res-pageTheme--refined .commentarea > .usertext {
 	box-sizing: border-box;
-	max-width: 820px;
+	width: min(100%, 960px);
+	max-width: none;
 	margin: 0 0 16px;
-	padding: 12px;
+	padding: 14px;
 	background: var(--rsm-th-bg-elev);
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 8px;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .usertext-edit,
+html.res-pageTheme--refined .commentarea > .usertext .usertext-edit > .md {
+	box-sizing: border-box;
+	width: 100%;
+	max-width: none;
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext textarea {
+	display: block;
+	width: 100% !important;
+	min-height: 148px;
+	padding: 12px 14px;
+	font-size: 14px;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .bottom-area {
+	display: flex;
+	min-height: 42px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 10px;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .bottom-area > .help-toggle,
+html.res-pageTheme--refined .commentarea > .usertext .bottom-area > .reddiquette {
+	float: none;
+	margin: 0;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .bottom-area a {
+	display: inline-flex;
+	min-height: 30px;
+	padding: 0 3px;
+	align-items: center;
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .usertext-buttons {
+	margin-left: auto;
+}
+
+html.res-pageTheme--refined .commentarea > .usertext .usertext-buttons .save {
+	min-height: 40px;
+	padding: 8px 18px;
+	background: color-mix(in srgb, var(--rsm-th-accent) 20%, var(--rsm-th-bg-raise));
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 48%, var(--rsm-th-border));
+}
+
+html.res-pageTheme--refined .commentarea > .usertext + .sitetable {
+	margin-top: 14px;
 }
 
 html.res-pageTheme--refined .commentarea > .sitetable > .comment {
@@ -942,6 +1223,13 @@ html.res-pageTheme--refined .commentarea > .sitetable > .comment {
 	border: 1px solid var(--rsm-th-border) !important;
 	border-radius: 8px !important;
 	box-shadow: 0 6px 20px var(--rsm-th-shadow);
+	transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+html.res-pageTheme--refined .commentarea > .sitetable > .comment:hover {
+	background: color-mix(in srgb, var(--rsm-th-bg-raise) 45%, var(--rsm-th-bg-elev)) !important;
+	border-color: color-mix(in srgb, var(--rsm-th-accent) 34%, var(--rsm-th-border)) !important;
+	box-shadow: 0 10px 28px var(--rsm-th-shadow);
 }
 
 html.res-pageTheme--refined .commentarea .comment .comment {
@@ -949,7 +1237,7 @@ html.res-pageTheme--refined .commentarea .comment .comment {
 	padding: 7px 0 0 12px;
 	background: transparent !important;
 	border: 0 !important;
-	border-left: 2px solid var(--rsm-th-border) !important;
+	border-left: 2px solid color-mix(in srgb, var(--rsm-th-accent) 32%, var(--rsm-th-border)) !important;
 	border-radius: 0 !important;
 	box-shadow: none;
 }
@@ -970,9 +1258,24 @@ html.res-pageTheme--refined .comment .tagline {
 	line-height: 1.5;
 }
 
+html.res-pageTheme--refined .comment .entry {
+	padding-right: 8px;
+}
+
 html.res-pageTheme--refined .comment .author {
 	color: var(--rsm-th-link);
 	font-weight: 700;
+}
+
+html.res-pageTheme--refined .comment .author.submitter {
+	padding: 2px 5px;
+	background: color-mix(in srgb, var(--rsm-th-accent) 18%, transparent);
+	border-radius: 4px;
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme--refined .comment .score {
+	font-weight: 600;
 }
 
 html.res-pageTheme--refined .comment .md {
@@ -983,16 +1286,37 @@ html.res-pageTheme--refined .comment .md {
 }
 
 html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .usertext-body .md {
-	margin-top: 8px;
-	padding: 10px 12px;
+	max-width: 92ch;
+	margin-top: 12px;
+	padding: 14px 16px;
 	background: var(--rsm-th-bg-raise) !important;
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 7px;
 	color: var(--rsm-th-txt-strong) !important;
+	font-size: 15px;
+	line-height: 1.65;
 }
 
 html.res-pageTheme--refined .comment .md p {
 	margin: 0.55em 0;
+}
+
+html.res-pageTheme--refined .comment .md blockquote {
+	margin-left: 0;
+	padding-left: 12px;
+	border-left: 2px solid color-mix(in srgb, var(--rsm-th-accent) 45%, var(--rsm-th-border));
+	color: var(--rsm-th-muted);
+}
+
+html.res-pageTheme--refined .comment .md pre,
+html.res-pageTheme--refined .comment .md :not(pre) > code {
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 4px;
+}
+
+html.res-pageTheme--refined .comment .flat-list {
+	margin-top: 5px;
 }
 
 html.res-pageTheme--refined .comment .expand {
@@ -1109,6 +1433,7 @@ html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side:focus-w
 	html.res-pageTheme--refined #siteTable > .thing.link,
 	html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link,
 	html.res-pageTheme--refined body.combined-search-page .search-result,
+	html.res-pageTheme--refined .commentarea > .sitetable > .comment,
 	html.res-pageTheme--refined.res-pageTheme--collapse-sidebar body > .side {
 		transition: none;
 	}

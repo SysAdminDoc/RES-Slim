@@ -1028,6 +1028,7 @@ test('the content script initialises on a real old.reddit document', async t => 
 
 	const html = servableCapture();
 	const page = await context.newPage();
+	await page.setViewportSize({ width: 1440, height: 900 });
 	const pageErrors = [];
 	page.on('pageerror', e => pageErrors.push(String(e)));
 
@@ -1069,11 +1070,36 @@ test('the content script initialises on a real old.reddit document', async t => 
 	assert.ok(thingCount > 0, 'captured thread should contain Things for modules to walk');
 
 	const discussionSurface = await page.evaluate(() => {
+		const post = document.querySelector('body.comments-page > .content > .sitetable > .thing.link');
+		const postTitle = post?.querySelector('.title');
+		const postThumbnail = post?.querySelector(':scope > .thumbnail');
+		const media = post?.querySelector('.media-preview');
+		const mediaContent = media?.querySelector('.media-preview-content');
+		const mediaImage = mediaContent?.querySelector('img');
+		const mediaRect = media?.getBoundingClientRect();
+		const mediaContentRect = mediaContent?.getBoundingClientRect();
+		const toolbar = document.querySelector('.commentarea .menuarea');
+		const composer = document.querySelector('.commentarea > .usertext');
+		const textarea = composer?.querySelector('textarea');
+		const save = composer?.querySelector('button.save');
 		const comment = document.querySelector('.commentarea > .sitetable > .comment');
 		const body = comment?.querySelector('.md');
 		const nested = document.querySelector('.commentarea .comment .comment');
 		const child = nested?.closest('.child');
 		return {
+			postTitleSize: postTitle ? getComputedStyle(postTitle).fontSize : null,
+			postThumbnailDisplay: postThumbnail ? getComputedStyle(postThumbnail).display : null,
+			mediaWidth: mediaRect?.width ?? null,
+			mediaContentWidth: mediaContentRect?.width ?? null,
+			mediaImageWidth: mediaImage?.getBoundingClientRect().width ?? null,
+			mediaLeftSpace: mediaRect && mediaContentRect ? mediaContentRect.left - mediaRect.left : null,
+			mediaRightSpace: mediaRect && mediaContentRect ? mediaRect.right - mediaContentRect.right : null,
+			toolbarHeight: toolbar?.getBoundingClientRect().height ?? null,
+			toolbarBackground: toolbar ? getComputedStyle(toolbar).backgroundColor : null,
+			composerWidth: composer?.getBoundingClientRect().width ?? null,
+			textareaWidth: textarea?.getBoundingClientRect().width ?? null,
+			textareaHeight: textarea?.getBoundingClientRect().height ?? null,
+			saveHeight: save?.getBoundingClientRect().height ?? null,
 			commentRadius: comment ? getComputedStyle(comment).borderRadius : null,
 			commentBackground: comment ? getComputedStyle(comment).backgroundColor : null,
 			bodyBackground: body ? getComputedStyle(body).backgroundColor : null,
@@ -1082,6 +1108,17 @@ test('the content script initialises on a real old.reddit document', async t => 
 			childMarginLeft: child ? getComputedStyle(child).marginLeft : null,
 		};
 	});
+	assert.equal(discussionSurface.postTitleSize, '20px', 'opened posts should promote the article title above listing-card hierarchy');
+	assert.equal(discussionSurface.postThumbnailDisplay, 'none', 'opened posts should not repeat a listing thumbnail beside full content');
+	assert.ok(discussionSurface.mediaImageWidth <= discussionSurface.mediaContentWidth, 'the media wrapper should contain the rendered preview without clipping it');
+	assert.ok(discussionSurface.mediaContentWidth < discussionSurface.mediaWidth, 'centering media must not stretch it across the entire preview surface');
+	assert.ok(Math.abs(discussionSurface.mediaLeftSpace - discussionSurface.mediaRightSpace) <= 1, 'opened media should be visually centred in its preview surface');
+	assert.ok(discussionSurface.toolbarHeight >= 44 && discussionSurface.toolbarHeight <= 56, 'comment sorting should have a stable toolbar-sized target');
+	assert.notEqual(discussionSurface.toolbarBackground, 'rgba(0, 0, 0, 0)', 'comment sorting should read as a deliberate surface');
+	assert.equal(discussionSurface.composerWidth, 960, 'desktop discussions should provide a comfortable writing workspace');
+	assert.ok(discussionSurface.textareaWidth > 900, 'the textarea should fill the composer instead of keeping old Reddit\'s narrow fixed width');
+	assert.ok(discussionSurface.textareaHeight >= 148, 'the composer should expose enough vertical room for a real reply');
+	assert.ok(discussionSurface.saveHeight >= 40, 'the comment action should be an obvious pointer target');
 	assert.equal(discussionSurface.commentRadius, '8px', 'top-level comments should read as distinct discussion cards');
 	assert.notEqual(discussionSurface.commentBackground, 'rgba(0, 0, 0, 0)', 'the top-level comment card needs a visible surface');
 	assert.equal(discussionSurface.bodyBackground, 'rgba(0, 0, 0, 0)', 'comment prose should not sit inside a second dark rectangle');
