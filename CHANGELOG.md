@@ -4,6 +4,34 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.35.0 - 2026-08-14
+
+### Changed
+
+- Opened old-Reddit posts now use an article hierarchy instead of repeating the
+  listing layout: titles are larger, duplicate thumbnails are removed, text
+  posts use a comfortable reader measure, and full media previews are centred
+  without being stretched.
+- Discussion pages now provide a surfaced sort toolbar, a responsive 960px
+  composer with a full-width textarea and clearer save action, calmer top-level
+  comment cards, accent-tinted nested depth guides, highlighted submitter
+  identity, and themed quote/code treatment.
+- Community rails now use deliberate join/leave controls, cleaner post metadata,
+  stronger sidebar headings and tables, and simplified moderator cards while
+  preserving subreddit-authored content and old Reddit's desktop density.
+
+### Verified
+
+- Signed-in live audits covered r/codex listings, a long self-post, nested
+  comments, an expanded media post, and r/technology's custom sidebar at
+  1440x900, plus the discussion layout at 1100x900. All audited states remained
+  free of horizontal overflow; the sort menu opened and closed normally and
+  only the active join/leave action remained visible.
+- The sanitized discussion fixture now carries real sort, composer, and media
+  structure. Chromium contracts pin opened-post hierarchy, preserved and
+  centred media, composer/action geometry, sort treatment, and nested depth;
+  all 937 unit tests and 16 extension browser tests pass.
+
 ## v0.34.0 - 2026-08-13
 
 ### Changed

@@ -1,6 +1,6 @@
 # RES-Slim
 
-![Version](https://img.shields.io/badge/version-0.34.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
+![Version](https://img.shields.io/badge/version-0.35.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
 
 A stripped-down personal fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (forked from upstream v5.24.8), targeting **old.reddit.com** on desktop. Built for one person's use and published as-is — there is no support commitment and no release cadence.
 
@@ -12,7 +12,7 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Media tweaks**: `showImages` inline expando engine plus all 73 host handlers (imgur, youtube, reddit-native, Mastodon, Threads, etc.).
 
-**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, a focused combined-search workspace, consistent controls, visible keyboard focus, and a debloated sidebar. Search uses a centered desktop measure, aligned query and result cards, themed excerpts and highlights, and deliberate empty states. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
+**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, a focused combined-search workspace, consistent controls, visible keyboard focus, and a debloated sidebar. Open posts gain article-scale titles, wider text and centred media; discussions gain a structured sort toolbar, full-width composer, clearer author/depth states, and polished community and moderator cards. Search uses a centered desktop measure, aligned query and result cards, themed excerpts and highlights, and deliberate empty states. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
 
 **Browsing**: `hideAll` — a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
@@ -51,7 +51,8 @@ yarn build      # production build + zip -> dist/zip/
 ad rules block a real browser request, all settings states render, promoted
 records stay hidden across asynchronous insertion, and the content script
 initialises on a served old.reddit document. It also checks the default refined
-Graphite layout, keyboard focus treatment, feed hierarchy, and discussion-card
+Graphite layout, keyboard focus treatment, feed hierarchy, opened-post and
+media geometry, the discussion composer and sort toolbar, and nested-comment
 surfaces. It needs no physical display or
 existing browser profile; one CSP reachability check requires outbound Reddit access,
 while the product-behavior fixtures are served locally. Screenshots land in
