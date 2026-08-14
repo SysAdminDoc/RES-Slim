@@ -4,6 +4,8 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.35.1 - 2026-08-14
+
 ### Changed
 
 - Old Reddit's sidebar search is now a compact 38px control with a clean
