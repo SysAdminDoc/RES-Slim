@@ -80,8 +80,7 @@
     "scripting"
   ],
   "optional_permissions": [
-    "downloads",
-    "geolocation"
+    "downloads"
   ],
   "host_permissions": [
     "https://*.reddit.com/*"

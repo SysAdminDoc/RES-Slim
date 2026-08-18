@@ -132,7 +132,7 @@ test('a budgeted file that is missing fails the build', () => {
 test('the Firefox build has its own add-on ID', () => {
 	// Shipping upstream RES's AMO ID makes the fork collide with an installed RES
 	// on Firefox, so the two cannot be side-loaded together.
-	for (const file of ['firefox/manifest.json', 'firefox/beta/manifest.json']) {
+	for (const file of ['firefox/manifest.json']) {
 		const manifest = JSON.parse(read(file));
 		const { id } = manifest.browser_specific_settings.gecko;
 		assert.notEqual(id, 'jid1-xUfzOsOFlzSOXg@jetpack', `${file} still ships upstream RES's add-on ID`);
@@ -144,7 +144,7 @@ test('both Firefox manifests declare that no data is collected', () => {
 	// AMO has auto-rejected submissions without this key since 2025-11-03. A
 	// no-telemetry extension is the trivial case, so its absence was pure
 	// paperwork blocking any Firefox distribution.
-	for (const file of ['firefox/manifest.json', 'firefox/beta/manifest.json']) {
+	for (const file of ['firefox/manifest.json']) {
 		const manifest = JSON.parse(read(file));
 		assert.deepEqual(
 			manifest.browser_specific_settings.gecko.data_collection_permissions,

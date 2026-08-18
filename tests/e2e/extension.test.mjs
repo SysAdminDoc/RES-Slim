@@ -1508,3 +1508,40 @@ test('the in-page UI keeps its edges in forced colours', async t => {
 	assert.equal(measured.selected.color, measured.highlight, 'a selected entry must be marked with Highlight, not a forced author hue');
 	assert.notEqual(measured.selected.width, '0px');
 });
+
+test('Escape inside a text field clears the field rather than closing the console', async t => {
+	// `document.body.addEventListener('keyup', handleEscapeKey)` had no target
+	// guard, so the keystroke that normally means "abandon what I am typing" threw
+	// away the whole workspace — including anything staged but unsaved.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	const search = page.locator('#RESConsoleContainer input[type="search"], #RESConsoleContainer input[type="text"]').first();
+	await search.waitFor({ timeout: 30000 });
+	await search.fill('night');
+	await page.keyboard.press('Escape');
+
+	assert.equal(await search.inputValue(), '', 'the first Escape should clear the field');
+	assert.ok(await page.locator('#RESConsoleContainer').isVisible(), 'and must not take the console with it');
+
+	// The console's own search field also drops focus on Escape, so by now the
+	// keystroke is no longer landing in an input — and from there Escape must
+	// still close, or the guard would have turned a working dismissal into a dead
+	// key. On the standalone options page closing means the page itself goes
+	// away, so either outcome counts.
+	// Every call after this can race the page going away, and a closed page *is*
+	// the pass here rather than an error to guard against.
+	let stillOpen;
+	try {
+		await page.keyboard.press('Escape');
+		await page.waitForTimeout(300);
+		stillOpen = await page.locator('#RESConsoleContainer').isVisible();
+	} catch (e) {
+		stillOpen = false;
+	}
+	assert.equal(stillOpen, false, 'Escape outside a text field must still close the console');
+});

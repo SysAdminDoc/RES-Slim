@@ -78,6 +78,34 @@ test('every optional host permission is reachable from code', () => {
 	);
 });
 
+test('every optional API permission is requested by some code path', () => {
+	// The host half of this was already covered; the API half was not, and
+	// `geolocation` sat in both shipped manifests for the life of the fork
+	// without a single caller — its only other occurrence in the tree was a
+	// human-readable label in the permission prompt. Dead surface on the trust
+	// prompt of an extension whose whole pitch is that it collects nothing.
+	const isApiPermission = entry => !isOrigin(entry) && entry !== '<all_urls>';
+	const chromeOptional = (chrome.optional_permissions || []).filter(isApiPermission);
+	const firefoxOptional = (firefox.optional_permissions || []).filter(isApiPermission);
+
+	assert.deepEqual(chromeOptional.slice().sort(), firefoxOptional.slice().sort(), 'the two manifests must ask for the same API permissions');
+	assert.ok(chromeOptional.length > 0, 'if this list empties, delete this test rather than leaving it vacuous');
+
+	// Whitespace-stripped rather than a regex: the pattern to find is a literal
+	// call shape, and escaping it correctly is exactly the sort of detail that
+	// silently turns a contract into one that matches nothing.
+	const compact = allSource.replace(/\s+/g, '');
+	const unused = chromeOptional.filter(name =>
+		!compact.includes(`Permissions.request(['${name}'`) &&
+		!compact.includes(`Permissions.has(['${name}'`));
+
+	assert.deepEqual(
+		unused,
+		[],
+		'an optional permission nothing ever requests is an over-request the user sees and no feature uses',
+	);
+});
+
 test('the matchable fragment really is what has to appear in source', () => {
 	// Guard for the test above: if `matchableFragment` returned something trivial
 	// (an empty string, or a substring present in every file), the check would pass

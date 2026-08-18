@@ -10,7 +10,6 @@ const readJson = file => JSON.parse(read(file));
 const manifests = [
 	'chrome/manifest.json',
 	'firefox/manifest.json',
-	'firefox/beta/manifest.json',
 ];
 
 test('both supported browsers enable the packaged Reddit ad-block ruleset', () => {

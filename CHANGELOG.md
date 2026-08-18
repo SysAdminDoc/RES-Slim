@@ -4,8 +4,25 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Removed
+
+- The `geolocation` optional permission. It was declared in both manifests and
+  requested by nothing — its only other appearance in the tree was a label in the
+  permission prompt. Dead surface on the trust prompt of an extension whose whole
+  pitch is that it collects nothing. A contract now fails on any optional API
+  permission no code path asks for.
+- `firefox/beta/`. Nothing built it, so it was a manifest only the test suite
+  read, and it had drifted: it declared `cookies`, `identity` and `history` plus a
+  Google Drive host the shipped manifests do not, set `all_frames: true`, and
+  carried a `__browser_mobile_min_version__` token the build never substitutes —
+  so building it would have shipped that literal.
+
 ### Fixed
 
+- Escape inside a text field no longer closes the settings console. The handler
+  was on `document.body` with no target guard, so clearing the search box or a
+  mistyped option value threw away the whole workspace, staged changes included,
+  for the keystroke that normally undoes one field.
 - Bulk actions are survivable. Two features could lose work and neither could be
   stopped once started.
   - `commentShredder` ran inside a notification that closed after fifteen
