@@ -2,6 +2,26 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Removed
+
+- The twenty-two orphaned SCSS partials, 1,659 lines that no entry point has
+  imported since v0.1.0 stripped the upstream modules they styled. Nothing
+  compiled them, so `res.css`, `options.css` and `prompt.css` are byte-identical
+  without them; what they did affect was every reading of this tree, the z-index
+  audit being the measured case — five of twelve tokens looked live and were
+  referenced only from stylesheets that never shipped. Re-porting one of those
+  features copies its implementation out of upstream's GPL-3.0 tree with its
+  stylesheet beside it, so nothing here is lost.
+
+### Added
+
+- `scss-reachability-contract` walks the import graph from the three stylesheet
+  entry points `build.js` compiles and fails on any `.scss` file it cannot
+  reach, so the orphan class cannot come back. A commented-out `@import` counts
+  as absent, which is the direction the check must not be wrong in.
+
 ## v0.39.0 - 2026-08-18
 
 ### Fixed
