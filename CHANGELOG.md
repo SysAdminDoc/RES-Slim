@@ -4,6 +4,19 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Importing a settings file written by a newer build is refused instead of
+  applied. `migrate.js` is a 937-line ladder that only runs forward, so a layout
+  this build has never seen cannot be interpreted — only written over a working
+  configuration. The message names both format versions, says to update, and
+  says that nothing was changed. A `formatVersion` that is present but not a
+  whole number is treated as corruption rather than coerced to the current one;
+  an absent one still reads as the current layout, since that is what files
+  written before the field existed are. An import from a different build now
+  says so in the result toast, which is what explains an unfamiliar module
+  appearing in the diff.
+
 ### Changed
 
 - The e2e suite no longer touches the network. One outbound request remained —

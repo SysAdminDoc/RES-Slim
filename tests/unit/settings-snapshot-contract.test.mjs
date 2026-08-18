@@ -52,6 +52,7 @@ globalThis.__resSlimEnvStub = environmentStub;
 const {
 	buildSnapshot, parseSnapshot, applySnapshot, serializeSnapshot, InvalidSnapshotError, SNAPSHOT_APP,
 	diffSnapshots, describeDiff, applySnapshotGuarded, loadRestorePoint, revertToRestorePoint, clearRestorePoint,
+	SNAPSHOT_FORMAT_VERSION, MIN_SUPPORTED_FORMAT_VERSION, describeSnapshotOrigin,
 } = await import(pathToFileURL(modulePath).href);
 
 const snap = modules => ({ app: SNAPSHOT_APP, appVersion: '0.0.0', formatVersion: 1, exportedAt: '', modules });
@@ -230,4 +231,97 @@ test('a corrupt restore point does not break the console', async () => {
 	await clearRestorePoint();
 	wrapped.set('RES.settingsRestorePoint', { app: 'some-other-extension' });
 	assert.equal(await loadRestorePoint(), null);
+});
+
+// --- format version ----------------------------------------------------------
+//
+// Importing is the one irreversible thing a settings page can do, and a file
+// from a *newer* build is the case where doing it is worse than refusing:
+// `migrate.js` is a 937-line ladder that only runs forward, so a layout this
+// build has never seen cannot be interpreted, only written over a working
+// configuration and hoped about.
+
+function withFormat(formatVersion) {
+	const payload = { app: SNAPSHOT_APP, appVersion: '0.0.0', exportedAt: '', modules: { pageTheme: { theme: { value: 'nord' } } } };
+	if (formatVersion !== undefined) payload.formatVersion = formatVersion;
+	return JSON.stringify(payload);
+}
+
+test('a snapshot from a newer build is refused, and says what to do about it', () => {
+	const attempt = () => parseSnapshot(withFormat(SNAPSHOT_FORMAT_VERSION + 1));
+	assert.throws(attempt, InvalidSnapshotError);
+
+	let message = '';
+	try { attempt(); } catch (e) { message = e.message; }
+	assert.match(message, /newer version of RES-Slim/);
+	assert.match(message, new RegExp(`file format ${SNAPSHOT_FORMAT_VERSION + 1}`), 'name the version in the file');
+	assert.match(message, new RegExp(`this build reads ${SNAPSHOT_FORMAT_VERSION}`), 'and the one this build understands');
+	assert.match(message, /Update RES-Slim/, 'an error the user can act on beats an accurate one they cannot');
+	assert.match(message, /Nothing was changed/, 'and the first thing they need to know is that their settings survived');
+
+	// Far-future too, not just off-by-one.
+	assert.throws(() => parseSnapshot(withFormat(SNAPSHOT_FORMAT_VERSION + 99)), InvalidSnapshotError);
+});
+
+test('a snapshot at the current version imports unchanged', () => {
+	const parsed = parseSnapshot(withFormat(SNAPSHOT_FORMAT_VERSION));
+	assert.equal(parsed.formatVersion, SNAPSHOT_FORMAT_VERSION);
+	assert.deepEqual(parsed.modules.pageTheme, { theme: { value: 'nord' } });
+});
+
+test('a file written before the field existed is read as the current layout', () => {
+	// Absent means "written before formatVersion was added", which is the current
+	// layout by definition — refusing those would break every export taken before
+	// the field shipped.
+	const parsed = parseSnapshot(withFormat(undefined));
+	assert.equal(parsed.formatVersion, SNAPSHOT_FORMAT_VERSION);
+	assert.deepEqual(parsed.modules.pageTheme, { theme: { value: 'nord' } });
+});
+
+test('a format version that is present but not a whole number is a corrupt file', () => {
+	// Present-but-wrong is refused rather than coerced. Reading `"2"` as 1 is the
+	// same mistake as accepting a newer file, in a smaller font.
+	for (const bad of ['"1"', '1.5', 'true', 'null', '"abc"', '[]', '{}']) {
+		const payload = `{"app": "${SNAPSHOT_APP}", "modules": {}, "formatVersion": ${bad}}`;
+		if (bad === 'null') {
+			// `null` is indistinguishable from absent in JSON round-trips, so it is
+			// treated as absent rather than as corruption.
+			assert.equal(parseSnapshot(payload).formatVersion, SNAPSHOT_FORMAT_VERSION);
+			continue;
+		}
+		assert.throws(() => parseSnapshot(payload), InvalidSnapshotError, `formatVersion ${bad} must not be coerced`);
+	}
+});
+
+test('a format older than this build still reads is refused rather than guessed at', () => {
+	assert.equal(MIN_SUPPORTED_FORMAT_VERSION, 1, 'only format 1 has ever shipped');
+	assert.throws(() => parseSnapshot(withFormat(0)), InvalidSnapshotError);
+	assert.throws(() => parseSnapshot(withFormat(-1)), InvalidSnapshotError);
+
+	let message = '';
+	try { parseSnapshot(withFormat(0)); } catch (e) { message = e.message; }
+	assert.match(message, /no longer reads/);
+	assert.match(message, /Nothing was changed/);
+});
+
+test('a refused import never reaches storage', async () => {
+	// The message says "nothing was changed", so nothing may be changed. parse
+	// happens before apply in the console, and this pins that ordering from the
+	// storage side rather than from the source.
+	memoryStorage.clear();
+	memoryStorage.set('pageTheme', { theme: { value: 'graphite' } });
+
+	assert.throws(() => parseSnapshot(withFormat(SNAPSHOT_FORMAT_VERSION + 1)), InvalidSnapshotError);
+	assert.deepEqual(memoryStorage.get('pageTheme'), { theme: { value: 'graphite' } }, 'the working configuration has to survive a refused import');
+});
+
+test('an import from a different build says so, and an identical one stays quiet', () => {
+	const older = { app: SNAPSHOT_APP, appVersion: '0.31.0', formatVersion: SNAPSHOT_FORMAT_VERSION, exportedAt: '', modules: {} };
+	assert.equal(describeSnapshotOrigin(older, '0.39.0'), 'exported by v0.31.0');
+
+	const same = { ...older, appVersion: '0.39.0' };
+	assert.equal(describeSnapshotOrigin(same, '0.39.0'), null, 'a note that always appears is furniture');
+
+	const unknown = { ...older, appVersion: '' };
+	assert.equal(describeSnapshotOrigin(unknown, '0.39.0'), null, 'nothing to say about a version the file did not record');
 });
