@@ -1589,3 +1589,85 @@ test('a vendored library injects into the extension world it is used from', asyn
 	assert.equal(probe.after, 'function', 'loadScript must define JSZip in the world the content script runs in');
 	assert.equal(probe.main, 'undefined', 'and must not leak it into the page');
 });
+
+test('the mandatory-login overlay is dismissed only when there is a page behind it', async t => {
+	// The unit contract supplies `getBoundingClientRect` by hand, because jsdom
+	// reports zeroes for every geometry and `position: static` for everything —
+	// which would make the coverage predicate vacuously false for every element on
+	// the page, including a real wall. The whole mechanism is geometric, so it has
+	// to be measured somewhere real.
+	//
+	// The fixture is synthetic on purpose. Reddit's wall rolled out geographically
+	// and gradually from 2026-06-30 and this repo has no capture of a walled page,
+	// so the module matches on shape rather than on class names; what is asserted
+	// here is that shape, under a browser that actually does layout.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// From the service worker: the page's main world has no `chrome.storage`.
+	// `RES.modulePrefs` holds enabled state; the options themselves live under
+	// `RESoptions.<moduleID>`, and setting the first without the second leaves the
+	// opt-in exactly as off as it ships.
+	await worker.evaluate(() => new Promise(resolve => chrome.storage.local.set({
+		'RES.modulePrefs': { frictionRemovers: true },
+		'RESoptions.frictionRemovers': { dismissLoginWall: { value: true } },
+	}, resolve)));
+
+	const wall = `
+		<div class="SomeRolloutClassName" style="position: fixed; inset: 0; background: #101010; z-index: 2147483647;">
+			<h2 style="color: #fff">Log in to continue</h2>
+		</div>
+		<style>html, body { overflow: hidden !important; }</style>`;
+
+	// The empty case is not the capture with its posts deleted — it is what reddit
+	// actually sends when it walls a page: the chrome, and nothing else.
+	const EMPTY_WALLED = `<!doctype html><html><body class="listing-page">
+		<div id="header" role="banner"><div id="header-bottom-left"><ul class="tabmenu"><li class="selected"><a href="#">hot</a></li></ul></div></div>
+		<div class="content" role="main"><div id="siteTable"></div></div>
+		${wall}
+	</body></html>`;
+
+	async function measure(body) {
+		const html = body === 'empty' ?
+			EMPTY_WALLED :
+			servableCapture(FRONT_CAPTURE).replace('</body>', `${wall}</body>`);
+
+		const tab = await context.newPage();
+		await tab.route('**/*', route => {
+			const url = route.request().url();
+			if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+				return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+			}
+			return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+		});
+		await tab.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+		await tab.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await tab.waitForTimeout(500);
+
+		const state = await tab.evaluate(() => {
+			const overlay = document.querySelector('.SomeRolloutClassName');
+			const post = document.querySelector('#siteTable .thing');
+			return {
+				overlayHidden: !overlay || getComputedStyle(overlay).display === 'none',
+				unwalled: document.documentElement.classList.contains('rsm-friction-unwalled'),
+				bodyOverflow: getComputedStyle(document.body).overflow,
+				postVisible: !!post && !!post.getBoundingClientRect().height,
+				consoleStillThere: !!document.querySelector('#header'),
+			};
+		});
+		await tab.close();
+		return state;
+	}
+
+	const walled = await measure('full');
+	assert.equal(walled.overlayHidden, true, 'a full-viewport fixed overlay over a real page is the thing this feature exists for');
+	assert.equal(walled.unwalled, true);
+	assert.notEqual(walled.bodyOverflow, 'hidden', 'restoring scroll is half the feature — an unblocked page you cannot scroll is still unusable');
+	assert.equal(walled.postVisible, true, 'and the content it was covering must be what is left');
+	assert.equal(walled.consoleStillThere, true, 'the page chrome is not an overlay');
+
+	const empty = await measure('empty');
+	assert.equal(empty.postVisible, false, 'the empty fixture has to actually be empty, or the next two assertions pass for the wrong reason');
+	assert.equal(empty.overlayHidden, false, 'with nothing behind it, hiding the wall would leave a blank page that looks like success');
+	assert.equal(empty.unwalled, false);
+});

@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- `frictionRemovers` can dismiss reddit's mandatory-login interstitial, off by
+  default. It matches on shape rather than on class names — a nearly
+  full-viewport fixed or absolutely positioned element that is not ours, plus
+  the scroll lock on the document — because the wall rolled out geographically
+  and gradually from 2026-06-30, so there is no single DOM to write a selector
+  list against. If reddit sent no content behind the overlay there is nothing to
+  uncover, and hiding it would leave a blank page that looks like success; that
+  case records a diagnostic entry naming the page instead.
+
 - A media-host penalty box. RES-Slim ships 74 media host handlers and had no
   shared failure policy: `linkScanner` logged each failure, destroyed the
   expando and moved on with no memory that it had just done the same for the
