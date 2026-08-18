@@ -16,6 +16,7 @@ html.res-pageTheme {
 	--rsm-th-link: #91c7ff;
 	--rsm-th-muted: #98a6b5;
 	--rsm-th-border: #253243;
+	--rsm-th-control-border: #5b6c7e;
 	--rsm-th-shadow: rgba(0, 0, 0, 0.32);
 	--rsm-th-accent: #82bfff;
 
@@ -41,6 +42,7 @@ html.res-pageTheme--oled {
 	--rsm-th-link: #ccc;
 	--rsm-th-muted: #a0a7af;
 	--rsm-th-border: rgba(255, 255, 255, 0.09);
+	--rsm-th-control-border: #606872;
 }
 
 html.res-pageTheme--graphite {
@@ -52,6 +54,7 @@ html.res-pageTheme--graphite {
 	--rsm-th-link: #91c7ff;
 	--rsm-th-muted: #98a6b5;
 	--rsm-th-border: #253243;
+	--rsm-th-control-border: #5b6c7e;
 }
 
 html.res-pageTheme--midnight {
@@ -63,6 +66,7 @@ html.res-pageTheme--midnight {
 	--rsm-th-link: #cdddec;
 	--rsm-th-muted: #94a9bd;
 	--rsm-th-border: rgba(180, 205, 230, 0.12);
+	--rsm-th-control-border: #58738e;
 }
 
 html.res-pageTheme--catppuccin {
@@ -74,6 +78,7 @@ html.res-pageTheme--catppuccin {
 	--rsm-th-link: #b4befe;
 	--rsm-th-muted: #b0b8d7;
 	--rsm-th-border: rgba(205, 214, 244, 0.12);
+	--rsm-th-control-border: #6c7bb4;
 }
 
 html.res-pageTheme--tokyonight {
@@ -85,6 +90,7 @@ html.res-pageTheme--tokyonight {
 	--rsm-th-link: #9aa5ce;
 	--rsm-th-muted: #aab4df;
 	--rsm-th-border: rgba(192, 202, 245, 0.12);
+	--rsm-th-control-border: #697bc7;
 }
 
 html.res-pageTheme--rosepine {
@@ -96,6 +102,7 @@ html.res-pageTheme--rosepine {
 	--rsm-th-link: #c4a7e7;
 	--rsm-th-muted: #b6b0d2;
 	--rsm-th-border: rgba(224, 222, 244, 0.12);
+	--rsm-th-control-border: #7266a8;
 }
 
 // Nord: polar night for the surfaces, snow storm for text, frost for links.
@@ -108,6 +115,7 @@ html.res-pageTheme--nord {
 	--rsm-th-link: #88c0d0;
 	--rsm-th-muted: #b7c1d3;
 	--rsm-th-border: rgba(216, 222, 233, 0.12);
+	--rsm-th-control-border: #8495b4;
 }
 
 html.res-pageTheme--dracula {
@@ -119,6 +127,7 @@ html.res-pageTheme--dracula {
 	--rsm-th-link: #bd93f9;
 	--rsm-th-muted: #c0c0bb;
 	--rsm-th-border: rgba(248, 248, 242, 0.12);
+	--rsm-th-control-border: #86867c;
 }
 
 html.res-pageTheme--gruvbox {
@@ -130,6 +139,7 @@ html.res-pageTheme--gruvbox {
 	--rsm-th-link: #8ec07c;
 	--rsm-th-muted: #c4b696;
 	--rsm-th-border: rgba(235, 219, 178, 0.12);
+	--rsm-th-control-border: #958153;
 }
 
 // Solarized deviates from canon, deliberately. Its own spec targets a lower
@@ -147,6 +157,7 @@ html.res-pageTheme--solarized {
 	--rsm-th-link: #64bab4;
 	--rsm-th-muted: #b0bcbc;
 	--rsm-th-border: rgba(147, 161, 161, 0.12);
+	--rsm-th-control-border: #798d8d;
 }
 
 // ---- Base surface ---------------------------------------------------------
@@ -200,7 +211,7 @@ html.res-pageTheme .roundfield textarea,
 html.res-pageTheme #compose-message .roundfield select {
 	background-color: var(--rsm-th-bg-raise) !important;
 	color: var(--rsm-th-txt-strong) !important;
-	border-color: var(--rsm-th-border) !important;
+	border-color: var(--rsm-th-control-border) !important;
 }
 
 // ---- Links & titles -------------------------------------------------------
@@ -518,7 +529,7 @@ html.res-pageTheme--refined .side #search input[type="text"] {
 	width: 100%;
 	height: 38px;
 	padding: 0 42px 0 12px;
-	border: 1px solid var(--rsm-th-border) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
 	border-radius: 7px;
 	box-shadow: 0 6px 20px var(--rsm-th-shadow);
 	font-size: 13px;
@@ -563,7 +574,7 @@ html.res-pageTheme--refined .side #search select.rsm-search-dispatcher {
 	margin: 0;
 	padding: 3px 22px 3px 8px;
 	background: var(--rsm-th-bg-elev) !important;
-	border: 1px solid var(--rsm-th-border) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
 	border-radius: 5px;
 	color: var(--rsm-th-txt) !important;
 	font-size: 10px;
@@ -578,7 +589,7 @@ html.res-pageTheme--refined .side #searchexpando {
 	margin: 6px 0 0;
 	padding: 7px 9px 6px;
 	background: var(--rsm-th-bg-elev) !important;
-	border: 1px solid var(--rsm-th-border) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
 	border-radius: 7px;
 	box-shadow: 0 8px 22px var(--rsm-th-shadow);
 	color: var(--rsm-th-txt) !important;

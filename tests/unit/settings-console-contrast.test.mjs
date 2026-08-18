@@ -148,6 +148,88 @@ for (const theme of THEMES) {
 	});
 }
 
+// Every surface `--options-text-soft` can actually land on. It is the
+// placeholder colour, the disabled-control colour, and the hint colour under
+// about thirty labels, so "the primary surfaces" is not the right scope for it —
+// the failures were on the surfaces the existing suites never reached.
+const SURFACE_TOKENS = [
+	'--options-bg',
+	'--options-panel',
+	'--options-panel-alt',
+	'--options-panel-raised',
+	'--options-field',
+	'--options-field-hover',
+];
+
+for (const theme of THEMES) {
+	test(`${theme}: soft text meets WCAG AA on every surface it lands on (>= 4.5:1)`, () => {
+		// Placeholders and hints are body-size text, so 4.5:1 — not the 3:1 the
+		// muted suite above uses, and not only on bg and panel. Measured before the
+		// fix: rosepine 2.94, tokyonight 3.56, catppuccin 3.77, and graphite,
+		// midnight and ember all sitting a hundredth or two under the line.
+		const block = extractBlock(theme);
+		const soft = parseColor(readToken(block, '--options-text-soft'));
+
+		for (const name of SURFACE_TOKENS) {
+			const ratio = contrast(soft, parseColor(readToken(block, name)));
+			assert.ok(ratio >= TEXT_AA, `${theme}: --options-text-soft on ${name} = ${ratio.toFixed(2)}:1 (needs >= ${TEXT_AA})`);
+		}
+	});
+
+	test(`${theme}: control boundaries meet WCAG 1.4.11 (>= 3:1)`, () => {
+		// 1.4.11 covers "visual information required to identify user interface
+		// components". A text field's boundary is exactly that. `--options-border`
+		// measured 1.09-1.50 here, so `--options-control-border` exists to carry
+		// the controls while `--options-border` stays decorative.
+		const block = extractBlock(theme);
+		const border = parseColor(readToken(block, '--options-control-border'));
+
+		for (const name of SURFACE_TOKENS) {
+			const surface = parseColor(readToken(block, name));
+			const ratio = contrast(flattenOver(border, surface), surface);
+			assert.ok(ratio >= UI_AA, `${theme}: --options-control-border on ${name} = ${ratio.toFixed(2)}:1 (needs >= ${UI_AA})`);
+		}
+	});
+}
+
+test('no disabled state is expressed as an opacity multiplier', () => {
+	// This is the assertion that would have caught the original defect. Three
+	// rules faded a control with `opacity`, which composites the text *and* the
+	// boundary toward the background: `--options-text-soft` at .72 measured
+	// 2.37-3.40:1, under AA in all nine themes and under 3:1 in four. A disabled
+	// control still has to be readable — WCAG's incidental-content exemption is
+	// about not blocking a design, not a licence to make state unreadable.
+	const offenders = [];
+	const lines = styles.split(/\r?\n/);
+
+	for (let i = 0; i < lines.length; i++) {
+		// Comments are excluded, or this fails on its own explanation — the same
+		// trap `codeOnly()` exists for elsewhere in the suite.
+		if (/^\s*\/\//.test(lines[i])) continue;
+		if (!/opacity:\s*\.?\d/.test(lines[i])) continue;
+		// Look back for the selector this declaration belongs to.
+		const context = lines.slice(Math.max(0, i - 12), i + 1).join('\n');
+		if (!/:disabled|\[disabled\]|\.is-disabled|aria-disabled/.test(context)) continue;
+		// A transition *listing* opacity is not a disabled treatment.
+		if (/transition/.test(lines[i])) continue;
+		offenders.push(`${i + 1}: ${lines[i].trim()}`);
+	}
+
+	assert.deepEqual(offenders, [], 'express disabled with an explicit colour and surface, not by fading the control');
+});
+
+test('the contrast helper parses the rgba() borders the palettes actually use', () => {
+	// Guard for the suites above. `page-theme-contrast-contract`'s own helper
+	// asserts a hex match and throws on anything else, which is why eight of ten
+	// page palettes had their borders silently uncovered — a parser that cannot
+	// read the value cannot fail on it either.
+	assert.deepEqual(parseColor('#abcdef'), { r: 0xab, g: 0xcd, b: 0xef, a: 1 });
+	assert.deepEqual(parseColor('#abc'), { r: 0xaa, g: 0xbb, b: 0xcc, a: 1 });
+	assert.deepEqual(parseColor('rgba(255, 255, 255, 0.09)'), { r: 255, g: 255, b: 255, a: 0.09 });
+	assert.deepEqual(parseColor('rgb(0 0 0 / 28%)'), { r: 0, g: 0, b: 0, a: 0.28 });
+	assert.throws(() => parseColor('color-mix(in srgb, red 50%, blue)'), /Unsupported color value/);
+});
+
 test('accent tints remain legible when flattened over the theme background', () => {
 	const root = extractBlock('oled');
 	for (const theme of THEMES) {

@@ -4,6 +4,31 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed (accessibility)
+
+- Placeholder and hint text now clears 4.5:1 on every surface it lands on, in all
+  nine console themes. `--options-text-soft` was measured only against the page
+  background and panel before, and the failures were on the surfaces nothing
+  reached: Rosé Pine 2.94:1, Tokyo Night 3.56:1, Catppuccin 3.77:1, with Graphite,
+  Midnight and Ember all a hundredth or two under the line.
+- Disabled controls are no longer faded with `opacity`. A `.72` multiplier
+  composited the already-soft text down to 2.37-3.40:1 — under AA in all nine
+  themes and under 3:1 in four — and faded the boundary that identifies the
+  control along with it. Disabled state is now carried by an explicit colour,
+  surface and dashed boundary, which also survives Windows High Contrast.
+- Form controls have a visible edge. Text fields, selects, buttons, toggle tracks
+  and radio chips drew their boundary from `--options-border`, which measured
+  1.09-1.50:1 against the surfaces behind it in every theme — below the 3:1 WCAG
+  1.4.11 asks of anything that identifies a component. A new
+  `--options-control-border` carries controls at 3:1 while `--options-border`
+  stays where it is for panel dividers and card outlines, which are decoration.
+  The old-Reddit theme gains the same split as `--rsm-th-control-border`, where
+  the composited border measured 1.17-1.48:1 across all ten palettes.
+- The page-theme contrast contract can now read the borders it is supposed to
+  check. Its colour helper accepted hex only and threw on anything else, and eight
+  of the ten palettes write `--rsm-th-border` as `rgba()` — so those borders were
+  never measured, and the gap read as coverage.
+
 ### Added
 
 - The accent colour now has a contrast floor. It is a free colour picker, so

@@ -9,6 +9,16 @@
 	--options-field-hover: #0f151e;
 	--options-border: #1d2632;
 	--options-border-strong: #2f3c4d;
+
+	// The boundary of an actual control — text field, select, button, toggle
+	// track. WCAG 1.4.11 wants 3:1 for anything that identifies a component, and
+	// `--options-border` measured 1.09-1.50 against the surfaces it sits on in
+	// every one of the nine themes, so a field was distinguishable from the panel
+	// behind it only if you already knew where it was. `--options-border` stays
+	// where it is for panel dividers and card outlines, which are decoration and
+	// exempt; raising those too would turn the console into a wireframe.
+	// `settings-console-contrast` holds this token to 3:1 per theme.
+	--options-control-border: #4f6581;
 	--options-text: #f2f7ff;
 	--options-text-muted: #a6b3c2;
 	--options-text-soft: #7d8a99;
@@ -57,6 +67,7 @@ html[data-settings-theme='paper'] {
 	--options-field-hover: #eef1f5;
 	--options-border: #d7dce4;
 	--options-border-strong: #98a4b5;
+	--options-control-border: #7d8ca2;
 	--options-text: #13213b;
 	--options-text-muted: #44546c;
 	--options-text-soft: #5f6f85;
@@ -78,9 +89,10 @@ html[data-settings-theme='graphite'] {
 	--options-field-hover: #161c24;
 	--options-border: #27303a;
 	--options-border-strong: #36404a;
+	--options-control-border: #5c6d7e;
 	--options-text: #e6edf3;
 	--options-text-muted: #9ba7b4;
-	--options-text-soft: #7d8894;
+	--options-text-soft: #7e8995;
 	--options-accent: #58a6ff;
 	--options-accent-strong: #7cc0ff;
 }
@@ -94,9 +106,10 @@ html[data-settings-theme='midnight'] {
 	--options-field-hover: #0d1722;
 	--options-border: #223347;
 	--options-border-strong: #344d69;
+	--options-control-border: #4a6e95;
 	--options-text: #e5f0ff;
 	--options-text-muted: #9db0c5;
-	--options-text-soft: #77889d;
+	--options-text-soft: #78899e;
 	--options-accent: #58c3ff;
 	--options-accent-strong: #8cddff;
 }
@@ -110,6 +123,7 @@ html[data-settings-theme='forest'] {
 	--options-field-hover: #12201a;
 	--options-border: #274036;
 	--options-border-strong: #355848;
+	--options-control-border: #477661;
 	--options-text: #e8f4ec;
 	--options-text-muted: #9ab4a4;
 	--options-text-soft: #789181;
@@ -126,9 +140,10 @@ html[data-settings-theme='ember'] {
 	--options-field-hover: #1c1512;
 	--options-border: #45302a;
 	--options-border-strong: #5a3d35;
+	--options-control-border: #8d6053;
 	--options-text: #f7ede7;
 	--options-text-muted: #c3a59a;
-	--options-text-soft: #9e7f73;
+	--options-text-soft: #a08276;
 	--options-accent: #ff9b57;
 	--options-accent-strong: #ffc08f;
 }
@@ -142,9 +157,10 @@ html[data-settings-theme='catppuccin'] {
 	--options-field-hover: #22223a;
 	--options-border: #313244;
 	--options-border-strong: #45475a;
+	--options-control-border: #717492;
 	--options-text: #cdd6f4;
 	--options-text-muted: #a6adc8;
-	--options-text-soft: #7f849c;
+	--options-text-soft: #8d92a7;
 	--options-accent: #cba6f7;
 	--options-accent-strong: #dbc0fa;
 }
@@ -158,9 +174,10 @@ html[data-settings-theme='tokyonight'] {
 	--options-field-hover: #1c1d2b;
 	--options-border: #292e42;
 	--options-border-strong: #3b4261;
+	--options-control-border: #626ea0;
 	--options-text: #c0caf5;
 	--options-text-muted: #9aa5ce;
-	--options-text-soft: #737aa2;
+	--options-text-soft: #878daf;
 	--options-accent: #7aa2f7;
 	--options-accent-strong: #a9c1f9;
 }
@@ -174,9 +191,10 @@ html[data-settings-theme='rosepine'] {
 	--options-field-hover: #1d1b2a;
 	--options-border: #26233a;
 	--options-border-strong: #393552;
+	--options-control-border: #70699e;
 	--options-text: #e0def4;
 	--options-text-muted: #908caa;
-	--options-text-soft: #6e6a86;
+	--options-text-soft: #8d89a2;
 	--options-accent: #c4a7e7;
 	--options-accent-strong: #d5c4ef;
 }
@@ -187,7 +205,7 @@ html[data-settings-theme='rosepine'] {
 	justify-content: center;
 	min-height: 22px;
 	padding: 0 8px;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-sm);
 	background: var(--options-panel-alt);
 	color: var(--options-text-muted);
@@ -202,7 +220,7 @@ html[data-settings-theme='rosepine'] {
 	gap: 8px;
 	min-height: 36px;
 	padding: 0 14px;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-md);
 	background: var(--options-panel-raised);
 	color: var(--options-text);
@@ -211,8 +229,11 @@ html[data-settings-theme='rosepine'] {
 	transition: background 120ms ease, border-color 120ms ease, color 120ms ease, opacity 120ms ease;
 
 	&:disabled {
+		border-color: var(--options-control-border);
+		border-style: dashed;
+		background: var(--options-panel-alt);
+		color: var(--options-text-soft);
 		cursor: default;
-		opacity: .68;
 	}
 }
 
@@ -250,7 +271,7 @@ html[data-settings-theme='rosepine'] {
 	width: 32px;
 	height: 32px;
 	padding: 0;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-md);
 	background: var(--options-panel-raised);
 	color: var(--options-text-muted);
@@ -1511,7 +1532,7 @@ li {
 	width: 100%;
 	min-height: 38px;
 	padding: 9px 11px;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 	color: var(--options-text);
@@ -1527,11 +1548,15 @@ li {
 	cursor: default;
 }
 
+// Disabled controls are signalled by surface and colour, never by an opacity
+// multiplier. `opacity: .72` composited `--options-text-soft` down to 2.37-3.40:1
+// against the surface behind it — under AA in all nine themes and under 3:1 in
+// four — and an opacity on the control also faded the border that identifies it.
 #RESConsoleContainer :is(input[type='text'], input[type='password'], input[type='search'], select, textarea):disabled {
-	border-color: var(--options-border);
+	border-color: var(--options-control-border);
+	border-style: dashed;
 	background: var(--options-panel-alt);
 	color: var(--options-text-soft);
-	opacity: .72;
 }
 
 #RESConsoleContainer textarea {
@@ -1546,7 +1571,7 @@ li {
 	width: 56px;
 	height: 38px;
 	padding: 4px;
-	border: 1px solid var(--options-border);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 }
@@ -1599,7 +1624,7 @@ li {
 	min-width: 44px;
 	height: 24px;
 	flex: 0 0 44px;
-	border: 1px solid var(--options-border-strong);
+	border: 1px solid var(--options-control-border);
 	border-radius: var(--options-radius-md);
 	background: var(--options-field);
 	transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
@@ -1686,7 +1711,7 @@ li {
 		align-items: center;
 		min-height: 34px;
 		padding: 0 11px;
-		border: 1px solid var(--options-border);
+		border: 1px solid var(--options-control-border);
 		border-radius: var(--options-radius-sm);
 		background: var(--options-field);
 		color: var(--options-text-muted);
@@ -1708,8 +1733,10 @@ li {
 	}
 
 	input[type='radio']:disabled + label {
+		border-style: dashed;
+		background: var(--options-panel-alt);
+		color: var(--options-text-soft);
 		cursor: default;
-		opacity: .62;
 	}
 }
 
