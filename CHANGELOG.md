@@ -6,6 +6,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- MutationObservers can now be turned off. `Expando` created an anonymous
+  observer per expando button with no reference held, so it could never be
+  disconnected — on a listing that appends 25 more buttons per infinite-scroll
+  page, each observer also pinned its own detached button. It is now held on the
+  instance and disconnected in `destroy()`. Four modules declared a
+  `MutationObserver | null` slot — a field whose only purpose is teardown — and
+  never disconnected, so a second setup call would orphan the first observer while
+  leaving it running; they now disconnect before reassigning.
+  `observer-teardown-contract` accepts either that pattern or `classicFavicon`'s
+  idempotent `if (observer) return;` guard, and rejects reassigning over a live
+  observer.
 - Every scroll listener is now passive, and the two that measure layout are
   throttled. A non-passive scroll listener makes the compositor wait for the
   handler before scrolling, and none of these ever call `preventDefault` — they
