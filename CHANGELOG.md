@@ -6,6 +6,22 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- `imgurFlatten` shipped two non-working mirrors. `rimgo.ducks.party` was gone
+  outright, and `imgur.artemislena.eu` — the first-choice default — answered 200
+  with an anti-bot challenge page rather than rimgo, so the module resolved it as
+  healthy and rewrote album URLs to a host that never returns album HTML. Defaults
+  are now `rimgo.reallyaweso.me` and `rmgur.com`, both verified serving rimgo.
+- `check:endpoints` gained `anyOf` groups and body assertions. An ordered fallback
+  list is now one gate that fails only when every member fails, instead of a
+  per-URL gate that failed the run — and claimed the module was "broken out of the
+  box" — whenever any single mirror died. Where a host has a recognisable body,
+  the probe asserts against it, so a 200 that is really a bot challenge no longer
+  reads as healthy.
+- `check:endpoints` probed `/api/comments/search` for Arctic Shift, an endpoint
+  the extension never calls; it began answering 422 and would have reported a
+  broken module. It now probes the `/api/comments/ids` and `/api/posts/ids` routes
+  that `buildCommentUrl` and `buildPostUrl` actually construct.
+
 - `chrome/manifest.json` hardcoded `minimum_chrome_version: "114"` while esbuild
   compiled for the browserslist floor of Chrome 125 — a third, unsynchronised copy
   of the supported-browser floor. Chrome 114–124 could install a build transpiled
