@@ -6,6 +6,18 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Every option control in the settings console now has an accessible name.
+  `<label for>` pointed at elements that cannot be labelled — an enum rendered a
+  div, a button option rendered a div, and a keycode pointed the label at a
+  `display: none` input while the field the user can see and focus had nothing —
+  so a screen-reader user got an unnamed control in each case. Enums are
+  radiogroups and button options are groups, both named by `aria-labelledby`;
+  keycodes label the visible field. Table cells, which had no label of their own
+  at all, take their column name. Option ids are namespaced by module, so two
+  modules sharing an option key no longer collide (and, for enums, no longer
+  render one merged radio group); which option a control belongs to is stated in
+  `data-option-key` rather than parsed back out of its id.
+
 - `Alert` is a native `<dialog>` opened with `showModal()`. It was a hand-rolled
   overlay with no role, no `aria-modal`, no focus trap and no focus restore —
   and its Escape handler *confirmed* when the dialog was not cancelable, so the

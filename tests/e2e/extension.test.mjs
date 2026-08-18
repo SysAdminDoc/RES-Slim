@@ -1331,7 +1331,10 @@ test('an unreadable accent colour is flagged in the console and corrected on the
 	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/pageTheme`, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
 
-	const accent = page.locator('#accent');
+	// `data-option-key`, not `#accent`: option ids are namespaced by module now,
+	// because a bare option key as a DOM id collides between modules. The key is
+	// what identifies the option; the id is only its address.
+	const accent = page.locator('#optionContainer-pageTheme-accent [data-option-key="accent"]');
 	await accent.waitFor({ timeout: 30000 });
 	const advice = page.locator('#optionContainer-pageTheme-accent .optionAdvice');
 
@@ -1844,4 +1847,72 @@ test('the alert modal traps focus, sits above the page, and cancels on Escape', 
 	}));
 	assert.equal(outcome.outcome, 'cancelled', 'Escape on a modal dialog is a cancel, not a confirm');
 	assert.equal(outcome.stillOpen, false);
+});
+
+test('every option control in the console has a name a screen reader can announce', async t => {
+	// Source assertions can check that the attributes are written. Only a real
+	// browser can compute what they add up to — and the three broken types
+	// (`enum`, `button`, `keycode`) were broken precisely because the attributes
+	// looked present: `<label for>` pointed at elements that cannot be labelled,
+	// so the markup read fine and the accessible name was empty.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	// One module per option type the console actually renders. Chosen by grepping
+	// the registry rather than by memory, so a type that stops being used shows up
+	// as a module that no longer has it rather than as silent loss of coverage.
+	const BY_TYPE = [
+		{ moduleID: 'a11yTriple', types: ['enum', 'boolean'] },
+		{ moduleID: 'commentPreview', types: ['keycode'] },
+		{ moduleID: 'commentHighlights', types: ['color'] },
+		{ moduleID: 'commentDepth', types: ['list'] },
+		{ moduleID: 'commentTools', types: ['textarea'] },
+		{ moduleID: 'arcticShift', types: ['text'] },
+	];
+
+	const seenTypes = new Set();
+	const unnamed = [];
+
+	for (const { moduleID, types } of BY_TYPE) {
+		await page.evaluate(id => { location.hash = `#!settings/${id}`; }, moduleID);
+		await page.waitForFunction(
+			id => !!document.querySelector(`[id^="optionContainer-${id}-"]`),
+			moduleID,
+			{ timeout: 30000 },
+		);
+		await page.waitForTimeout(150);
+		for (const type of types) seenTypes.add(type);
+
+		// The computed accessibility tree, not the DOM: this is the name the
+		// platform hands to assistive technology, after `aria-labelledby`,
+		// `aria-label`, `<label for>` and content have all been resolved against
+		// each other. An `ariaSnapshot` line reads `- role "name"`, so a role with
+		// no name has no quoted part at all — which is exactly the failure the
+		// three broken option types produced.
+		const snapshot = await page.locator('#allOptionsContainer').ariaSnapshot();
+		const NAMEABLE = ['textbox', 'radiogroup', 'radio', 'combobox', 'checkbox', 'switch', 'slider', 'listbox'];
+		for (const line of snapshot.split('\n')) {
+			const match = /^\s*-\s+([a-z]+)(.*)$/.exec(line);
+			if (!match) continue;
+			const [, role, rest] = match;
+			if (!NAMEABLE.includes(role)) continue;
+			if (!/"[^"]+"/.test(rest)) unnamed.push(`${moduleID}: ${role} with no accessible name — ${line.trim()}`);
+		}
+
+		// And the controls the console rendered are really there — a module whose
+		// options failed to draw would otherwise pass by having nothing to check.
+		const controlCount = await page.locator('#allOptionsContainer input, #allOptionsContainer select, #allOptionsContainer textarea, #allOptionsContainer [role="radiogroup"]').count();
+		assert.ok(controlCount > 0, `${moduleID} rendered no option controls at all`);
+	}
+
+	assert.deepEqual(unnamed, [], 'every option control needs a name; these had none');
+	assert.deepEqual(
+		[...seenTypes].sort(),
+		['boolean', 'color', 'enum', 'keycode', 'list', 'text', 'textarea'],
+		'coverage drifted — a type listed here is no longer reached by the modules above',
+	);
 });
