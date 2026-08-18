@@ -1384,3 +1384,127 @@ test('an unreadable accent colour is flagged in the console and corrected on the
 	assert.notEqual(painted.text, '#333333', 'visited titles must not be painted the unreadable value');
 	assert.notEqual(painted.ui, '#333333', 'the focus outline must not be painted the unreadable value');
 });
+
+test('the console stays usable in forced colours and increased contrast', async t => {
+	// Windows High Contrast forces every author colour, drops `box-shadow`, and
+	// drops any non-url() `background-image`. That is the whole vocabulary this
+	// console is drawn in — the switch is an accent fill, selection is a tinted
+	// row, the focus ring is a shadow plus an accent outline — so without explicit
+	// handling every one of those states renders identically to its opposite.
+	//
+	// Emulated rather than asserted from source: `forced-colors` is applied by the
+	// UA, and only a real engine can say what survives it.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.emulateMedia({ forcedColors: 'active' });
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/pageTheme`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await page.waitForSelector('.toggleButton', { timeout: 30000 });
+
+	const outlineOf = (selector, pseudo) => page.evaluate(([sel, ps]) => {
+		const el = document.querySelector(sel);
+		if (!el) return null;
+		const style = getComputedStyle(el, ps || undefined);
+		return { color: style.outlineColor, width: style.outlineWidth, style: style.outlineStyle, background: style.backgroundColor };
+	}, [selector, pseudo]);
+
+	// A text field with no edge is not a text field.
+	const field = await outlineOf('#RESConsoleContainer input[type="color"]');
+	assert.ok(field, 'the accent colour input should be on this page');
+	assert.equal(field.style, 'solid', 'controls need an edge that survives forced colours');
+	assert.notEqual(field.width, '0px');
+
+	// On and off must not render identically. The track outline is the signal.
+	const enabledTrack = await outlineOf('.toggleButton.enabled .toggleThumb');
+	const anyTrack = await outlineOf('.toggleButton:not(.enabled) .toggleThumb');
+	assert.ok(enabledTrack, 'the module toggle should be present');
+	if (anyTrack) {
+		assert.notEqual(
+			`${enabledTrack.color}|${enabledTrack.width}`,
+			`${anyTrack.color}|${anyTrack.width}`,
+			'an enabled switch must not look identical to a disabled one under forced colours',
+		);
+	}
+
+	// The selected category is a tinted row in normal rendering, and the tint is
+	// exactly what gets forced away.
+	const activeTab = await outlineOf('.categoryTab.is-active');
+	assert.ok(activeTab, 'a category tab should be active');
+	assert.equal(activeTab.style, 'solid');
+	assert.notEqual(activeTab.width, '0px', 'selection must survive as more than a background colour');
+
+	// Increased contrast is a separate preference and keeps the palette; what it
+	// must drop is the translucent decoration.
+	await page.emulateMedia({ forcedColors: null, contrast: 'more' });
+	const contrastTokens = await page.evaluate(() => {
+		const style = getComputedStyle(document.documentElement);
+		return {
+			border: style.getPropertyValue('--options-border').trim(),
+			control: style.getPropertyValue('--options-control-border').trim(),
+			shadow: style.getPropertyValue('--options-shadow').trim(),
+		};
+	});
+	assert.equal(contrastTokens.border, contrastTokens.control, 'the decorative border should be promoted to the measured 3:1 one');
+	assert.equal(contrastTokens.shadow, 'none', 'translucent elevation should be dropped');
+});
+
+test('the in-page UI keeps its edges in forced colours', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.emulateMedia({ forcedColors: 'active' });
+	const html = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>forced colours probe</title></head><body class="listing-page"><main class="content" role="main"><div id="siteTable"><div class="thing link" data-fullname="t3_a" data-url="https://example.com/a"><div class="entry"><p class="title"><a class="title" href="/r/x/comments/a/t/">A post</a></p></div></div></div></main></body></html>';
+	await page.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme', { timeout: 30000 });
+
+	// Probes rather than a captured page state: these surfaces appear on user
+	// action (a toast, the saved-comments panel, a selected entry), and what is
+	// under test is whether the shipped stylesheet gives them an edge when the UA
+	// takes their background away. The probe carries the real class, and the rule
+	// is keyed on exactly that.
+	const measured = await page.evaluate(() => {
+		const reference = document.createElement('span');
+		reference.style.outline = '1px solid Highlight';
+		document.body.append(reference);
+		const highlight = getComputedStyle(reference).outlineColor;
+		reference.remove();
+
+		const read = className => {
+			const probe = document.createElement('div');
+			probe.className = className;
+			document.body.append(probe);
+			const style = getComputedStyle(probe);
+			const result = { style: style.outlineStyle, width: style.outlineWidth, color: style.outlineColor };
+			probe.remove();
+			return result;
+		};
+
+		return {
+			highlight,
+			toast: read('rsm-toast'),
+			panel: read('rsm-savedBackup-panel'),
+			badge: read('rsm-repost-badge'),
+			selected: read('res-selected'),
+		};
+	});
+
+	for (const surface of ['toast', 'panel', 'badge']) {
+		assert.equal(measured[surface].style, 'solid', `${surface} must keep an edge when its background is forced away`);
+		assert.notEqual(measured[surface].width, '0px', `${surface} outline should have width`);
+	}
+
+	// Selection is a background tint everywhere in this codebase, so under forced
+	// colours it has to be restated as the system colour that means selection.
+	assert.equal(measured.selected.color, measured.highlight, 'a selected entry must be marked with Highlight, not a forced author hue');
+	assert.notEqual(measured.selected.width, '0px');
+});

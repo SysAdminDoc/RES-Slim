@@ -4,6 +4,20 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added (accessibility)
+
+- Windows High Contrast support. The UA forces every author colour, drops
+  `box-shadow`, and drops any non-`url()` `background-image` — which is the entire
+  vocabulary a restyler is built from, making it the one environment where this
+  extension could render a page worse than not running at all. Neither
+  `forced-colors` nor `prefers-contrast` appeared anywhere in the 76 stylesheets.
+  Every RES-Slim control and floating surface now keeps a real edge, and every
+  selected state is restated with `Highlight` rather than a hue that gets forced
+  away. Drawn with `outline` and a negative offset so nothing reflows.
+- `prefers-contrast: more` promotes the decorative border to the measured 3:1
+  control border, drops the translucent elevation, and thickens the focus ring, in
+  both the page theme and the settings console.
+
 ### Fixed (accessibility)
 
 - Placeholder and hint text now clears 4.5:1 on every surface it lands on, in all

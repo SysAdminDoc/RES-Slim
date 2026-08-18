@@ -201,3 +201,86 @@ html.res-pageTheme {
 		transition-duration: 1ms !important;
 	}
 }
+
+// ---- Forced colours (Windows High Contrast) ---------------------------------
+// The UA replaces every author colour, drops `box-shadow` outright, and drops
+// any `background-image` that is not a `url()`. That is the entire vocabulary
+// this product is built from, so it is the one environment where a restyler can
+// render the page *worse* than not running at all: a control whose only
+// affordance is a background tint stops reading as a control, an elevation drawn
+// as a shadow flattens into the page, and a state carried by hue alone vanishes.
+// The rule below is that every RES-Slim control and floating surface keeps a
+// real edge, and every selected state is marked with a system colour rather than
+// a hue. Drawn with `outline` and a negative offset rather than `border`, so
+// nothing reflows — high contrast mode is not the place to also move the layout.
+@media (forced-colors: active) {
+	// Controls. `[class*='rsm-']` is the same hook the focus ring above uses, so
+	// a module that adopts the convention is covered without being listed here.
+	button[class*='rsm-'],
+	select[class*='rsm-'],
+	textarea[class*='rsm-'],
+	input[class*='rsm-'],
+	[class*='rsm-'] :is(button, select, textarea, input),
+	[id^='rsm-'] :is(button, select, textarea, input) {
+		outline: 1px solid ButtonBorder;
+		outline-offset: -1px;
+	}
+
+	// Floating surfaces. Each of these is separated from the page by nothing but
+	// a background colour and a shadow, and loses both.
+	.rsm-toast,
+	.rsm-savedBackup-panel,
+	.rsm-storageDashboard-panel,
+	.rsm-subrules-popover,
+	.res-search-pane,
+	.rsm-thread-minimap-rail {
+		outline: 1px solid CanvasText;
+		outline-offset: -1px;
+	}
+
+	// Chips that carry meaning as a coloured pill. Without an edge they read as
+	// stray words in the byline.
+	.rsm-bait-badge,
+	.rsm-repost-badge,
+	.rsm-filter-badge {
+		outline: 1px solid CanvasText;
+		outline-offset: -1px;
+	}
+
+	// Selection is a background colour everywhere in this codebase, so it has to
+	// be restated as a system colour to survive at all.
+	.res-selected,
+	.res-search-tab-active,
+	.rsm-auto-refresh-new {
+		outline: 2px solid Highlight;
+		outline-offset: -2px;
+	}
+
+	// `--rsm-accent` is an author colour and is forced away, which would leave
+	// the shared ring drawn in whatever the UA picked for text — indistinguishable
+	// from the border it sits next to. `Highlight` is the system colour that means
+	// exactly this.
+	[class*='rsm-']:focus-visible,
+	[id^='rsm-']:focus-visible {
+		outline: var(--rsm-focus-width) solid Highlight;
+		outline-offset: var(--rsm-focus-offset);
+	}
+}
+
+// ---- Increased contrast -----------------------------------------------------
+// Unlike forced colours this keeps the palette; it asks for the low-contrast
+// decoration to go. Translucency is the main offender here — shadows and the
+// 12%-alpha borders every palette but graphite uses — and the control boundary
+// token already exists at a measured 3:1, so raising the decorative border to it
+// is the whole change.
+@media (prefers-contrast: more) {
+	:root {
+		--rsm-focus-width: 3px;
+	}
+
+	html.res-pageTheme {
+		--rsm-th-border: var(--rsm-th-control-border);
+		--rsm-th-muted: var(--rsm-th-txt);
+		--rsm-th-shadow: transparent;
+	}
+}

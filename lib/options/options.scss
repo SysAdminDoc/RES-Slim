@@ -2164,6 +2164,75 @@ html[data-settings-density='dense'] {
 
 html[data-reduced-motion='reduce'] { @include console-reduced-motion; }
 
+// ---- Forced colours (Windows High Contrast) ---------------------------------
+// The UA forces every author colour, drops `box-shadow`, and drops any
+// `background-image` that is not a `url()`. This console is built almost
+// entirely from those: the toggle reads on/off as an accent fill, the selected
+// module and category read as a tinted row, the focus ring is a `box-shadow`
+// paired with an accent outline, and disabled controls are a muted surface. In
+// forced colours every one of those collapses to the same pair of system
+// colours, so state has to be restated in the vocabulary the UA keeps —
+// `Highlight` for selection, `ButtonBorder` for a control's edge — and drawn as
+// an outline so nothing reflows.
+@media (forced-colors: active) {
+	#RESConsoleContainer :is(input, select, textarea, button, .RESConsoleButton, .moduleButton, .moduleRowToggle, .categoryTab, .filterChip, .themeOption) {
+		outline: 1px solid ButtonBorder;
+		outline-offset: -1px;
+	}
+
+	// The switch: its whole state is an accent fill on the track and thumb.
+	#RESConsoleContainer .toggleButton .toggleThumb {
+		outline: 1px solid ButtonBorder;
+		outline-offset: -1px;
+
+		&::before { background: ButtonBorder; }
+	}
+
+	#RESConsoleContainer .toggleButton.enabled .toggleThumb {
+		outline: 2px solid Highlight;
+		outline-offset: -2px;
+
+		&::before { background: Highlight; }
+	}
+
+	// Selection, in all four places the console expresses it as a tint.
+	#RESConsoleContainer :is(.moduleButton.active, .categoryTab.is-active, .filterChip.is-active, .themeOption.is-active) {
+		outline: 2px solid Highlight;
+		outline-offset: -2px;
+	}
+
+	// Panels are separated from the page by a background and a shadow, and lose
+	// both.
+	#RESConsoleContainer :is(.optionContainer, .workspaceEmptyState, #moduleOptionsScrim, .optionAdvice) {
+		outline: 1px solid CanvasText;
+		outline-offset: -1px;
+	}
+
+	// The ring is an accent outline plus a `box-shadow` glow. The glow is gone and
+	// the outline's colour is forced, so it has to say `Highlight` to stay
+	// distinguishable from the control edge beside it.
+	#RESConsoleContainer :is(button, a, input, select, textarea, .SearchRES-result-copybutton, .moduleButton, .moduleRowToggle, .toggleButton):focus-visible {
+		outline: 3px solid Highlight;
+		outline-offset: 2px;
+	}
+}
+
+// ---- Increased contrast -----------------------------------------------------
+// This keeps the palette and asks for the low-contrast decoration to go. The
+// decorative border and the panel shadows are the translucency here, and
+// `--options-control-border` already exists at a measured 3:1, so promoting the
+// decorative token to it is most of the change.
+@media (prefers-contrast: more) {
+	:root,
+	html[data-settings-theme] {
+		--options-border: var(--options-control-border);
+		--options-border-strong: var(--options-control-border);
+		--options-text-soft: var(--options-text-muted);
+		--options-shadow: none;
+		--options-shadow-soft: none;
+	}
+}
+
 .motionToggle {
 	@extend %surface-button;
 
