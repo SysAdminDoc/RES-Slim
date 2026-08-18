@@ -185,7 +185,7 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	const dom = new JSDOM(html, { url, pretendToBeVisual: true });
 	const { window } = dom;
 
-	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
+	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'HTMLDialogElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
 		if (!(key in window)) continue;
 		// Node 24 defines `navigator` (and friends) as getter-only on globalThis, so
 		// a plain assignment throws. defineProperty replaces them outright.
@@ -226,6 +226,36 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	if (!globalThis.requestIdleCallback) {
 		globalThis.requestIdleCallback = callback => setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 0);
 		globalThis.cancelIdleCallback = handle => clearTimeout(handle);
+	}
+
+	// jsdom 30 parses `<dialog>` but implements none of its behaviour: there is no
+	// `showModal`, no `close`, no `open` reflection. A module that opens a modal
+	// therefore throws on its first line, and the whole feature is unreachable to a
+	// contract.
+	//
+	// The shim is deliberately the *minimum*: open/close state and the `close`
+	// event, which is what our own handlers react to. Everything the element is
+	// actually chosen for — the top layer, the focus trap, the inertness of the
+	// page behind it, and Escape being routed to a `cancel` event — is the
+	// browser's, is not reproduced here, and belongs in tests/e2e/.
+	const DialogProto = window.HTMLDialogElement && window.HTMLDialogElement.prototype;
+	if (DialogProto && typeof DialogProto.showModal !== 'function') {
+		Object.defineProperty(DialogProto, 'open', {
+			configurable: true,
+			get() { return this.hasAttribute('open'); },
+			set(value) { if (value) this.setAttribute('open', ''); else this.removeAttribute('open'); },
+		});
+		DialogProto.showModal = function showModal() {
+			this.setAttribute('open', '');
+			this.dataset.jsdomModal = 'true';
+		};
+		DialogProto.show = function show() { this.setAttribute('open', ''); };
+		DialogProto.close = function close(returnValue) {
+			if (!this.hasAttribute('open')) return;
+			this.removeAttribute('open');
+			if (returnValue !== undefined) this.returnValue = String(returnValue);
+			this.dispatchEvent(new window.Event('close'));
+		};
 	}
 
 	installNetworkGuard();

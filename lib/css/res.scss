@@ -444,7 +444,11 @@ span.multi-count {
 	100% { transform: rotate(360deg); }
 }
 
-#alert_message {
+// A native `<dialog>` opened with `showModal()`. The browser puts it in the top
+// layer, so the z-index token this used to need is gone — nothing on the page
+// can paint above it by any stacking arithmetic. The backdrop is the platform's
+// too, which is why `#alert_message_background` no longer exists.
+dialog#alert_message {
 	position: fixed;
 	top: 0;
 	right: 0;
@@ -460,7 +464,10 @@ span.multi-count {
 	border: 1px solid;
 	background-color: #efefef;
 	overflow: auto;
-	z-index: $zindex-alert-message;
+
+	&::backdrop {
+		background-color: rgb(0 0 0 / 70%);
+	}
 
 	@media (width <= 520px) {
 		width: auto;
@@ -484,13 +491,6 @@ span.multi-count {
 	> div:not(:last-of-type) {
 		margin-bottom: 20px;
 	}
-}
-
-#alert_message_background {
-	position: fixed;
-	inset: 0 0 0 0;
-	background-color: rgb(0 0 0 / 70%);
-	z-index: $zindex-alert-message - 1;
 }
 
 .res-icon {

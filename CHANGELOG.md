@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- `Alert` is a native `<dialog>` opened with `showModal()`. It was a hand-rolled
+  overlay with no role, no `aria-modal`, no focus trap and no focus restore —
+  and its Escape handler *confirmed* when the dialog was not cancelable, so the
+  gesture every user reads as "no" could mean "yes". Escape now always cancels a
+  cancelable dialog, closing it by any other means is not agreement either, and
+  focus returns to whatever opened it. The backdrop and the stacking are the
+  platform's now, so the second fixed-position div and the z-index token are
+  gone.
+
 - Importing a settings file written by a newer build is refused instead of
   applied. `migrate.js` is a 937-line ladder that only runs forward, so a layout
   this build has never seen cannot be interpreted — only written over a working

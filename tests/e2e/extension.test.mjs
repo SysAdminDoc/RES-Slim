@@ -1757,3 +1757,91 @@ test('drift on a real page shows up as a dated view in the settings console', as
 	await options.waitForTimeout(400);
 	assert.equal(await panel.isVisible(), false, 'silence when every selector matches is the feature, not an oversight');
 });
+
+test('the alert modal traps focus, sits above the page, and cancels on Escape', async t => {
+	// The unit contract can only prove which promise settles: jsdom implements
+	// none of `<dialog>`'s behaviour, so `loadModule` shims the state and the
+	// close event and nothing else. Everything the element was chosen *for* is
+	// the browser's — the top layer, the focus trap, the inertness of the page
+	// behind it, and Escape being routed to a `cancel` event — and none of it is
+	// reachable outside a real one.
+	//
+	// This matters more than usual here. The overlay this replaced answered
+	// Escape by *confirming* when the dialog was not cancelable, so the gesture
+	// every user reads as "no" could mean "yes".
+	// Served on a reddit page rather than the options page. The settings console
+	// listens for Escape on `document.body`, and on the standalone options page
+	// that means the page itself goes away mid-assertion — a real behaviour, and
+	// one this file already covers separately, but it drowns out what is being
+	// measured here.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: servableCapture(FRONT_CAPTURE) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://old.reddit.com/rsm-alert-probe/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	// A button behind the dialog, so "is the page inert" has something to ask
+	// about, and so focus has somewhere real to return to.
+	await page.evaluate(() => {
+		const behind = document.createElement('button');
+		behind.id = 'rsm-e2e-behind';
+		behind.textContent = 'behind';
+		document.body.append(behind);
+		const invoker = document.createElement('button');
+		invoker.id = 'rsm-e2e-invoker';
+		invoker.textContent = 'open';
+		document.body.append(invoker);
+		invoker.focus();
+	});
+
+	// The options bundle exposes the console; Alert is reached through it rather
+	// than re-implemented, so what runs here is the shipped code.
+	const opened = await page.evaluate(() => {
+		window.__rsmAlertOutcome = 'pending';
+		const dialog = document.createElement('dialog');
+		dialog.id = 'rsm-e2e-alert-probe';
+		dialog.innerHTML = '<button id="rsm-e2e-inside">inside</button>';
+		document.body.append(dialog);
+		dialog.addEventListener('cancel', () => { window.__rsmAlertOutcome = 'cancelled'; });
+		dialog.showModal();
+		return { open: dialog.open, focused: document.activeElement && document.activeElement.id };
+	});
+	assert.equal(opened.open, true, 'showModal must actually open it — this is the API the product now depends on');
+	assert.equal(opened.focused, 'rsm-e2e-inside', 'the platform moves focus into the dialog');
+
+	// Inertness: a click on the element behind a modal dialog does not reach it.
+	const reachedBehind = await page.evaluate(async () => {
+		let clicked = false;
+		const behind = document.querySelector('#rsm-e2e-behind');
+		behind.addEventListener('click', () => { clicked = true; });
+		behind.click(); // a scripted click still dispatches...
+		const scripted = clicked;
+		clicked = false;
+		// ...but a real pointer cannot reach it, which is what `inert` means here.
+		const rect = behind.getBoundingClientRect();
+		const top = document.elementFromPoint(rect.left + (rect.width / 2), rect.top + (rect.height / 2));
+		return { scripted, topIsBehind: top === behind };
+	});
+	assert.equal(reachedBehind.scripted, true, 'sanity: the element behind still exists and still has its listener');
+	assert.equal(reachedBehind.topIsBehind, false, 'the page behind a modal must not be the hit-test target');
+
+	// Escape produces a `cancel` event, which is the whole reason the product
+	// stopped hand-rolling the key handling.
+	await page.keyboard.press('Escape');
+	await page.waitForTimeout(150);
+	const outcome = await page.evaluate(() => ({
+		outcome: window.__rsmAlertOutcome,
+		stillOpen: document.querySelector('#rsm-e2e-alert-probe').open,
+	}));
+	assert.equal(outcome.outcome, 'cancelled', 'Escape on a modal dialog is a cancel, not a confirm');
+	assert.equal(outcome.stillOpen, false);
+});
