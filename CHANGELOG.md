@@ -22,6 +22,30 @@ All notable changes to RES-Slim will be documented in this file.
   reach, so the orphan class cannot come back. A commented-out `@import` counts
   as absent, which is the direction the check must not be wrong in.
 
+### Changed
+
+- The css-custom-property contract checks all four directions it used to be
+  blind in, each baited to prove it can fail. It found one real defect: the
+  comment minimap read `var(--minimap-stripe-color, ...)` for a token nothing
+  ever defined, because the module assigned the `background` shorthand directly
+  and overwrote the whole declaration. It sets the property now, which is what
+  the stylesheet was written for.
+
+  The other three directions came back clean once the scan was correct.
+  Fallback-bearing references are validated (a misspelled token behind a
+  fallback ships the fallback forever and never complains); JS is scanned as
+  well as SCSS, which turns out to be two files rather than the sixteen
+  estimated; and theme scopes are compared against each other, allowing for the
+  base definitions that `paper`, as the only light theme, legitimately overrides.
+
+  Twelve tokens nothing reads are listed with a reason rather than deleted.
+  Every one completes a live scale or family - two steps of the five-step radius
+  scale, three status-family members, `--rsm-motion-slow` - so removing them
+  would leave a vocabulary with holes in it and the next author inventing a
+  replacement instead of finding the gap. The list is capped, and asserted in
+  both directions, so adopting a token without delisting it fails and so does
+  deleting one and leaving its entry behind.
+
 ### Accessibility
 
 - An axe-core gate runs against the options page and, scoped to RES-Slim's own
