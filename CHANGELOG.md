@@ -4,6 +4,21 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- `chrome/manifest.json` hardcoded `minimum_chrome_version: "114"` while esbuild
+  compiled for the browserslist floor of Chrome 125 — a third, unsynchronised copy
+  of the supported-browser floor. Chrome 114–124 could install a build transpiled
+  for 125 and silently receive no-ops from `@starting-style` and
+  `transition-behavior` (both Chrome 117): the same class of failure as the
+  `:has()`/`roleHighlights` bug that `browser-targets-contract` was written to
+  prevent. The manifest now carries `__browser_min_version__` like the Firefox one,
+  so both shipped floors derive from `browserslist` alone.
+- `browser-targets-contract` only ever asserted the Firefox half of that claim, so
+  the drift it exists to catch was invisible on the Chrome side. It now asserts the
+  Chrome manifest uses the token, rejects any bare version literal, and checks that
+  both substituted floors resolve to the browserslist value.
+
 ## v0.35.1 - 2026-08-14
 
 ### Changed

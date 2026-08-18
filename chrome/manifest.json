@@ -5,7 +5,7 @@
   "description": "__description__",
   "author": "__author__",
   "homepage_url": "__homepage__",
-  "minimum_chrome_version": "114",
+  "minimum_chrome_version": "__browser_min_version__",
   "icons": {
     "48": "icon48.png",
     "128": "icon128.png"

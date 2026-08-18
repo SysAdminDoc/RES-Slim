@@ -66,6 +66,52 @@ test('the Firefox manifest takes its strict_min_version from the same source', (
 	assert.match(manifest, /"strict_min_version":\s*"__browser_min_version__"/);
 });
 
+test('the Chrome manifest takes its minimum_chrome_version from the same source', () => {
+	// This is the copy that drifted. `minimum_chrome_version` was hardcoded to
+	// "114" while esbuild compiled for the browserslist floor (125) — eleven
+	// versions of installable-but-untranspiled-for range, and the exact failure
+	// this file's header describes for `:has()`/`roleHighlights`: a manifest that
+	// advertises support for browsers where a shipped feature silently no-ops.
+	// `@starting-style` and `transition-behavior` both need Chrome 117.
+	//
+	// The Firefox assertion above existed from the start; this one did not, so
+	// the "one authoritative floor" claim held for one of the two shipped
+	// manifests. Assert the token, and assert no bare version literal survives.
+	const manifest = read('chrome/manifest.json');
+
+	assert.match(manifest, /"minimum_chrome_version":\s*"__browser_min_version__"/);
+	assert.ok(
+		!/"minimum_chrome_version":\s*"\d/.test(manifest),
+		'minimum_chrome_version must not hardcode a version literal — it is derived from browserslist',
+	);
+});
+
+test('every shipped manifest floor resolves to the browserslist value', () => {
+	// The tokens above prove the manifests do not hardcode a floor. This proves
+	// the substituted value is the one browserslist declares, so a build cannot
+	// quietly ship a different number than the one esbuild targeted.
+	const parsed = floors();
+
+	for (const [file, key] of [
+		['chrome/manifest.json', 'minimum_chrome_version'],
+		['firefox/manifest.json', 'strict_min_version'],
+	]) {
+		const source = read(file);
+		const browser = file.startsWith('chrome') ? 'chrome' : 'firefox';
+		const substituted = source.replaceAll('__browser_min_version__', `${parsed[browser]}.0`);
+		const manifest = JSON.parse(substituted);
+		const value = browser === 'chrome'
+			? manifest.minimum_chrome_version
+			: manifest.browser_specific_settings.gecko.strict_min_version;
+
+		assert.equal(
+			Number.parseInt(value, 10),
+			parsed[browser],
+			`${file} ${key} must resolve to the browserslist ${browser} floor`,
+		);
+	}
+});
+
 test('the floor supports every CSS feature used in a runtime-injected stylesheet', () => {
 	const parsed = floors();
 
