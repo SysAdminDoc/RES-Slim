@@ -22,6 +22,16 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Settings import is no longer able to destroy a configuration. It was the one
+  irreversible action in the product with neither a guard in front of it nor a way
+  back: `applySnapshot` overwrote each module blob in a sequential loop with no
+  backup and no rollback, so a failure partway through left settings half-imported
+  while the user was told the import had failed. Import now writes a restore point
+  before the first mutation, rolls every module back if any write fails, says so
+  precisely when the rollback itself cannot run, and reports what actually changed
+  ("4 options changed, 2 modules updated, 1 left as-is") instead of a bare module
+  count. Because import reloads the page, the undo is offered on the next console
+  load rather than in a toast the reload would destroy.
 - `imgurFlatten` shipped two non-working mirrors. `rimgo.ducks.party` was gone
   outright, and `imgur.artemislena.eu` — the first-choice default — answered 200
   with an anti-bot challenge page rather than rimgo, so the module resolved it as
