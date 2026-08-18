@@ -4,6 +4,28 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- The accent colour now has a contrast floor. It is a free colour picker, so
+  `#333` was a legal choice — about 1.2:1 against every shipped palette, which
+  makes visited post titles unreadable and the `:focus-visible` outline invisible.
+  Readability is a property of the colour *and* the palette, which is why syntax
+  validation could never catch it. Visited titles and the focus outline are now
+  painted from corrected shades that clear 4.5:1 and 3:1 respectively, keeping the
+  hue the user chose; the raw accent still drives the decorative blends, which are
+  legible at any darkness. The settings console says so inline and offers the
+  nearest compliant shade rather than rewriting the value behind the user.
+- Options can declare inline advice, rendered under the control. It exists for
+  values that are only wrong in combination with another setting, which type
+  validation cannot see.
+
+### Changed
+
+- The default accent moved from `#5aa9ff` to `#82bfff`. Measured against the
+  lightest surface each palette paints behind it, the old default was 3.75:1 on
+  Nord and 4.30:1 on Solarized Dark — below AA on two of the ten shipped palettes.
+  The new one clears 4.5:1 on all ten.
+
 ### Fixed
 
 - Imgur album flatten works again. It has never worked: rimgo instances send no

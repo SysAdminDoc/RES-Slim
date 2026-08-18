@@ -1297,3 +1297,90 @@ test('a read-only Reddit JSON module sends authenticated requests through the sh
 		body: null,
 	});
 });
+
+test('an unreadable accent colour is flagged in the console and corrected on the page', async t => {
+	// The accent is a `type: 'color'` option, so a user can pick `#333` — about
+	// 1.2:1 on every shipped palette — and get visited titles they cannot read and
+	// a focus outline they cannot see. Nothing told them, and nothing corrected it.
+	//
+	// Both halves are checked here because either alone is a worse product: a
+	// silent correction leaves the settings page showing a colour the page does
+	// not paint, and a warning with no correction leaves the page unreadable.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/pageTheme`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	const accent = page.locator('#accent');
+	await accent.waitFor({ timeout: 30000 });
+	const advice = page.locator('#optionContainer-pageTheme-accent .optionAdvice');
+
+	// The shipped default clears both floors on every palette, so a fresh install
+	// must not be nagged.
+	assert.equal(await advice.isVisible(), false, 'the default accent must not raise advice');
+
+	await accent.evaluate(el => {
+		el.value = '#333333';
+		el.dispatchEvent(new Event('input', { bubbles: true }));
+		el.dispatchEvent(new Event('change', { bubbles: true }));
+	});
+
+	await advice.waitFor({ state: 'visible', timeout: 10000 });
+	assert.match(await advice.innerText(), /below the 4\.5:1/, 'the advice must name the floor it fails');
+
+	// The suggestion is offered, not applied — until the user takes it.
+	const action = page.locator('#optionContainer-pageTheme-accent .optionAdviceAction');
+	assert.match(await action.innerText(), /^Use #[0-9a-f]{6}$/i);
+	assert.equal(await accent.inputValue(), '#333333', 'nothing may be rewritten behind the user');
+
+	const suggested = (await action.innerText()).replace('Use ', '').toLowerCase();
+	await action.click();
+	assert.equal((await accent.inputValue()).toLowerCase(), suggested, 'taking the suggestion sets the input');
+	await page.waitForFunction(
+		() => {
+			const note = document.querySelector('#optionContainer-pageTheme-accent .optionAdvice');
+			return note && note.hidden;
+		},
+		null,
+		{ timeout: 10000 },
+	);
+
+	// Now the page side: with an unreadable accent saved, the theme must paint a
+	// corrected shade rather than the raw value.
+	await page.evaluate(() => new Promise((resolve, reject) => {
+		chrome.storage.local.set({
+			'RESoptions.pageTheme': { accent: { value: '#333333' }, theme: { value: 'graphite' } },
+		}, () => (chrome.runtime.lastError ? reject(new Error(chrome.runtime.lastError.message)) : resolve()));
+	}));
+
+	const reddit = await context.newPage();
+	const html = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>accent probe</title></head><body class="listing-page"><main class="content" role="main"></main></body></html>';
+	await reddit.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await reddit.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await reddit.waitForFunction(
+		() => document.documentElement.style.getPropertyValue('--rsm-th-accent-text').trim().length > 0,
+		null,
+		{ timeout: 30000 },
+	);
+
+	const painted = await reddit.evaluate(() => {
+		const style = document.documentElement.style;
+		return {
+			raw: style.getPropertyValue('--rsm-th-accent').trim(),
+			text: style.getPropertyValue('--rsm-th-accent-text').trim(),
+			ui: style.getPropertyValue('--rsm-th-accent-ui').trim(),
+		};
+	});
+
+	assert.equal(painted.raw, '#333333', 'the raw accent still drives the decorative color-mix blends');
+	assert.notEqual(painted.text, '#333333', 'visited titles must not be painted the unreadable value');
+	assert.notEqual(painted.ui, '#333333', 'the focus outline must not be painted the unreadable value');
+});

@@ -2412,6 +2412,37 @@ html[res-options] {
 	align-self: stretch;
 }
 
+// Inline advice: a value that is syntactically fine but wrong against the other
+// settings. Warning-toned rather than danger-toned because nothing is broken —
+// the page corrects it — and offered as a suggestion, never applied silently.
+.optionAdvice {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	max-width: 80ch;
+	margin: 6px 0 0;
+	padding: 8px 10px;
+	border: 1px solid color-mix(in srgb, var(--options-warning) 45%, transparent);
+	border-radius: var(--options-radius-sm);
+	background: color-mix(in srgb, var(--options-warning) 12%, transparent);
+	color: var(--options-text);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.optionAdvice[hidden] {
+	display: none;
+}
+
+.optionAdviceText {
+	flex: 1 1 24ch;
+}
+
+.optionAdviceAction {
+	flex: 0 0 auto;
+}
+
 .workspaceEmptyState {
 	border-radius: var(--options-radius-md);
 	box-shadow: none;

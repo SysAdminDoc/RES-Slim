@@ -20,7 +20,7 @@ import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const scss = fs.readFileSync(path.join(repoRoot, 'lib', 'css', 'modules', '_pageTheme.scss'), 'utf8');
 
-const { PAGE_THEME_IDS } = await loadFlowModule('lib/utils/pageTheme.js', 'page-theme-contrast');
+const { PAGE_THEME_IDS } = await loadFlowModule('lib/utils/pageTheme.js', 'page-theme-contrast', { deps: ['lib/utils/usernameColors.js'] });
 
 function hex(value) {
 	// Both forms: OLED's background is written `#000`.

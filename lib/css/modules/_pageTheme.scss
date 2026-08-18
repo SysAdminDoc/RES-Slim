@@ -17,7 +17,17 @@ html.res-pageTheme {
 	--rsm-th-muted: #98a6b5;
 	--rsm-th-border: #253243;
 	--rsm-th-shadow: rgba(0, 0, 0, 0.32);
-	--rsm-th-accent: #5aa9ff;
+	--rsm-th-accent: #82bfff;
+
+	// The accent split by role. `--rsm-th-accent` stays the raw user value and
+	// drives the decorative `color-mix()` blends; these two are the shades the
+	// module corrects to when the raw accent cannot clear its WCAG floor against
+	// the active palette — 4.5:1 for text (visited titles), 3:1 for non-text
+	// (the focus outline, checkbox fills). The defaults below are what applies
+	// before the module has run; the shipped `#82bfff` clears both on every
+	// palette, so an un-corrected page is never a failing one.
+	--rsm-th-accent-text: var(--rsm-th-accent);
+	--rsm-th-accent-ui: var(--rsm-th-accent);
 }
 
 // ---- Palettes -------------------------------------------------------------
@@ -203,14 +213,14 @@ html.res-pageTheme a.title {
 html.res-pageTheme .thing .title:visited,
 html.res-pageTheme a.title:visited,
 html.res-pageTheme .md a:visited {
-	color: var(--rsm-th-accent);
+	color: var(--rsm-th-accent-text);
 }
 
 // Flair: transparent chip with an accent outline instead of a loud fill.
 html.res-pageTheme span[class*="flair"],
 html.res-pageTheme .linkflairlabel {
 	background-color: transparent !important;
-	border: 1px solid var(--rsm-th-accent);
+	border: 1px solid var(--rsm-th-accent-ui);
 	color: var(--rsm-th-txt-strong) !important;
 }
 
@@ -320,7 +330,7 @@ html.res-pageTheme--refined ::-webkit-scrollbar-thumb {
 }
 
 html.res-pageTheme--refined :where(a, button, input, textarea, select, [tabindex]):focus-visible {
-	outline: 2px solid var(--rsm-th-accent) !important;
+	outline: 2px solid var(--rsm-th-accent-ui) !important;
 	outline-offset: 2px;
 }
 
@@ -500,7 +510,7 @@ html.res-pageTheme--refined .side #search::after {
 }
 
 html.res-pageTheme--refined .side #search:focus-within::after {
-	color: var(--rsm-th-accent);
+	color: var(--rsm-th-accent-text);
 }
 
 html.res-pageTheme--refined .side #search input[type="text"] {
@@ -590,7 +600,7 @@ html.res-pageTheme--refined .side #searchexpando input[type="checkbox"] {
 	height: 14px;
 	min-height: 14px;
 	margin: 0;
-	accent-color: var(--rsm-th-accent);
+	accent-color: var(--rsm-th-accent-ui);
 }
 
 html.res-pageTheme--refined .side #searchexpando p {

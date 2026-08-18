@@ -2,18 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import flowRemoveTypes from 'flow-remove-types';
+
+import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-page-theme');
-fs.mkdirSync(tmpDir, { recursive: true });
-const stripped = flowRemoveTypes(read('lib/utils/pageTheme.js'), { all: true }).toString();
-const modulePath = path.join(tmpDir, 'pageTheme.mjs');
-fs.writeFileSync(modulePath, stripped);
-const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, sanitizeAccent } = await import(pathToFileURL(modulePath).href);
+// Loaded through the shared helper rather than a hand-rolled strip-and-import:
+// the helper resolves the sibling imports `lib/utils/pageTheme.js` now has, and a
+// second copy of that logic is a second thing to fix every time one grows.
+const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, sanitizeAccent } =
+	await loadFlowModule('lib/utils/pageTheme.js', 'page-theme', { deps: ['lib/utils/usernameColors.js'] });
 
 test('normalizeTheme falls back to graphite for unknown values', () => {
 	assert.equal(normalizeTheme('catppuccin'), 'catppuccin');
@@ -57,7 +56,11 @@ test('pageTheme module is registered, enabled by default, and reversible', () =>
 	assert.match(mod, /refinedLayout:\s*\{[\s\S]*?value: true/);
 	assert.match(mod, /if \(!Modules\.isRunning\(module\)\) \{\s*clearAll\(\);/);
 	assert.match(mod, /localStorage\.getItem\(CACHE_KEY\)/); // anti-FOUC early apply
-	assert.match(mod, /el\.style\.setProperty\('--rsm-th-accent', accent\)/);
+	// The accent is written from `accentRoles`, not raw, so a value that cannot
+	// clear its contrast floor against the chosen palette is corrected on the way
+	// out. `page-theme-accent-contract` owns that behaviour; this only pins that
+	// the module still writes the property at all.
+	assert.match(mod, /el\.style\.setProperty\('--rsm-th-accent', roles\.accent\)/);
 
 	const index = read('lib/modules/index.js');
 	assert.match(index, /import \{ module as pageTheme \} from '\.\/pageTheme';/);

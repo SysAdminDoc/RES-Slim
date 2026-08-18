@@ -18,13 +18,30 @@ export function readRepoFile(relativePath) {
 
 // `name` scopes the temp directory so two suites running in parallel do not
 // write over each other's stripped copy.
-export async function loadFlowModule(relativePath, name) {
+//
+// `deps` names sibling `lib/utils/` helpers the target imports. They are stripped
+// into the same directory and the extensionless relative specifiers are rewritten
+// to `.mjs`, because Node's ESM resolver requires an extension and `lib/` is
+// written for a bundler that does not. Without this, a helper that grows a single
+// import to another helper breaks every contract that loads it — which is a poor
+// reason to duplicate maths that is already tested elsewhere.
+export async function loadFlowModule(relativePath, name, { deps = [] } = {}) {
 	const tmpDir = path.join(repoRoot, 'tests', 'unit', `.tmp-${name}`);
 	fs.mkdirSync(tmpDir, { recursive: true });
 
-	const stripped = flowRemoveTypes(readRepoFile(relativePath), { all: true }).toString();
-	const outPath = path.join(tmpDir, `${path.basename(relativePath, '.js')}.mjs`);
-	fs.writeFileSync(outPath, stripped);
+	const names = [relativePath, ...deps].map(p => path.basename(p, '.js'));
+	const withExtensions = source => names.reduce(
+		(acc, base) => acc.replace(new RegExp(`(from\\s+['"]\\.\\/)${base}(['"])`, 'g'), `$1${base}.mjs$2`),
+		source,
+	);
+
+	let outPath;
+	for (const dep of [relativePath, ...deps]) {
+		const stripped = withExtensions(flowRemoveTypes(readRepoFile(dep), { all: true }).toString());
+		const depPath = path.join(tmpDir, `${path.basename(dep, '.js')}.mjs`);
+		fs.writeFileSync(depPath, stripped);
+		if (dep === relativePath) outPath = depPath;
+	}
 
 	return import(pathToFileURL(outPath).href);
 }
