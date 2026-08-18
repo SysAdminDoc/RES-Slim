@@ -309,6 +309,17 @@ html.res-pageTheme--collapse-sidebar .side:hover {
 // ---- Optional: refined desktop layout ------------------------------------
 
 html.res-pageTheme--refined {
+	// WCAG 2.2 AA, 2.4.11 Focus Not Obscured (Minimum). The sticky header further
+	// down is this fork's own addition, and it covers whatever a scroll-into-view
+	// brings to the top of the viewport. Measured on the thread fixture before this
+	// landed: 20 of 78 focusable controls landed under it when focus moved
+	// *upward* - shift+Tab, an in-page anchor, a module calling scrollIntoView.
+	// Downward moves hide the defect, because the minimum scroll parks the target
+	// at the viewport bottom instead. Padding on the scrollport covers every
+	// scroll-into-view at once, where scroll-margin would be repeated per element.
+	// The offset is written by pageTheme from the header's measured height; the
+	// fallback is the header's min-height, which is what an empty one renders at.
+	scroll-padding-block-start: calc(var(--rsm-th-header-height, 80px) + 8px);
 	color-scheme: dark;
 	background: var(--rsm-th-bg);
 	scrollbar-color: var(--rsm-th-border) var(--rsm-th-bg);

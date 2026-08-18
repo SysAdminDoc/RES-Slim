@@ -267,6 +267,32 @@ html.res-pageTheme {
 	}
 }
 
+// ---- Target size ------------------------------------------------------------
+// WCAG 2.2 AA, 2.5.8 Target Size (Minimum): 24x24 CSS px. Old Reddit's own icon
+// rows are ~16px and RES-Slim injects controls alongside them, so matching the
+// neighbours visually and meeting the rule are the same problem - which is what
+// the overlay solves. The element keeps its rendered size; the *target* grows
+// around its centre.
+
+// Applied by adding `rsm-target-24` to an injected control. Do not reach for it
+// on a control that is already large enough: an oversized invisible target that
+// overlaps its neighbour is its own failure (2.5.8 exempts spacing for a reason).
+.rsm-target-24 {
+	position: relative;
+
+	&::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		translate: -50% -50%;
+		width: 100%;
+		height: 100%;
+		min-width: 24px;
+		min-height: 24px;
+	}
+}
+
 // ---- Increased contrast -----------------------------------------------------
 // Unlike forced colours this keeps the palette; it asks for the low-contrast
 // decoration to go. Translucency is the main offender here — shadows and the

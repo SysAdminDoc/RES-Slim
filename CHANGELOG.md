@@ -22,6 +22,34 @@ All notable changes to RES-Slim will be documented in this file.
   reach, so the orphan class cannot come back. A commented-out `@import` counts
   as absent, which is the direction the check must not be wrong in.
 
+### Accessibility
+
+- Focus is no longer parked under the sticky header. WCAG 2.2 AA, 2.4.11 Focus
+  Not Obscured (Minimum), and the offending element is this fork's own - the
+  compact sticky header added in v0.32.0. Measured on the thread fixture before
+  the fix: **20 of 78 focusable controls landed underneath it.** Only when focus
+  moves *upward*, which is why it went unnoticed - a downward move scrolls the
+  minimum and parks the target at the viewport bottom, while shift+Tab, in-page
+  anchors and every `scrollIntoView` put it at the top.
+
+  `scroll-padding-block-start` on the scrollport covers every scroll-into-view at
+  once. The header has no fixed height (`min-height` is 80px; three populated rows
+  measure 172px and it reflows with the viewport), so `pageTheme` measures it and
+  publishes the value. Note the first version of that publish ran only from
+  `always`, which can fire before reddit's header is in the document - leaving the
+  80px fallback against a 172px header on roughly half of all loads. It runs from
+  `contentStart` now, and retries on `DOMContentLoaded`.
+
+- Every injected control meets the 24x24 target size (2.5.8, AA). Five did not:
+  the three old/www/sh header segments at 17px tall, and the saved-manager and
+  storage triggers at 15px. An overlay grows the target around the control's
+  centre without changing what it renders as, so they still match the reddit links
+  beside them.
+
+  Both are gated in the e2e suite, and the target-size check hit-tests rather than
+  measuring boxes - an overlay satisfies 2.5.8 and moves
+  `getBoundingClientRect()` by nothing at all.
+
 ### Security
 
 - The four third-party API keys inherited from upstream are gone. They were live

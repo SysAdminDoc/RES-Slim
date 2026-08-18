@@ -2093,3 +2093,140 @@ test('the hover-zoom preview is in the top layer and takes no focus', async t =>
 	assert.equal(state.zIndex, 'auto', 'a top-layer preview needs no stacking value');
 	assert.notEqual(state.activeElement, 'rsm-hoverZoom-popover', 'the preview must not take focus');
 });
+
+// Every opt-in module that injects a control, so the sweep below sees more than
+// the handful the defaults put on the page.
+const CONTROL_HEAVY_MODULES = {
+	overlayViewer: true, hoverZoom: true, storageDashboard: true, savedBackup: true,
+	commentTreeExport: true, threadMinimap: true, subRulesInline: true, waybackSnapshot: true,
+	archiveLinks: true, viewDeleted: true, userTagger: true, reverseImageSearch: true,
+	commentShredder: true, arcticShift: true, codeBlockCopy: true, searchGallery: true,
+	cobaltDownloader: true, editedCommentDiff: true, crosspostMap: true,
+	authorContextBadge: true, perSubSort: true, repostDedupe: true, topCommentsPreview: true,
+};
+
+async function openControlHeavyThread(context, worker) {
+	await worker.evaluate(mods => new Promise(resolve => chrome.storage.local.set({ 'RES.modulePrefs': mods }, resolve)), CONTROL_HEAVY_MODULES);
+	const html = servableCapture();
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://old.reddit.com/r/fixture/comments/post0000001/fixture-post/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForTimeout(1500);
+	return page;
+}
+
+test('every injected control meets the WCAG 2.2 target size', async t => {
+	// 2.5.8 Target Size (Minimum), AA: 24x24 CSS px. Old Reddit's own icon rows are
+	// about 16px and RES-Slim injects controls alongside them, so looking right and
+	// meeting the rule pull in opposite directions — which is what the
+	// `rsm-target-24` overlay resolves: the rendered size does not change, the
+	// target grows around the centre.
+	//
+	// Measured by hit test, because the criterion is about the region that accepts
+	// a pointer and not the rendered box. An overlay satisfies 2.5.8 and moves
+	// getBoundingClientRect() by exactly nothing, so a box measurement answers a
+	// question the rule never asked.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+	const page = await openControlHeavyThread(context, worker);
+
+	const report = await page.evaluate(() => {
+		const isOurs = el => /(^|\s)(rsm-|RES)/.test(`${el.className || ''} `) || /^(rsm-|RES)/.test(el.id || '');
+		const ours = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="button"]')].filter(isOurs);
+
+		const failures = [];
+		for (const el of ours) {
+			// elementsFromPoint answers an empty list outside the viewport, which
+			// would read as a failure for a control that is merely below the fold.
+			el.scrollIntoView({ block: 'center' });
+			const r = el.getBoundingClientRect();
+			if (r.width === 0 || r.height === 0) continue;
+			const cx = r.left + r.width / 2;
+			const cy = r.top + r.height / 2;
+			const inView = ([x, y]) => x >= 0 && y >= 0 && x < window.innerWidth && y < window.innerHeight;
+			// A target flush against a viewport edge cannot extend past it.
+			const probes = [[cx, cy - 11.5], [cx, cy + 11.5], [cx - 11.5, cy], [cx + 11.5, cy]].filter(inView);
+			const misses = probes.filter(([x, y]) => {
+				// The whole stack, not the topmost element: a toast painted over the
+				// control at this instant does not make the control smaller.
+				const stack = document.elementsFromPoint(x, y);
+				return !stack.some(node => node === el || el.contains(node));
+			});
+			if (misses.length) {
+				failures.push(`${el.id ? `#${el.id}` : `.${(el.className || '').toString().trim().split(/\s+/).join('.')}`} (${Math.round(r.width)}x${Math.round(r.height)}, ${misses.length} of ${probes.length} probes missed)`);
+			}
+		}
+		return { controls: ours.length, failures: [...new Set(failures)] };
+	});
+
+	// The sweep is worthless if it found nothing to sweep.
+	assert.ok(report.controls >= 20, `expected the injected controls, found ${report.controls}`);
+	assert.deepEqual(report.failures, [],
+		`injected controls under the 24x24 target:\n  ${report.failures.join('\n  ')}`);
+});
+
+test('focus is never parked under the sticky header', async t => {
+	// 2.4.11 Focus Not Obscured (Minimum), AA — and the offending element is this
+	// fork's own: the compact sticky header v0.32.0 introduced. Measured on this
+	// fixture before the fix, 20 of 78 focusable controls landed under it.
+	//
+	// Only when focus moves *upward*. A downward move scrolls the minimum, which
+	// parks the target at the viewport bottom; shift+Tab, an in-page anchor and
+	// every scrollIntoView put it at the top, where the header is.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+	const page = await openControlHeavyThread(context, worker);
+
+	const result = await page.evaluate(() => {
+		const header = document.querySelector('#header');
+		if (getComputedStyle(header).position !== 'sticky') return { skipped: 'header is not sticky' };
+		const focusables = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select')]
+			// Nothing inside the header can be obscured *by* the header.
+			.filter(el => !header.contains(el) && el.getBoundingClientRect().width > 0);
+
+		const obscured = [];
+		for (const el of focusables) {
+			el.focus({ preventScroll: true });
+			// scrollIntoView rather than letting focus() scroll: focus-triggered
+			// scrolling is scheduled, not synchronous, and reading the rect after it
+			// made this count flip between 0 and 16 across identical runs. This drives
+			// the same user-agent scroll-into-view that honours scroll-padding, and
+			// has landed by the time it returns. `start` is the upward-move case.
+			el.scrollIntoView({ block: 'start' });
+			const r = el.getBoundingClientRect();
+			const hb = header.getBoundingClientRect();
+			if (r.height === 0) continue;
+			if (r.top < hb.bottom && r.bottom > hb.top) {
+				obscured.push(`${el.tagName}.${(el.className || '').toString().slice(0, 40)} "${(el.textContent || '').trim().slice(0, 20)}" at ${Math.round(r.top)} under ${Math.round(hb.bottom)}`);
+			}
+		}
+		return {
+			checked: focusables.length,
+			scrollPadding: getComputedStyle(document.documentElement).scrollPaddingBlockStart,
+			headerHeight: Math.round(header.getBoundingClientRect().height),
+			obscured,
+		};
+	});
+
+	assert.equal(result.skipped, undefined, result.skipped);
+	assert.ok(result.checked > 50, `expected a page full of controls, found ${result.checked}`);
+
+	// The padding has to have come from the measured header, not the fallback. It
+	// is published by pageTheme from a ResizeObserver, and the first version of
+	// that published it from `always`, which can run before reddit's header is in
+	// the document — leaving the fallback in place on about half of all loads,
+	// which is how this test came to flip between 0 and 16 obscured.
+	assert.ok(parseInt(result.scrollPadding, 10) >= result.headerHeight,
+		`scroll-padding ${result.scrollPadding} does not clear the ${result.headerHeight}px header — the measured height never reached the stylesheet`);
+
+	assert.deepEqual(result.obscured, [],
+		`focused controls under the sticky header:\n  ${result.obscured.join('\n  ')}`);
+});
