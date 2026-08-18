@@ -57,6 +57,13 @@ All notable changes to RES-Slim will be documented in this file.
   ("4 options changed, 2 modules updated, 1 left as-is") instead of a bare module
   count. Because import reloads the page, the undo is offered on the next console
   load rather than in a toast the reload would destroy.
+- `viewDeleted` told you a comment was "not in archive" whenever anything went
+  wrong — every failure collapsed to `null`, so a rate limit, a server error and a
+  genuinely unarchived comment were indistinguishable. pullpush rate-limits
+  readily, so the misleading branch was the common one. Failures are now typed the
+  way `arcticShift` already types them, each gets its own label, and only "not in
+  archive" is terminal: transient failures restore the actionable label so the
+  link is visibly worth clicking again.
 - `imgurFlatten` shipped two non-working mirrors. `rimgo.ducks.party` was gone
   outright, and `imgur.artemislena.eu` — the first-choice default — answered 200
   with an anti-bot challenge page rather than rimgo, so the module resolved it as
