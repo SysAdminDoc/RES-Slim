@@ -603,7 +603,7 @@ li {
 .globalStageIcon {
 	width: 9px;
 	height: 9px;
-	border-radius: 3px;
+	border-radius: 4px;
 	background: currentcolor;
 }
 
@@ -3426,7 +3426,7 @@ html[res-options]:root {
 		min-width: 48px;
 		height: 28px;
 		flex-basis: 48px;
-		border-radius: 16px;
+		border-radius: 12px;
 	}
 
 	#RESConsoleContainer .toggleButton .toggleThumb::before {
@@ -3669,7 +3669,7 @@ html[res-options]:root {
 		height: 28px;
 		margin: 0;
 		border: 1px solid var(--options-border-strong);
-		border-radius: 16px;
+		border-radius: 12px;
 		background: var(--options-field);
 		cursor: pointer;
 	}

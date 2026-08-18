@@ -456,7 +456,7 @@ html.res-pageTheme--refined #header-bottom-right {
 	right: 10px;
 	padding: 6px 9px;
 	border: 1px solid var(--rsm-th-border);
-	border-radius: 7px;
+	border-radius: 8px;
 	box-shadow: 0 6px 18px var(--rsm-th-shadow);
 	font-size: 11px;
 }
@@ -530,7 +530,7 @@ html.res-pageTheme--refined .side #search input[type="text"] {
 	height: 38px;
 	padding: 0 42px 0 12px;
 	border: 1px solid var(--rsm-th-control-border) !important;
-	border-radius: 7px;
+	border-radius: 8px;
 	box-shadow: 0 6px 20px var(--rsm-th-shadow);
 	font-size: 13px;
 }
@@ -553,7 +553,7 @@ html.res-pageTheme--refined .side #search input[type="submit"] {
 	padding: 0;
 	background: none !important;
 	border: 0 !important;
-	border-radius: 0 7px 7px 0;
+	border-radius: 0 8px 8px 0;
 	box-shadow: none;
 	color: transparent;
 	cursor: pointer;
@@ -575,7 +575,7 @@ html.res-pageTheme--refined .side #search select.rsm-search-dispatcher {
 	padding: 3px 22px 3px 8px;
 	background: var(--rsm-th-bg-elev) !important;
 	border: 1px solid var(--rsm-th-control-border) !important;
-	border-radius: 5px;
+	border-radius: 6px;
 	color: var(--rsm-th-txt) !important;
 	font-size: 10px;
 	font-weight: 650;
@@ -590,7 +590,7 @@ html.res-pageTheme--refined .side #searchexpando {
 	padding: 7px 9px 6px;
 	background: var(--rsm-th-bg-elev) !important;
 	border: 1px solid var(--rsm-th-control-border) !important;
-	border-radius: 7px;
+	border-radius: 8px;
 	box-shadow: 0 8px 22px var(--rsm-th-shadow);
 	color: var(--rsm-th-txt) !important;
 	font-size: 11px;
@@ -843,7 +843,7 @@ html.res-pageTheme--refined .thing.link .thumbnail {
 	overflow: hidden;
 	background-color: var(--rsm-th-bg-raise);
 	border: 1px solid var(--rsm-th-border);
-	border-radius: 7px;
+	border-radius: 8px;
 }
 
 html.res-pageTheme--refined .thing.link .thumbnail img {
@@ -1083,7 +1083,7 @@ html.res-pageTheme--refined body.combined-search-page .search-result .thumbnail 
 	overflow: hidden;
 	background: var(--rsm-th-bg-raise);
 	border: 1px solid var(--rsm-th-border);
-	border-radius: 7px;
+	border-radius: 8px;
 }
 
 html.res-pageTheme--refined body.combined-search-page .search-result .thumbnail img {
@@ -1400,7 +1400,7 @@ html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.
 	padding: 14px 16px;
 	background: var(--rsm-th-bg-raise) !important;
 	border: 1px solid var(--rsm-th-border);
-	border-radius: 7px;
+	border-radius: 8px;
 	color: var(--rsm-th-txt-strong) !important;
 	font-size: 15px;
 	line-height: 1.65;
@@ -1453,7 +1453,7 @@ html.res-pageTheme--refined select {
 	padding: 8px 10px;
 	background: var(--rsm-th-bg-raise) !important;
 	border: 1px solid var(--rsm-th-border) !important;
-	border-radius: 7px;
+	border-radius: 8px;
 	color: var(--rsm-th-txt-strong) !important;
 	font: inherit;
 }

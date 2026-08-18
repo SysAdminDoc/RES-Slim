@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The 4/6/8/10/12 radius scale is enforced for real. `CLAUDE.md` and the project
+  notes both said a contract already scanned every shipped stylesheet; what
+  existed were four inconsistent pill greps over disjoint file subsets, one
+  matching the literal `999px` only — so `9999px` passed — while about fifty
+  off-scale literals shipped underneath them. Those are snapped onto the scale
+  (each moved at most 4px, most by 1), circles are allowlisted one site at a
+  time, and the three token scales are checked against each other.
+
 - Every option control in the settings console now has an accessible name.
   `<label for>` pointed at elements that cannot be labelled — an enum rendered a
   div, a button option rendered a div, and a keycode pointed the label at a

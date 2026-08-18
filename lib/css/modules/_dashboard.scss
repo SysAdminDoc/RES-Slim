@@ -16,7 +16,7 @@
 .RESDashboardComponent {
 	position: relative;
 	border: 1px solid #ccc;
-	border-radius: 3px;
+	border-radius: 4px;
 	overflow: hidden;
 	margin-top: 5px;
 	margin-bottom: 5px;
@@ -74,7 +74,7 @@
 			border: 1px solid #c7c7c7;
 			background-color: #fff;
 			color: #6c6c6c;
-			border-radius: 3px;
+			border-radius: 4px;
 
 			&.active,
 			&:hover {
@@ -98,7 +98,7 @@
 	position: absolute;
 	background-color: #f2f9ff;
 	border: 1px solid #b9d7f4;
-	border-radius: 3px;
+	border-radius: 4px;
 	width: 314px;
 	height: 40px;
 	left: 50%;
@@ -199,7 +199,7 @@
 	font-size: 11px;
 	color: #fff;
 	border: 1px solid #636363;
-	border-radius: 3px;
+	border-radius: 4px;
 	background-color: #5cc410;
 	margin-top: 3px;
 	margin-left: 5px;
@@ -214,7 +214,7 @@
 	font-size: 11px;
 	color: #fff;
 	border: 1px solid #636363;
-	border-radius: 3px;
+	border-radius: 4px;
 	background-color: #d02020;
 	margin-top: 3px;
 	margin-left: 5px;

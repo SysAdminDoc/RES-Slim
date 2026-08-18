@@ -701,7 +701,11 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	assert.ok(state.expandedSearchHeight > state.closedSearchHeight, 'the native helper should expand the form in flow');
 	assert.notEqual(state.searchExpandoBackground, 'rgba(0, 0, 0, 0)', 'the search helper should sit on a deliberate surface');
 	assert.equal(state.searchExpandoBorder, state.searchInputBorder, 'the search helper should use the active theme border instead of orange');
-	assert.equal(state.searchExpandoRadius, '7px', 'the search helper should match the field geometry');
+	// 8px, not the 7px this pinned for two releases: 7 is not on the 4/6/8/10/12
+	// scale, and this assertion was one of the places the off-scale value was
+	// load-bearing. What it is really about is that the helper and the field it
+	// hangs off share a radius, which is still true.
+	assert.equal(state.searchExpandoRadius, '8px', 'the search helper should match the field geometry');
 	assert.equal(state.searchExpandoGap, 6, 'the search helper should connect to the field with a compact gap');
 	assert.equal(state.searchExpandoLabelHeight, 24, 'search scope choices should remain easy to target');
 	assert.equal(state.searchAdvancedSize, '10px', 'advanced search should stay visible without dominating the rail');
