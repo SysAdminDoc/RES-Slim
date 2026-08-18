@@ -185,12 +185,18 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	const dom = new JSDOM(html, { url, pretendToBeVisual: true });
 	const { window } = dom;
 
-	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
+	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
 		if (!(key in window)) continue;
 		// Node 24 defines `navigator` (and friends) as getter-only on globalThis, so
 		// a plain assignment throws. defineProperty replaces them outright.
 		Object.defineProperty(globalThis, key, { value: window[key], writable: true, configurable: true });
 	}
+	// The element constructors are not decoration: modules narrow with
+	// `instanceof HTMLLinkElement` before touching an element, and an undefined
+	// global makes that a ReferenceError inside a MutationObserver callback —
+	// where it is swallowed as unhandled activity rather than reported as a
+	// failure, so the module looks like it simply did nothing.
+	//
 	// `Blob`/`File`/`FileReader`/`URL` come from jsdom rather than Node. Node has
 	// its own `Blob` and no `FileReader` at all, and a library that feature-detects
 	// blob support when it loads — jszip does — then ends up holding one
@@ -210,6 +216,16 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	}
 	for (const name of ['IntersectionObserver', 'ResizeObserver', 'PerformanceObserver']) {
 		if (!globalThis[name]) globalThis[name] = InertObserver;
+	}
+
+	// jsdom does not implement the idle callbacks. Modules that defer work with
+	// them throw a ReferenceError from inside a timer, long after whichever test
+	// triggered it has ended — where node:test reports it as "asynchronous
+	// activity after the test ended" rather than as the failure it is. Shimmed
+	// onto a timer so the deferred work actually runs.
+	if (!globalThis.requestIdleCallback) {
+		globalThis.requestIdleCallback = callback => setTimeout(() => callback({ didTimeout: false, timeRemaining: () => 0 }), 0);
+		globalThis.cancelIdleCallback = handle => clearTimeout(handle);
 	}
 
 	installNetworkGuard();

@@ -4,6 +4,12 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- `fixImageLinks` carried an unreachable `observer.disconnect()` sitting after an
+  early return on the same condition, with a comment describing a leak the guard
+  above it already prevented.
+
 ### Added
 
 - Selector drift now has its own view in the settings console: which surfaces
