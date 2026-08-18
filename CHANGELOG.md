@@ -6,6 +6,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- esbuild 0.25.10 -> 0.28.2. Three miscompile fixes, and it steps over the
+  0.25.11-0.27.4 CSS media-query regression window. Landing on 0.28.2 rather
+  than 0.27.x is deliberate: the dev-server advisory GHSA-g7r4-m6w7-qqqr was
+  introduced in 0.27.3 and fixed in 0.28.1. Bundle sizes did not move.
 - `fast-levenshtein` replaced with `fastest-levenshtein`. The former was a thin
   wrapper that delegated to the latter, so the tree already shipped both; the
   wrapper's repo has been dead since the day it was published. Its one extra
