@@ -30,6 +30,9 @@ const NON_GATE_SCRIPTS = new Set([
 	'test:settings', 'test:show-images', 'test:privacy', 'pretest:e2e',
 	'eslint', 'stylelint', 'lint:i18n', 'flow:baseline', 'lint:baseline',
 	'test:bundle', 'fixture:import', 'verify', 'bundle:baseline',
+	// Writes a version, a commit and a tag. Deliberately operator-run: a gate
+	// must be safe to run on every push, and this is not.
+	'release',
 ]);
 
 function declaredGates() {
