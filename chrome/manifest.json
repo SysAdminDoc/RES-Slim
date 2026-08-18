@@ -99,7 +99,9 @@
     "https://www.flickr.com/services/oembed",
     "https://embed.bsky.app/oembed",
     "https://www.threads.com/*",
-    "https://www.threads.net/*"
+    "https://www.threads.net/*",
+    "https://rimgo.reallyaweso.me/*",
+    "https://rmgur.com/*"
   ],
   "web_accessible_resources": [
     {

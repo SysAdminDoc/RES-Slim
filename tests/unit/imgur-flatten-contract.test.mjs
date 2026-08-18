@@ -24,9 +24,22 @@ const {
 	DEFAULT_MIRROR_LIST,
 	parseMirrorList,
 	isHealthyStatus,
+	isHealthyProbe,
+	looksLikeMirror,
+	originForMirror,
 	pickHealthyMirror,
 	probeUrlFor,
 } = await import(pathToFileURL(modulePath).href);
+
+const moduleSource = fs.readFileSync(path.join(repoRoot, 'lib/modules/imgurFlatten.js'), 'utf8');
+const readManifest = target => JSON.parse(fs.readFileSync(path.join(repoRoot, target, 'manifest.json'), 'utf8'));
+
+// A root document as a live rimgo instance actually serves it, trimmed to the
+// part the probe judges. Captured from rimgo.reallyaweso.me on 2026-08-18.
+const RIMGO_BODY = '<!DOCTYPE html><html><head><title>rimgo</title></head><body><a href="https://codeberg.org/rimgo/rimgo">source</a></body></html>';
+// What imgur.artemislena.eu served, with a 200, while shipping as the
+// first-choice default.
+const CHALLENGE_BODY = '<!DOCTYPE html><html><head><title>Making sure you\'re not a bot!</title></head><body>Checking your browser</body></html>';
 
 test('isImgurAlbumUrl recognises /a/ and /gallery/ variants', () => {
 	assert.equal(isImgurAlbumUrl('https://imgur.com/a/abc123'), true);
@@ -115,14 +128,98 @@ test('every mirror failing resolves to null rather than a bad rewrite', async ()
 	assert.equal(thrown, null);
 });
 
+test('a 200 that is not rimgo is not a healthy mirror', () => {
+	// The whole reason this check exists: imgur.artemislena.eu was the
+	// first-choice default for months while answering 200 with a bot challenge,
+	// so `isHealthyStatus` alone called a page that never returns album HTML
+	// healthy. A status code cannot tell those apart; the body can.
+	assert.equal(looksLikeMirror(RIMGO_BODY), true);
+	assert.equal(looksLikeMirror(CHALLENGE_BODY), false);
+	assert.equal(looksLikeMirror('<title>Just a moment...</title>'), false, 'the Cloudflare interstitial');
+	assert.equal(looksLikeMirror(''), false);
+	assert.equal(looksLikeMirror(null), false);
+	// A rebranded title is still recognisable by the source link back to rimgo.
+	assert.equal(looksLikeMirror('<title>albums</title><a href="https://codeberg.org/rimgo/rimgo">src</a>'), true);
+
+	assert.equal(isHealthyProbe({ status: 200, body: RIMGO_BODY }), true);
+	assert.equal(isHealthyProbe({ status: 200, body: CHALLENGE_BODY }), false);
+	assert.equal(isHealthyProbe({ status: 403, body: RIMGO_BODY }), false, 'the body cannot rescue a dead status');
+	// Rate-limited: alive, but serving an error page, so there is no body to
+	// judge and the status is the only signal there is.
+	assert.equal(isHealthyProbe({ status: 429, body: 'slow down' }), true);
+	// A bare number is the status-only shape the fallthrough tests inject.
+	assert.equal(isHealthyProbe(200), true);
+	assert.equal(isHealthyProbe(503), false);
+	assert.equal(isHealthyProbe(null), false);
+});
+
+test('a mirror that answers 200 with a challenge page falls through to a real one', async () => {
+	const tried = [];
+	const picked = await pickHealthyMirror(
+		['https://challenge.example', 'https://real.example', 'https://never.example'],
+		async mirror => {
+			tried.push(mirror);
+			return mirror.includes('challenge') ?
+				{ status: 200, body: CHALLENGE_BODY } :
+				{ status: 200, body: RIMGO_BODY };
+		},
+	);
+	assert.equal(picked, 'https://real.example');
+	assert.deepEqual(tried, ['https://challenge.example', 'https://real.example']);
+});
+
+test('originForMirror yields a match pattern, or nothing it cannot parse', () => {
+	assert.equal(originForMirror('https://rimgo.example.com'), 'https://rimgo.example.com/*');
+	assert.equal(originForMirror('rimgo.example.com/'), 'https://rimgo.example.com/*');
+	assert.equal(originForMirror('http://rimgo.example.com:8080/x'), 'http://rimgo.example.com:8080/*');
+	assert.equal(originForMirror(''), '');
+	assert.equal(originForMirror(null), '');
+	assert.equal(originForMirror('http://['), '', 'an unparseable value must not become a permission request');
+});
+
+test('both manifests declare exactly the shipped mirrors as optional origins', () => {
+	// Without a host permission the service worker's fetch is CORS-blocked and
+	// every mirror reads as dead — which is how this module shipped doing nothing
+	// at all. Verified 2026-08-18 against the built extension: the fetch rejects
+	// with "Failed to fetch". Unlike Arctic Shift / pullpush / Wayback, rimgo
+	// instances send no `Access-Control-Allow-Origin` to work around it.
+	const wanted = DEFAULT_MIRRORS.map(m => `${m}/*`).sort();
+	const isOrigin = entry => /^https?:\/\//.test(entry);
+	const mirrorish = list => list.filter(entry => wanted.includes(entry) || /rimgo|rmgur/i.test(entry)).sort();
+
+	assert.deepEqual(mirrorish(readManifest('chrome').optional_host_permissions), wanted);
+	assert.deepEqual(
+		mirrorish(readManifest('firefox').optional_permissions.filter(isOrigin)),
+		wanted,
+		'Firefox MV2 spells this field differently, so a one-sided edit leaves one browser unable to ask',
+	);
+});
+
+test('the module asks for the mirror host before it probes, and judges the body', () => {
+	// A probe that reads only `.status` is the defect this module shipped with,
+	// and a probe that runs without the permission never leaves the browser.
+	assert.match(moduleSource, /await Permissions\.has\(\[origin\]\)/);
+	assert.match(moduleSource, /await Permissions\.request\(\[origin\]\)/);
+	assert.match(moduleSource, /if \(!await ensureMirrorPermission\(mirror\)\)/);
+	assert.match(moduleSource, /body: response && typeof response\.text === 'string'/);
+	assert.doesNotMatch(codeOnly(moduleSource), /pickHealthyMirror\(mirrors, probeStatus\)/);
+	// "No permission" and "host is down" have different remedies, so they must not
+	// collapse into one message.
+	assert.match(moduleSource, /ungranted\.length === mirrors\.length/);
+});
+
 test('the module only rewrites once a mirror is known good', () => {
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/imgurFlatten.js'), 'utf8');
 	// Writing data-url is destructive: the original URL is gone afterwards, so a
 	// rewrite through an unchecked mirror cannot be undone by a later pass.
 	assert.match(mod, /resolveMirror\(\)\.then\(mirror => \{/);
 	assert.match(mod, /if \(mirror && el\.isConnected\) applyRewrite/);
-	// One toast, and only when every mirror is down.
-	assert.match(mod, /if \(!mirror && !allMirrorsFailed\)/);
+	// One toast, and only when every mirror is unusable — a single dead instance
+	// is a non-event. Asserted as intent rather than one spelling: the guard has
+	// already moved once, and pinning the line is how a contract fails a refactor
+	// that kept the behaviour.
+	assert.match(mod, /if \(!mirror\) reportNoMirror\(mirrors\)/);
+	assert.match(mod, /if \(allMirrorsFailed\) return;\n\tallMirrorsFailed = true;/);
 });
 
 test('probeUrlFor targets the mirror root', () => {

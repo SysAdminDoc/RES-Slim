@@ -2,6 +2,26 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Imgur album flatten works again. It has never worked: rimgo instances send no
+  `Access-Control-Allow-Origin` and the extension held no host permission for
+  them, so the service worker's probe fetch was CORS-blocked before it left the
+  browser. Every mirror therefore read as dead and the module rewrote nothing,
+  reporting "none of the configured mirrors responded" as though the hosts were
+  down. The two shipped mirrors are now declared as optional host permissions and
+  requested when an imgur album is actually encountered; a mirror the extension
+  cannot read is reported as a permission problem rather than as an outage,
+  because the remedies are different.
+- The mirror probe now judges the response body, not just its status code. A
+  status code cannot tell a working instance from an anti-bot interstitial, which
+  is how `imgur.artemislena.eu` stayed the first-choice default while answering
+  200 with "Making sure you're not a bot!". A 200 must now contain rimgo's own
+  markup to count as healthy, so a challenge page falls through to the next
+  mirror instead of being selected.
+
 ## v0.36.0 - 2026-08-18
 
 ### Changed
