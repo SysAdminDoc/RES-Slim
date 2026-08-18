@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- `waybackSnapshot` tells an archive.org outage apart from a URL that was never
+  archived. Every failure used to collapse to the same value, so the module
+  opened Save Page Now for pages that may already have had a snapshot and then
+  reported success. Found live: archive.org answered 200 and the Wayback machine
+  itself 302 while `/wayback/available` returned 502 for minutes. An unreachable
+  API now archives nothing and says so.
+
 - The 4/6/8/10/12 radius scale is enforced for real. `CLAUDE.md` and the project
   notes both said a contract already scanned every shipped stylesheet; what
   existed were four inconsistent pill greps over disjoint file subsets, one

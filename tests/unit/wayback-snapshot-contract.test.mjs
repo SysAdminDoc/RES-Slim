@@ -85,3 +85,89 @@ test('waybackSnapshot module is registered and uses the helpers', () => {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
 	}
 });
+
+// --- outage is not absence ---------------------------------------------------
+//
+// `checkAvailability` used to return `null` for every failure, so a 502, a
+// dropped connection, a body the parser could not read and a genuine "this URL
+// was never archived" were the same value — and the caller acted on the last
+// reading, opening Save Page Now for a URL that may already be archived and
+// then reporting "✓ checked".
+//
+// Observed live on 2026-08-18: archive.org answered 200 and the Wayback machine
+// itself 302 while `/wayback/available` returned 502 for minutes.
+
+const moduleSource = fs.readFileSync(path.join(repoRoot, 'lib/modules/waybackSnapshot.js'), 'utf8');
+// `classifyAvailability` lives in `lib/utils/wayback.js` alongside the other
+// pure helpers, so it comes from the same stripped module as everything above —
+// no slicing a function out of a file that reaches the whole extension.
+const { classifyAvailability } = await import(pathToFileURL(modulePath).href);
+
+const NOW = Date.UTC(2026, 7, 18, 12, 0, 0);
+const YEAR = 365 * 24 * 60 * 60 * 1000;
+
+function availableAt(timestamp) {
+	return { archived_snapshots: { closest: { available: true, url: `https://web.archive.org/web/${timestamp}/https://example.com`, timestamp, status: '200' } } };
+}
+
+test('a fresh snapshot is reported as available', () => {
+	const result = classifyAvailability(availableAt('20260810120000'), NOW, YEAR);
+	assert.equal(result.state, 'available');
+	assert.equal(result.isStale, false);
+	assert.match(result.url, /^https:\/\/web\.archive\.org\/web\//);
+});
+
+test('an old snapshot is available but stale', () => {
+	const result = classifyAvailability(availableAt('20200810120000'), NOW, YEAR);
+	assert.equal(result.state, 'available');
+	assert.equal(result.isStale, true, 'a six-year-old capture of a live page is worth refreshing');
+});
+
+test('a URL the API says is not archived is absent, not an outage', () => {
+	assert.deepEqual(classifyAvailability({ archived_snapshots: {} }, NOW, YEAR), { state: 'absent' });
+	assert.deepEqual(classifyAvailability({ archived_snapshots: { closest: { available: false } } }, NOW, YEAR), { state: 'absent' });
+});
+
+test('a response the parser cannot read is an outage, not an absence', () => {
+	// The distinction that matters: "archive.org told us there is nothing" versus
+	// "archive.org did not tell us anything". Reading the second as the first is
+	// how a changed API shape becomes a silent wrong answer.
+	for (const unreadable of [null, undefined, '', 'not json', 42, [], {}]) {
+		const result = classifyAvailability(unreadable, NOW, YEAR);
+		assert.equal(result.state, 'unavailable', `${JSON.stringify(unreadable)} is not an answer`);
+		assert.match(result.reason, /unreadable/);
+	}
+});
+
+test('a transport failure is reported as unavailable, with its reason', () => {
+	// The catch in checkAvailability is what turns a 502 or a dropped socket into
+	// this shape; the shape itself is asserted here, and the wiring below.
+	const stripped = moduleSource
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.split(/\r?\n/).map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1')).join('\n');
+
+	assert.match(stripped, /catch \(e\) \{\s*\n\s*return \{ state: 'unavailable', reason: String\(\(e && e\.message\) \|\| e\) \};/);
+	assert.ok(!/return null;/.test(stripped.slice(stripped.indexOf('async function checkAvailability'), stripped.indexOf('function openSave'))));
+});
+
+test('an unreachable API never triggers a save, and says so', () => {
+	const stripped = moduleSource
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.split(/\r?\n/).map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1')).join('\n');
+	const action = stripped.slice(stripped.indexOf('async function performAction'), stripped.indexOf('function injectButton'));
+
+	// The whole point: an outage must not archive a page that may already have a
+	// snapshot, on the strength of an answer that was never given.
+	assert.match(action, /if \(avail\.state === 'unavailable'\) \{[\s\S]*?unreachable \+= 1;[\s\S]*?continue;/);
+	const unavailableAt = action.indexOf("avail.state === 'unavailable'");
+	const saveAt = action.indexOf('openSave(target)');
+	assert.ok(unavailableAt > 0 && saveAt > unavailableAt, 'the outage branch has to come before the save');
+
+	// And an absent snapshot still saves, which is the correct action for a URL
+	// that genuinely is not archived.
+	assert.match(action, /avail\.state === 'absent' \|\| avail\.isStale/);
+
+	// The status line stops claiming success it did not have.
+	assert.match(action, /archive\.org unreachable/);
+	assert.match(action, /\$\{unreachable\} unreachable/);
+});
