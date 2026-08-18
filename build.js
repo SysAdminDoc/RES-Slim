@@ -55,11 +55,23 @@ const targets = {
 
 const validModes = new Set(['development', 'production']);
 
+// Targets build concurrently and the bundle baseline is one shared file, so a
+// read-modify-write per target races: the second writer overwrites the first
+// target's entry with a copy it read before that entry existed. Chaining the
+// updates makes each one read what the previous actually wrote.
+let bundleBaselineQueue = Promise.resolve();
+function queueBundleBaselineUpdate(update) {
+	const next = bundleBaselineQueue.then(update);
+	bundleBaselineQueue = next.catch(() => {});
+	return next;
+}
+
 const options = commander.program
 	.option('--watch', 'Enable watch mode')
 	.option('--zip', 'Enable zipping')
 	.option('--mode <type>', 'Set the mode', 'development')
 	.option('--browsers <list>', 'Specify browsers to target', 'chrome')
+	.option('--update-bundle-baseline', 'Rewrite the recorded bundle sizes instead of asserting against them')
 	.parse(process.argv)
 	.opts();
 
@@ -137,6 +149,11 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 		// Chrome zip shipped .map files carrying the full original sources and came
 		// out at more than double the Firefox one.
 		sourcemap: !isProduction,
+		// Production minifies; development never does, so a stack trace in the
+		// browser still points at readable source. This was simply never set, so
+		// every release shipped the foreground content script — parsed at
+		// document_start on every Reddit page — as full-width readable source.
+		minify: isProduction,
 		outdir: `./dist/${targetName}/`,
 		bundle: true,
 		format: 'iife',
@@ -216,37 +233,86 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 				},
 			},
 			isProduction ? {
-				name: 'bundle-budget',
+				name: 'bundle-baseline',
 				setup(build) {
 					build.onEnd(async () => {
-						// Covers the two largest shipped assets as well as the entry
-						// scripts: res.css is injected into every frame at document_start
-						// and was ungated, as was the vendored dash player.
-						const budgets = {
-							'foreground.entry.js': 1_800_000,
-							'options.entry.js': 1_900_000,
-							'background.entry.js': 400_000,
-							'res.css': 400_000,
-							'options.css': 120_000,
-							'dash.mediaplayer.min.js': 800_000,
-						};
-						const violations = [];
-						for (const [file, limit] of Object.entries(budgets)) {
-							const filePath = `./dist/${targetName}/${file}`;
-							const stat = await fs.promises.stat(filePath).catch(() => null);
-							if (!stat) {
-								// A budget that skips missing files passes for a build that
-								// never produced the file, which is the failure it exists to
-								// catch.
-								violations.push(`${file}: missing from the build output`);
+						// A ratchet, not a ceiling. The budgets this replaced sat ~400KB
+						// above reality, so no realistic regression could trip them — the
+						// foreground entry could have grown by a third and still passed.
+						// Recorded sizes fail in both directions, like the eslint and flow
+						// baselines: growth is a regression, and a shrink is a win worth
+						// banking rather than silently losing.
+						const TRACKED = [
+							'foreground.entry.js',
+							'options.entry.js',
+							'background.entry.js',
+							'res.css',
+							'options.css',
+							'dash.mediaplayer.min.js',
+						];
+						// Byte-exact would be too brittle: an esbuild patch release moves
+						// output by a few bytes. 2% of the foreground entry is ~16KB, far
+						// tighter than the 400KB of slack it replaces.
+						const TOLERANCE = 0.02;
+						const baselinePath = './tests/fixtures/lint/bundle-baseline.json';
+
+						const sizes = {};
+						const missing = [];
+						const stats = await Promise.all(TRACKED.map(file =>
+							fs.promises.stat(`./dist/${targetName}/${file}`).catch(() => null)));
+						for (const [i, stat] of stats.entries()) {
+							const file = TRACKED[i];
+							// A check that skips missing files passes for a build that never
+							// produced them, which is the failure it exists to catch.
+							if (!stat) missing.push(`${file}: missing from the build output`);
+							else sizes[file] = stat.size;
+						}
+
+						const readBaseline = () => fs.promises.readFile(baselinePath, 'utf8')
+							.then(JSON.parse)
+							.catch(() => ({}));
+
+						if (options.updateBundleBaseline) {
+							if (missing.length) {
+								throw new Error(`Refusing to record a baseline from an incomplete build:\n  ${missing.join('\n  ')}`);
+							}
+							await queueBundleBaselineUpdate(async () => {
+								// Re-read inside the queue: another target may have written
+								// its own entry since this build started.
+								const baseline = await readBaseline();
+								baseline[targetName] = sizes;
+								const ordered = Object.fromEntries(Object.keys(baseline).sort().map(k => [k, baseline[k]]));
+								await fs.promises.writeFile(baselinePath, `${JSON.stringify(ordered, null, '\t')}\n`);
+							});
+							console.log(`recorded bundle baseline for ${targetName}`);
+							return;
+						}
+
+						const recorded = (await readBaseline())[targetName];
+						if (!recorded) {
+							throw new Error(`No bundle baseline recorded for ${targetName}. Run \`yarn bundle:baseline\`.`);
+						}
+
+						const violations = [...missing];
+						for (const [file, size] of Object.entries(sizes)) {
+							const was = recorded[file];
+							if (typeof was !== 'number') {
+								violations.push(`${file}: not in the baseline — run \`yarn bundle:baseline\``);
 								continue;
 							}
-							if (stat.size > limit) {
-								violations.push(`${file}: ${(stat.size / 1024).toFixed(0)}KB exceeds budget of ${(limit / 1024).toFixed(0)}KB`);
+							const delta = (size - was) / was;
+							if (Math.abs(delta) <= TOLERANCE) continue;
+							const direction = delta > 0 ? 'grew' : 'shrank';
+							violations.push(`${file}: ${direction} ${(Math.abs(delta) * 100).toFixed(1)}% (${was} -> ${size} bytes)`);
+						}
+						for (const file of Object.keys(recorded)) {
+							if (!Object.hasOwn(sizes, file) && !missing.some(m => m.startsWith(`${file}:`))) {
+								violations.push(`${file}: in the baseline but not in the build output`);
 							}
 						}
+
 						if (violations.length) {
-							throw new Error(`Bundle budget exceeded:\n  ${violations.join('\n  ')}`);
+							throw new Error(`Bundle sizes moved away from the baseline:\n  ${violations.join('\n  ')}\n\nIf you caused this and it is expected, bank it:\n  yarn bundle:baseline`);
 						}
 					});
 				},

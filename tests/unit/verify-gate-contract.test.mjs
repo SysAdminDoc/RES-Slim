@@ -29,7 +29,7 @@ const NON_GATE_SCRIPTS = new Set([
 	'preinstall', 'prestart', 'start', 'preonce', 'once', 'prebuild',
 	'test:settings', 'test:show-images', 'test:privacy', 'pretest:e2e',
 	'eslint', 'stylelint', 'lint:i18n', 'flow:baseline', 'lint:baseline',
-	'test:bundle', 'fixture:import', 'verify',
+	'test:bundle', 'fixture:import', 'verify', 'bundle:baseline',
 ]);
 
 function declaredGates() {

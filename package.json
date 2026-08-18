@@ -32,6 +32,7 @@
 		"lint:baseline": "node scripts/lint-baseline.mjs --update",
 		"check:endpoints": "node scripts/check-endpoints.mjs",
 		"verify": "node scripts/verify.mjs",
+		"bundle:baseline": "node build.js --mode production --browsers chrome,firefox --update-bundle-baseline",
 		"fixture:import": "node scripts/import-old-reddit-fixture.mjs"
 	},
 	"browserslist": [

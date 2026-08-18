@@ -87,13 +87,38 @@ test('zipping happens after the gates, not as a plugin among them', () => {
 	assert.ok(zipAt > buildAt, 'zipping must follow the awaited build');
 });
 
-test('the bundle budget covers the two largest shipped assets', () => {
+test('the bundle gate covers the two largest shipped assets', () => {
 	const build = read('build.js');
 	// res.css is injected into every frame at document_start and was ungated, as
 	// was the vendored dash player — together larger than every budgeted script.
-	assert.match(build, /'res\.css': /);
-	assert.match(build, /'dash\.mediaplayer\.min\.js': /);
-	assert.match(build, /'options\.css': /);
+	// Assert against the recorded baseline rather than the source, because the
+	// baseline is the data the gate actually compares against: a file could be
+	// listed in TRACKED and still never be measured if it were never recorded.
+	const baseline = JSON.parse(read('tests/fixtures/lint/bundle-baseline.json'));
+	const targets = Object.keys(baseline);
+
+	assert.deepEqual(targets.sort(), ['chrome', 'firefox'], 'both shipped targets must be recorded');
+	for (const target of targets) {
+		for (const file of ['res.css', 'dash.mediaplayer.min.js', 'options.css', 'foreground.entry.js', 'options.entry.js', 'background.entry.js']) {
+			assert.equal(
+				typeof baseline[target][file],
+				'number',
+				`${target}/${file} has no recorded size, so nothing gates its growth`,
+			);
+		}
+	}
+	assert.match(build, /const TRACKED = \[/);
+});
+
+test('the bundle gate is a ratchet, not a ceiling', () => {
+	const build = read('build.js');
+	// The budgets this replaced sat ~400KB above reality, so a third of the
+	// foreground entry could be added without tripping them. A ratchet has to
+	// fail in both directions — a silent shrink is a win being lost, and is also
+	// how a truncated or half-written bundle would slip through.
+	assert.match(build, /grew|shrank/);
+	assert.match(build, /Math\.abs\(delta\) <= TOLERANCE/);
+	assert.doesNotMatch(build, /stat\.size > limit/, 'a one-sided size ceiling is what this replaced');
 });
 
 test('a budgeted file that is missing fails the build', () => {

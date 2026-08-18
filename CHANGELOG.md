@@ -4,6 +4,23 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Production builds are minified. `minify` was simply never set, so every release
+  shipped the foreground content script — parsed at `document_start` on every
+  Reddit page — as full-width readable source. `foreground.entry.js` drops from
+  1,433,172 to 811,627 bytes (-43%), `options.entry.js` from 1,540,578 to 874,830
+  (-43%), and `background.entry.js` from 167,527 to 104,210 (-38%). Development
+  builds are unchanged, so stack traces still point at readable source. The e2e
+  suite was run against the minified production build to confirm it behaves
+  identically.
+- The bundle budget is now a ratchet instead of a ceiling. The old limits sat
+  ~400KB above reality, so the foreground entry could have grown by a third
+  without tripping them. Recorded sizes live in
+  `tests/fixtures/lint/bundle-baseline.json` and fail in both directions — growth
+  is a regression, a shrink is a win worth banking — matching how the eslint and
+  flow baselines already work. `yarn bundle:baseline` re-records them.
+
 ### Added
 
 - `yarn verify` runs every gate in one command — lint, Flow, unit suite, production
