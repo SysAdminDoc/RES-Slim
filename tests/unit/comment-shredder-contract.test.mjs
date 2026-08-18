@@ -375,3 +375,104 @@ test('the panel shows a live count and a working Stop button', () => {
 
 	panel.remove();
 });
+
+// --- the panel's own survival ------------------------------------------------
+//
+// `execute` is only half the story. The Stop button and the progress line live
+// in a notification that closes on a timer, and the run they control can outlast
+// it: the default cap is 100 comments at one request a second, and `maxPerRun`
+// is free text against a listing that reaches 1000. A run that outlives its
+// panel keeps deleting with no way to stop it and nothing reporting how far it
+// has got.
+
+function panelInNotification(count, onConfirm) {
+	const host = document.createElement('div');
+	host.className = 'RESNotification';
+	const panel = Shredder.confirmPanel(count, onConfirm);
+	host.append(panel);
+	document.body.append(host);
+
+	const resets = [];
+	host.addEventListener('notification-reset', () => resets.push(Date.now()));
+
+	return {
+		host,
+		panel,
+		resets,
+		go: panel.querySelector('button'),
+		status: panel.querySelector('p[role="status"]'),
+		confirm: panel.querySelector('input[type="text"]'),
+		start() {
+			this.confirm.value = 'DELETE';
+			this.confirm.dispatchEvent(new Event('input', { bubbles: true }));
+			this.go.click();
+		},
+	};
+}
+
+test('a running shred keeps its own panel from closing underneath it', async () => {
+	let captured;
+	const ui = panelInNotification(3, controls => { captured = controls; });
+	ui.start();
+	assert.ok(captured, 'confirming should hand back the run controls');
+
+	assert.deepEqual(ui.resets, [], 'nothing to keep alive before the first comment');
+	captured.onProgress(1);
+	captured.onProgress(2);
+	assert.equal(ui.resets.length, 2, 'every progress tick must restart the notification close timer');
+	assert.match(ui.status.textContent, /2 of 3/);
+
+	// Release the in-flight lock: it is module state, and the next test asserts
+	// on it.
+	captured.finish('Overwrote 3, deleted 3.');
+	ui.host.remove();
+});
+
+test('a run that throws reports it rather than stranding the panel on "Shredding"', async () => {
+	let captured;
+	const ui = panelInNotification(2, controls => { captured = controls; });
+	ui.start();
+
+	assert.equal(ui.go.textContent, 'Shredding…');
+	captured.fail('network went away');
+
+	assert.equal(ui.go.textContent, 'Failed', 'a stranded "Shredding…" is indistinguishable from a hung run');
+	assert.match(ui.status.textContent, /may have finished part of the work/, 'a partial destructive run must say so');
+	assert.match(ui.status.textContent, /network went away/);
+
+	ui.host.remove();
+});
+
+test('the call site actually routes a thrown run into that failure path', () => {
+	// The panel can only report a throw if someone catches it. Before this the
+	// call was fire-and-forget, so the rejection went nowhere.
+	assert.match(mod, /execute\(plan\.selected, uh, limiter, controls\)\.catch\(/);
+	assert.match(mod, /controls\.fail\(String\(\(e && e\.message\) \|\| e\)\)/);
+});
+
+test('a second shred cannot start while one is still running', async () => {
+	let first;
+	const one = panelInNotification(3, controls => { first = controls; });
+	one.start();
+	assert.ok(first);
+
+	// A fresh panel, as the link builds on every use.
+	let second = null;
+	const two = panelInNotification(3, controls => { second = controls; });
+	two.start();
+
+	assert.equal(second, null, 'the second run must not be handed controls');
+	assert.match(two.status.textContent, /already going in this tab/);
+
+	// And it becomes possible again once the first finishes.
+	first.finish('Overwrote 3, deleted 3.');
+	let third = null;
+	const three = panelInNotification(1, controls => { third = controls; });
+	three.start();
+	assert.ok(third, 'a run must be startable again after the previous one ends');
+	third.finish('done');
+
+	one.host.remove();
+	two.host.remove();
+	three.host.remove();
+});

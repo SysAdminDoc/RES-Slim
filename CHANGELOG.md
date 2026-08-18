@@ -4,6 +4,27 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Bulk actions are survivable. Two features could lose work and neither could be
+  stopped once started.
+  - `commentShredder` ran inside a notification that closed after fifteen
+    minutes while `maxPerRun` is free text against a listing that reaches 1000 —
+    so a long run lost its Stop button and its progress line while the loop kept
+    deleting. Each progress tick now keeps the panel open for the whole run.
+    A throw out of the run stranded the panel on "Shredding…" forever, and the
+    call site had no `.catch` at all, so the error reached nobody; it now reports
+    that the run stopped part-way and the comments should be checked. A second
+    run in the same tab is refused rather than racing the first through reddit's
+    per-account write limiter.
+  - `hideAll` kept its undo in memory and offered it from a notification that
+    closes after fifteen seconds, so hiding a listing by accident was recoverable
+    for fifteen seconds and not at all after a reload or a click into a thread —
+    which is exactly what a user does next. The undo set now persists for thirty
+    minutes and reappears as an "undo hide all" link in the tab menu, surviving
+    navigation. The run also gained a way out: clicking the link during a run
+    stops it, and the summary says how many were skipped.
+
 ### Added (accessibility)
 
 - Windows High Contrast support. The UA forces every author colour, drops
