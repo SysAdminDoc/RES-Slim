@@ -1,0 +1,17 @@
+# Every text file is LF in the repository *and* in the working tree.
+#
+# Why this exists: with no attributes and `core.autocrlf=false`, nothing kept the
+# two in step. 368 tracked files were LF in the index and CRLF on disk, and 26
+# were mixed, while `git status` reported the tree clean — so the difference was
+# invisible until some tool rewrote a file and preserved its CRLF, at which point
+# a three-line change surfaced as a seven-hundred-line diff. That happened
+# repeatedly and was worked around per file; this is the cause.
+#
+# `eol=lf` is the half that matters: `text=auto` alone normalizes the index and
+# leaves the working tree to the platform, which is exactly the split that hid
+# this.
+* text=auto eol=lf
+
+*.png binary
+*.gif binary
+*.woff binary
