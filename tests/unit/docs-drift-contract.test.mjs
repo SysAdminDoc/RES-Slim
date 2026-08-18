@@ -56,6 +56,25 @@ test('README does not describe a public repository as private', () => {
 	);
 });
 
+test('the current version has a CHANGELOG section', () => {
+	// Six releases (v0.31.0-v0.35.1) shipped with no tag and no way to correlate a
+	// CHANGELOG entry with a tree. Tags live in git and cannot be asserted from a
+	// fresh clone, but "the version you are shipping is documented" can be, and it
+	// is the half that catches a silent bump.
+	const changelog = read('CHANGELOG.md');
+	const pkg = JSON.parse(read('package.json'));
+
+	assert.ok(
+		changelog.includes(`## v${pkg.version} -`),
+		`CHANGELOG.md has no "## v${pkg.version}" section — bump the version and document it in the same change`,
+	);
+	assert.doesNotMatch(
+		changelog.slice(0, changelog.indexOf(`## v${pkg.version} -`)),
+		/## v\d+\.\d+\.\d+ -/,
+		'the current version must be the newest section in CHANGELOG.md',
+	);
+});
+
 test('the version badge matches package.json', () => {
 	const pkg = JSON.parse(read('package.json'));
 	const badge = readme.match(/version-(\d+\.\d+\.\d+)-blue/);
