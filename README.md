@@ -38,6 +38,7 @@ RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local
 
 ```bash
 yarn install
+yarn verify     # every gate, in order, stops at the first failure
 yarn test       # focused fixture checks
 yarn test:show-images
 yarn test:privacy
@@ -45,6 +46,22 @@ yarn test:e2e   # loads the built extension in Chromium (headless) and drives it
 yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
+
+`yarn verify` runs lint, Flow, the unit suite, a production build, the e2e suite,
+and the third-party endpoint probe — in that order, stopping at the first
+failure. It is the one command worth running before a push; the individual
+scripts above are for iterating on a single gate. `yarn verify --skip-network`
+omits the endpoint probe, which is the only step that can fail for reasons
+outside this repository.
+
+To run it automatically before every push, enable the shipped hook once per
+clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`git push --no-verify` skips it when you genuinely need to.
 
 `yarn test:e2e` rebuilds first, then launches Playwright's Chromium with
 `dist/chrome/` loaded and checks that the service worker is alive, the packaged

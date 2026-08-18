@@ -4,6 +4,22 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `yarn verify` runs every gate in one command — lint, Flow, unit suite, production
+  build, e2e, and the endpoint probe — in cheapest-first order, stopping at the
+  first failure and printing a per-gate summary. `--skip-network` omits the
+  endpoint probe. A `.githooks/pre-push` hook runs it, enabled per clone with
+  `git config core.hooksPath .githooks`.
+  Every one of those gates already existed and nothing ran them together: `yarn
+  test` invoked only the unit suite, there were no git hooks, there is no CI by
+  charter, and `check:endpoints` was referenced by nothing at all. That is how a
+  dead third-party default survived three releases and six versions shipped
+  without a tag.
+- `verify-gate-contract` asserts the gate list in `scripts/verify.mjs` matches
+  package.json, so a new gate cannot be defined and then never run — and forces
+  any new script to be classified as a gate or explicitly exempt.
+
 ### Fixed
 
 - `imgurFlatten` shipped two non-working mirrors. `rimgo.ducks.party` was gone

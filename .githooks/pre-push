@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs every gate before a push. Enable once per clone with:
+#
+#   git config core.hooksPath .githooks
+#
+# Escape hatch when you genuinely need it: `git push --no-verify`.
+#
+# This exists because the gates were never run together — see scripts/verify.mjs.
+# Six releases shipped untagged and a dead third-party default survived three
+# releases, both because nothing checked at the push boundary.
+exec yarn verify
