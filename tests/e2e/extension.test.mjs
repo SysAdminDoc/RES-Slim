@@ -17,6 +17,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createServer } from 'node:http';
 
+import AxeBuilder from '@axe-core/playwright';
+
 import { launchWithExtension, extensionUrl, assertBuilt, repoRoot, saveScreenshotDir } from './harness.mjs';
 
 // The committed skeleton, not the full `.research/` capture: `.research/` is
@@ -2229,4 +2231,72 @@ test('focus is never parked under the sticky header', async t => {
 
 	assert.deepEqual(result.obscured, [],
 		`focused controls under the sticky header:\n  ${result.obscured.join('\n  ')}`);
+});
+
+// WCAG tags, most to least: 2.0 A/AA, then what 2.1 and 2.2 each added at AA.
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
+function describeViolations(violations) {
+	// axe's failureSummary names the measured values — the actual contrast ratio,
+	// the actual target size — which is the difference between a gate that reports
+	// a rule id and one that tells you what to change.
+	return violations.flatMap(v => v.nodes.map(node =>
+		`${v.id} (${v.impact}) — ${node.target.join(' ')}\n      ${(node.failureSummary || v.help).replace(/\n/g, '\n      ')}`)).join('\n  ');
+}
+
+test('the options page has no accessibility violations', async t => {
+	// The whole page is ours here, so nothing needs scoping: every node axe finds
+	// is markup this repo wrote.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#moduleOptionsScrim, #optionContainer, .optionContainer', { timeout: 30000 }).catch(() => {});
+	await page.waitForTimeout(1000);
+
+	const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+
+	// A run that inspected nothing proves nothing — axe reports what it checked.
+	assert.ok(results.passes.length > 0, 'axe found no passing checks, so it inspected nothing');
+	assert.deepEqual(results.violations.map(v => v.id), [],
+		`accessibility violations on the options page:\n  ${describeViolations(results.violations)}`);
+});
+
+test('the controls injected into old Reddit have no accessibility violations', async t => {
+	// Scoped, unlike the options page: old.reddit's own markup fails plenty that
+	// this fork did not write and cannot fix without rewriting reddit. `include`
+	// narrows axe to the surfaces RES-Slim injects, which is the part we own.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+	const page = await openControlHeavyThread(context, worker);
+
+	// Derived from the page rather than hardcoded, so a module that starts
+	// injecting under a new id is covered without anyone remembering to add it.
+	const roots = await page.evaluate(() => {
+		const SURFACE = '[id^="rsm-"], [class*="rsm-"]';
+		// `<html>` carries rsm-root and the theme classes, so it matches SURFACE and
+		// is an ancestor of everything — including it as a root would scope axe to
+		// the entire reddit page, which is the opposite of what this test is for.
+		const skip = new Set([document.documentElement, document.body]);
+		const candidates = [...document.querySelectorAll(SURFACE)].filter(el => !skip.has(el));
+		const seen = new Set();
+		for (const el of candidates) {
+			// Only outermost surfaces; axe walks into the rest.
+			const container = el.parentElement && el.parentElement.closest(SURFACE);
+			if (container && !skip.has(container)) continue;
+			const cls = el.className.toString().trim().split(/\s+/).find(c => c.startsWith('rsm-'));
+			seen.add(el.id ? `#${el.id}` : `.${cls}`);
+		}
+		return [...seen];
+	});
+	assert.ok(roots.length >= 5, `expected injected surfaces to scope to, found ${roots.length}`);
+
+	let builder = new AxeBuilder({ page }).withTags(WCAG_TAGS);
+	for (const root of roots) builder = builder.include(root);
+	const results = await builder.analyze();
+
+	assert.ok(results.passes.length > 0, 'axe found no passing checks, so it inspected nothing');
+	assert.deepEqual(results.violations.map(v => v.id), [],
+		`accessibility violations in injected UI:\n  ${describeViolations(results.violations)}`);
 });

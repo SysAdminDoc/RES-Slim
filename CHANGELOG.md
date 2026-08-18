@@ -24,6 +24,32 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Accessibility
 
+- An axe-core gate runs against the options page and, scoped to RES-Slim's own
+  selectors, against the injected controls on a local old-Reddit fixture. It
+  found four things the hand-written checks could not, and all four are fixed:
+
+  - **The options page had no `lang`** - WCAG 3.1.1, Level A. An entire page this
+    project owns, shipped without a language for a screen reader to read it in.
+    The permissions prompt had the same gap.
+  - **The search-destination `<select>` had no accessible name** (critical). Its
+    options name destinations - "Reddit", "Google" - so a screen reader announced
+    the current one and nothing about what choosing it does.
+  - **The comment minimap was `aria-hidden`** while its stripes are buttons with
+    accessible names, reachable by Tab. Focus inside an `aria-hidden` subtree is
+    announced as nothing at all, which is the worst of both. It is a labelled
+    navigation landmark now.
+  - **The active old/www/sh segment measured 1.05:1.** Two separate mistakes: the
+    "filled" segment the comment described was actually a 30% tint over whatever
+    was behind it, and `--rsm-ink` flips to near-white under `pageTheme` while
+    the orange underneath does not move. A new `--rsm-on-brand` token is
+    deliberately never redefined per theme, because the brand colour it sits on
+    never changes either.
+
+  The segments also take real padding rather than the overlay used elsewhere:
+  they are adjacent, so an enlarged invisible target would overlap its
+  neighbours and steal their clicks.
+
+
 - Focus is no longer parked under the sticky header. WCAG 2.2 AA, 2.4.11 Focus
   Not Obscured (Minimum), and the offending element is this fork's own - the
   compact sticky header added in v0.32.0. Measured on the thread fixture before

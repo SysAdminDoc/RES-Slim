@@ -108,6 +108,12 @@
 	// --rsm-text-*.
 	--rsm-ink: #1a1a1b;
 	--rsm-ink-muted: #4a5568;
+	// Text on a --rsm-brand fill. Deliberately *not* redefined per theme: the
+	// brand orange is the same colour in every theme, so its text colour has to be
+	// too. Using --rsm-ink here instead measured 1.05:1 on the active host-toggle
+	// segment, because --rsm-ink flips to near-white under pageTheme while the
+	// orange underneath it does not move. Against #ff7a18 this is about 6.6:1.
+	--rsm-on-brand: #1a1a1b;
 	// Opaque counterpart to --rsm-chip-fill. Form controls need it: the browser
 	// paints a <select> on its own field background, and nightMode restyles
 	// reddit's controls with id-level selectors, so a translucent fill there

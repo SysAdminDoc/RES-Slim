@@ -16,7 +16,14 @@
 }
 
 .rsm-host-toggle-link {
-	display: inline-block;
+	// 24x24 without an overlay: these three segments are adjacent, so an
+	// enlarged invisible target would overlap its neighbours and steal their
+	// clicks. Real padding grows the target and the spacing together.
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 24px;
+	min-height: 24px;
 	padding: 3px 6px;
 	border-radius: var(--rsm-radius-xs);
 	color: inherit;
@@ -32,8 +39,20 @@
 	// Which host you are on is the whole point of the control, so the active
 	// segment is filled and carries its own text colour rather than relying on
 	// a tint that read as almost nothing on a light header.
+	// `#header a` rules in _pageTheme.scss carry an id, so they outrank a
+	// two-class selector and were repainting this segment's text - which is how
+	// the fill ended up at 1.05:1 against a colour nothing here had set. The
+	// `#header` prefix matches their specificity.
+	#header &.is-active,
 	&.is-active {
-		background: color-mix(in srgb, var(--rsm-brand) 30%, transparent);
-		color: var(--rsm-ink);
+		// Filled, not tinted. A 30% mix over a transparent base takes the header's
+		// colour, so --rsm-ink (near-black, for light surfaces) sat on a dark
+		// background at well under 3:1 - which is what the comment above already
+		// said this should not do. And --rsm-ink was the wrong token besides: it
+		// flips to near-white under pageTheme while the orange underneath does not
+		// move, which measured 1.05:1. --rsm-on-brand does not flip, and is 6.6:1
+		// against the fill.
+		background: var(--rsm-brand);
+		color: var(--rsm-on-brand);
 	}
 }
