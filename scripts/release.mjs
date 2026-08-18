@@ -93,10 +93,25 @@ for (const [file, contents] of files) write(file, contents);
 const baseline = spawnSync('yarn bundle:baseline', { cwd: repoRoot, stdio: 'inherit', shell: true });
 if (baseline.status !== 0) fail('bundle:baseline failed');
 
-// Only README.md and package.json are tracked; the rest of the .md files are
-// gitignored, which is why the CHANGELOG edit above does not appear here.
-git('add', 'package.json', 'README.md', 'tests/fixtures/lint/bundle-baseline.json');
+// `.gitignore` has `*.md` with `!README.md`, but CHANGELOG.md was force-added
+// and *is* tracked. The first run of this script assumed otherwise and left the
+// heading rename uncommitted, so the tag pointed at a tree whose CHANGELOG did
+// not document its own version — and `docs-drift-contract` could not see it,
+// because it reads the file from disk rather than from the commit.
+git('add', 'package.json', 'README.md', 'CHANGELOG.md', 'tests/fixtures/lint/bundle-baseline.json');
 git('commit', '-m', `chore: release ${version}`);
+
+// Check the commit, not the working tree. Every drift contract in this repo
+// reads from disk, so "the file is right but was never staged" is a gap none of
+// them can close — and it is the exact gap this script fell into on its first
+// real run.
+const committedChangelog = git('show', `HEAD:CHANGELOG.md`);
+if (!committedChangelog.includes(`## v${version} -`)) {
+	fail(`the release commit does not contain the "## v${version}" CHANGELOG section — a fresh clone of this tag would fail docs-drift-contract`);
+}
+const committedPkg = JSON.parse(git('show', 'HEAD:package.json'));
+if (committedPkg.version !== version) fail('the release commit does not contain the new package.json version');
+
 git('tag', '-a', `v${version}`, '-m', `v${version}`);
 
 console.log(`release: ${pkg.version} -> ${version}, committed and tagged v${version}.`);
