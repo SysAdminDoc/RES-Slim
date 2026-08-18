@@ -147,7 +147,16 @@ test('userTagger positions the popover against viewport edges', () => {
 	assert.match(mod, /classList\.add\('is-flipped'\)/);
 	assert.match(mod, /classList\.add\('is-above'\)/);
 	assert.match(mod, /window\.addEventListener\('resize', onResize, true\)/);
-	assert.match(mod, /window\.addEventListener\('scroll', onResize, true\)/);
+	// Fixed positioning means scroll moves the page out from under the popover, so
+	// it has to be re-anchored. Match the registration, not its third argument's
+	// spelling — the listener became `{ capture: true, passive: true }` so that
+	// re-anchoring cannot hold up the scroll that triggered it, and pinning the
+	// bare `true` made that improvement look like a regression.
+	assert.match(mod, /window\.addEventListener\('scroll', onResize,/);
+	assert.match(mod, /window\.addEventListener\('scroll', onResize, \{[^}]*passive: true/);
+	// Capture must survive, because removeEventListener matches on it.
+	assert.match(mod, /window\.addEventListener\('scroll', onResize, \{[^}]*capture: true/);
+	assert.match(mod, /window\.removeEventListener\('scroll', onResize, true\)/);
 });
 
 test('user tagger styles ship in the SCSS bundle', () => {

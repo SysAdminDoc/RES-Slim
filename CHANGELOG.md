@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Every scroll listener is now passive, and the two that measure layout are
+  throttled. A non-passive scroll listener makes the compositor wait for the
+  handler before scrolling, and none of these ever call `preventDefault` — they
+  close a hover, re-anchor a popover, clear a zoom preview, or pick the selected
+  Thing. `selectedEntry` was the worst case: `SelectedThing.selectClosestInView()`
+  walked Things and measured rectangles synchronously on every scroll event, with
+  no throttle at all; it now runs through `idleThrottle` like `showImages`.
+  `scroll-listener-contract` keeps every future listener passive.
 - Production builds are minified. `minify` was simply never set, so every release
   shipped the foreground content script — parsed at `document_start` on every
   Reddit page — as full-width readable source. `foreground.entry.js` drops from
