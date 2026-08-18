@@ -48,11 +48,13 @@ yarn build      # production build + zip -> dist/zip/
 ```
 
 `yarn verify` runs lint, Flow, the unit suite, a production build, the e2e suite,
-and the third-party endpoint probe — in that order, stopping at the first
+the third-party endpoint probe, and an advisory check that the published GitHub
+description still matches this README — in that order, stopping at the first
 failure. It is the one command worth running before a push; the individual
 scripts above are for iterating on a single gate. `yarn verify --skip-network`
-omits the endpoint probe, which is the only step that can fail for reasons
-outside this repository.
+omits the two network steps, which are the only ones that can fail for reasons
+outside this repository. The metadata check reports drift but never fails a
+push, since it needs a `gh` login as well as a network.
 
 To run it automatically before every push, enable the shipped hook once per
 clone:
@@ -70,10 +72,11 @@ records stay hidden across asynchronous insertion, and the content script
 initialises on a served old.reddit document. It also checks the default refined
 Graphite layout, keyboard focus treatment, feed hierarchy, opened-post and
 media geometry, the discussion composer and sort toolbar, and nested-comment
-surfaces. It needs no physical display or
-existing browser profile; one CSP reachability check requires outbound Reddit access,
-while the product-behavior fixtures are served locally. Screenshots land in
-`tests/e2e/screenshots/`. Set `RES_E2E_HEADED=1` to watch it run.
+surfaces. It needs no physical display, no existing browser profile, and no
+network: every request is either served from a local fixture or intercepted, and
+the browser is launched with DNS for everything but localhost pointed at a dead
+address so that stays true. Screenshots land in `tests/e2e/screenshots/`. Set
+`RES_E2E_HEADED=1` to watch it run.
 
 ### Refresh old Reddit fixtures
 

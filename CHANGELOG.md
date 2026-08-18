@@ -2,6 +2,19 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- The e2e suite no longer touches the network. One outbound request remained —
+  a CSP reachability check against reddit — which coupled the suite's result to
+  a third party's availability and to whether reddit's anti-automation layer
+  lets a fresh automation profile out at all. It is now intercepted, which
+  proves the same thing more precisely: a request the CSP refuses never leaves
+  the worker, so reaching the interceptor *is* the evidence. The browser is
+  launched with DNS for everything but localhost pointed at a dead address, so
+  an un-routed request fails loudly instead of working on a good day.
+
 ## v0.38.0 - 2026-08-18
 
 ### Changed

@@ -89,7 +89,7 @@ test('the built extension loads and its service worker registers', async t => {
 // talks to `http://127.0.0.1:7860` by design — so that module could never have
 // worked. Only a real browser can prove this either way; jsdom has no CSP.
 test('the service worker CSP permits the origins the extension actually fetches', async t => {
-	const { worker, dispose } = await launchWithExtension();
+	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
 
 	// `fetch` from the worker, reporting whether the request was allowed to leave.
@@ -122,7 +122,25 @@ test('the service worker CSP permits the origins the extension actually fetches'
 	assert.equal(await attempt(`http://127.0.0.1:${port}/health`), true, 'localCompanion talks to http://127.0.0.1 and cannot work without it');
 	assert.equal(await attempt(`http://localhost:${port}/health`), true, 'the companion URL may be spelled localhost too');
 
+	// The reddit case used to be a real outbound request, and it was the only one
+	// left in the suite. It coupled green/red to a third party's availability and
+	// to whether reddit's anti-automation layer lets a fresh automation profile out
+	// at all — a network-layer block reds the suite for a reason that has nothing
+	// to do with the extension, and this repo has already seen that happen.
+	//
+	// Interception proves the same thing more precisely. A request the CSP refuses
+	// never leaves the worker, so the route handler cannot fire: reaching the
+	// handler *is* the evidence that `connect-src` allowed the origin. The old
+	// version could not distinguish that from reddit answering 403, because
+	// `attempt()` returns true for any response at all.
+	let intercepted = 0;
+	await context.route('https://old.reddit.com/api/me.json', route => {
+		intercepted += 1;
+		return route.fulfill({ status: 200, contentType: 'application/json', body: '{"data":null}' });
+	});
+
 	assert.equal(await attempt('https://old.reddit.com/api/me.json'), true, 'reddit itself must remain reachable');
+	assert.equal(intercepted, 1, 'the request has to actually leave the worker — a CSP refusal never reaches an interceptor');
 });
 
 test('the settings console renders in the options page', async t => {

@@ -73,6 +73,20 @@ export async function launchWithExtension({ timeout = 30000 } = {}) {
 	const args = [
 		`--disable-extensions-except=${distDir}`,
 		`--load-extension=${distDir}`,
+		// Every reddit navigation in this suite is already `page.route`-intercepted
+		// and served from a local sanitized capture, so nothing here needs the
+		// internet. That was true by convention, and convention is not a property:
+		// one un-routed URL would silently start reaching a third party, and the
+		// suite would go red for reasons that have nothing to do with the
+		// extension — reddit being slow, an anti-automation block on a fresh
+		// profile, someone's train wifi.
+		//
+		// This makes it structural. DNS for everything but localhost resolves to a
+		// dead address, so an un-routed request fails fast and loudly instead of
+		// working on a good day. Playwright's own interception happens above the
+		// network stack and is unaffected, which is exactly the line being drawn:
+		// intercepted is fine, outbound is not.
+		'--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1',
 	];
 
 	if (HEADED) {
