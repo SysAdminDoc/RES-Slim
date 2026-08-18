@@ -2,6 +2,20 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- `galleryZip` no longer bundles JSZip. It reached the library with
+  `await import('jszip')`, which reads as a lazy load and is not one: the build
+  is `format: 'iife'` with no code splitting, so esbuild inlined all 153KB into
+  the content script — parsed on every Reddit page, for a module that is
+  disabled by default. JSZip now ships as a separate file injected on first use,
+  the same way `showImages` already loads dashjs. Production bundles shrank 12%:
+  `foreground.entry.js` 819KB -> 719KB, `options.entry.js` 884KB -> 784KB. The
+  build refuses to bundle a vendored library at all, so the next one cannot
+  arrive the same way, and every vendored file carries a pinned digest.
+
 ## v0.37.0 - 2026-08-18
 
 ### Removed

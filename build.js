@@ -14,7 +14,24 @@ import { sassPlugin } from 'esbuild-sass-plugin';
 import isBetaVersion from './build/isBetaVersion.js';
 import packageInfo from './package.json' with { type: 'json' };
 
-const DASHJS_SHA256 = '66dff6f83ec1e22418f3fa17a2b2b9b21b7b3ffc290fd17a6a6595678c35ed9b';
+// Third-party libraries that ship as separate on-demand files rather than being
+// bundled. Each is injected at the moment it is first needed (see
+// `environment/foreground/loadScript`), so its weight is paid by the users who
+// trigger the feature instead of by every page load. Because they are copied in
+// verbatim rather than passing through esbuild, each carries a pinned digest:
+// nothing else in the build would notice a tampered or silently-upgraded file.
+const VENDORED_ASSETS = [
+	{
+		file: 'dash.mediaplayer.min.js',
+		from: './node_modules/dashjs/dist/dash.mediaplayer.min.js',
+		sha256: '66dff6f83ec1e22418f3fa17a2b2b9b21b7b3ffc290fd17a6a6595678c35ed9b',
+	},
+	{
+		file: 'jszip.min.js',
+		from: './node_modules/jszip/dist/jszip.min.js',
+		sha256: 'acc7e41455a80765b5fd9c7ee1b8078a6d160bbbca455aeae854de65c947d59e',
+	},
+];
 
 // The supported floor has exactly one source: `browserslist` in package.json.
 //
@@ -208,7 +225,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 					{ from: ['./images/icon48.png'], to: ['./'] },
 					{ from: ['./lib/environment/background/permissions/prompt.html'], to: ['./'] },
 					{ from: ['./lib/options/options.html'], to: ['./'] },
-					{ from: ['./node_modules/dashjs/dist/dash.mediaplayer.min.js'], to: ['./'] },
+					...VENDORED_ASSETS.map(({ from }) => ({ from: [from], to: ['./'] })),
 				],
 			}),
 			{
@@ -248,7 +265,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 							'background.entry.js',
 							'res.css',
 							'options.css',
-							'dash.mediaplayer.min.js',
+							...VENDORED_ASSETS.map(({ file }) => file),
 						];
 						// Byte-exact would be too brittle: an esbuild patch release moves
 						// output by a few bytes. 2% of the foreground entry is ~16KB, far
@@ -318,15 +335,43 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 				},
 			} : undefined,
 			{
-				name: 'verify-dashjs-integrity',
+				// A vendored library exists precisely so it is *not* in a bundle. Nothing
+				// enforced that: `galleryZip` wrote `await import('jszip')`, which reads as
+				// lazy but is not, because `format: 'iife'` with no splitting leaves esbuild
+				// no choice but to inline it — 153KB in the content script parsed on every
+				// Reddit page for a module disabled by default. The size ratchet could not
+				// catch it either, since it was in the baseline from the start. This asserts
+				// the property directly, against the metafile esbuild just produced.
+				name: 'verify-vendored-not-bundled',
+				setup(build) {
+					build.onEnd(result => {
+						if (!result.metafile) return;
+						const packages = VENDORED_ASSETS.map(({ from }) => from.replace('./node_modules/', '').split('/')[0]);
+						const violations = [];
+						for (const [outFile, output] of Object.entries(result.metafile.outputs)) {
+							if (!outFile.endsWith('.entry.js')) continue;
+							for (const input of Object.keys(output.inputs || {})) {
+								const pkg = packages.find(name => input.includes(`node_modules/${name}/`));
+								if (pkg) violations.push(`${pkg} is bundled into ${path.basename(outFile)} (via ${input})`);
+							}
+						}
+						if (violations.length) {
+							throw new Error(`Vendored on-demand libraries must not be bundled:\n  ${violations.join('\n  ')}\n\nLoad it with loadScript('/<file>') instead of importing it — a dynamic import() is inlined by this build, not split.`);
+						}
+					});
+				},
+			},
+			{
+				name: 'verify-vendored-integrity',
 				setup(build) {
 					build.onEnd(async () => {
-						const dashjsPath = `./dist/${targetName}/dash.mediaplayer.min.js`;
-						const content = await fs.promises.readFile(dashjsPath);
-						const actual = crypto.createHash('sha256').update(content).digest('hex');
-						if (actual !== DASHJS_SHA256) {
-							throw new Error(`dashjs integrity check failed!\n  expected: ${DASHJS_SHA256}\n  actual:   ${actual}\nThe vendored dashjs file may have been tampered with. Update DASHJS_SHA256 in build.js if you intentionally upgraded the package.`);
-						}
+						await Promise.all(VENDORED_ASSETS.map(async ({ file, sha256 }) => {
+							const content = await fs.promises.readFile(`./dist/${targetName}/${file}`);
+							const actual = crypto.createHash('sha256').update(content).digest('hex');
+							if (actual !== sha256) {
+								throw new Error(`${file} integrity check failed!\n  expected: ${sha256}\n  actual:   ${actual}\nThe vendored file may have been tampered with. Update its entry in VENDORED_ASSETS in build.js if you intentionally upgraded the package.`);
+							}
+						}));
 					});
 				},
 			},
@@ -343,7 +388,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 		fs.writeFileSync(`dist/esbuild-meta-${targetName}.json`, JSON.stringify(result.metafile))
 
 		// Only reached when every onEnd gate passed — esbuild.build() rejects
-		// otherwise — so a build that blew its bundle budget or failed the dashjs
+		// otherwise — so a build that blew its bundle budget or failed a vendored
 		// integrity check leaves no shippable zip behind.
 		if (options.zip) {
 			const zip = new JSZip();

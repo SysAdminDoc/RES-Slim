@@ -92,7 +92,12 @@ test('galleryZip module is registered and uses the helpers', () => {
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/galleryZip.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/galleryZip'/);
 	assert.match(mod, /watchForThings\(\['post'\]/);
-	assert.match(mod, /import\('jszip'\)/);
+	// Deliberately not pinned to a spelling: this asserted `import('jszip')` for its
+	// whole life, which is the exact call that put 153KB of ZIP library into every
+	// page load. The load path now has its own contracts in
+	// gallery-zip-load-contract.test.mjs, which assert the property (not bundled,
+	// injected on use) rather than the syntax.
+	assert.match(mod, /loadScript\('\/jszip\.min\.js'\)/);
 	assert.match(mod, /data-is-gallery/);
 	for (const opt of ['includeCaptionsTxt', 'maxImages']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);

@@ -1545,3 +1545,47 @@ test('Escape inside a text field clears the field rather than closing the consol
 	}
 	assert.equal(stillOpen, false, 'Escape outside a text field must still close the console');
 });
+
+test('a vendored library injects into the extension world it is used from', async t => {
+	// `galleryZip` used to reach JSZip with `await import('jszip')`, which the
+	// bundler resolved statically: 153KB of ZIP library in the content script on
+	// every Reddit page, for a module disabled by default. It now loads the file
+	// on demand, the way `showImages` already loads dashjs.
+	//
+	// Nothing under tests/unit/ can check that path. The unit contract answers the
+	// `loadScript` message itself, so it proves the module asks and uses what it
+	// gets — but whether `chrome.scripting.executeScript` puts a UMD global where
+	// the *content script* can see it is a property of the browser, and this repo
+	// has been burned before by a permission boundary that only fails for real
+	// (imgurFlatten's probe was CORS-blocked in the service worker for its whole
+	// life while every test passed).
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		if (route.request().resourceType() === 'document') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: servableCapture(FRONT_CAPTURE) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	const probe = await worker.evaluate(async () => {
+		const [tab] = await chrome.tabs.query({ url: 'https://old.reddit.com/*' });
+		if (!tab) return { error: 'no reddit tab' };
+		const before = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => typeof JSZip });
+		await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ['/jszip.min.js'] });
+		const after = await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => typeof JSZip });
+		// The page's own world must stay clean: injecting into MAIN would hand a
+		// library to reddit's scripts and let reddit's scripts replace it.
+		const main = await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN', func: () => typeof JSZip });
+		return { before: before[0].result, after: after[0].result, main: main[0].result };
+	});
+
+	assert.equal(probe.error, undefined, `probe failed: ${probe.error}`);
+	assert.equal(probe.before, 'undefined', 'the library must not be present until something asks for it');
+	assert.equal(probe.after, 'function', 'loadScript must define JSZip in the world the content script runs in');
+	assert.equal(probe.main, 'undefined', 'and must not leak it into the page');
+});

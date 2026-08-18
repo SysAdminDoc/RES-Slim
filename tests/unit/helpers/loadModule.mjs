@@ -46,7 +46,20 @@ globalThis.chrome = globalThis.chrome || {
 		id: 'res-slim-test',
 		getURL: p => 'chrome-extension://res-slim-test/' + String(p).replace(/^\\//, ''),
 		getManifest: () => ({ version: '0.0.0-test', name: 'RES-Slim' }),
-		sendMessage: (msg, cb) => { if (cb) cb({ data: undefined }); },
+		// Answering nothing is the right default — the background is a different
+		// process and a foreground contract has no business simulating it. But a
+		// module whose feature *is* a background round-trip (loadScript injecting a
+		// vendored library, say) then silently does nothing, which reads as success.
+		// __runtimeMessageResponder lets one test answer one message type, through
+		// the real foreground code path rather than around it.
+		sendMessage: (msg, cb) => {
+			const respond = globalThis.__runtimeMessageResponder;
+			if (!respond) { if (cb) cb({ data: undefined }); return; }
+			Promise.resolve().then(() => respond(msg)).then(
+				data => { if (cb) cb({ data }); },
+				e => { if (cb) cb({ error: { message: String((e && e.message) || e), stack: '' } }); },
+			);
+		},
 		onMessage: {
 			addListener: fn => { globalThis.__chromeMessageListeners.push(fn); },
 			removeListener: noop,
@@ -172,12 +185,19 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	const dom = new JSDOM(html, { url, pretendToBeVisual: true });
 	const { window } = dom;
 
-	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame']) {
+	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
 		if (!(key in window)) continue;
 		// Node 24 defines `navigator` (and friends) as getter-only on globalThis, so
 		// a plain assignment throws. defineProperty replaces them outright.
 		Object.defineProperty(globalThis, key, { value: window[key], writable: true, configurable: true });
 	}
+	// `Blob`/`File`/`FileReader`/`URL` come from jsdom rather than Node. Node has
+	// its own `Blob` and no `FileReader` at all, and a library that feature-detects
+	// blob support when it loads — jszip does — then ends up holding one
+	// implementation's Blob and looking for the other's reader, and reports "is it
+	// a supported JavaScript type?" for a perfectly ordinary Blob. The browser
+	// never sees that split, so neither should a contract.
+	//
 	// jsdom implements neither observer; several modules construct one while their
 	// module body evaluates, so these must exist before the import, not before the
 	// first call. Inert on purpose — a test that needs observer callbacks to fire
@@ -228,8 +248,15 @@ export function installNetworkGuard() {
  * globalThis after that, so a test can override any piece of it.
  * `exportDefault` exposes a target's default export as `__targetDefault`; it is
  * opt-in because many utility targets intentionally have no default export.
+ *
+ * `alsoExport` maps a name to another `lib/` path, re-exported as a namespace
+ * from the *same* bundle. Modules that inject through `watchForThings` do
+ * nothing when `contentStart()` is called in isolation — the watchers only fire
+ * once something registers the page — and reaching `lib/utils/watchers` through
+ * a second `loadModule` call gives a different copy of the watcher registry, so
+ * the callbacks the module just registered would be invisible to it.
  */
-export async function loadModule(relativePath, name, { globals = {}, dom, stubEnvironment = false, exportDefault = false } = {}) {
+export async function loadModule(relativePath, name, { globals = {}, dom, stubEnvironment = false, exportDefault = false, alsoExport = {} } = {}) {
 	const stubs = await stubDir();
 	if (dom !== false) installDom(dom || {});
 	const outDir = path.join(repoRoot, 'tests', 'unit', `.tmp-mod-${name}`);
@@ -266,6 +293,8 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 		'export { __registry };',
 		`export * from ${JSON.stringify(toTarget)};`,
 		exportDefault ? `export { default as __targetDefault } from ${JSON.stringify(toTarget)};` : '',
+		...Object.entries(alsoExport).map(([exportName, modulePath]) =>
+			`export * as ${exportName} from ${JSON.stringify(posix(path.join(repoRoot, modulePath)))};`),
 		'',
 	].join('\n'));
 
