@@ -4,6 +4,18 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- A media-host penalty box. RES-Slim ships 74 media host handlers and had no
+  shared failure policy: `linkScanner` logged each failure, destroyed the
+  expando and moved on with no memory that it had just done the same for the
+  previous twenty links, so a host that was down cost one dead network
+  round-trip per link, on every page, indefinitely. A host that fails three
+  times within five minutes is now skipped for five minutes, doubling on each
+  repeat up to six hours, and is let back in automatically. One success clears
+  the record. Each suspension is recorded once in the diagnostics log, and the
+  state survives a page load.
+
 ### Changed
 
 - `galleryZip` no longer bundles JSZip. It reached the library with
