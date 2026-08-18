@@ -30,6 +30,12 @@ const GATES = [
 	{ name: 'build', script: 'build', why: 'production Chrome + Firefox bundles and zips' },
 	{ name: 'e2e', script: 'test:e2e', why: 'built extension driven in headless Chromium' },
 	{ name: 'endpoints', script: 'check:endpoints', why: 'third-party defaults still answer', network: true },
+	// Reports, never fails. The published repo description is the copy the public
+	// reads, and it drifted from the README for months while a contract asserted
+	// the README's half — but this needs a network and a `gh` login, neither of
+	// which is a property of the code, and a gate that goes red because someone is
+	// offline stops being read.
+	{ name: 'metadata', script: 'check:metadata', why: 'the published repo description still matches the README', network: true, advisory: true },
 ];
 
 function run(gate) {
@@ -62,9 +68,10 @@ for (const gate of GATES) {
 
 	console.log(`\n=== verify: ${gate.name} — ${gate.why} ===`);
 	const { code, ms } = run(gate);
-	summary.push({ name: gate.name, state: code === 0 ? 'pass' : 'FAIL', ms });
+	const state = code === 0 ? 'pass' : (gate.advisory ? 'warn' : 'FAIL');
+	summary.push({ name: gate.name, state, ms });
 
-	if (code !== 0) {
+	if (code !== 0 && !gate.advisory) {
 		failed = gate;
 		break;
 	}

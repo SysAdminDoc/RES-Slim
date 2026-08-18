@@ -4,6 +4,19 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- `fast-levenshtein` replaced with `fastest-levenshtein`. The former was a thin
+  wrapper that delegated to the latter, so the tree already shipped both; the
+  wrapper's repo has been dead since the day it was published. Its one extra
+  option, `useCollator`, was unused here.
+- `yarn verify` gained an advisory `metadata` gate that compares the published
+  GitHub repo description and topics against the README. The description read
+  "Stripped-down private fork" while a contract asserted the README does not say
+  "private fork" — the third time in this repo a contract has been bound to one
+  copy of a duplicated fact. It reports rather than fails, because it needs a
+  network and a `gh` login.
+
 ### Security
 
 - The version beacon RES-Slim writes into reddit's own DOM now carries a

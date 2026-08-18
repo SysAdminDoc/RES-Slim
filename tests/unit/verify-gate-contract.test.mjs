@@ -21,7 +21,14 @@ const verifySource = read('scripts/verify.mjs');
 // Everything else in package.json is a dev affordance (start, once, watch) or a
 // narrower slice of a gate already covered (test:settings, test:privacy), or an
 // explicit baseline-rewriting escape hatch (lint:baseline, flow:baseline).
-const GATE_SCRIPTS = ['lint', 'flow', 'test', 'build', 'test:e2e', 'check:endpoints'];
+const GATE_SCRIPTS = ['lint', 'flow', 'test', 'build', 'test:e2e', 'check:endpoints', 'check:metadata'];
+
+// Gates that report rather than fail. `check:metadata` compares the published
+// GitHub description against the README, which needs a network and a `gh` login
+// — neither of which is a property of the code, and a gate that goes red because
+// someone is offline stops being read. It still has to be *run*, which is the
+// whole point of the list above.
+const ADVISORY_SCRIPTS = new Set(['check:metadata']);
 
 // Slices of `test` that exist for focused runs. Listing them explicitly means a
 // genuinely new script cannot hide in this exemption.
@@ -76,6 +83,26 @@ test('no package.json script escapes classification', () => {
 
 test('verify stops at the first failure rather than running on', () => {
 	// The summary is only trustworthy if a later "pass" cannot appear after an
-	// earlier failure.
-	assert.match(verifySource, /if\s*\(code !== 0\)\s*\{[\s\S]*?break;/);
+	// earlier failure. Advisory gates are the one exception, and the exception has
+	// to be written into the condition rather than into a comment.
+	assert.match(verifySource, /if\s*\(code !== 0 && !gate\.advisory\)\s*\{[\s\S]*?break;/);
+});
+
+test('every advisory gate is declared advisory in verify.mjs, and no others are', () => {
+	// An advisory gate that forgot its flag would fail a push over someone's
+	// network; a failing gate that gained the flag would stop failing pushes at
+	// all, quietly. Both are one word, so both are asserted.
+	const entries = [...verifySource.matchAll(/\{ name: '([^']+)', script: '([^']+)'[^}]*\}/g)];
+	assert.ok(entries.length >= GATE_SCRIPTS.length, 'sanity: every gate should parse out of verify.mjs');
+
+	for (const [entry, , script] of entries) {
+		const isAdvisory = /advisory:\s*true/.test(entry);
+		assert.equal(
+			isAdvisory,
+			ADVISORY_SCRIPTS.has(script),
+			isAdvisory ?
+				`"${script}" is marked advisory in verify.mjs but is not listed as one here — a gate that cannot fail a push should be a deliberate decision` :
+				`"${script}" is listed as advisory here but verify.mjs will fail a push on it`,
+		);
+	}
 });
