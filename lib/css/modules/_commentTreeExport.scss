@@ -1,3 +1,5 @@
+@import '../zindex';
+
 // commentTreeExport module styles.
 // The trigger sits inline in reddit's comment menu (ink tokens, must survive a
 // white page); the menu it opens is a floating dark surface (overlay tokens).
@@ -43,7 +45,7 @@
 	position: absolute;
 	top: calc(100% + 6px);
 	right: 0;
-	z-index: 9999;
+	z-index: $zindex-dropdown-menu;
 	min-width: 168px;
 	padding: 5px;
 	background: var(--rsm-surface);

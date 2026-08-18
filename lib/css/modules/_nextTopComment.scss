@@ -1,0 +1,18 @@
+@import '../zindex';
+
+// The module used to write this block as an inline style attribute, which is how
+// a page-level `z-index: 9999` ended up outside the scale entirely - a value in a
+// template literal is invisible to every stylesheet audit this repo runs.
+.res-slim-next-top {
+	position: fixed;
+	right: 16px;
+	bottom: 16px;
+	z-index: $zindex-page-furniture;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+
+	> button {
+		padding: 6px 10px;
+	}
+}

@@ -1,3 +1,5 @@
+@import '../zindex';
+
 // RES-Slim user tagger module styles. Scoped under .rsm-userTagger-* class
 // names so the host page's existing tagline layout (and any subreddit custom
 // CSS) is not disturbed.
@@ -97,7 +99,7 @@
 	// post tagline. A fixed element resolves against the viewport instead, so
 	// that clip does not apply. The module sets left/top in viewport coordinates.
 	position: fixed;
-	z-index: 9999;
+	z-index: $zindex-inline-popover;
 	padding: 12px;
 	width: min(280px, calc(100vw - 24px));
 	background: var(--rsm-surface);

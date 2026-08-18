@@ -1,3 +1,5 @@
+@import '../zindex';
+
 // RES-Slim: minimap strip injected by threadMinimap. Fixed to the right (or
 // left) viewport edge, narrow enough not to overlap the main content
 // column. Pointer events stay scoped to the rail / stripes so the rest of
@@ -9,7 +11,7 @@
 	bottom: 0;
 	width: 16px;
 	pointer-events: none;
-	z-index: 9999;
+	z-index: $zindex-page-furniture;
 
 	&[data-side='right'] { right: 0; }
 

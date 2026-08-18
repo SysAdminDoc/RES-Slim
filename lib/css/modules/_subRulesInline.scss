@@ -1,7 +1,9 @@
+@import '../zindex';
+
 // subRulesInline module styles — the subreddit-rules hovercard.
 
 .rsm-subrules-popover {
-	z-index: 1000;
+	z-index: $zindex-inline-popover;
 	width: min(420px, calc(100vw - 24px));
 	max-height: min(400px, calc(100vh - 24px));
 	overflow-y: auto;

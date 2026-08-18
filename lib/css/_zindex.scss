@@ -1,5 +1,23 @@
 @use 'sass:math';
 
+// The stacking scale. Every RES-Slim surface that floats above page content gets
+// its number from here, and the base sits far above anything reddit ships so no
+// RES surface has to win an arithmetic argument with reddit's own CSS.
+
+// The slots are roles, not modules. That is the whole point of v0.40.0's pass:
+// before it, six of twelve tokens were referenced only from stylesheets that no
+// entry point compiled, and no module added since the fork participated at all —
+// ad-hoc values of 1000, 2001, 9999, 99999 and 100000 sat alongside a scale whose
+// smallest member was 10,100,000. `$zindex-res-hover` therefore outranked the
+// modal overlay viewer by two orders of magnitude, which is not a near miss: with
+// the viewer open, a hover card painted on top of it. Observed in Chromium via
+// `document.elementFromPoint`, not inferred.
+
+// Two surfaces are deliberately absent. `Alert` and `overlayViewer` are in the
+// browser's top layer (a native `<dialog>` and the Popover API), where stacking
+// arithmetic cannot reach them, and `hoverZoom` is there with them. A number here
+// would be a number that could be beaten; the top layer cannot be.
+
 @function _($i) {
 	$base: 10000000;
 	$increment: math.div($base, 100);
@@ -7,18 +25,30 @@
 	@return $base + $i * $increment;
 }
 
-$zindex-go-mode-panel:         _(1);
-$zindex-key-help:              _(2);
+// Page chrome — the sticky header, which everything else must be able to cover.
+// Its dropdown menus open with `+ 1`.
+$zindex-page-chrome:           _(0);
+// Fixed furniture pinned to the viewport edge: the thread minimap rail, the
+// scroll-to-top button in each of its three placements.
+$zindex-page-furniture:        _(1);
+// Hovercards and popovers anchored to a piece of content: subreddit rules, the
+// user-tagger form.
+$zindex-inline-popover:        _(2);
+// `.RESHover`, the shared hover-card host.
 $zindex-res-hover:             _(3);
-$zindex-show-link-title:       _(4);
+// Slot 4 is free.
 $zindex-big-editor:            _(5);
+// Above the big editor because it opens from inside it.
 $zindex-autocomplete-dropdown: _(6);
-$zindex-quick-message-dialog:  _(7);
-$zindex-command-line-widget:   _(8);
+// Panels the user opened deliberately: saved-backup, storage dashboard. These two
+// used to tie at exactly 1000, leaving their order up to source order.
+$zindex-floating-panel:        _(7);
+// Menus opened from a control, which must cover whatever they opened from.
+$zindex-dropdown-menu:         _(8);
 $zindex-notifications:         _(9);
-// Unused since Alert moved to a native <dialog> opened with showModal(): the
-// browser puts it in the top layer, where no stacking arithmetic can reach it.
-// The slot is kept so the tokens below keep their numbers.
-$zindex-alert-message:         _(10);
-$zindex-baconbit:              _(11);
+// Slot 10 held `$zindex-alert-message` until Alert moved to a native <dialog>
+// opened with showModal(). Slot 11 is free.
 $zindex-console-container:     _(12);
+// The developer warning banner, above everything including the console — it
+// exists to be seen when something is wrong with the surface underneath it.
+$zindex-dev-warning:           _(13);

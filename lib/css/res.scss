@@ -9,6 +9,7 @@
 @import 'modules/commentPreview';
 @import 'modules/commentTools';
 @import 'modules/newCommentCount';
+@import 'modules/nextTopComment';
 @import 'modules/noParticipation';
 @import 'modules/notifications';
 @import 'modules/toastHost';
@@ -149,7 +150,6 @@ body.res-console-open {
 	text-align: center;
 	width: 24px;
 	height: 24px;
-	z-index: 1000;
 	cursor: pointer;
 	box-sizing: border-box;
 
@@ -822,7 +822,7 @@ html[res-warning]::before {
 	content: attr(res-warning);
 	right: 20px;
 	bottom: 20px;
-	z-index: 99999999;
+	z-index: $zindex-dev-warning;
 	color: red;
 	font-size: 1em;
 	background-color: wheat;
@@ -857,13 +857,13 @@ html[res-warning]::before {
 	&-visibleAfterScroll {
 		position: fixed;
 		will-change: transform;
-		z-index: 10000000;
+		z-index: $zindex-page-furniture;
 		right: 8px;
 	}
 
 	&-belowNavbar {
 		position: fixed;
-		z-index: 5;
+		z-index: $zindex-page-furniture;
 		right: 8px;
 		top: 60px;
 		padding: 0.2em 0.1em;
@@ -875,7 +875,7 @@ html[res-warning]::before {
 		position: fixed;
 		right: 6px;
 		top: 14px;
-		z-index: 100;
+		z-index: $zindex-page-furniture;
 	}
 }
 

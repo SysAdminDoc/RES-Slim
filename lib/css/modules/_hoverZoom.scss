@@ -1,8 +1,17 @@
 // hoverZoom module styles. v0.11.3.
 
+// The preview lives in the browser's top layer via popover="manual", so it has no
+// z-index: nothing on the page can cover it, and it cannot cover the modal
+// viewer, because the top layer stacks by show order rather than by number.
 #rsm-hoverZoom-popover {
+	// A popover arrives with UA styles: auto margins, fit-content sizing, a solid
+	// border and a canvas background. The module positions this element itself.
 	position: fixed;
-	z-index: 99999;
+	margin: 0;
+	inset: auto;
+	width: auto;
+	height: auto;
+	padding: 0;
 	background: rgb(8 8 12 / 92%);
 	border: 1px solid rgb(255 255 255 / 12%);
 	border-radius: 6px;

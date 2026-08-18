@@ -100,7 +100,7 @@
 .RESMacroDropdown {
 	display: none;
 	position: absolute;
-	z-index: 2001;
+	z-index: $zindex-dropdown-menu;
 	font-size: 10px;
 	line-height: 2;
 	border: 1px solid rgb(200, 200, 200);

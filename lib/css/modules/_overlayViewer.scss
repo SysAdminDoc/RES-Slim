@@ -1,17 +1,43 @@
 // overlayViewer module styles.
-// A modal lightbox. The scrim colour is set inline by the module from the
-// user's backdrop-opacity option; everything else comes from the token layer.
+// A modal lightbox: a native <dialog> opened with showModal(), so it lives in the
+// browser's top layer. It carries no z-index at all, which is the point - as a
+// div at 100000 it was covered by .RESHover at 10300000, confirmed in Chromium
+// with document.elementFromPoint rather than by reading the numbers. Nothing on
+// the page can paint over the top layer, including anything reddit ships.
+
+// The dim is ::backdrop now. The module writes its opacity into
+// --rsm-overlay-dim from the user's option.
 
 #rsm-overlayViewer {
+	// A <dialog> arrives with UA styles a <div> never had: auto margins, a solid
+	// border, fit-content sizing and a canvas background. Left alone they collapse
+	// the full-bleed box to a bordered card in the middle of the screen.
 	position: fixed;
 	inset: 0;
-	z-index: 100000;
-	display: flex;
+	margin: 0;
+	width: auto;
+	height: auto;
+	max-width: none;
+	max-height: none;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	overflow: visible;
 	align-items: center;
 	justify-content: center;
 	padding: clamp(12px, 3vw, 28px);
 	cursor: zoom-out;
 	animation: rsm-overlayViewer-fadeIn var(--rsm-motion-fast) var(--rsm-ease);
+
+	// display: none is the UA rule for a closed dialog and must keep winning, so
+	// the flex layout is stated only for the open state.
+	&[open] {
+		display: flex;
+	}
+
+	&::backdrop {
+		background-color: rgb(0 0 0 / calc(var(--rsm-overlay-dim, 0.85) * 100%));
+	}
 }
 
 #rsm-overlayViewer-inner {

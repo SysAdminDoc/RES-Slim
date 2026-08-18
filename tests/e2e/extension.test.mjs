@@ -1920,3 +1920,176 @@ test('every option control in the console has a name a screen reader can announc
 		'coverage drifted — a type listed here is no longer reached by the modules above',
 	);
 });
+
+// A 1x1 transparent PNG, so an <img> the overlay viewer can bind to actually
+// decodes under the DNS blackhole the harness launches with.
+const PIXEL_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+
+test('the image viewer sits in the top layer, where a hover card cannot cover it', async t => {
+	// This is the test that had to exist before the fix. As a <div> the viewer
+	// carried `z-index: 100000` while `.RESHover` carried `$zindex-res-hover`,
+	// 10,300,000 — two orders of magnitude higher — so with the viewer open, a
+	// hover card painted on top of the modal. The pairing is reachable: `hover` is
+	// alwaysEnabled, its card lingers for `fadeDelay` (500ms) plus a 0.7s fade
+	// after the pointer leaves, and clicking an image inside that window is
+	// ordinary use.
+	//
+	// The assertion is the browser's own hit test, not the numbers.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => chrome.storage.local.set({
+		'RES.modulePrefs': { overlayViewer: true },
+		'RESoptions.overlayViewer': { includeCommentImages: { value: true } },
+	}, resolve)));
+
+	const html = servableCapture();
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		if (route.request().resourceType() === 'image') {
+			return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/r/fixture/comments/post0000001/fixture-post/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	await page.evaluate(() => {
+		const body = document.querySelector('.usertext-body .md');
+		const img = document.createElement('img');
+		img.src = 'https://i.redd.it/fixture-probe.png';
+		img.id = 'probe-image';
+		img.width = 200;
+		img.height = 120;
+		body.appendChild(img);
+	});
+	await page.click('#probe-image');
+	await page.waitForSelector('#rsm-overlayViewer', { state: 'attached' });
+
+	const shape = await page.evaluate(() => {
+		const overlay = document.querySelector('#rsm-overlayViewer');
+		return {
+			tag: overlay.tagName,
+			open: overlay.hasAttribute('open'),
+			zIndex: getComputedStyle(overlay).zIndex,
+			backdropDim: getComputedStyle(overlay).getPropertyValue('--rsm-overlay-dim').trim(),
+		};
+	});
+	assert.equal(shape.tag, 'DIALOG', 'the viewer has to be a real dialog to reach the top layer');
+	assert.equal(shape.open, true, 'showModal() must have run — an appended dialog with no open attribute renders nothing');
+	assert.equal(shape.zIndex, 'auto', 'a top-layer element that still carries a z-index is a number that could be beaten');
+	assert.equal(shape.backdropDim, '0.85', 'the dim option has to reach ::backdrop now that it is not the element background');
+
+	// Now the original defect, reproduced exactly: the highest-numbered surface
+	// RES-Slim ships, placed over the open viewer.
+	const verdict = await page.evaluate(() => {
+		const card = document.createElement('div');
+		card.className = 'RESHover RESHoverInfoCard RESDialogSmall';
+		// `.RESHover` is position: absolute, so its offsets are document
+		// coordinates while elementFromPoint takes viewport ones. Opening the
+		// viewer scrolls the page, so a card placed at a flat `top: 200px` sits
+		// nowhere near the point being probed - and the hit test then reports the
+		// overlay on top no matter what, which is a test that cannot fail.
+		Object.assign(card.style, {
+			top: `${window.scrollY + 200}px`,
+			left: `${window.scrollX + 200}px`,
+			width: '300px',
+			height: '150px',
+		});
+		card.textContent = 'hover card';
+		document.body.appendChild(card);
+		const hit = document.elementFromPoint(250, 250);
+		const box = card.getBoundingClientRect();
+		return {
+			cardZ: getComputedStyle(card).zIndex,
+			hitClass: hit ? hit.className : null,
+			hitInsideOverlay: !!(hit && hit.closest('#rsm-overlayViewer')),
+			probeInsideCard: box.left <= 250 && box.right >= 250 && box.top <= 250 && box.bottom >= 250,
+		};
+	});
+	assert.equal(verdict.cardZ, '10300000', 'the hover card should still carry the number that used to win');
+	assert.equal(verdict.probeInsideCard, true, 'the probed point has to land inside the card, or the hit test proves nothing');
+	assert.equal(verdict.hitInsideOverlay, true,
+		`a hover card at z-index 10300000 covered the open viewer — hit ${verdict.hitClass}`);
+
+	// Escape still closes, and through the module's own path: the body class and
+	// the focus restore both live there, and a bare `cancel` would skip them.
+	await page.keyboard.press('Escape');
+	await page.waitForSelector('#rsm-overlayViewer', { state: 'detached' });
+	const bodyClass = await page.evaluate(() => document.body.className);
+	assert.ok(!bodyClass.includes('rsm-overlayViewer-open'), 'closing must run the module cleanup, not just the dialog close');
+});
+
+test('the hover-zoom preview is in the top layer and takes no focus', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => chrome.storage.local.set({
+		'RES.modulePrefs': { hoverZoom: true },
+	}, resolve)));
+
+	const html = servableCapture();
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		if (route.request().resourceType() === 'image') {
+			return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL_PNG });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/r/fixture/comments/post0000001/fixture-post/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	// The module builds the preview from a hover on a media link; driving that
+	// needs a link it recognises, so the element is built through the same code
+	// path by dispatching a real pointer event over one.
+	await page.evaluate(() => {
+		const target = document.querySelector('.usertext-body .md');
+		const a = document.createElement('a');
+		a.href = 'https://i.redd.it/fixture-probe.png';
+		a.textContent = 'a picture';
+		a.id = 'probe-link';
+		target.appendChild(a);
+	});
+	// Centred, not merely scrolled into view: `scrollIntoView()` parks the target
+	// under the sticky header, and the pointer then lands on the header instead of
+	// the link. That is the same defect WCAG 2.4.11 names, showing up here as a
+	// test that silently hovers nothing.
+	await page.evaluate(() => document.querySelector('#probe-link').scrollIntoView({ block: 'center' }));
+	// The scroll event has to land before the pointer moves. hoverZoom clears its
+	// pending preview on scroll - correctly, since a preview anchored to a link
+	// that has moved is wrong - and a scroll event dispatched after the mouse move
+	// cancels the 180ms timer that would have built the popover.
+	await page.waitForTimeout(500);
+	const box = await page.locator('#probe-link').boundingBox();
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.waitForSelector('#rsm-hoverZoom-popover', { state: 'attached', timeout: 10000 });
+
+	const state = await page.evaluate(() => {
+		const pop = document.querySelector('#rsm-hoverZoom-popover');
+		return {
+			zIndex: getComputedStyle(pop).zIndex,
+			popover: pop.getAttribute('popover'),
+			isOpen: pop.matches(':popover-open'),
+			// `manual` must not have taken the page's Escape key or dismissed on an
+			// outside click; `auto` would have done both, and this preview owns
+			// neither gesture.
+			activeElement: document.activeElement?.id ?? null,
+		};
+	});
+	assert.equal(state.popover, 'manual');
+	assert.equal(state.isOpen, true, 'showPopover() must have run — otherwise the UA display:none rule hides it');
+	assert.equal(state.zIndex, 'auto', 'a top-layer preview needs no stacking value');
+	assert.notEqual(state.activeElement, 'rsm-hoverZoom-popover', 'the preview must not take focus');
+});

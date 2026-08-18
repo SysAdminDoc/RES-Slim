@@ -1,3 +1,5 @@
+@import '../zindex';
+
 // RES-Slim pageTheme — an opt-in dark/OLED skin for old.reddit itself.
 // Combined and cleaned up from a few community Stylus userstyles. Everything is
 // gated behind classes on <html> that the pageTheme module toggles, so the skin
@@ -283,7 +285,7 @@ html.res-pageTheme--collapse-sidebar .side {
 	height: 22px;
 	overflow: hidden;
 	opacity: 0.5;
-	z-index: 100;
+	z-index: $zindex-page-furniture;
 	background-color: var(--rsm-th-bg-elev);
 	transition: opacity 0.15s ease;
 }
@@ -349,7 +351,7 @@ html.res-pageTheme--refined :where(a, button, input, textarea, select, [tabindex
 html.res-pageTheme--refined #header {
 	position: sticky;
 	top: 0;
-	z-index: 100;
+	z-index: $zindex-page-chrome;
 	min-height: 80px;
 	border: 0;
 	border-bottom: 1px solid var(--rsm-th-border);
@@ -1227,7 +1229,8 @@ html.res-pageTheme--refined .commentarea .dropdown .selected {
 html.res-pageTheme--refined .commentarea .drop-choices {
 	display: none;
 	position: absolute;
-	z-index: 101;
+	// Opens from inside the sticky header's surface, so it rides one above it.
+	z-index: $zindex-page-chrome + 1;
 	overflow: hidden;
 	background: var(--rsm-th-bg-elev);
 	border: 1px solid var(--rsm-th-border);

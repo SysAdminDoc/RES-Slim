@@ -22,6 +22,35 @@ All notable changes to RES-Slim will be documented in this file.
   reach, so the orphan class cannot come back. A commented-out `@import` counts
   as absent, which is the direction the check must not be wrong in.
 
+### Fixed
+
+- A hover card could paint on top of the open image viewer. `.RESHover` carries
+  10,300,000 and the viewer carried 100,000, two orders of magnitude apart, and
+  the pairing is reachable in ordinary use: `hover` is always enabled and its
+  card lingers for half a second plus a fade after the pointer leaves, which is
+  long enough to click an image. Confirmed in Chromium with
+  `document.elementFromPoint` before anything was changed.
+
+  The viewer is a native `<dialog>` opened with `showModal()` now, so it lives
+  in the browser's top layer where no stacking value can reach it, and the top
+  layer brings the focus trap, the inertness of the page behind, and Escape with
+  it — forty lines of hand-rolled Tab cycling went away. The hover-zoom preview
+  moved to the top layer too, via `popover="manual"`: it follows the cursor and
+  owns neither Escape nor light-dismiss, so `auto` would have been wrong.
+
+### Changed
+
+- The z-index scale describes roles rather than modules, and every page-level
+  stacking value comes from it. Six of its twelve tokens were referenced only
+  from stylesheets no entry point compiled; the ad-hoc values that had grown up
+  beside it — 1000 on four different surfaces, 2001, 9999 on four more, 99999,
+  100000, 10000000 and 99999999 — are now slots in one ladder, and the two
+  panels that tied at exactly 1000 no longer depend on source order. Three
+  contracts hold it: no unreferenced token, no page-level literal outside the
+  scale, and no stacking value written from JS. `nextTopComment` wrote
+  `z-index: 9999` into an inline style attribute, where no stylesheet audit
+  could see it; its layout is a stylesheet now.
+
 ## v0.39.0 - 2026-08-18
 
 ### Fixed
