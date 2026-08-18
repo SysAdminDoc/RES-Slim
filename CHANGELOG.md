@@ -4,6 +4,22 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Security
+
+- The version beacon RES-Slim writes into reddit's own DOM now carries a
+  per-session nonce instead of the extension ID. For an unpacked install Chrome
+  derives that ID from the install path, so it was a stable per-machine
+  identifier handed to the page by a product that ships no telemetry precisely
+  so it has nothing to hand over. Its only consumer needs two installs to look
+  different from each other, which a nonce does just as well.
+  `data-fork-version`, which published the exact build, is gone too.
+- `continueThreadInline` validates the URL before it sends credentials. It is
+  the one credentialed fetch in the tree built from page markup, and the URL
+  came from an `a.href` — which resolves against the document, so a `<base>`
+  element is enough to move it off reddit while the attribute still reads
+  `/r/…`. It must now be https, same-origin, and shaped like a comment
+  permalink.
+
 ### Fixed
 
 - `fixImageLinks` carried an unreachable `observer.disconnect()` sitting after an

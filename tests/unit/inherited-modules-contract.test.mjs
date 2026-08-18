@@ -71,7 +71,12 @@ test('version publishes a beacon old reddit will accept, without hiding the fork
 		`the beacon reports ${beacon.textContent}, which old reddit treats as too old to run expandos`,
 	);
 
-	assert.ok(beacon.getAttribute('data-fork-version'), 'the real fork version must still be discoverable');
+	// `data-fork-version` used to ride along here, and this line used to require
+	// it. It published the exact build to reddit's own scripts, which is a
+	// fingerprinting bit an extension that ships no telemetry has no business
+	// handing over — and the version is already in the settings console, where the
+	// person who wants it can read it.
+	assert.equal(beacon.getAttribute('data-fork-version'), null, 'the exact build is not published to the page');
 	assert.equal(beacon.style.display, 'none', 'the beacon is machine-readable only and must not render');
 });
 
@@ -80,7 +85,9 @@ test('version marks the document so a second install can detect the first', () =
 	mod('version').contentStart();
 
 	const beacon = document.querySelector('#RESConsoleVersion');
-	assert.ok(beacon.getAttribute('data-id'), 'without an extension id, two installs cannot tell each other apart');
+	// Distinctness, not identity. What this attribute carries is asserted in
+	// credentialed-fetch-contract.test.mjs, which is where the reason lives.
+	assert.ok(beacon.getAttribute('data-id'), 'without something to compare, two installs cannot tell each other apart');
 });
 
 // --- hover -----------------------------------------------------------------
