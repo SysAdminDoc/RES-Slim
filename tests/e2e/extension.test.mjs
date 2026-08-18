@@ -1671,3 +1671,71 @@ test('the mandatory-login overlay is dismissed only when there is a page behind 
 	assert.equal(empty.overlayHidden, false, 'with nothing behind it, hiding the wall would leave a blank page that looks like success');
 	assert.equal(empty.unwalled, false);
 });
+
+test('drift on a real page shows up as a dated view in the settings console', async t => {
+	// The unit contract can prove the record is structured and the report is
+	// clean; it cannot prove the console is wired to either. This drives the whole
+	// path — a capture with a renamed surface, the content script recording it,
+	// and the console rendering it — because every previous version of this
+	// feature ended at "a line in a textarea" and looked fine from the inside.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = servableCapture(FRONT_CAPTURE).replace(
+		'id="siteTable" class="sitetable linklisting"',
+		'id="legacySiteTable" class="sitetable linklisting"',
+	);
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://old.reddit.com/rsm-drift-console/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForTimeout(400);
+	await page.close();
+
+	const options = await context.newPage();
+	await options.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await options.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	const panel = options.locator('#RESSelectorDrift');
+	await panel.waitFor({ state: 'visible', timeout: 30000 });
+
+	const rendered = await options.evaluate(() => {
+		const group = document.querySelector('#RESSelectorDriftList .selectorDriftGroup');
+		return {
+			title: document.querySelector('#RESSelectorDriftTitle')?.textContent || '',
+			pageType: group?.dataset.pageType || '',
+			dates: group?.querySelector('.selectorDriftGroupDates')?.textContent || '',
+			findings: Array.from(group?.querySelectorAll('.selectorDriftFinding') || []).map(li => li.textContent),
+			// Contrast is asserted elsewhere; what matters here is that the panel is
+			// painted at all rather than inheriting a transparent background from a
+			// container that assumed it was never shown.
+			background: getComputedStyle(document.querySelector('#RESSelectorDrift')).backgroundColor,
+		};
+	});
+
+	assert.match(rendered.title, /Selector drift/);
+	assert.equal(rendered.pageType, 'linklist', 'the view is per page kind, not one flat list');
+	assert.match(rendered.dates, /Seen |Since /, 'and dated');
+	assert.ok(
+		rendered.findings.some(text => /listingFeed — matched fallback selector/.test(text)),
+		`expected the drifted surface to be named, saw ${JSON.stringify(rendered.findings)}`,
+	);
+	assert.notEqual(rendered.background, 'rgba(0, 0, 0, 0)');
+
+	// Clearing empties the view without claiming the checking has stopped.
+	await options.locator('#RESSelectorDriftClear').click();
+	await panel.waitFor({ state: 'hidden', timeout: 10000 });
+
+	// And a console opened with nothing recorded shows nothing at all.
+	await options.reload({ waitUntil: 'domcontentloaded' });
+	await options.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await options.waitForTimeout(400);
+	assert.equal(await panel.isVisible(), false, 'silence when every selector matches is the feature, not an oversight');
+});

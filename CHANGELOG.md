@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- Selector drift now has its own view in the settings console: which surfaces
+  fell back or went missing, on which kind of page, and since when, with a
+  one-click copyable report. It was previously one line in the module error log,
+  which is a textarea of everything that has ever gone wrong. The panel is
+  hidden entirely while every selector matches. The record keeps page kind,
+  surface names and dates and nothing else — no URLs, no subreddits, no times of
+  day — and the report says so.
+
 - `frictionRemovers` can dismiss reddit's mandatory-login interstitial, off by
   default. It matches on shape rather than on class names — a nearly
   full-viewport fixed or absolutely positioned element that is not ours, plus

@@ -3202,6 +3202,128 @@ html[res-options]:root {
 		line-height: 1.65;
 	}
 
+	// Selector drift. Hidden entirely until something drifts, so it is styled as a
+	// notice that has arrived rather than as a permanent section of the console.
+	.selectorDriftPanel {
+		margin: 0 0 20px;
+		padding: 18px 20px;
+		border: 1px solid var(--options-control-border);
+		border-radius: 10px;
+		background: var(--options-panel-raised);
+		color: var(--options-text);
+	}
+
+	.selectorDriftPanel[hidden] {
+		display: none;
+	}
+
+	.selectorDriftHeader {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.selectorDriftTitle {
+		margin: 0;
+		font-size: 16px;
+		font-weight: 600;
+	}
+
+	.selectorDriftActions {
+		display: flex;
+		gap: 8px;
+	}
+
+	.selectorDriftButton {
+		padding: 6px 12px;
+		border: 1px solid var(--options-control-border);
+		border-radius: 6px;
+		background: var(--options-panel);
+		color: var(--options-text);
+		font-size: 13px;
+		cursor: pointer;
+	}
+
+	.selectorDriftButton:hover {
+		border-color: var(--options-accent);
+	}
+
+	.selectorDriftButton--quiet {
+		color: var(--options-text-muted);
+	}
+
+	.selectorDriftSummary {
+		margin: 10px 0 16px;
+		color: var(--options-text-muted);
+		font-size: 13px;
+		line-height: 1.6;
+	}
+
+	.selectorDriftGroup + .selectorDriftGroup {
+		margin-top: 16px;
+		padding-top: 16px;
+		border-top: 1px solid var(--options-border);
+	}
+
+	.selectorDriftGroupTitle {
+		margin: 0;
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.selectorDriftGroupDates {
+		margin: 2px 0 8px;
+		color: var(--options-text-muted);
+		font-size: 12px;
+	}
+
+	.selectorDriftFindings {
+		margin: 0;
+		padding-left: 18px;
+	}
+
+	.selectorDriftFinding {
+		margin: 2px 0;
+		font-size: 13px;
+		line-height: 1.6;
+	}
+
+	// A missing surface is a different situation from one that fell through to a
+	// backup, and the difference has to survive being printed in one colour.
+	.selectorDriftFinding[data-status='missing'] {
+		font-weight: 600;
+	}
+
+	.selectorDriftFinding[data-status='missing']::after {
+		content: ' (missing)';
+		color: var(--options-text-muted);
+		font-weight: 400;
+	}
+
+	.selectorDriftStatus:empty {
+		display: none;
+	}
+
+	.selectorDriftStatus {
+		margin: 12px 0 0;
+		color: var(--options-text-muted);
+		font-size: 13px;
+	}
+
+	.selectorDriftFallbackReport {
+		width: 100%;
+		margin-top: 12px;
+		padding: 10px;
+		border: 1px solid var(--options-control-border);
+		border-radius: 6px;
+		background: var(--options-panel);
+		color: var(--options-text);
+		font-family: monospace;
+		font-size: 12px;
+	}
+
 	.moduleContextNote {
 		display: flex;
 		align-items: center;
