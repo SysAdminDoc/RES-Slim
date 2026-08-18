@@ -271,7 +271,11 @@
     },
     {
       "file": "lib/modules/hosts/giphy.js",
-      "url": "https://api.giphy.com/v1/gifs/${id}"
+      "url": "https://media.giphy.com/media/${id}/giphy.gif"
+    },
+    {
+      "file": "lib/modules/hosts/giphy.js",
+      "url": "https://media.giphy.com/media/${id}/giphy.mp4"
     },
     {
       "file": "lib/modules/hosts/github.js",
@@ -287,7 +291,7 @@
     },
     {
       "file": "lib/modules/hosts/googlemaps.js",
-      "url": "https://www.google.com/maps/embed/v1/view?center=${coords}&key=AIzaSyCtnLZP1XwkgIK53Asx_5qtZa2k9eZcdDc"
+      "url": "https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat},${lon}"
     },
     {
       "file": "lib/modules/hosts/gyazo.js",
@@ -656,10 +660,6 @@
     {
       "file": "lib/modules/hosts/xkcd.js",
       "url": "https://xkcd.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/youtube.js",
-      "url": "https://www.googleapis.com/youtube/v3/videos"
     },
     {
       "file": "lib/modules/hosts/youtube.js",

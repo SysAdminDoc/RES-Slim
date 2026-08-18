@@ -1652,6 +1652,12 @@
     "showImagesForceReplaceNativeExpandoDesc": {
         "message": "Always replace Reddit's player."
     },
+    "showImagesTumblrApiKeyTitle": {
+        "message": "Tumblr API key"
+    },
+    "showImagesTumblrApiKeyDesc": {
+        "message": "Your own Tumblr API key (OAuth consumer key). Tumblr post previews stay off until one is set: expanding a post needs Tumblr's API, and RES-Slim will not ship a key it does not own. Register an application at https://www.tumblr.com/oauth/apps to get one."
+    },
     "showImagesVredditMinimumVideoBandwidthTitle": {
         "message": "Minimum Video Bandwidth"
     },

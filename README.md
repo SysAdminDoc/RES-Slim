@@ -32,6 +32,8 @@ The selected 1440×900 design references for all 11 categories, Console preferen
 
 ## Permissions and privacy
 
+RES-Slim ships no third-party API credentials. Four were inherited from upstream and removed in v0.40.0: the YouTube key went with a metadata function nothing called, Giphy previews use the media paths the id already determines, and Google Maps links preview through OpenStreetMap because Google's Embed API requires a key this project does not own. Tumblr is the exception - its API is the only route to a post body - so Tumblr previews stay off until you supply your own key in the host's settings.
+
 RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local feature data in the browser profile. `declarativeNetRequest` is used for the packaged Reddit-scoped block rules and the user-controlled Old Reddit redirect described above. Optional host permissions are requested only when a media provider or localhost companion needs one. The extension contains no analytics and sends no RES-Slim telemetry.
 
 ## Build

@@ -22,6 +22,33 @@ All notable changes to RES-Slim will be documented in this file.
   reach, so the orphan class cannot come back. A commented-out `@import` counts
   as absent, which is the direction the check must not be wrong in.
 
+### Security
+
+- The four third-party API keys inherited from upstream are gone. They were live
+  quota credentials this project neither owns nor can restrict, published in a
+  public GPL-3.0 repository, and revocable without notice by owners who have no
+  idea this fork exists - at which point the features would have broken with
+  nothing to diagnose them by. One decision per key:
+
+  - **YouTube** - deleted outright. The key fed `getVideoData`, which was
+    declared on `Host`, assigned by the constructor, and read by no file in the
+    repo. It shipped in the foreground bundle of every release for a code path
+    that never ran. The caller-less plumbing went with it.
+  - **Giphy** - no longer calls the API at all. `dc6zaTOxFJmzC` is the
+    well-known public beta key, and the request bought nothing: the response's
+    media URLs are exactly the paths the id already determines.
+  - **Google Maps** - previews render through OpenStreetMap, which needs no key
+    and no quota. Google's Embed API requires one, so the trade is tiles and the
+    satellite layer for a feature that does not depend on a stranger's
+    credential.
+  - **Tumblr** - the one host with no key-less path; its oEmbed endpoint no
+    longer returns JSON. The key is now yours to supply in the host's settings,
+    and until one is set the host does not claim the link at all rather than
+    offering an expando that can only fail.
+
+  `no-inherited-credentials-contract` fails on any hardcoded key shape, baited in
+  both directions so it matches a real credential and not ordinary code.
+
 ### Fixed
 
 - A hover card could paint on top of the open image viewer. `.RESHover` carries

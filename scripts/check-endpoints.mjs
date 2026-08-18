@@ -63,6 +63,11 @@ const FETCHED = [
 	{ name: 'PullPush API (viewDeleted, editedCommentDiff)', url: 'https://api.pullpush.io/reddit/search/comment/?size=1' },
 	{ name: 'Wayback availability API (waybackSnapshot)', url: 'https://archive.org/wayback/available?url=example.com' },
 	{ name: 'Bluesky oEmbed (hosts/bluesky)', url: 'https://embed.bsky.app/oembed?url=https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l' },
+	// v0.40.0 dropped Giphy's API call for the media paths the id already
+	// determines, so these two URLs are the whole host now. If the pattern ever
+	// stops resolving, the expando breaks with nothing else to notice it.
+	{ name: 'Giphy media mp4 (hosts/giphy)', url: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.mp4' },
+	{ name: 'Giphy media gif fallback (hosts/giphy)', url: 'https://media.giphy.com/media/3o7TKMt1VVNkHV2PaE/giphy.gif' },
 ];
 
 const LINKED = [
@@ -72,6 +77,9 @@ const LINKED = [
 	// Loaded in an iframe by the browser, not fetched by us. A bogus paste id
 	// legitimately 404s, so probe the host rather than inventing an id.
 	{ name: 'Pastebin (hosts/pastebin)', url: 'https://pastebin.com/' },
+	// The map preview, since Google's Embed API needs a key this project will not
+	// ship. Loaded in an iframe by the browser rather than fetched by us.
+	{ name: 'OpenStreetMap embed (hosts/googlemaps)', url: 'https://www.openstreetmap.org/export/embed.html?bbox=-0.13,51.50,-0.11,51.52&layer=mapnik' },
 ];
 
 // cobaltDownloader deliberately ships no default instance, so there is nothing
