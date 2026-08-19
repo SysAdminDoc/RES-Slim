@@ -989,6 +989,21 @@
     "settingsConsoleImportFailed": {
         "message": "Import failed: $1"
     },
+    "settingsConsoleReset": {
+        "message": "Reset"
+    },
+    "settingsConsoleResetTitle": {
+        "message": "Put every module and option back to how it ships"
+    },
+    "settingsConsoleResetConfirm": {
+        "message": "Put every module and option back to how it ships?\n\nYour current settings are saved first, and you can undo this from the notice that appears afterwards."
+    },
+    "settingsConsoleResetSuccess": {
+        "message": "Settings reset to defaults. Reloading…"
+    },
+    "settingsConsoleResetFailed": {
+        "message": "Reset failed: $1"
+    },
     "settingsConsoleToastModuleEnabled": {
         "message": "Enabled $1 (Save to apply)"
     },

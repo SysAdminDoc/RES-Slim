@@ -2495,6 +2495,78 @@ test('the controls injected into old Reddit have no accessibility violations', a
 		`accessibility violations in injected UI:\n  ${describeViolations(results.violations)}`);
 });
 
+// The defaults turn roughly sixty modules on, six of which have no visible
+// control at all, so "put it back how it was" was not something a user could
+// actually do. Driven end to end because the interesting half is the reload:
+// the reset writes storage, the page reloads, and the undo has to be offered
+// from the persisted restore point on the way back up.
+test('resetting to defaults clears settings and can be undone afterwards', async t => {
+	const { context, extensionId, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// A changed option and a module switched off, so the reset has something to
+	// undo and the undo has something to prove.
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { karmaHide: true },
+			'RESoptions.karmaHide': { hideCommentCounts: { value: true } },
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	page.on('dialog', dialog => { dialog.accept(); });
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	// The data panel lives under the console-preferences tab, alongside export and
+	// import — the reset belongs with the other whole-profile operations rather
+	// than loose among the per-module settings.
+	await page.click('[data-category="__console"]');
+	await page.waitForSelector('#RESSettingsReset', { timeout: 30000 });
+
+	await page.click('#RESSettingsReset');
+	// The reset reloads the page, so wait on the storage rather than the DOM.
+	await page.waitForFunction(() => new Promise(resolve => {
+		chrome.storage.local.get(['RESoptions.karmaHide', 'RES.modulePrefs'], r => {
+			const blob = r['RESoptions.karmaHide'];
+			const prefs = r['RES.modulePrefs'];
+			resolve(blob && Object.keys(blob).length === 0 && prefs && Object.keys(prefs).length === 0);
+		});
+	}), null, { timeout: 30000 });
+
+	const afterReset = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get(['RESoptions.karmaHide', 'RES.modulePrefs', 'RES.settingsRestorePoint'], resolve);
+	}));
+	assert.deepEqual(afterReset['RESoptions.karmaHide'], {}, 'the stored option must be cleared');
+	assert.deepEqual(afterReset['RES.modulePrefs'], {}, 'and the enablement override with it');
+
+	// The restore point is what makes this safe to offer at all.
+	const restorePoint = afterReset['RES.settingsRestorePoint'];
+	assert.ok(restorePoint, 'a reset with no way back is not a reset, it is a wipe');
+	assert.deepEqual(restorePoint.modules.karmaHide, { hideCommentCounts: { value: true } });
+	assert.deepEqual(restorePoint.modulePrefs, { karmaHide: true }, 'enablement has to be in the snapshot, or the undo restores half the state');
+
+	// And the undo is reachable after the reload, which is the part that cannot be
+	// checked from storage alone. Waited on by its own text rather than on any
+	// `.RESNotification`: the reset's success toast is also one, and it appears
+	// first, before the reload that the undo notice comes back after.
+	const undo = page.locator('.RESNotification button', { hasText: 'Undo reset' });
+	await undo.waitFor({ state: 'visible', timeout: 30000 });
+	assert.equal(await undo.count(), 1, 'the undo has to name what it undoes');
+	await undo.click();
+
+	await page.waitForFunction(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.modulePrefs', r => {
+			resolve(Boolean(r['RES.modulePrefs'] && r['RES.modulePrefs'].karmaHide === true));
+		});
+	}), null, { timeout: 30000 });
+
+	const afterUndo = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get(['RESoptions.karmaHide', 'RES.modulePrefs'], resolve);
+	}));
+	assert.deepEqual(afterUndo['RESoptions.karmaHide'], { hideCommentCounts: { value: true } }, 'the option comes back');
+	assert.deepEqual(afterUndo['RES.modulePrefs'], { karmaHide: true }, 'and so does the module being on');
+	await page.close();
+});
+
 // karmaHide is a selector list handed to addCSS, and current Reddit renders post
 // scores inside each host's open shadow root. So through v0.45.0 the module was
 // `['r2']` only: on current Reddit every selector in it missed, and there was no

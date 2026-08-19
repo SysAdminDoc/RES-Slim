@@ -22,6 +22,10 @@ const storageStub = {
 // module needs a stub too — otherwise importing snapshot.js drags the real
 // extension environment in.
 const wrapped = new Map();
+// `RES.modulePrefs` lives outside the `RESoptions.` prefix, so the snapshot
+// reads and writes it through the raw store rather than the prefixed one. Keyed
+// storage on the same stub, so an enablement round-trip is testable.
+const rawStorage = new Map();
 const environmentStub = {
 	wrap(key, getDefault) {
 		return {
@@ -30,6 +34,8 @@ const environmentStub = {
 			delete: () => { wrapped.delete(key); return Promise.resolve(); },
 		};
 	},
+	get(key) { return Promise.resolve(rawStorage.has(key) ? rawStorage.get(key) : null); },
+	set(key, value) { rawStorage.set(key, value); return Promise.resolve(); },
 };
 
 const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-snapshot');
@@ -37,7 +43,12 @@ fs.mkdirSync(tmpDir, { recursive: true });
 const stubPath = path.join(tmpDir, 'storage-stub.mjs');
 fs.writeFileSync(stubPath, 'export const storage = globalThis.__resSlimSnapshotStub;\n');
 const envStubPath = path.join(tmpDir, 'environment-storage-stub.mjs');
-fs.writeFileSync(envStubPath, 'export const wrap = (...a) => globalThis.__resSlimEnvStub.wrap(...a);\n');
+fs.writeFileSync(envStubPath, [
+	'export const wrap = (...a) => globalThis.__resSlimEnvStub.wrap(...a);',
+	'export const get = (...a) => globalThis.__resSlimEnvStub.get(...a);',
+	'export const set = (...a) => globalThis.__resSlimEnvStub.set(...a);',
+	'',
+].join('\n'));
 
 const stubUrl = pathToFileURL(stubPath).href;
 const envStubUrl = pathToFileURL(envStubPath).href;
@@ -52,10 +63,111 @@ globalThis.__resSlimEnvStub = environmentStub;
 const {
 	buildSnapshot, parseSnapshot, applySnapshot, serializeSnapshot, InvalidSnapshotError, SNAPSHOT_APP,
 	diffSnapshots, describeDiff, applySnapshotGuarded, loadRestorePoint, revertToRestorePoint, clearRestorePoint,
+	buildDefaultsSnapshot,
 	SNAPSHOT_FORMAT_VERSION, MIN_SUPPORTED_FORMAT_VERSION, describeSnapshotOrigin,
 } = await import(pathToFileURL(modulePath).href);
 
-const snap = modules => ({ app: SNAPSHOT_APP, appVersion: '0.0.0', formatVersion: 1, exportedAt: '', modules });
+const snap = modules => ({ app: SNAPSHOT_APP, appVersion: '0.0.0', formatVersion: 1, exportedAt: '', modules, modulePrefs: null });
+
+const MODULE_PREFS_KEY = 'RES.modulePrefs';
+
+// --- enablement -------------------------------------------------------------
+//
+// `RES.modulePrefs` lives outside the `RESoptions.` prefix, so it was missing
+// from the snapshot entirely: an export carried every option value and silently
+// left every enable/disable behind, and a profile restored from a file came back
+// with the right settings on the wrong set of modules.
+
+test('a snapshot carries which modules are on, not only their options', async () => {
+	memoryStorage.clear();
+	rawStorage.clear();
+	memoryStorage.set('hover', { width: { value: 42 } });
+	rawStorage.set(MODULE_PREFS_KEY, { hover: true, karmaHide: false });
+
+	const snapshot = await buildSnapshot({ appVersion: '1.0.0' });
+	assert.deepEqual(snapshot.modulePrefs, { hover: true, karmaHide: false });
+
+	// And it survives serialisation, which is the only form that reaches a user.
+	const roundTripped = parseSnapshot(serializeSnapshot(snapshot));
+	assert.deepEqual(roundTripped.modulePrefs, { hover: true, karmaHide: false });
+});
+
+test('only real booleans are kept, so a stray string cannot switch a module on', async () => {
+	memoryStorage.clear();
+	rawStorage.clear();
+	rawStorage.set(MODULE_PREFS_KEY, { good: false, bad: 'true', alsoBad: 1, worse: null });
+
+	const snapshot = await buildSnapshot({ appVersion: '1.0.0' });
+	// `'true'` and `1` are both truthy. Coercing them would turn a module the user
+	// disabled back on during a restore.
+	assert.deepEqual(snapshot.modulePrefs, { good: false });
+});
+
+test('a file written before enablement was captured leaves enablement alone', async () => {
+	rawStorage.clear();
+	rawStorage.set(MODULE_PREFS_KEY, { hover: false });
+
+	// The distinction that matters: absent means "this file does not say", which
+	// must not be read as "no module is enabled". Reading it as `{}` would wipe
+	// every toggle the user had whenever they imported an older export.
+	const old = parseSnapshot(JSON.stringify({ app: SNAPSHOT_APP, modules: { hover: {} } }));
+	assert.equal(old.modulePrefs, null);
+
+	memoryStorage.clear();
+	await applySnapshot(old);
+	assert.deepEqual(rawStorage.get(MODULE_PREFS_KEY), { hover: false }, 'untouched');
+});
+
+test('enablement is replaced wholesale rather than merged', async () => {
+	rawStorage.clear();
+	rawStorage.set(MODULE_PREFS_KEY, { hover: true, leftover: true });
+	memoryStorage.clear();
+
+	await applySnapshot({ ...snap({ hover: {} }), modulePrefs: { hover: false } });
+	// `leftover` is not in the snapshot, and merging would leave it on. A snapshot
+	// is a complete statement of which modules are enabled.
+	assert.deepEqual(rawStorage.get(MODULE_PREFS_KEY), { hover: false });
+});
+
+// --- reset to defaults ------------------------------------------------------
+
+test('the defaults snapshot clears every stored blob and all enablement', async () => {
+	memoryStorage.clear();
+	rawStorage.clear();
+	memoryStorage.set('hover', { width: { value: 42 } });
+	memoryStorage.set('karmaHide', { hidePostScores: { value: false } });
+	rawStorage.set(MODULE_PREFS_KEY, { karmaHide: true });
+
+	const defaults = await buildDefaultsSnapshot({ appVersion: '1.0.0' });
+	// An empty blob is how "no stored options" is spelled, so each module falls
+	// back to what it declares without this file needing to know the defaults.
+	assert.deepEqual(defaults.modules, { hover: {}, karmaHide: {} });
+	assert.deepEqual(defaults.modulePrefs, {});
+});
+
+test('resetting goes through the guarded path, so it leaves a restore point', async () => {
+	memoryStorage.clear();
+	rawStorage.clear();
+	wrapped.clear();
+	memoryStorage.set('hover', { width: { value: 42 } });
+	rawStorage.set(MODULE_PREFS_KEY, { karmaHide: true });
+
+	const defaults = await buildDefaultsSnapshot({ appVersion: '1.0.0' });
+	await applySnapshotGuarded(defaults, { appVersion: '1.0.0' });
+
+	assert.deepEqual(memoryStorage.get('hover'), {}, 'the stored option is gone');
+	assert.deepEqual(rawStorage.get(MODULE_PREFS_KEY), {}, 'and so is the enablement override');
+
+	// Undoing 60 toggles by hand is not something a person can do, so the reset
+	// being reversible is the whole reason it is safe to offer.
+	const restorePoint = await loadRestorePoint();
+	assert.deepEqual(restorePoint.modules.hover, { width: { value: 42 } });
+	assert.deepEqual(restorePoint.modulePrefs, { karmaHide: true });
+
+	await revertToRestorePoint();
+	assert.deepEqual(memoryStorage.get('hover'), { width: { value: 42 } });
+	assert.deepEqual(rawStorage.get(MODULE_PREFS_KEY), { karmaHide: true }, 'the undo has to bring enablement back too');
+});
 
 test('buildSnapshot captures every module blob with app metadata', async () => {
 	memoryStorage.clear();

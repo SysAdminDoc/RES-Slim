@@ -19,6 +19,20 @@ All notable changes to RES-Slim will be documented in this file.
   both relative and the wrong anchor, which is the sort of thing that survives
   when nothing reads it.
 
+- A **Reset** button in the settings console, next to Export and Import. It puts
+  every module and every option back to how the extension ships. The defaults
+  turn roughly sixty modules on and six of those have no visible control at all,
+  so undoing them by hand was not something you could realistically do.
+
+  Your current settings are saved before anything changes, and a notice
+  afterwards offers to put them back.
+
+- Exported settings files now include which modules are switched on. They never
+  did, so exporting and importing carried every option value across and quietly
+  left every enable/disable behind: you got the right settings on the wrong set
+  of modules. Older files still import exactly as they did before and leave your
+  toggles alone.
+
 - Hiding scores now works on current Reddit. `karmaHide` ran on old Reddit only,
   because it works by handing a list of selectors to the page and current Reddit
   keeps the numbers inside each post's shadow root, where page-level CSS cannot
