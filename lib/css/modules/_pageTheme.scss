@@ -849,15 +849,10 @@ html.res-pageTheme shreddit-app select {
 	color: var(--rsm-th-txt-strong) !important;
 }
 
-html.res-pageTheme--declutter shreddit-ad-post,
-html.res-pageTheme--declutter shreddit-comments-page-ad,
-html.res-pageTheme--declutter shreddit-comment-tree-ad,
-html.res-pageTheme--declutter shreddit-sidebar-ad,
-html.res-pageTheme--declutter [data-promoted='true'],
-html.res-pageTheme--declutter article:has(shreddit-ad-post),
-html.res-pageTheme--declutter faceplate-tracker[source='ad'] {
-	display: none !important;
-}
+// The ad elements that used to be listed here moved to `_removePromoted.scss`.
+// Every selector in this block was an ad, so "declutter" was quietly deciding
+// whether ads were removed, and a user with ad removal on and declutter off got
+// ads inside every discussion.
 
 
 // Old Reddit has one content rail and one information rail. The permanent

@@ -40,3 +40,35 @@ test('removePromoted ships a hidden-count badge styled in res.scss imports', () 
 	assert.match(partial, /\.thing\.link\.promotedlink/);
 	assert.match(partial, /display:\s*none\s*!important/);
 });
+
+test('current Reddit ad elements belong to the ad remover, not to a theme option', () => {
+	// Three of these were hidden only by `html.res-pageTheme--declutter`, so a
+	// user with ad removal on and declutter off saw every ad inside a discussion,
+	// and the count the module reports never included one. A fourth,
+	// `shreddit-dynamic-ad-link`, was covered nowhere at all.
+	const source = read('lib/modules/removePromoted.js');
+	const partial = read('lib/css/modules/_removePromoted.scss');
+	const theme = read('lib/css/modules/_pageTheme.scss');
+
+	for (const element of [
+		'shreddit-comments-page-ad',
+		'shreddit-comment-tree-ad',
+		'shreddit-sidebar-ad',
+		'shreddit-dynamic-ad-link',
+	]) {
+		assert.ok(source.includes(`'${element}'`), `${element} is not in the module's selector list`);
+		assert.ok(partial.includes(element), `${element} is not hidden by the module's own stylesheet`);
+		assert.ok(!theme.includes(`--declutter ${element}`), `${element} is still gated on the declutter theme toggle`);
+	}
+
+	// An ad inside a discussion is not a post, so the Thing watcher cannot see one,
+	// and current Reddit streams the comment tree so a document sweep misses it too.
+	assert.match(source, /watchForFutureDescendants\(document\.body, D2X_AD_ELEMENTS\.join\(', '\)/);
+});
+
+test('the declutter toggle no longer decides whether ads are removed', () => {
+	const theme = read('lib/css/modules/_pageTheme.scss');
+	for (const element of ['shreddit-ad-post', 'faceplate-tracker[source=', 'article:has(shreddit-ad-post)']) {
+		assert.ok(!theme.includes(`--declutter ${element}`), `${element} still rides on a theme option`);
+	}
+});

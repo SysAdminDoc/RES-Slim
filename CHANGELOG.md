@@ -81,6 +81,14 @@ All notable changes to RES-Slim will be documented in this file.
   forces the upgrade rather than hoping the browser gets round to it, and retries
   on a short bounded schedule after that.
 
+- Ads inside discussions on current Reddit are removed by the ad remover, and
+  counted. Three of Reddit's ad elements were hidden only by the optional
+  declutter theme setting, so if you removed ads but left that setting off you
+  still got an ad in the middle of every comment thread, and the badge that
+  reports how many ads were removed never counted one. A fourth was not covered
+  anywhere. They belong to the ad remover now, which is always on, and the theme
+  setting no longer decides whether ads appear.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then

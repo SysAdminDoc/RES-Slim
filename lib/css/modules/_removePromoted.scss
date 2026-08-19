@@ -10,6 +10,21 @@
 	display: none !important;
 }
 
+// Current Reddit's ad elements. These used to live in `_pageTheme.scss` under the
+// optional `--declutter` toggle, which meant a user who removed ads but did not
+// declutter still saw every ad inside a discussion — a theme option was carrying
+// ad removal as a side effect, and the module whose job this is did not know
+// about them. `removePromoted` is always enabled, so this is unconditional.
+shreddit-ad-post,
+shreddit-comments-page-ad,
+shreddit-comment-tree-ad,
+shreddit-sidebar-ad,
+shreddit-dynamic-ad-link,
+article:has(shreddit-ad-post),
+faceplate-tracker[source='ad'] {
+	display: none !important;
+}
+
 // RES-Slim: badge that surfaces the number of promoted posts hidden this page-load.
 // Lives in the existing #header-bottom-right cluster so it sits next to mail/userbar.
 // The base colour used to be the dark-theme value (#ffb06a, about 1.9:1 on a

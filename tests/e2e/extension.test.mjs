@@ -1148,6 +1148,59 @@ for (const [label, fixture, url] of [
 	});
 }
 
+test('ads inside a discussion are removed by the ad remover, with the theme option off', async t => {
+	// `shreddit-comments-page-ad` and `shreddit-comment-tree-ad` were hidden only
+	// by the optional declutter theme toggle, so removing ads and not decluttering
+	// left every in-comment ad on screen, and the count the badge shows never
+	// included one.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = staticFixture(SHREDDIT_THREAD).replace(
+		'</main>',
+		'<shreddit-comments-page-ad id="rsm-page-ad">sponsored</shreddit-comments-page-ad></main>',
+	);
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('shreddit-comment[data-res-shreddit-compat]', { timeout: 30000 });
+
+	// Declutter is on by default, and while it is on it hides these itself — so
+	// take it off first. Without this the test passes whichever owner is doing the
+	// work, which is the exact confusion being removed.
+	const hadDeclutter = await page.evaluate(() => {
+		const had = document.documentElement.classList.contains('res-pageTheme--declutter');
+		document.documentElement.classList.remove('res-pageTheme--declutter');
+		return had;
+	});
+	assert.equal(hadDeclutter, true, 'declutter was already off, so removing it proves nothing');
+	await page.waitForSelector('#rsm-page-ad', { state: 'hidden', timeout: 30000 });
+
+	// And one that streams in after the tree is built, which no document sweep and
+	// no Thing watcher would catch.
+	await page.evaluate(() => {
+		const late = document.createElement('shreddit-comment-tree-ad');
+		late.id = 'rsm-tree-ad';
+		document.querySelector('shreddit-comment')?.after(late);
+	});
+	await page.waitForSelector('#rsm-tree-ad', { state: 'hidden', timeout: 30000 });
+
+	const hidden = await page.evaluate(() => ({
+		pageAd: document.getElementById('rsm-page-ad')?.dataset.rsmPromotedHidden,
+		treeAd: document.getElementById('rsm-tree-ad')?.dataset.rsmPromotedHidden,
+	}));
+	assert.equal(hidden.pageAd, 'true', 'the module must own the removal, not only the stylesheet');
+	assert.equal(hidden.treeAd, 'true', 'a streamed in-comment ad was hidden by CSS but never counted');
+});
+
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
