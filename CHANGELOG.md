@@ -58,6 +58,18 @@ All notable changes to RES-Slim will be documented in this file.
   Waiters can also be handed a list of selectors to try in order, which is what
   you want while a site is halfway through a redesign.
 
+- Selector drift detection now watches current Reddit as well. It only ever
+  covered old Reddit, which is the renderer that stopped changing, while current
+  Reddit ships continuously and has broken other extensions repeatedly. The
+  elements the current-Reddit adapter depends on are checked on every page load
+  now, including the slot names it reads post and comment content out of, and a
+  renamed slot is exactly the kind of change that otherwise just makes features
+  quietly stop appearing.
+
+  The diagnostics panel and the copyable report say which renderer drifted rather
+  than opening with "Old Reddit" whatever was found. Findings are recorded per
+  renderer, so drift on a discussion page on one does not hide drift on the other.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then

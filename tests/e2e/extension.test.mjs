@@ -1511,7 +1511,7 @@ test('selector drift records one local diagnostic without a toast', async t => {
 		entries = await selectorEntries(); // eslint-disable-line no-await-in-loop
 	}
 	assert.equal(entries.length, 1, 'one aggregated selector warning should be persisted locally');
-	assert.equal(entries[0].stage, 'selector-drift:linklist');
+	assert.equal(entries[0].stage, 'selector-drift:r2:linklist');
 	assert.match(entries[0].message, /listingFeed matched fallback "\.linklisting \.thing\.link"/);
 	assert.equal(
 		await page.locator('.RESNotification').filter({ hasText: 'selector drift' }).count(),
@@ -1523,6 +1523,60 @@ test('selector drift records one local diagnostic without a toast', async t => {
 	await page.waitForTimeout(250);
 	entries = await selectorEntries();
 	assert.equal(entries.length, 1, 'reloading the same drift must not duplicate its local warning');
+});
+
+test('selector drift is detected on current Reddit too, and says which renderer', async t => {
+	// Drift detection used to run only on old Reddit — the renderer that stopped
+	// changing. Current Reddit ships continuously and has broken other extensions
+	// repeatedly, which is the wrong way round to be watching.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// Clean first, then the same fixture with a load-bearing slot renamed. A
+	// detector that only ever fires proves as little as one that never does.
+	const clean = staticFixture(SHREDDIT_THREAD);
+	const drifted = clean.replace('slot="credit-bar"', 'slot="credit-bar-renamed"');
+	assert.notEqual(clean, drifted, 'the dirty fixture is identical to the clean one');
+	let body = clean;
+
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const load = async () => {
+		await page.goto('https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	};
+	const driftEntries = () => worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.moduleErrorLog', values => resolve(
+			(values['RES.moduleErrorLog'] || []).filter(entry => entry.moduleID === 'currentRedditSelectors'),
+		));
+	}));
+
+	await load();
+	await page.waitForTimeout(500);
+	assert.deepEqual(await driftEntries(), [], 'the committed fixture must be clean, or a dirty run proves nothing');
+
+	body = drifted;
+	await load();
+	// Bounded: an unbounded poll for something that never arrives is the same
+	// defect this repo just fixed in the DOM waiters.
+	let entries = [];
+	for (const delay of Array.from({ length: 50 }, () => 50)) {
+		entries = await driftEntries(); // eslint-disable-line no-await-in-loop
+		if (entries.length) break;
+		await page.waitForTimeout(delay); // eslint-disable-line no-await-in-loop
+	}
+	assert.equal(entries.length, 1, 'one aggregated warning should be persisted for the redesign');
+	assert.equal(entries[0].stage, 'selector-drift:d2x:comments');
+	assert.match(entries[0].message, /^Current Reddit selector drift detected on comments/);
+	assert.match(entries[0].message, /postCredit is missing/);
 });
 
 test('a read-only Reddit JSON module sends authenticated requests through the shared helper', async t => {
@@ -2002,6 +2056,7 @@ test('drift on a real page shows up as a dated view in the settings console', as
 		return {
 			title: document.querySelector('#RESSelectorDriftTitle')?.textContent || '',
 			pageType: group?.dataset.pageType || '',
+			heading: group?.querySelector('.selectorDriftGroupTitle')?.textContent || '',
 			dates: group?.querySelector('.selectorDriftGroupDates')?.textContent || '',
 			findings: Array.from(group?.querySelectorAll('.selectorDriftFinding') || []).map(li => li.textContent),
 			// Contrast is asserted elsewhere; what matters here is that the panel is
@@ -2012,7 +2067,10 @@ test('drift on a real page shows up as a dated view in the settings console', as
 	});
 
 	assert.match(rendered.title, /Selector drift/);
-	assert.equal(rendered.pageType, 'linklist', 'the view is per page kind, not one flat list');
+	// Keyed by renderer as well as page kind, since `comments` exists on both and
+	// one would otherwise overwrite the other in storage.
+	assert.equal(rendered.pageType, 'r2:linklist', 'the view is per renderer and page kind, not one flat list');
+	assert.equal(rendered.heading, 'Old Reddit — linklist', 'the storage key is not what a reader should be shown');
 	assert.match(rendered.dates, /Seen |Since /, 'and dated');
 	assert.ok(
 		rendered.findings.some(text => /listingFeed — matched fallback selector/.test(text)),

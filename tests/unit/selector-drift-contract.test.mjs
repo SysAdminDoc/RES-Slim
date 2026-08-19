@@ -132,7 +132,7 @@ test('a finding describes itself the same way everywhere', () => {
 test('the diagnostics recorder writes the structured record alongside the log entry', () => {
 	const source = read('lib/core/dom/selectorDiagnostics.js');
 	assert.match(source, /DRIFT_STORAGE_KEY/);
-	assert.match(source, /mergeDrift\(state, pageType, toFindings\(matches\), now\)/);
+	assert.match(source, /mergeDrift\(state, `\$\{appType\}:\$\{pageType\}`, toFindings\(matches\), now\)/);
 	assert.match(source, /recordModuleErrorOnce/, 'the existing aggregated warning is a shipped contract and must not be dropped');
 	assert.equal(DRIFT_STORAGE_KEY, 'RES.selectorDrift');
 });

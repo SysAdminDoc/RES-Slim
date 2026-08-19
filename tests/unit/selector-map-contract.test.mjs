@@ -202,8 +202,8 @@ test('findSurface returns only real elements', () => {
 
 test('an unknown surface name fails loudly', () => {
 	// A typo must not resolve to null and look like "not on this page".
-	assert.throws(() => getSurfaceSelectorList('nosuchsurface'), /Unknown old Reddit surface/);
-	assert.throws(() => getStableSelector('nosuchsurface'), /Unknown old Reddit surface/);
+	assert.throws(() => getSurfaceSelectorList('nosuchsurface'), /Unknown Old Reddit surface/);
+	assert.throws(() => getStableSelector('nosuchsurface'), /Unknown Old Reddit surface/);
 });
 
 test('the selector map is actually used by shipping code', () => {
