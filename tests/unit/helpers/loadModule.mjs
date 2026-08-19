@@ -223,6 +223,17 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	// a supported JavaScript type?" for a perfectly ordinary Blob. The browser
 	// never sees that split, so neither should a contract.
 	//
+	// jsdom implements neither object-URL method, and a module that builds a
+	// download revokes its URL on a 1500ms timer. Every `installDom` call replaces
+	// `globalThis.URL`, so a timer armed before the swap lands on a URL with no
+	// `revokeObjectURL` and throws — after the test that armed it has ended, which
+	// node:test reports as an uncaughtException and the whole *file* failing with
+	// no subtest to point at. It only shows up when the file runs long enough for
+	// the timer to outlive its test, so it read as an unrelated contract failing
+	// about one run in three under parallel load.
+	if (!window.URL.createObjectURL) window.URL.createObjectURL = () => 'blob:res-slim-test';
+	if (!window.URL.revokeObjectURL) window.URL.revokeObjectURL = () => {};
+
 	// `customElements` matters more than it looks: `lib/utils/shreddit.js` opens
 	// with `typeof customElements === 'undefined'` and bails, so without this every
 	// contract that prepares a Shreddit host skipped the shadow-style install
