@@ -68,6 +68,25 @@ async function errorLog() {
 	return (Array.isArray(raw) ? raw : []).filter(e => e.moduleID === 'frictionRemovers');
 }
 
+test('the option says what it cannot do, not only what it does', () => {
+	// Two variants of the wall exist, and only one of them is reachable. Where
+	// the rollout has completed reddit answers with a 302 to the login page and
+	// serves no content, which happens before any content script runs — so the
+	// honest description has to name the case where turning this on changes
+	// nothing. The reachable share shrinks as the rollout completes, which is
+	// why this is stated rather than left to be inferred from a feature that
+	// silently stops applying.
+	//
+	// Stated-behaviour drift is this repo's most-recurring documentation defect,
+	// so the boundary is asserted rather than trusted to survive edits.
+	const { description } = mod.options.dismissLoginWall;
+	assert.match(description, /redirect/i, 'the server-side variant has to be named');
+	assert.match(description, /nothing behind the wall|nothing to uncover|never sent/i,
+		'and what that means: there is no page to reveal');
+	assert.match(description, /only uncovers content Reddit actually sent/i,
+		'the positive half of the same boundary — this reveals, it does not fetch');
+});
+
 test('the wall is left alone until the option is turned on', async () => {
 	installPage(WALLED);
 	makeOverlay(document.querySelector('.LoginWallOverlay'));

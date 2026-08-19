@@ -2,6 +2,17 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Documentation
+
+- The mandatory-login overlay dismisser now says what it cannot do. Reddit's
+  login wall has two forms, and where the rollout has finished it is a
+  server-side redirect to the login page with no content sent at all, which
+  happens before any extension code runs. The option used to describe only the
+  form it can handle, so a user turning it on against the redirect variant had
+  no way to tell whether the feature was broken or simply not applicable.
+
 ## v0.45.0 - 2026-08-19
 
 ### Documentation

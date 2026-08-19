@@ -86,6 +86,10 @@
       "url": "https://arctic-shift.photon-reddit.com"
     },
     {
+      "file": "lib/modules/frictionRemovers.js",
+      "url": "https://news.ycombinator.com/item?id=49326106"
+    },
+    {
       "file": "lib/modules/hosts/aarli.js",
       "url": "https://aar.li/api.php"
     },
