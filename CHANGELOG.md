@@ -2,6 +2,34 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- The Transifex locale negotiation is retired. `redditLocaleToTransifexLocale`
+  mapped `lol` to `en_lolcat`, `es-ar` to `es_419` and so on, then merged an
+  exact match over a region match over `en` - and every branch of it resolved to
+  `en`, because `locales/locales/` has held exactly one file since v0.1.0. The
+  README told contributors to submit translations to upstream's Transifex
+  project, which does not feed this fork, and pointed at `userbarHider` for
+  worked examples - a module deleted in v0.1.0.
+
+  Only the *translation* half was dead. Reddit's locale is still detected and
+  still used: `lib/utils/localization.js` picks a dayjs locale from it, so
+  timestamps format in the reader's language even though interface strings do
+  not. Retiring detection alongside translation would have silently moved every
+  timestamp to the browser locale.
+
+  One behavioural improvement falls out: the cached dictionary was keyed on the
+  reddit locale, so switching reddit's language discarded it and re-fetched an
+  identical copy. It is keyed on the build token alone now, and the stale key is
+  cleared from existing profiles.
+
+  `single-locale-contract` fails if a second dictionary appears and names what
+  has to come back with it, so the decision is reversible on purpose rather than
+  by accident. It also checks that every repo path the README cites exists -
+  the check the `userbarHider` link needed and never had.
+
 ## v0.40.0 - 2026-08-18
 
 ### Removed

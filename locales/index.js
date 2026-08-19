@@ -4,44 +4,25 @@ import locales from './locales';
 
 const localeDictionaries: { [string]: { [string]: { message: string } } } = (locales: any);
 
-// `en-ca` -> `en_CA`
-function redditLocaleToTransifexLocale(redditLocale) {
-	switch (redditLocale) {
-		case 'leet':
-			return 'en'; // doesn't appear to exist
-		case 'lol':
-			return 'en_lolcat';
-		case 'pir':
-			return 'en_pirate';
-		case 'es-ar': // argentina
-		case 'es-cl': // chile
-			return 'es_419'; // latin america
-		default: {
-			// `es-ar` -> `es_ar`
-			const normalized = redditLocale.replace('-', '_');
-			const inx = normalized.indexOf('_');
-			if (inx === -1) {
-				// `zh` -> `zh`
-				return normalized;
-			} else {
-				// `en_au` -> `en_AU`
-				return `${normalized.slice(0, inx)}_${normalized.slice(inx + 1).toUpperCase()}`;
-			}
-		}
-	}
-}
-
-export function getLocaleDictionary(localeName: string): { [string]: string } {
-	const transifexLocale = redditLocaleToTransifexLocale(localeName);
-
-	const mergedLocales = {
-		// 3. Default (en)
-		...localeDictionaries.en,
-		// 2. Match without region (en_CA -> en)
-		...localeDictionaries[transifexLocale.slice(0, transifexLocale.indexOf('_'))],
-		// 1. Exact match (en_CA -> en_CA)
-		...localeDictionaries[transifexLocale],
-	};
-
-	return Object.fromEntries(Object.entries(mergedLocales).map(([k, x]) => [k, x.message]));
+// This fork ships one dictionary.
+//
+// Upstream carried a Transifex locale negotiation here - `lol` to `en_lolcat`,
+// `pir` to `en_pirate`, `es-ar` to `es_419`, then a three-way merge of exact
+// match over region match over `en`. Every branch of it resolved to `en`,
+// because `locales/locales/` has held exactly one file since v0.1.0, and the
+// README pointed translators at *upstream's* Transifex project, where any work
+// they did would never reach this fork. Machinery that cannot produce a
+// different answer is not a feature, it is a claim.
+//
+// Reddit's locale is still read, and still matters: `lib/utils/localization.js`
+// uses it to choose a dayjs locale, so timestamps format in the reader's
+// language even though the interface strings do not. Detection and translation
+// are separate concerns, and only the second one is gone.
+//
+// `tests/unit/single-locale-contract.test.mjs` fails if a second dictionary
+// appears, and names what has to come back with it.
+export function getLocaleDictionary(): { [string]: string } {
+	return Object.fromEntries(
+		Object.entries(localeDictionaries.en).map(([key, entry]) => [key, entry.message]),
+	);
 }

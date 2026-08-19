@@ -1,24 +1,36 @@
-# Localization
+# Strings
 
-**Do not edit the files in this directory, they are automatically generated.**
+`en.json` is the only dictionary this fork ships, and it is edited by hand.
 
-[Instead, visit Transifex if you wish to submit translations.](https://www.transifex.com/reddit-enhancement-suite/reddit-enhancement-suite/)
+Upstream generated this directory from Transifex and told contributors to submit
+translations there. That was never true of this fork: it is a personal fork with
+no translator pipeline, and work submitted to upstream's Transifex project would
+not reach it. The locale negotiation that consumed those files was retired in
+v0.41.0 - see the comment in `locales/index.js`, and
+`tests/unit/single-locale-contract.test.mjs`, which fails if a second dictionary
+appears without the negotiation coming back with it.
 
-## New strings
+Reddit's own locale is still detected, and still used: `lib/utils/localization.js`
+selects a dayjs locale from it, so timestamps format in the reader's language.
 
-New strings should be added to `en.json` and only that file.
+## Adding strings
 
-## Translating Modules
+Add them to `en.json`. `yarn lint` runs `scripts/i18n-lint.mjs`, which fails on a
+key referenced in code but missing here, and reports keys defined here that
+nothing reads.
 
-User interface text can be translated with the `i18n` function.
+## Translating modules
 
-The names, categories and descriptions of modules and options are automatically translated (you do not need to call `i18n`).
+Interface text goes through the `i18n` function. Module and option names,
+categories and descriptions are translated automatically - a module sets
+`moduleName`/`description` to a key and the settings console resolves it.
 
-See the [userbarHider](/lib/modules/userbarHider.js) module for examples of both of these.
+### Naming conventions
 
-### Naming Conventions
+* camelCase.
+* Start a module's keys with its `moduleID`.
+  * Option titles: `{moduleID}Options{OptionName}Title`
+  * Option descriptions: `{moduleID}Options{OptionName}Desc`
 
-* Use camelCase.
-* In general, i18n keys for a module should start with its `moduleId`.
-  * Option titles: `{moduleId}Options{OptionName}Title` (e.g. `userbarHiderUserbarStateTitle`)
-  * Option descriptions: `{moduleId}Options{OptionName}Desc` (e.g. `userbarHiderUserbarStateDesc`)
+`lib/modules/hover.js` shows both forms in a module that still ships; the
+`userbarHider` this file used to point at was removed in v0.1.0.
