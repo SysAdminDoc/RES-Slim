@@ -1664,6 +1664,12 @@
     "showImagesVredditMinimumVideoBandwidthDesc": {
         "message": "The lowest video quality (in kB/s) the adaptive player shall use."
     },
+    "imgurApiKeyTitle": {
+        "message": "Imgur API key"
+    },
+    "imgurApiKeyDesc": {
+        "message": "Your own Imgur Client-ID. Direct image links expand without one. Galleries and albums need Imgur's API, and RES-Slim will not ship a key it does not own, so those stay collapsed until you set one. Register an application at https://api.imgur.com/oauth2/addclient to get one."
+    },
     "imgurPreferResAlbumsTitle": {
         "message": "Prefer RES-Slim Albums"
     },

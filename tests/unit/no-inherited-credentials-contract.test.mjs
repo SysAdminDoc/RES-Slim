@@ -27,11 +27,29 @@ function collectJs(dir, found = []) {
 // Deliberately narrow, and each one is a shape a real credential takes rather
 // than a guess at entropy: a token that only ever appears as a literal in source
 // has no legitimate form here, because this project owns no third-party account.
+//
+// 2026-08-19: a fifth key was found sitting in `hosts/imgur.js` through all of
+// this — `const apiId = '1d8d9b36339e0e2'`, sent as a `Client-ID` header. It was
+// missed because the four shapes above were derived from the four keys already
+// known, so this file proved "those four are gone", which is a different claim
+// from the one its name makes. The shapes below are derived from how a
+// credential is *written* instead: the assignment spellings a key can take, and
+// the auth headers it can be sent in.
 const CREDENTIAL_SHAPES = [
 	{ name: 'Google API key', pattern: /AIza[0-9A-Za-z_-]{35}/ },
 	{ name: 'hardcoded api_key value', pattern: /api_?[kK]ey\s*:\s*'[A-Za-z0-9_-]{12,}'/ },
 	{ name: 'hardcoded key query parameter', pattern: /[?&]key=[A-Za-z0-9_-]{20,}/ },
 	{ name: 'bearer token literal', pattern: /Bearer\s+[A-Za-z0-9_.-]{20,}/ },
+	// Any `const <something id-ish> = '<opaque token>'`. The name test is what
+	// keeps this off ordinary constants; a 12-character lower-bound keeps it off
+	// short enum values and CSS-ish literals.
+	{
+		name: 'credential assigned to an id-like constant',
+		pattern: /\b(?:const|let|var)\s+\w*(?:api(?:Id|Key)|clientId|client_id|appId|app_key|accessToken|secret)\w*\s*=\s*'[A-Za-z0-9_-]{12,}'/i,
+	},
+	// And the same value arriving at a request as a literal rather than through
+	// an option, which is the form that actually reaches a third party.
+	{ name: 'Client-ID header literal', pattern: /Client-ID\s+(?!\$\{)[A-Za-z0-9_-]{12,}/ },
 ];
 
 test('the credential shapes match a real key and not ordinary code', () => {
@@ -46,6 +64,20 @@ test('the credential shapes match a real key and not ordinary code', () => {
 	assert.doesNotMatch("api_key: String(this.options.apiKey.value)", shape('hardcoded api_key value'));
 	assert.doesNotMatch("query: { api_key: '' },", shape('hardcoded api_key value'));
 	assert.doesNotMatch('sortKey: this.key', shape('hardcoded key query parameter'));
+
+	// The fifth key, in the exact spelling that walked past the four shapes above.
+	assert.match("\t\tconst apiId = '1d8d9b36339e0e2';", shape('credential assigned to an id-like constant'));
+	assert.match('Authorization: `Client-ID 1d8d9b36339e0e2`,', shape('Client-ID header literal'));
+
+	// ...and the shapes it must not fire on: the option-driven forms that replaced
+	// it, and ordinary constants whose names happen to be nearby.
+	assert.doesNotMatch(
+		"const apiKey = String(this.options && this.options.apiKey ? this.options.apiKey.value : '');",
+		shape('credential assigned to an id-like constant'),
+	);
+	assert.doesNotMatch('Authorization: `Client-ID ${apiKey}`,', shape('Client-ID header literal'));
+	assert.doesNotMatch("const apiPrefix = 'https://api.imgur.com/3/';", shape('credential assigned to an id-like constant'));
+	assert.doesNotMatch("const cdnUrl = 'https://i.imgur.com/';", shape('credential assigned to an id-like constant'));
 });
 
 test('no third-party credential is hardcoded anywhere in lib/', () => {
@@ -92,4 +124,21 @@ test('each of the four inherited keys has its recorded resolution in the code', 
 	assert.match(tumblr, /apiKey: \{/);
 	assert.match(tumblr, /if \(!this\.options \|\| !this\.options\.apiKey\.value\) return null;/);
 	assert.match(tumblr, /api_key: String\(this\.options \? this\.options\.apiKey\.value : ''\)/);
+});
+
+test('the fifth key is user-supplied, and imgur still works without one', () => {
+	const read = relative => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+	const imgur = read('lib/modules/hosts/imgur.js');
+
+	// The literal is gone and the header is built from the option.
+	assert.doesNotMatch(stripComments(imgur), /1d8d9b36339e0e2/);
+	assert.match(imgur, /apiKey: \{/);
+	assert.match(imgur, /Authorization: `Client-ID \$\{apiKey\}`/);
+
+	// Unlike tumblr, imgur keeps a key-less path — that is the whole reason it is
+	// gated per-branch rather than at `detect`'s entry. `imgur-url-shapes-contract`
+	// drives both halves; this asserts the shape so the gate cannot be widened into
+	// "no key, no imgur" by a later edit.
+	assert.match(imgur, /if \(!apiKey\) return null;/);
+	assert.match(imgur, /\} else if \(!apiKey\) \{\n\s*\/\//, 'the bare-hash branch must degrade, not decline');
 });

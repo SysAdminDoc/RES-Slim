@@ -4,6 +4,29 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Security
+
+- A fifth inherited third-party credential is gone. `hosts/imgur.js` shipped
+  upstream's registered imgur Client-ID as a literal, sent as an `Authorization`
+  header on every gallery and album expansion - a live quota credential this
+  project does not own and cannot restrict, in a public repository. It outlived
+  the four removed in v0.40.0 because the credential sweep's four shapes were
+  derived from those four keys and none of them matches an `apiId = '...'`
+  spelling: the contract proved "those four are gone", not "no key remains".
+
+  imgur differs from tumblr in having a real key-less path, so the gate is
+  per-branch rather than at the door. Direct and hosted images answer with no
+  request at all, and a bare hash degrades to the still frame (imgur serves a
+  gifv's `.jpg` as its first frame), so the only things that need a key are
+  galleries, albums, and the is-this-a-video check. Those stay collapsed until
+  you set your own Client-ID under the imgur host's options.
+
+  The sweep now carries two shapes derived from how a credential is *written* -
+  any id-like constant assigned an opaque literal, and a `Client-ID` header that
+  is not an interpolation - and names, in the file, the fact that it can only
+  prove absence for the spellings it lists. Baited by reintroducing the exact
+  literal that was removed.
+
 ### Fixed
 
 - Two of the four ways imgur writes an id got no working expando. A slugged URL

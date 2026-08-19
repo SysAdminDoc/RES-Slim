@@ -19,14 +19,15 @@ import { loadModule } from './helpers/loadModule.mjs';
 
 const OK = { data: { id: 'observed', type: 'image/jpeg', link: 'https://i.imgur.com/observed.jpg' } };
 
-async function imgurHost() {
+async function imgurHost({ apiKey = 'test-client-id' } = {}) {
 	const { __targetDefault: imgur } = await loadModule('lib/modules/hosts/imgur.js', 'imgur-url-shapes', {
 		stubEnvironment: true,
 		exportDefault: true,
 	});
 	// `preferResAlbums` gates the album branch; the shipped default is true and
-	// the option object is not wired up under `loadModule`, so supply it.
-	imgur.options = { preferResAlbums: { value: true } };
+	// the option object is not wired up under `loadModule`, so supply it. `apiKey`
+	// is the user's own Client-ID — empty is the shipped default.
+	imgur.options = { preferResAlbums: { value: true }, apiKey: { value: apiKey } };
 	return imgur;
 }
 
@@ -135,6 +136,41 @@ test('imgur service paths are still not treated as media', async () => {
 	for (const pathname of ['/rules', '/inbox']) {
 		assert.equal(imgur.detect(new URL(`https://imgur.com${pathname}`)), null);
 	}
+});
+
+test('without a key, imgur still expands every link it can serve from the CDN', async () => {
+	// The shipped default. imgur is not tumblr: most of what it is used for on
+	// reddit is a direct image, and those never needed the credential.
+	const imgur = await imgurHost({ apiKey: '' });
+	globalThis.__resSlimAjax = async ({ url }) => { throw new Error(`no key, but requested ${url}`); };
+	try {
+		const direct = await imgur.detect(new URL('https://i.imgur.com/AbCd123.jpg'))();
+		assert.equal(direct.link, 'https://i.imgur.com/AbCd123.jpg');
+
+		// A bare hash cannot be checked for video-ness without the API, so it
+		// degrades to the still frame rather than vanishing.
+		const bare = await imgur.detect(new URL('https://imgur.com/AbCd123'))();
+		assert.equal(bare.link, 'https://i.imgur.com/AbCd123.jpg');
+		assert.equal(bare.animated, false);
+
+		// Galleries and albums genuinely need the API, so they decline outright
+		// rather than offering an expando that could only fail.
+		assert.equal(imgur.detect(new URL('https://imgur.com/gallery/AbCd123')), null);
+		assert.equal(imgur.detect(new URL('https://imgur.com/a/some-title-AbCd123')), null);
+	} finally {
+		delete globalThis.__resSlimAjax;
+	}
+});
+
+test('the key that ships is the empty string', async () => {
+	// The defect this replaced was a live credential belonging to upstream. The
+	// option must default to nothing, or the fix ships the same problem.
+	const { __targetDefault: imgur } = await loadModule('lib/modules/hosts/imgur.js', 'imgur-default-key', {
+		stubEnvironment: true,
+		exportDefault: true,
+	});
+	assert.equal(imgur.options.apiKey.value, '');
+	assert.equal(imgur.options.apiKey.type, 'text');
 });
 
 test('direct image links still bypass the API entirely', async () => {
