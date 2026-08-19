@@ -30,13 +30,13 @@ img {
 	.res-showImages-highlightSpoilerButton .thing.spoiler &::before {
 		@extend %expando-button-overlay;
 
-		background-image: linear-gradient(45deg, rgba(255, 130, 0, .3) 25%, transparent 25%, transparent 50%, rgba(255, 130, 0, .3) 50%, rgba(255, 130, 0, .3) 75%, transparent 75%, transparent);
+		background-image: linear-gradient(45deg, rgb(255, 130, 0, 0.3) 25%, transparent 25%, transparent 50%, rgb(255, 130, 0, 0.3) 50%, rgb(255, 130, 0, 0.3) 75%, transparent 75%, transparent);
 	}
 
 	.res-showImages-highlightNSFWButton .thing.over18 &::before {
 		@extend %expando-button-overlay;
 
-		background-image: linear-gradient(45deg, rgba(255, 0, 0, .15) 25%, transparent 25%, transparent 50%, rgba(255, 0, 0, .15) 50%, rgba(255, 0, 0, .15) 75%, transparent 75%, transparent);
+		background-image: linear-gradient(45deg, rgb(255, 0, 0, 0.15) 25%, transparent 25%, transparent 50%, rgb(255, 0, 0, 0.15) 50%, rgb(255, 0, 0, 0.15) 75%, transparent 75%, transparent);
 	}
 }
 
@@ -53,7 +53,7 @@ img {
 	vertical-align: middle;
 
 	.expando-button {
-		margin: calc(calc(1em * .5) - 50%) 0 0 0 !important;
+		margin: calc(calc(1em * 0.5) - 50%) 0 0 0 !important;
 		transform: scale(0.8); // Try to not exceed height of line
 	}
 
@@ -127,7 +127,7 @@ img {
 
 	&-generic {
 		clear: left;
-		margin: .5em;
+		margin: 0.5em;
 	}
 
 	> a:first-of-type {
@@ -143,7 +143,7 @@ img {
 
 	.gearIcon {
 		margin-left: 4px;
-		opacity: .3;
+		opacity: 0.3;
 
 		&:hover,
 		&:active {
@@ -171,14 +171,14 @@ img {
 	z-index: 2;
 	gap: 2px;
 	padding: 3px;
-	border: 1px solid rgba(255, 255, 255, .16);
+	border: 1px solid rgb(255, 255, 255, 0.16);
 	border-radius: 10px;
-	background: rgba(10, 14, 22, .74);
+	background: rgb(10, 14, 22, 0.74);
 	backdrop-filter: blur(8px);
 	opacity: 0;
 	cursor: pointer;
-	box-shadow: 0 10px 24px rgba(0, 0, 0, .24);
-	transition: opacity .16s ease, transform .16s ease;
+	box-shadow: 0 10px 24px rgb(0, 0, 0, 0.24);
+	transition: opacity 0.16s ease, transform 0.16s ease;
 	transform: translateY(2px);
 
 	&-left { left: 10px; }
@@ -207,8 +207,8 @@ img {
 
 		&:hover,
 		&:focus-visible {
-			background: rgba(255, 255, 255, .12);
-			filter: saturate(.35);
+			background: rgb(255, 255, 255, 0.12);
+			filter: saturate(0.35);
 		}
 
 		&:hover::after,
@@ -222,7 +222,15 @@ img {
 
 	&-clippy {
 		color: white;
-		font-family: normal 16px verdana, arial, helvetica, sans-serif;
+		// A `font` shorthand value was written into the `font-family` longhand, so
+		// the whole declaration was invalid at parse time and this button has had no
+		// family of its own since it was written. It is the one control here whose
+		// glyph is plain Unicode - the info sign below, rather than a private-use
+		// codepoint from the icon font the siblings use - which is exactly why it
+		// asked for a text family. The size is dropped with the shorthand debris:
+		// the shared button rules own the sizing, and imposing 16px here would move
+		// this one control out of line with the rest.
+		font-family: verdana, arial, helvetica, sans-serif;
 		white-space: nowrap;
 
 		&::after {
@@ -243,7 +251,7 @@ img {
 
 	&:hover .res-media-controls,
 	&:focus-within .res-media-controls {
-		opacity: .94;
+		opacity: 0.94;
 		transform: translateY(0);
 	}
 }
@@ -390,7 +398,7 @@ img {
 		height: 12px;
 		padding: 8px 0 2px 0;
 		background-clip: content-box;
-		background-color: rgba(255, 255, 255, 0.2);
+		background-color: rgb(255, 255, 255, 0.2);
 		box-sizing: border-box;
 	}
 
@@ -404,7 +412,7 @@ img {
 		border-radius: 6px;
 		background-color: white;
 		box-shadow: -1px -1px 2px -1px inset;
-		opacity: .8;
+		opacity: 0.8;
 
 		#{$va}-progress:hover & {
 			display: block;
@@ -416,7 +424,7 @@ img {
 		position: relative;
 		width: 2%;
 		margin-left: -1% !important;
-		background-color: rgba(255, 47, 0, .6);
+		background-color: rgb(255, 47, 0, 0.6);
 		border-radius: 4px;
 	}
 
@@ -425,7 +433,7 @@ img {
 		padding: 3px 5px 5px 5px;
 		justify-content: space-between;
 		flex-wrap: wrap;
-		color: rgba(256, 256, 256, .95);
+		color: rgb(256, 256, 256, 0.95);
 
 		> * {
 			height: 20px;
@@ -446,7 +454,7 @@ img {
 
 	&-link {
 		padding: 0 3px;
-		color: rgba(256, 256, 256, .9);
+		color: rgb(256, 256, 256, 0.9);
 
 		&:not(:last-of-type)::after {
 			content: '|';
@@ -472,7 +480,7 @@ img {
 		margin-right: 7px !important;
 
 		&:hover {
-			color: rgba(256, 256, 256, .8);
+			color: rgb(256, 256, 256, 0.8);
 		}
 	}
 
@@ -517,7 +525,7 @@ img {
 
 		&-level {
 			position: absolute;
-			background-color: rgba(0, 0, 0, 0.67);
+			background-color: rgb(0, 0, 0, 0.67);
 			cursor: pointer;
 			height: 50px;
 			width: 16px;
@@ -540,7 +548,7 @@ img {
 
 	&:not(&-has-native-controls):hover &-interface {
 		display: block;
-		background: linear-gradient(rgba(255, 255, 255, 0), rgba(0, 0, 0, .6));
+		background: linear-gradient(rgb(255, 255, 255, 0), rgb(0, 0, 0, 0.6));
 		position: absolute;
 		bottom: 0;
 		width: 100%;
@@ -549,7 +557,7 @@ img {
 	// Push below and remove progress bar and redundant button if native browser controls are visible
 	&-has-native-controls &-interface {
 		display: block;
-		background: rgba(52, 47, 38, 1);
+		background: rgb(52, 47, 38, 1);
 		border-top: 1px solid #e4e4e4;
 
 		#{$va}-toggle-pause,
@@ -679,7 +687,7 @@ body:not(.res-showImages-displayImageCaptions) {
 
 		p {
 			line-height: 1.2rem;
-			font-size: .9rem;
+			font-size: 0.9rem;
 		}
 
 		h2 {
@@ -730,7 +738,7 @@ blockquote.bluesky-embed {
 // drawn in `currentColor` costs the text nothing, works on every theme without a
 // per-skin variant, and does not rely on colour alone to carry the meaning.
 a.res-visited-link::before {
-	content: "";
+	content: '';
 	display: inline-block;
 	width: 0.4em;
 	height: 0.4em;

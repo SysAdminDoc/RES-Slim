@@ -212,7 +212,7 @@ body.rsm-overlayViewer-open {
 @keyframes rsm-overlayViewer-rise {
 	from {
 		opacity: 0;
-		transform: translateY(6px) scale(.985);
+		transform: translateY(6px) scale(0.985);
 	}
 
 	to {

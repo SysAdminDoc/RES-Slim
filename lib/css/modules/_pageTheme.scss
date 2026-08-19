@@ -19,7 +19,7 @@ html.res-pageTheme {
 	--rsm-th-muted: #98a6b5;
 	--rsm-th-border: #253243;
 	--rsm-th-control-border: #5b6c7e;
-	--rsm-th-shadow: rgba(0, 0, 0, 0.32);
+	--rsm-th-shadow: rgb(0, 0, 0, 0.32);
 	--rsm-th-accent: #82bfff;
 
 	// The accent split by role. `--rsm-th-accent` stays the raw user value and
@@ -43,7 +43,7 @@ html.res-pageTheme--oled {
 	--rsm-th-txt-strong: #f2f2f2;
 	--rsm-th-link: #ccc;
 	--rsm-th-muted: #a0a7af;
-	--rsm-th-border: rgba(255, 255, 255, 0.09);
+	--rsm-th-border: rgb(255, 255, 255, 0.09);
 	--rsm-th-control-border: #606872;
 }
 
@@ -67,7 +67,7 @@ html.res-pageTheme--midnight {
 	--rsm-th-txt-strong: #eaf2fb;
 	--rsm-th-link: #cdddec;
 	--rsm-th-muted: #94a9bd;
-	--rsm-th-border: rgba(180, 205, 230, 0.12);
+	--rsm-th-border: rgb(180, 205, 230, 0.12);
 	--rsm-th-control-border: #58738e;
 }
 
@@ -79,7 +79,7 @@ html.res-pageTheme--catppuccin {
 	--rsm-th-txt-strong: #f5f5ff;
 	--rsm-th-link: #b4befe;
 	--rsm-th-muted: #b0b8d7;
-	--rsm-th-border: rgba(205, 214, 244, 0.12);
+	--rsm-th-border: rgb(205, 214, 244, 0.12);
 	--rsm-th-control-border: #6c7bb4;
 }
 
@@ -91,7 +91,7 @@ html.res-pageTheme--tokyonight {
 	--rsm-th-txt-strong: #ecf0ff;
 	--rsm-th-link: #9aa5ce;
 	--rsm-th-muted: #aab4df;
-	--rsm-th-border: rgba(192, 202, 245, 0.12);
+	--rsm-th-border: rgb(192, 202, 245, 0.12);
 	--rsm-th-control-border: #697bc7;
 }
 
@@ -103,7 +103,7 @@ html.res-pageTheme--rosepine {
 	--rsm-th-txt-strong: #f7f5ff;
 	--rsm-th-link: #c4a7e7;
 	--rsm-th-muted: #b6b0d2;
-	--rsm-th-border: rgba(224, 222, 244, 0.12);
+	--rsm-th-border: rgb(224, 222, 244, 0.12);
 	--rsm-th-control-border: #7266a8;
 }
 
@@ -116,7 +116,7 @@ html.res-pageTheme--nord {
 	--rsm-th-txt-strong: #eceff4;
 	--rsm-th-link: #88c0d0;
 	--rsm-th-muted: #b7c1d3;
-	--rsm-th-border: rgba(216, 222, 233, 0.12);
+	--rsm-th-border: rgb(216, 222, 233, 0.12);
 	--rsm-th-control-border: #8495b4;
 }
 
@@ -128,7 +128,7 @@ html.res-pageTheme--dracula {
 	--rsm-th-txt-strong: #fff;
 	--rsm-th-link: #bd93f9;
 	--rsm-th-muted: #c0c0bb;
-	--rsm-th-border: rgba(248, 248, 242, 0.12);
+	--rsm-th-border: rgb(248, 248, 242, 0.12);
 	--rsm-th-control-border: #86867c;
 }
 
@@ -140,7 +140,7 @@ html.res-pageTheme--gruvbox {
 	--rsm-th-txt-strong: #fbf1c7;
 	--rsm-th-link: #8ec07c;
 	--rsm-th-muted: #c4b696;
-	--rsm-th-border: rgba(235, 219, 178, 0.12);
+	--rsm-th-border: rgb(235, 219, 178, 0.12);
 	--rsm-th-control-border: #958153;
 }
 
@@ -158,7 +158,7 @@ html.res-pageTheme--solarized {
 	--rsm-th-txt-strong: #eee8d5;
 	--rsm-th-link: #64bab4;
 	--rsm-th-muted: #b0bcbc;
-	--rsm-th-border: rgba(147, 161, 161, 0.12);
+	--rsm-th-border: rgb(147, 161, 161, 0.12);
 	--rsm-th-control-border: #798d8d;
 }
 
@@ -203,12 +203,12 @@ html.res-pageTheme .thing {
 }
 
 // Form controls readable on dark.
-html.res-pageTheme #search input[type="text"],
+html.res-pageTheme #search input[type='text'],
 html.res-pageTheme textarea,
-html.res-pageTheme .roundfield input[type="text"],
-html.res-pageTheme .roundfield input[type="url"],
-html.res-pageTheme .roundfield input[type="password"],
-html.res-pageTheme .roundfield input[type="number"],
+html.res-pageTheme .roundfield input[type='text'],
+html.res-pageTheme .roundfield input[type='url'],
+html.res-pageTheme .roundfield input[type='password'],
+html.res-pageTheme .roundfield input[type='number'],
 html.res-pageTheme .roundfield textarea,
 html.res-pageTheme #compose-message .roundfield select {
 	background-color: var(--rsm-th-bg-raise) !important;
@@ -230,7 +230,7 @@ html.res-pageTheme .md a:visited {
 }
 
 // Flair: transparent chip with an accent outline instead of a loud fill.
-html.res-pageTheme span[class*="flair"],
+html.res-pageTheme span[class*='flair'],
 html.res-pageTheme .linkflairlabel {
 	background-color: transparent !important;
 	border: 1px solid var(--rsm-th-accent-ui);
@@ -327,7 +327,7 @@ html.res-pageTheme--refined {
 }
 
 html.res-pageTheme--refined body {
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	font-size: 14px;
 	line-height: 1.45;
 	letter-spacing: 0.005em;
@@ -537,7 +537,7 @@ html.res-pageTheme--refined .side #search:focus-within::after {
 	color: var(--rsm-th-accent-text);
 }
 
-html.res-pageTheme--refined .side #search input[type="text"] {
+html.res-pageTheme--refined .side #search input[type='text'] {
 	box-sizing: border-box;
 	width: 100%;
 	height: 38px;
@@ -548,15 +548,15 @@ html.res-pageTheme--refined .side #search input[type="text"] {
 	font-size: 13px;
 }
 
-html.res-pageTheme--refined .side #search:has(.rsm-search-dispatcher) input[type="text"] {
+html.res-pageTheme--refined .side #search:has(.rsm-search-dispatcher) input[type='text'] {
 	padding-right: 142px;
 }
 
-html.res-pageTheme--refined .side #search input[type="text"]::placeholder {
+html.res-pageTheme--refined .side #search input[type='text']::placeholder {
 	color: var(--rsm-th-muted);
 }
 
-html.res-pageTheme--refined .side #search input[type="submit"] {
+html.res-pageTheme--refined .side #search input[type='submit'] {
 	position: absolute;
 	top: 0;
 	right: 0;
@@ -619,7 +619,7 @@ html.res-pageTheme--refined .side #searchexpando label {
 	cursor: pointer;
 }
 
-html.res-pageTheme--refined .side #searchexpando input[type="checkbox"] {
+html.res-pageTheme--refined .side #searchexpando input[type='checkbox'] {
 	width: 14px;
 	height: 14px;
 	min-height: 14px;
@@ -973,7 +973,7 @@ html.res-pageTheme--refined body.combined-search-page #previoussearch form {
 	align-items: center;
 }
 
-html.res-pageTheme--refined body.combined-search-page #previoussearch input[name="q"] {
+html.res-pageTheme--refined body.combined-search-page #previoussearch input[name='q'] {
 	width: 100%;
 	height: 38px;
 	max-width: none;
@@ -1458,9 +1458,9 @@ html.res-pageTheme--refined .comment .expand:hover {
 
 // Inputs and buttons stop falling back to the platform-grey 2005 treatment.
 html.res-pageTheme--refined textarea,
-html.res-pageTheme--refined input[type="text"],
-html.res-pageTheme--refined input[type="password"],
-html.res-pageTheme--refined input[type="number"],
+html.res-pageTheme--refined input[type='text'],
+html.res-pageTheme--refined input[type='password'],
+html.res-pageTheme--refined input[type='number'],
 html.res-pageTheme--refined select {
 	box-sizing: border-box;
 	min-height: 38px;
@@ -1478,9 +1478,9 @@ html.res-pageTheme--refined textarea {
 }
 
 html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type="button"]:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type="submit"]:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type="reset"]:not(:where(#RESConsoleContainer *)) {
+html.res-pageTheme--refined input[type='button']:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined input[type='submit']:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined input[type='reset']:not(:where(#RESConsoleContainer *)) {
 	min-height: 34px;
 	padding: 6px 12px;
 	background: var(--rsm-th-bg-raise);
@@ -1493,9 +1493,9 @@ html.res-pageTheme--refined input[type="reset"]:not(:where(#RESConsoleContainer 
 }
 
 html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type="button"]:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type="submit"]:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type="reset"]:not(:where(#RESConsoleContainer *)):hover {
+html.res-pageTheme--refined input[type='button']:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined input[type='submit']:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined input[type='reset']:not(:where(#RESConsoleContainer *)):hover {
 	background: color-mix(in srgb, var(--rsm-th-accent) 15%, var(--rsm-th-bg-raise));
 	border-color: color-mix(in srgb, var(--rsm-th-accent) 50%, var(--rsm-th-border));
 }

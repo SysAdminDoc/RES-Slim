@@ -10,6 +10,7 @@
     "stylelint-scss"
   ],
   "rules": {
+    "@stylistic/indentation": "tab",
     "alpha-value-notation": null,
     "color-named": null,
     "color-function-notation": null,

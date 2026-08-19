@@ -6,6 +6,48 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Two invalid declarations the old linter never saw, both found by upgrading it:
+
+  - The media-controls **info button had no font family at all.** A `font`
+    shorthand value was written into the `font-family` longhand
+    (`font-family: normal 16px verdana, ...`), so the declaration was invalid at
+    parse time and dropped. It is the one control there whose glyph is plain
+    Unicode rather than a private-use codepoint from the icon font its siblings
+    use, which is exactly why it asked for a text family in the first place.
+  - `word-break: break-word` in the edited-comment diff is a deprecated
+    non-standard alias; it is `overflow-wrap: break-word` now. `clip` in the
+    screen-reader-only helper is deprecated too, and is `clip-path: inset(50%)`.
+
+### Changed
+
+- stylelint 16 -> 17, with `stylelint-scss` 7 and all four shared configs, which
+  have to move together because they declare hard peers on each other.
+
+  The upgraded `sass-guidelines` config brings `@stylistic`, which defaulted to
+  two-space indentation and produced 9,355 findings against a repository whose
+  `.editorconfig` has declared `indent_style = tab` since the fork. That is
+  configured to `tab` rather than suppressed; the 347 findings left after it were
+  genuine mixed indentation, and were fixed along with ~190 other formatting
+  findings (leading zeros, `rgba()` -> `rgb()`, quote style, hex case). Every
+  colour conversion preserves its alpha exactly.
+
+  The three rules left disabled were reviewed rather than left unexplained:
+  `no-descending-specificity` costs 269 findings and is inherent to restyling
+  someone else's stylesheet, `selector-max-compound-selectors` costs 51 for the
+  same reason, and `max-nesting-depth: 3` costs only 6 - but all six are in
+  inherited stylesheets where changing nesting changes specificity, which is not
+  a trade worth making for a cosmetic rule.
+
+- The radius contract's circle allowlist is keyed on the enclosing selector path
+  instead of `file:line`. The reformat above moved every entry, which is the
+  failure that allowlist's own drift check existed to catch - arriving through
+  the source moving rather than the scanner miscounting. Two of the eight
+  comments were already describing the wrong element by then. Keying on the
+  selector also caught its own first spelling being ambiguous: two rules named
+  `.globalStageIcon` with different radii, so the key is the full nesting path.
+
+### Fixed
+
 - dashjs 4.7.4 -> 5.2.1, which fixes Cta608Parser and ResizeObserver memory
   leaks - the kind that matter in a content script that lives as long as the tab
   does.

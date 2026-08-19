@@ -42,15 +42,30 @@ const SHAPES = new Set(['0']);
 // into a lozenge. Each of these is a shape whose whole job is to be round — a
 // spinner, a status dot, a toggle thumb, a colour swatch — so the allowlist is
 // short and adding to it is a decision someone has to make on purpose.
+// Keyed on the innermost enclosing selector, not on `file:line`. Line numbers
+// were the first spelling and they did not survive their first formatter:
+// `stylelint --fix` reflowed the tree in v0.41.0 and every entry moved, so the
+// allowlist would have gone on exempting whatever slid into its place. That is
+// the failure the "still points at a radius" check below exists to catch, and it
+// arrived through the *source* moving rather than the scanner miscounting.
+//
+// Two of the eight comments were already describing the wrong element by then —
+// `res.scss:439` is the loading spinner, not the csspinner ring, and the last
+// entry is the settings toggle knob rather than a theme swatch. A comment drifts
+// silently; a selector only moves when someone renames the thing.
+// The full nesting path, not just the innermost selector: `.globalStageIcon` and
+// `.themeOptionSwatch` each appear twice in options.scss with different radii, so
+// the bare name would have exempted the wrong one. The contract found that itself
+// - the "matches exactly one" check below failed on the ambiguous key.
 const CIRCLES = new Set([
-	'lib/css/res.scss:439',   // .csspinner ring
-	'lib/css/res.scss:707',   // full-page loading spinner
-	'lib/options/options.scss:2858',  // .globalStageIcon status dot
-	'lib/options/options.scss:3107',  // .moduleButton::before enabled dot
-	'lib/options/options.scss:3437',  // toggle thumb
-	'lib/options/options.scss:3478',  // .workspaceEmptyStateIcon
-	'lib/options/options.scss:3605',  // theme swatch
-	'lib/options/options.scss:3684',  // theme swatch, forced-colors
+	'lib/css/res.scss :: .RESLoadingSpinner',
+	'lib/css/res.scss :: .csspinner / &::after',
+	'lib/options/options.scss :: html[res-options]:root / .globalStageIcon',
+	'lib/options/options.scss :: html[res-options]:root / .moduleButton::before',
+	'lib/options/options.scss :: html[res-options]:root / #RESConsoleContainer .toggleButton .toggleThumb::before',
+	'lib/options/options.scss :: html[res-options]:root / .workspaceEmptyStateIcon',
+	'lib/options/options.scss :: html[res-options]:root / .consolePrefsGrid .themeOptionSwatch',
+	'lib/options/options.scss :: html[res-options]:root / #RESAllOptions::before',
 ]);
 
 const RADIUS_DECL = /border-radius:\s*([^;{}]+);/g;
@@ -68,20 +83,34 @@ for (const file of scssFiles()) {
 	}
 }
 
-// Line numbers come along, because the circle allowlist is per site: naming the
-// file alone would exempt every radius in it.
+// Each declaration carries its line, for the message, and its innermost enclosing
+// selector, which is what the circle allowlist is keyed on: naming the file alone
+// would exempt every radius in it.
 function declarationsIn(source) {
-	// Block comments are blanked rather than deleted, so a comment spanning
-	// three lines does not shift every line number after it — which is exactly
-	// what an allowlist keyed on line numbers cannot survive.
+	// Block comments are blanked rather than deleted, so a comment spanning three
+	// lines does not shift every line number after it.
 	const lines = source
 		.replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' '))
 		.split(/\r?\n/).map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1'));
+
 	const out = [];
+	const stack = [];
 	lines.forEach((line, index) => {
 		for (const match of line.matchAll(RADIUS_DECL)) {
-			out.push({ value: match[1].trim(), line: index + 1 });
+			out.push({
+				value: match[1].trim(),
+				line: index + 1,
+				selector: stack.length ? stack.join(' / ') : '(top level)',
+			});
 		}
+		// `@media`/`@supports` wrappers push too, which is wanted: they are part of
+		// what distinguishes one occurrence of a selector from another.
+		const opens = (line.match(/\{/g) || []).length;
+		const closes = (line.match(/\}/g) || []).length;
+		for (let i = 0; i < opens; i++) {
+			stack.push(i === 0 ? (line.slice(0, line.indexOf('{')).trim() || '(anonymous)') : '(nested)');
+		}
+		for (let i = 0; i < closes; i++) stack.pop();
 	});
 	return out;
 }
@@ -116,9 +145,9 @@ test('every shipped border-radius is on the declared scale', () => {
 	for (const file of scssFiles()) {
 		const relative = path.relative(repoRoot, file).split(path.sep).join('/');
 		const source = fs.readFileSync(file, 'utf8');
-		for (const { value, line } of declarationsIn(source)) {
-			if (CIRCLES.has(`${relative}:${line}`)) {
-				assert.match(value, /^(50%|100%)$/, `${relative}:${line} is allowlisted as a circle but is not one: ${value}`);
+		for (const { value, line, selector } of declarationsIn(source)) {
+			if (CIRCLES.has(`${relative} :: ${selector}`)) {
+				assert.match(value, /^(50%|100%)$/, `${relative}:${line} (${selector}) is allowlisted as a circle but is not one: ${value}`);
 				continue;
 			}
 			const bad = offScaleParts(value);
@@ -145,14 +174,17 @@ test('the scan actually reaches the stylesheets it claims to', () => {
 	}
 
 	const withRadii = files.filter(f => declarationsIn(fs.readFileSync(f, 'utf8')).length);
-	// And the circle allowlist still points at real declarations. An entry that
-	// has drifted off its line would silently start exempting whatever moved into
-	// its place.
+	// And every allowlist entry still names a rule that sets a circular radius. A
+	// stale entry exempts nothing, which is harmless — but it also means the rule
+	// it was written for is now being checked by nobody, and that is not.
 	for (const entry of CIRCLES) {
-		const [entryFile, entryLine] = entry.split(':');
+		const [entryFile, entrySelector] = entry.split(' :: ');
 		const source = fs.readFileSync(path.join(repoRoot, entryFile), 'utf8');
-		const found = declarationsIn(source).find(d => d.line === Number(entryLine));
-		assert.ok(found, `circle allowlist entry ${entry} does not point at a border-radius any more`);
+		const matches = declarationsIn(source).filter(d => d.selector === entrySelector);
+		assert.equal(matches.length, 1,
+			`circle allowlist entry "${entry}" matches ${matches.length} border-radius declarations; it should match exactly one`);
+		assert.match(matches[0].value, /^(50%|100%)$/,
+			`circle allowlist entry "${entry}" no longer sets a circular radius: ${matches[0].value}`);
 	}
 	assert.ok(withRadii.length > 20, `expected radii across the tree, found them in ${withRadii.length} files`);
 });

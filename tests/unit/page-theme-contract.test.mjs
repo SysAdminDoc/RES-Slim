@@ -78,7 +78,7 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /html\.res-pageTheme--refined \.commentarea > \.sitetable > \.comment/);
 	assert.match(scss, /\.side > \.spacer:has\(> \.account-activity-box\)/);
 	assert.match(scss, /\.side > \.spacer:has\(> \.sidebox\.create\)/);
-	assert.match(scss, /html\.res-pageTheme--refined \.side #search input\[type="submit"\]/);
+	assert.match(scss, /html\.res-pageTheme--refined \.side #search input\[type=['"]submit['"]\]/);
 	assert.match(scss, /html\.res-pageTheme--refined \.side #search::after/);
 	assert.match(scss, /content: '\\F094'/);
 	assert.match(scss, /\.side #search select\.rsm-search-dispatcher/);

@@ -7,9 +7,9 @@
 	border-radius: 10px;
 	background: rgb(255 255 255 / 92%);
 	box-shadow: 0 10px 28px rgb(15 23 42 / 14%);
-	opacity: .52;
+	opacity: 0.52;
 	user-select: none;
-	transition: opacity .2s ease, box-shadow .2s ease;
+	transition: opacity 0.2s ease, box-shadow 0.2s ease;
 
 	&:focus-within,
 	&:hover {
@@ -71,15 +71,15 @@
 	cursor: pointer;
 	font-weight: 800;
 
-		&:hover,
-		&:focus-visible {
-			background: rgb(18 120 211 / 10%);
-			outline: 2px solid rgb(18 120 211 / 22%);
-			outline-offset: 1px;
-		}
+	&:hover,
+	&:focus-visible {
+		background: rgb(18 120 211 / 10%);
+		outline: 2px solid rgb(18 120 211 / 22%);
+		outline-offset: 1px;
+	}
 
 	&[disabled] {
-		opacity: .3;
+		opacity: 0.3;
 		cursor: default;
 	}
 }

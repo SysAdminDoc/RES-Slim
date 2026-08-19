@@ -196,8 +196,8 @@ test('form controls take their boundary from the control token, not the decorati
 	// put a hard line around every card and divider and turn the page into a
 	// wireframe. So the rules that style an actual input must name the other token.
 	const controlRules = [
-		/html\.res-pageTheme #search input\[type="text"\][\s\S]*?border-color: var\(--rsm-th-control-border\)/,
-		/\.side #search input\[type="text"\] \{[\s\S]*?border: 1px solid var\(--rsm-th-control-border\)/,
+		/html\.res-pageTheme #search input\[type=['"]text['"]\][\s\S]*?border-color: var\(--rsm-th-control-border\)/,
+		/\.side #search input\[type=['"]text['"]\] \{[\s\S]*?border: 1px solid var\(--rsm-th-control-border\)/,
 		/select\.rsm-search-dispatcher \{[\s\S]*?border: 1px solid var\(--rsm-th-control-border\)/,
 	];
 	for (const rule of controlRules) assert.match(scss, rule);

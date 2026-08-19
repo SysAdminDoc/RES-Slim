@@ -3,11 +3,11 @@ pre.rsm-fenced {
 	margin: 6px 0;
 	padding: 10px 12px;
 	overflow: auto;
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	border: 1px solid rgb(255, 255, 255, 0.12);
 	border-radius: 6px;
-	background: rgba(20, 20, 24, 0.92);
+	background: rgb(20, 20, 24, 0.92);
 	color: #dcdce0;
-	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 	font-size: 12px;
 	line-height: 1.5;
 	tab-size: 4;
@@ -28,7 +28,7 @@ pre.rsm-fenced {
 	font-size: 10px;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: rgba(255, 255, 255, 0.4);
+	color: rgb(255, 255, 255, 0.4);
 	user-select: none;
 }
 

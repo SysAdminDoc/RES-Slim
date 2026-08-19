@@ -21,7 +21,10 @@
 	font-size: 13px;
 	line-height: 1.5;
 	white-space: pre-wrap;
-	word-break: break-word;
+	// `word-break: break-word` is a deprecated non-standard alias that every engine
+	// maps to this. The diff panel holds arbitrary comment text, so an unbroken URL
+	// still has to wrap rather than widen the panel.
+	overflow-wrap: break-word;
 
 	// Added and removed text are marked by an underline and a strikethrough as
 	// well as a tint, so the diff is still readable without colour vision.
