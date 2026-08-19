@@ -52,14 +52,18 @@ test('current Reddit posts are normalised into the Thing vocabulary', () => {
 	assert.equal(post.querySelector('[slot="credit-bar"]').classList.contains('tagline'), true);
 });
 
-test('current Reddit post controls receive the gated Classic layout stylesheet', () => {
+test('current Reddit post controls receive the layout-gated stylesheet on every palette', () => {
 	const post = document.createElement('shreddit-post');
 	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';
 	document.body.append(post);
 	Shreddit.prepareShredditThing(post);
 	const style = post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`);
 	assert.ok(style, 'the open post shadow root needs the layout bridge');
-	assert.match(style.textContent, /res-pageTheme--classic\.res-pageTheme--refined/);
+	// The gate is the refined-layout toggle, not the Classic palette: this was
+	// `--classic.--refined` until v0.45.0, which left the ten dark palettes with
+	// no vote rail inside the shadow root. `theme-parity-contract` holds the rest.
+	assert.match(style.textContent, /:host-context\(html\.res-pageTheme\.res-pageTheme--refined\)/);
+	assert.doesNotMatch(style.textContent, /res-pageTheme--classic/);
 	assert.match(style.textContent, /data-action-bar-action='upvote'/);
 	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`).length, 1);
 	Shreddit.prepareShredditThing(post);

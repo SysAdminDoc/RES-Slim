@@ -2,6 +2,32 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- The classic layout now reaches both renderers on all eleven palettes. It was
+  gated on `.res-pageTheme--classic.res-pageTheme--refined` - the Classic
+  *palette* - so choosing any of the ten dark themes dropped every measurement
+  the parity pass established: current Reddit kept Reddit's own geometry in
+  slightly different colours, and old Reddit lost the 72px rows, 43px vote rail,
+  70px thumbnails and 300px information rail with it.
+
+  The gate is now the refined-layout toggle
+  (`html.res-pageTheme.res-pageTheme--refined`, the same specificity, because
+  `res-pageTheme` is always present), and the colours those rules hardcoded
+  became palette tokens. Every palette gained `--rsm-th-header`,
+  `--rsm-th-shadow` and `--rsm-th-scheme`; the last drives `color-scheme`, so
+  scrollbars and native form controls stop rendering light on a dark theme.
+
+  The sharpest instance was inside each post's open shadow root, the one surface
+  document CSS cannot reach: on any dark palette the vote controls were never
+  moved into the left rail at all. The e2e test measures it directly - reverting
+  the gate puts the dark palette's upvote button back at x=128 instead of x=10.
+
+  The 21 coarser current-Reddit rules added in v0.42.0 that the v0.43.0 parity
+  pass superseded are deleted rather than left to lose on specificity.
+
 ## v0.44.0 - 2026-08-19
 
 ### Changed

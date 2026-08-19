@@ -2494,3 +2494,99 @@ test('the controls injected into old Reddit have no accessibility violations', a
 	assert.deepEqual(results.violations.map(v => v.id), [],
 		`accessibility violations in injected UI:\n  ${describeViolations(results.violations)}`);
 });
+
+// The classic layout used to be gated on the Classic palette, so choosing any of
+// the ten dark palettes on current Reddit produced a page with none of the
+// old-Reddit geometry - and, inside each post's open shadow root, no vote rail at
+// all. That gap was invisible to every stylesheet-level contract, because the
+// shadow root is the one surface document CSS cannot reach.
+//
+// This drives the real fixture under a dark palette and a light one and asserts
+// the geometry is identical while the colours are not.
+test('the classic layout reaches current Reddit on every palette, and the palette still decides the colours', async t => {
+	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
+	t.after(dispose);
+
+	async function measure(theme) {
+		const page = await context.newPage();
+		await page.route('**/*', route => {
+			const request = route.request();
+			if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+				return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+			}
+			return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+		});
+		await worker.evaluate(value => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { pageTheme: true },
+				'RESoptions.pageTheme': { theme: { value } },
+			}, resolve);
+		}), theme);
+
+		await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(
+			expected => document.documentElement.classList.contains(`res-pageTheme--${expected}`),
+			theme, { timeout: 30000 });
+		await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+		// The shadow stylesheet can land one frame after upgrade.
+		await page.waitForFunction(
+			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-classic-style]'),
+			null, { timeout: 30000 });
+
+		const state = await page.evaluate(() => {
+			const post = document.querySelector('#t3_fixture1');
+			const header = document.querySelector('reddit-header-large');
+			const shadow = post.shadowRoot;
+			const upvote = shadow.querySelector('[data-action-bar-action="upvote"]');
+			const postBox = post.getBoundingClientRect();
+			const upBox = upvote.getBoundingClientRect();
+			return {
+				// geometry - must be identical across palettes
+				headerHeight: Math.round(header.getBoundingClientRect().height),
+				postHeight: Math.round(postBox.height),
+				leftSidebarHidden: getComputedStyle(document.querySelector('#left-sidebar-container')).display === 'none',
+				// the vote control's offset inside the post: this is the left rail
+				voteOffsetX: Math.round(upBox.x - postBox.x),
+				voteWidth: Math.round(upBox.width),
+				// colour - must follow the palette
+				appBackground: getComputedStyle(document.querySelector('shreddit-app')).backgroundColor,
+				bodyColour: getComputedStyle(document.querySelector('shreddit-app')).color,
+				headerBackground: getComputedStyle(header).backgroundColor,
+				colorScheme: getComputedStyle(document.documentElement).colorScheme,
+				voteColour: getComputedStyle(upvote).color,
+				titleFont: getComputedStyle(post.querySelector('[slot="title"]')).fontFamily,
+				shadowRuleCount: shadow.querySelector('style[data-res-shreddit-classic-style]').textContent.length,
+			};
+		});
+		await page.close();
+		return state;
+	}
+
+	const light = await measure('classic');
+	const dark = await measure('gruvbox');
+
+	// Geometry is the layout, and the layout is not a palette decision.
+	for (const key of ['headerHeight', 'postHeight', 'voteOffsetX', 'voteWidth', 'leftSidebarHidden']) {
+		assert.deepEqual(dark[key], light[key],
+			`${key} differs between palettes: classic=${JSON.stringify(light[key])} gruvbox=${JSON.stringify(dark[key])}`);
+	}
+	assert.equal(light.titleFont, dark.titleFont, 'both palettes use the classic type stack');
+	assert.ok(light.headerHeight > 0 && light.postHeight > 0, 'the fixture rendered nothing to measure');
+	assert.ok(light.shadowRuleCount > 100 && dark.shadowRuleCount === light.shadowRuleCount,
+		'the shadow stylesheet must be installed identically under both palettes');
+
+	// The vote rail is genuinely inside the post box rather than left at Reddit's
+	// own position - this is the assertion the classic-only gate used to fail.
+	assert.ok(dark.voteOffsetX < 60, `the dark palette's vote control is not in the left rail (x=${dark.voteOffsetX})`);
+
+	// Colour is the palette, and it must actually differ.
+	const parse = value => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+	const luminance = value => { const [r, g, b] = parse(value); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; };
+	assert.ok(luminance(light.appBackground) > 0.85, `classic should paint a light canvas, got ${light.appBackground}`);
+	assert.ok(luminance(dark.appBackground) < 0.35, `gruvbox should paint a dark canvas, got ${dark.appBackground}`);
+	assert.ok(luminance(dark.bodyColour) > 0.5, `gruvbox body text must be light on a dark canvas, got ${dark.bodyColour}`);
+	assert.notEqual(dark.headerBackground, light.headerBackground, 'the header must follow the palette');
+	assert.equal(light.colorScheme, 'light');
+	assert.equal(dark.colorScheme, 'dark', 'a dark palette must set color-scheme so native controls match');
+	assert.notEqual(dark.voteColour, light.voteColour, 'the shadow-root vote arrows must follow the palette too');
+});
