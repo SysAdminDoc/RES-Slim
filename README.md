@@ -4,7 +4,7 @@
 
 A stripped-down personal fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (forked from upstream v5.24.8), targeting **old.reddit.com and current Reddit** on desktop.
 
-The goal is that the two renderers look and behave like one product. Reddit has said it [cannot promise old Reddit will stay](https://tech.slashdot.org/story/26/07/01/1743219/reddit-will-require-you-to-log-in-to-use-old-reddit) and began requiring a login for it on 2026-06-30, so current Reddit is treated as the renderer that has to work, and the classic interface is something this extension *reproduces* there rather than something it depends on. Built for one person's use and published as-is — there is no support commitment and no release cadence.
+The goal is that the two renderers look and behave like one product. Reddit has said it [cannot promise old Reddit will stay](https://tech.slashdot.org/story/26/07/01/1743219/reddit-will-require-you-to-log-in-to-use-old-reddit) and began requiring a login for it on 2026-06-30, so current Reddit is treated as the renderer that has to work, and the classic interface is something this extension *reproduces* there rather than something it depends on. Built for one person's use and published as-is. There is no support commitment and no release cadence.
 
 Only the features actually used are kept. Upstream self-promotion, sponsorship, announcements, and cloud-backup code have been removed.
 
@@ -16,15 +16,15 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Appearance**: `pageTheme` now defaults to **Classic Reddit**, a measured white-and-blue recreation of the archived desktop interface. On current Reddit it removes the permanent left rail, restores a 300px information sidebar, uses 72px listing rows with a 43px native vote rail and 70px thumbnails, returns titles to 16px Verdana blue links, flattens cards and rounding, compacts metadata and action links, and rebuilds discussions as border-nested comments. Native current-Reddit voting, comments, sharing, links, collapse, streaming, and routing stay functional; the vote/action controls are styled inside their open shadow roots instead of replaced. The **layout is not tied to the palette**: the same measured geometry is applied on all eleven palettes, so OLED, Graphite, Midnight, Catppuccin, Tokyo Night, Rosé Pine, Nord, Dracula, Gruvbox, and Solarized give you the classic old-Reddit shape in dark colours on *both* renderers. Every palette also sets `color-scheme`, so scrollbars and native form controls match the theme instead of staying light. Accent correction now works in both directions so custom colours remain readable on light and dark surfaces.
 
-**Current Reddit compatibility**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and native vote/action controls; The classic control CSS is installed once per post shadow root and is gated by the refined-layout toggle rather than by the palette, so the left vote rail appears under every theme - document CSS cannot reach inside a shadow root, which is why that distinction matters.
+**Current Reddit compatibility**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and native vote/action controls; The classic control CSS is installed once per post shadow root and is gated by the refined-layout toggle rather than by the palette, so the left vote rail appears under every theme. Document CSS cannot reach inside a shadow root, which is why that distinction matters.
 
-**Browsing**: `hideAll` — a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
+**Browsing**: `hideAll` adds a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
-**Ads and measurement**: an always-on static `declarativeNetRequest` ruleset blocks separable Reddit ad assets, click trackers, pixels, and telemetry requests before load. Promoted records embedded in Reddit's essential first-party listing response are suppressed at `document_start`, counted locally, and rechecked as listings append. No claim is made that those inseparable records disappear from the listing response itself.
+**Ads and measurement**: an always-on static `declarativeNetRequest` ruleset blocks separable Reddit ad assets, click trackers, pixels, and telemetry requests before load. Promoted records embedded in Reddit's essential first-party listing response are suppressed at `document_start`, counted locally, and rechecked as listings append. No claim is made that those inseparable records disappear from the listing response itself. Current Reddit's ad elements, including the ones that appear inside a discussion, belong to the same module rather than to a theme setting. A second layer patches `sendBeacon`, `fetch` and `XMLHttpRequest` in the page so a telemetry payload is never assembled, which covers transports the network rules do not; it ships as a packaged file the page loads by URL, because Manifest V3 refuses an inline script a content script writes.
 
 **Old Reddit routing**: the optional `www.reddit.com` → `old.reddit.com` preference now installs a dynamic request rule, so the modern document does not download before the host changes. It preserves path, query, and fragment; leaves login, account, and advertising routes alone; and the header’s **www** link provides a one-page escape. The preference remains off by default.
 
-**Ecosystem parity (v0.20.0)**: fifteen modules rewritten from the most-installed old.reddit userscripts, all disabled by default except the two that only repair broken behaviour — `commentShredder` (bulk overwrite-and-delete of your own comments, preview-first with a typed confirmation), `usernameColors`, `systemThemeSync`, `autoLoadMoreComments`, `visitedPosts`, `searchScope`, `flairLinkify`, `reverseImageSearch`, `nsfwThumbnails`, `karmaHide`, `restoreVoteArrows`, `randomSubreddit`, `loginRedirectFix`, plus `brokenLinkFixer` and `preventAutoTranslate` on by default.
+**Ecosystem parity (v0.20.0)**: fifteen modules rewritten from the most-installed old.reddit userscripts, all disabled by default except the two that only repair broken behaviour. The fifteen are `commentShredder` (bulk overwrite-and-delete of your own comments, preview-first with a typed confirmation), `usernameColors`, `systemThemeSync`, `autoLoadMoreComments`, `visitedPosts`, `searchScope`, `flairLinkify`, `reverseImageSearch`, `nsfwThumbnails`, `karmaHide`, `restoreVoteArrows`, `randomSubreddit`, `loginRedirectFix`, plus `brokenLinkFixer` and `preventAutoTranslate` on by default.
 
 **Infrastructure only**: menu, notifications, settingsNavigation, selectedEntry, version, requestPermissions.
 
@@ -36,7 +36,7 @@ The selected 1440×900 design references for all 11 categories, Console preferen
 
 ## Permissions and privacy
 
-RES-Slim ships no third-party API credentials. Four were inherited from upstream and removed in v0.40.0: the YouTube key went with a metadata function nothing called, Giphy previews use the media paths the id already determines, and Google Maps links preview through OpenStreetMap because Google's Embed API requires a key this project does not own. Tumblr is the exception - its API is the only route to a post body - so Tumblr previews stay off until you supply your own key in the host's settings.
+RES-Slim ships no third-party API credentials. Four were inherited from upstream and removed in v0.40.0: the YouTube key went with a metadata function nothing called, Giphy previews use the media paths the id already determines, and Google Maps links preview through OpenStreetMap because Google's Embed API requires a key this project does not own. Tumblr is the exception, because its API is the only route to a post body, so Tumblr previews stay off until you supply your own key in the host's settings.
 
 RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local feature data in the browser profile. `declarativeNetRequest` is used for the packaged Reddit-scoped block rules and the user-controlled Old Reddit redirect described above. Optional host permissions are requested only when a media provider or localhost companion needs one. The extension contains no analytics and sends no RES-Slim telemetry.
 
@@ -55,7 +55,7 @@ yarn build      # production build + zip -> dist/zip/
 
 `yarn verify` runs lint, Flow, the unit suite, a production build, the e2e suite,
 the third-party endpoint probe, and an advisory check that the published GitHub
-description still matches this README — in that order, stopping at the first
+description still matches this README, in that order, stopping at the first
 failure. It is the one command worth running before a push; the individual
 scripts above are for iterating on a single gate. `yarn verify --skip-network`
 omits the two network steps, which are the only ones that can fail for reasons
@@ -79,7 +79,11 @@ initialises on served old-Reddit and current-Reddit documents. It also checks th
 default refined Graphite layout, keyboard focus treatment, feed hierarchy,
 opened-post and media geometry, the discussion composer and sort toolbar,
 nested-comment surfaces, Shreddit semantic adaptation, SPA navigation, streamed
-posts, native comment collapse, and open-shadow-root vote controls. It needs no
+posts, native comment collapse, and open-shadow-root vote controls. It also
+checks that the telemetry patch reached the page world on both renderers, that
+an ad inside a discussion is removed with the theme setting off, and that
+selector drift is reported on a deliberately broken current-Reddit fixture and
+not on a clean one. It needs no
 physical display, no existing browser profile, and no network: every request is
 either served from a local fixture or intercepted, and
 the browser is launched with DNS for everything but localhost pointed at a dead
@@ -103,7 +107,7 @@ shaped data, and permits only a reserved non-routable fixture host. Run
 
 ## Install (Chrome)
 
-The repo ships no loadable extension — `dist/` is generated. Build it first:
+The repo ships no loadable extension. `dist/` is generated, so build it first:
 
 ```bash
 yarn install
@@ -116,7 +120,7 @@ Firefox: `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on** �
 
 Two things that look like bugs but aren't:
 
-- **Do not point Chrome at the repo's `chrome/` folder.** That manifest is a build template — `"name": "__name__"`, `"version": "__version__"` — and Chrome rejects it with *Invalid value for 'version'*. Only `dist/chrome/` is loadable.
+- **Do not point Chrome at the repo's `chrome/` folder.** That manifest is a build template, with `"name": "__name__"` and `"version": "__version__"` still in it, so Chrome rejects it with *Invalid value for 'version'*. Only `dist/chrome/` is loadable.
 - **`--load-extension` on the command line no longer works** in Google Chrome stable (it logs `--load-extension is not allowed in Google Chrome, ignoring` and continues without the extension). Use the Load-unpacked UI above; for scripted checks use a Chrome for Testing / Chromium build, which still honours the flag.
 
 ## Updating
@@ -145,4 +149,4 @@ log and in `CHANGELOG.md`.
 
 ## License
 
-GPL-3.0 — inherited from upstream RES. See `LICENSE`.
+GPL-3.0, inherited from upstream RES. See `LICENSE`.
