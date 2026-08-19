@@ -2942,3 +2942,114 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 	assert.equal(dark.colorScheme, 'dark', 'a dark palette must set color-scheme so native controls match');
 	assert.notEqual(dark.voteColour, light.voteColour, 'the shadow-root vote arrows must follow the palette too');
 });
+
+test('the support report is built on demand and carries timings from the reddit page', async t => {
+	// The unit contract covers the formatting and the redaction. It cannot cover
+	// the thing this feature is actually made of: the timings are measured in the
+	// content script on a reddit page, the console that shows them is a different
+	// document, and the two are joined by a postMessage round trip that no test
+	// in node can execute. Every earlier "unread mechanism" in this codebase was
+	// wired at exactly this seam and nowhere else.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = servableCapture(FRONT_CAPTURE);
+	const page = await context.newPage();
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	// A deviation to find. Turning a default-on module off is the single most
+	// common thing a report needs to say, and it is stored where the console
+	// reads it rather than injected into the panel. Written from an extension
+	// page: `chrome.storage` belongs to the content script's isolated world, and
+	// `page.evaluate` on a reddit page runs in the main one.
+	const seed = await context.newPage();
+	await seed.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await seed.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.modulePrefs', stored => {
+			const prefs = { ...(stored['RES.modulePrefs'] || {}), showImages: false };
+			chrome.storage.local.set({ 'RES.modulePrefs': prefs }, resolve);
+		});
+	}));
+	await seed.close();
+
+	// Opened from the page, so the console is an iframe with a content script to
+	// ask. This is the path a user takes from the RES menu.
+	await page.goto('https://old.reddit.com/rsm-support-dump/#res:settings/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForSelector('#console-container', { timeout: 30000 });
+
+	const console_ = page.frameLocator('#console-container');
+	await console_.locator('#RESConsoleContainer').waitFor({ state: 'attached', timeout: 30000 });
+	// The utility panels are a tabpanel, hidden until its tab is chosen.
+	await console_.locator('#RESCategoryTab-console').click();
+	await console_.locator('#RESSupportDumpPanel').waitFor({ state: 'visible', timeout: 30000 });
+
+	const output = console_.locator('#RESSupportDumpOutput');
+	// Nothing is gathered until the button is pressed. An empty textarea before
+	// the click is what "collected only when the panel asks" looks like from
+	// outside.
+	assert.equal(await output.inputValue(), '', 'the report must not be built before it is asked for');
+
+	await console_.locator('#RESSupportDumpBuild').click();
+	// The console is a chrome-extension: frame on a reddit page, so the page's
+	// own world cannot read into it — `contentDocument` is null across that
+	// boundary. Poll through the frame locator instead.
+	//
+	// Waits for the report to exist, not for the timings to be in it. Waiting on
+	// the timings would turn a missing round trip into a 30-second timeout
+	// instead of the specific assertion below, which is the one that names what
+	// broke.
+	let embedded = '';
+	let attempts = 0;
+	while (attempts < 120 && !embedded.includes('RES-Slim v')) {
+		attempts += 1;
+		await page.waitForTimeout(250); // eslint-disable-line no-await-in-loop
+		embedded = await output.inputValue(); // eslint-disable-line no-await-in-loop
+	}
+	assert.ok(
+		embedded.includes('RES-Slim v'),
+		`the report never arrived; status read ${JSON.stringify(await console_.locator('#RESSupportDumpStatus').textContent())}`,
+	);
+
+	assert.match(embedded, /^RES-Slim v\d+\.\d+\.\d+$/m, 'the report must name the build');
+	assert.match(embedded, /^Browser: \w+ [\d.]+ on \w+$/m);
+	// The renderer and page kind arrived over the message channel, so this line
+	// is the round trip succeeding rather than a value the console could read.
+	assert.match(embedded, /^Page: Old Reddit \(linklist\)$/m);
+	assert.match(embedded, /Slowest modules \(\d+ of \d+\)/, `expected timings from the page, got:\n${embedded}`);
+	assert.match(embedded, /^ {2}\w+ [\d.]+ms — \w+ [\d.]+ms/m, 'a timing line names the module and its slowest stage');
+	assert.match(embedded, /showImages: off \(default on\)/, 'a module turned off is what the report exists to say');
+
+	// Nothing in it identifies the reader or where they were.
+	assert.doesNotMatch(embedded, /rsm-support-dump/, 'the report must not carry the URL it was built on');
+	assert.doesNotMatch(embedded, /old\.reddit\.com/);
+
+	await page.close();
+
+	// The standalone options page has no reddit page to ask. That has to read as
+	// a stated absence rather than an empty heading, because a supporter reading
+	// the paste otherwise cannot tell "fast" from "not measured".
+	const options = await context.newPage();
+	await options.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await options.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await options.locator('#RESCategoryTab-console').click();
+	await options.locator('#RESSupportDumpPanel').waitFor({ state: 'visible', timeout: 30000 });
+	await options.locator('#RESSupportDumpBuild').click();
+	await options.waitForFunction(
+		() => (document.querySelector('#RESSupportDumpOutput') || {}).value?.includes('RES-Slim v'),
+		null,
+		{ timeout: 30000 },
+	);
+
+	const standalone = await options.locator('#RESSupportDumpOutput').inputValue();
+	assert.match(standalone, /Slowest modules: unavailable \(open the settings console from a reddit page\)/);
+	assert.match(standalone, /showImages: off \(default on\)/, 'the settings half works with no page at all');
+	assert.equal(await options.locator('#RESSupportDumpCopy').isDisabled(), false, 'a built report must be copyable');
+});

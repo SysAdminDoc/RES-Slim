@@ -896,6 +896,42 @@
     "settingsConsoleErrorsClearFailed": {
         "message": "Could not clear the local error log."
     },
+    "settingsConsoleSupportTitle": {
+        "message": "Support report"
+    },
+    "settingsConsoleSupportMeta": {
+        "message": "Built only when you ask, and only from what this page already shows you."
+    },
+    "settingsConsoleSupportGroup": {
+        "message": "Support report actions"
+    },
+    "settingsConsoleSupportBuild": {
+        "message": "Build report"
+    },
+    "settingsConsoleSupportCopy": {
+        "message": "Copy report"
+    },
+    "settingsConsoleSupportAria": {
+        "message": "Support report text"
+    },
+    "settingsConsoleSupportEmpty": {
+        "message": "Press Build report to gather your version, browser, changed settings and any recent failures."
+    },
+    "settingsConsoleSupportBuilding": {
+        "message": "Gathering..."
+    },
+    "settingsConsoleSupportReady": {
+        "message": "Report ready. Check it before you paste it anywhere."
+    },
+    "settingsConsoleSupportFailed": {
+        "message": "The report could not be built."
+    },
+    "settingsConsoleSupportCopySuccess": {
+        "message": "Support report copied."
+    },
+    "settingsConsoleSupportCopyFailed": {
+        "message": "Copy failed. The report is selected, so use your browser's copy command."
+    },
     "settingsConsoleBuildLabel": {
         "message": "Build"
     },

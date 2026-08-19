@@ -2,6 +2,23 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- A support report in the settings console, under Console preferences. Press
+  Build report and it collects your version, browser, the modules whose
+  enablement or options you have changed, the slowest modules by stage, recent
+  module failures and any selector drift, as plain text you can copy into a bug
+  report. Nothing is gathered until you press the button and nothing is stored,
+  so there is no diagnostics record accumulating in the background.
+  Values that could carry something private are described rather than printed:
+  a subreddit list reports its count, a text field its length, and a table its
+  row count, which is what keeps a password field out of a public paste.
+  The module timings come from the reddit page itself, so open the console from
+  a reddit page to include them. Opened as its own tab, the report says the
+  timings are unavailable rather than showing an empty heading.
+
 ## v0.47.0 - 2026-08-19
 
 ### Fixed

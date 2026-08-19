@@ -23,6 +23,10 @@ declare class Object {
 	static getOwnPropertyNames(o: any): Array<string>;
 	static getOwnPropertySymbols(o: any): Symbol[];
 	static getPrototypeOf: Object$GetPrototypeOf;
+	// ES2022, Chrome 93 / Firefox 92, so well inside the `browserslist` floor.
+	// The eslint config prefers it over `Object.prototype.hasOwnProperty.call`,
+	// which left the two checkers disagreeing until this line existed.
+	static hasOwn(o: any, p: any): boolean;
 	static is(a: any, b: any): boolean;
 	static isExtensible(o: any): boolean;
 	static isFrozen(o: any): boolean;

@@ -3651,7 +3651,8 @@ html[res-options]:root {
 	}
 
 	.utilityPanel--data .utilityActionStack,
-	.utilityPanel--errors .utilityActionStack {
+	.utilityPanel--errors .utilityActionStack,
+	.utilityPanel--support .utilityActionStack {
 		justify-content: flex-start;
 	}
 
