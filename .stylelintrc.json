@@ -15,7 +15,12 @@
     "color-named": null,
     "color-function-notation": null,
     "declaration-property-value-disallowed-list": null,
-    "font-family-no-missing-generic-family-keyword": [true, { "ignoreFontFamilies": "Batch" }],
+    "font-family-no-missing-generic-family-keyword": [
+      true,
+      {
+        "ignoreFontFamilies": "Batch"
+      }
+    ],
     "font-family-name-quotes": null,
     "function-no-unknown": null,
     "hue-degree-notation": null,
@@ -33,6 +38,18 @@
     "selector-max-compound-selectors": null,
     "selector-max-id": null,
     "selector-no-qualifying-type": null,
-    "shorthand-property-no-redundant-values": null
-  }
+    "shorthand-property-no-redundant-values": null,
+    "relative-selector-nesting-notation": "implicit",
+    "selector-no-deprecated": true,
+    "display-notation": "short",
+    "no-unknown-custom-properties": true
+  },
+  "referenceFiles": [
+    {
+      "files": [
+        "lib/css/**/*.scss"
+      ],
+      "customSyntax": "postcss-scss"
+    }
+  ]
 }
