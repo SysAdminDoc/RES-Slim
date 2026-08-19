@@ -20,8 +20,11 @@ test('removePromoted matches both legacy class markup and the data-promoted attr
 		'.thing.link[data-promoted="true"]',
 		'.thing.link[data-adserver-imp-pixel]',
 		'.thing.link[data-adserver-click-url]',
+		'shreddit-ad-post',
+		'shreddit-post[promoted]',
+		'article[data-promoted="true"]',
 	]) assert.ok(source.includes(`'${hook}'`), `missing promoted hook ${hook}`);
-	assert.match(source, /module\.include\s*=\s*\['r2'\]/);
+	assert.match(source, /module\.include\s*=\s*\['r2', 'd2x'\]/);
 	assert.match(source, /module\.alwaysEnabled\s*=\s*true/);
 	assert.match(source, /watchForThings\(\['post'\]/);
 	assert.match(source, /dataset\.rsmPromotedHidden\s*=\s*'true'/);

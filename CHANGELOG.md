@@ -4,6 +4,19 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.42.0 - 2026-08-19
+
+### Added
+
+- Added a current-Reddit Web3X/Shreddit compatibility adapter that normalizes live post and comment components into RES-Slim's existing Thing model, including streamed content, nested comments, native collapse state, SPA navigation, and vote controls exposed through open shadow roots.
+- Added a current-Reddit visual layer to `pageTheme`: the same palettes and accent now drive Reddit's inherited design tokens, with a compact header, hidden left navigation, old-Reddit-density listing rows, reclaimed feed width, a retained community rail, full discussion bodies, comment depth guides, and responsive/sidebar option support.
+- Added deterministic current-Reddit listing and thread fixtures plus real-browser coverage for them. The extension suite now verifies filtering, promoted-post removal, outbound-link cleaning, absolute timestamps, selected-entry state, streamed posts, SPA navigation, comment collapse, and shadow-root vote discovery on the new interface.
+
+### Changed
+
+- Enabled `absoluteTimestamps`, `authorContextBadge`, `filterRules`, `layoutTweaks`, `outboundCleanser`, `removePromoted`, `roleHighlights`, `scrollRestore`, `userTagger`, `voteHistory`, and `pageTheme` on both Reddit interfaces.
+- Removed the `sh.reddit.com` manifest exclusion so the compatibility layer follows Reddit's current host routing.
+
 ### Security
 
 - A fifth inherited third-party credential is gone. `hosts/imgur.js` shipped

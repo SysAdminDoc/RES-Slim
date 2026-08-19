@@ -1,0 +1,82 @@
+<!doctype html>
+<html class="theme-beta theme-dark">
+<head>
+	<meta charset="utf-8">
+	<title>Current Reddit listing fixture</title>
+	<style>
+		* { box-sizing: border-box; }
+		body { margin: 0; font: 14px/1.4 Arial, sans-serif; }
+		reddit-header-large { display: block; position: fixed; inset: 0 0 auto; z-index: 4; height: 56px; }
+		reddit-header-large > header { display: flex; height: 56px; padding: 8px 16px; align-items: center; gap: 18px; }
+		reddit-header-large input { flex: 1; min-height: 36px; }
+		shreddit-app { display: block; padding-top: 56px; }
+		.grid-container { display: grid; grid-template-columns: 240px 1fr; }
+		#left-sidebar-container { min-height: 900px; padding: 18px; }
+		#subgrid-container { width: min(1120px, 100%); margin: 0 auto; padding: 20px; }
+		.main-container { display: grid; grid-template-columns: minmax(0, 756px) 316px; gap: 24px; }
+		#main-content, #right-sidebar-container { min-width: 0; }
+		#right-sidebar-container { padding: 12px; }
+		shreddit-feed, shreddit-post, shreddit-ad-post { display: block; }
+		article { margin: 0 0 10px; }
+		shreddit-post { min-height: 132px; padding: 14px; }
+		[slot='credit-bar'], [slot='title'], [slot='text-body'] { display: block; }
+		[slot='title'] { margin: 5px 0; font-size: 18px; }
+		[slot='post-media-container'] { width: 100%; height: 180px; margin-top: 10px; background: #45515a; }
+		.panel { margin-bottom: 12px; padding: 12px; border: 1px solid currentColor; }
+	</style>
+</head>
+<body>
+<shreddit-app>
+	<reddit-header-large>
+		<header><a href="/">reddit</a><input aria-label="Search Reddit" placeholder="Search Reddit"><a href="/user/fixture-reader/">fixture-reader</a></header>
+	</reddit-header-large>
+	<div class="grid-container flex-nav-expanded">
+		<flex-left-nav-container id="left-sidebar-container"><nav><strong>Home</strong><p>Popular</p><p>Explore</p><p>Communities</p></nav></flex-left-nav-container>
+		<div id="subgrid-container">
+			<h1>r/example</h1>
+			<div class="main-container fixed-sidebar">
+				<main id="main-content">
+					<shreddit-feed>
+						<article>
+							<shreddit-post id="t3_fixture1" author="alice" subreddit-name="example" domain="example.org"
+								post-type="link" score="128" comment-count="24" permalink="/r/example/comments/fixture1/current_reddit_post/"
+								content-href="https://example.org/story?utm_source=reddit">
+								<template shadowrootmode="open">
+									<slot name="credit-bar"></slot><slot name="title"></slot><slot name="post-flair"></slot><slot name="post-media-container"></slot>
+									<div class="action-row"><button data-action-bar-action="upvote" aria-pressed="false">up</button><span>128</span><button data-action-bar-action="downvote" aria-pressed="false">down</button><a data-action-bar-action="comments" href="/r/example/comments/fixture1/current_reddit_post/">24 comments</a></div>
+								</template>
+								<a slot="full-post-link" href="/r/example/comments/fixture1/current_reddit_post/"></a>
+								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/alice/">alice</a> <time datetime="2026-08-19T12:00:00Z">2h ago</time></span>
+								<a slot="title" href="https://example.org/story?utm_source=reddit">A current Reddit post</a>
+								<shreddit-post-flair slot="post-flair">News</shreddit-post-flair>
+								<div slot="post-media-container"><span>media preview</span></div>
+							</shreddit-post>
+						</article>
+						<article data-promoted="true"><shreddit-ad-post><p>Sponsored fixture</p></shreddit-ad-post></article>
+						<article>
+							<shreddit-post id="t3_fixture2" author="bob" subreddit-name="example" domain="self.example"
+								post-type="text" score="31" comment-count="5" permalink="/r/example/comments/fixture2/text_post/"
+								content-href="https://www.reddit.com/r/example/comments/fixture2/text_post/">
+								<template shadowrootmode="open"><slot name="credit-bar"></slot><slot name="title"></slot><slot name="text-body"></slot><div class="action-row"><button data-action-bar-action="upvote" aria-pressed="false">up</button><a data-action-bar-action="comments" href="/r/example/comments/fixture2/text_post/">5 comments</a></div></template>
+								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/bob/">bob</a> <time datetime="2026-08-19T11:00:00Z">3h ago</time></span>
+								<a slot="title" href="/r/example/comments/fixture2/text_post/">A compact text post</a>
+								<shreddit-post-text-body slot="text-body">The listing preview should stay collapsed.</shreddit-post-text-body>
+							</shreddit-post>
+						</article>
+						<article>
+							<shreddit-post id="t3_fixture3" author="promoter" subreddit-name="example" domain="self.example"
+								post-type="text" score="1" comment-count="0" permalink="/r/example/comments/fixture3/promotional_post/"
+								content-href="https://www.reddit.com/r/example/comments/fixture3/promotional_post/">
+								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/promoter/">promoter</a></span>
+								<a slot="title" href="/r/example/comments/fixture3/promotional_post/">I built a promotional dashboard</a>
+							</shreddit-post>
+						</article>
+					</shreddit-feed>
+				</main>
+				<aside id="right-sidebar-container"><section class="panel"><strong>About community</strong><p>A deterministic current Reddit fixture.</p></section><section class="panel">Community options</section></aside>
+			</div>
+		</div>
+	</div>
+</shreddit-app>
+</body>
+</html>

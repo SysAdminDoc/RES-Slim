@@ -27,6 +27,8 @@ import { launchWithExtension, extensionUrl, assertBuilt, repoRoot, saveScreensho
 // two ever disagree about old.reddit's shape, one of them is measuring nothing.
 const CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'thread.html');
 const FRONT_CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'frontpage.html');
+const SHREDDIT_LISTING = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'listing.html');
+const SHREDDIT_THREAD = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html');
 
 function screenshotSlug(value) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -47,6 +49,177 @@ function servableCapture(capture = CAPTURE) {
 	assert.ok(!/<html[^>]*\bclass="[^"]*\bres\b/i.test(stripped), 'res classes must be stripped from the served capture');
 	return stripped;
 }
+
+function staticFixture(file) {
+	return fs.readFileSync(file, 'utf8');
+}
+
+test('current Reddit receives the old-style theme and RES Thing behaviour', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelectorAll('.res-slim-abs-ts').length >= 2, null, { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelector('#t3_fixture3')?.dataset.rsmFilterHit === 'i-built', null, { timeout: 30000 });
+
+	const state = await page.evaluate(() => {
+		const rootStyle = getComputedStyle(document.documentElement);
+		const header = document.querySelector('reddit-header-large');
+		const left = document.querySelector('#left-sidebar-container');
+		const main = document.querySelector('#main-content');
+		const first = document.querySelector('#t3_fixture1');
+		const media = first?.querySelector('[slot="post-media-container"]');
+		const text = document.querySelector('#t3_fixture2 [slot="text-body"]');
+		const filtered = document.querySelector('#t3_fixture3');
+		const ad = document.querySelector('shreddit-ad-post');
+		const outbound = document.querySelector('#t3_fixture1 [slot="title"]');
+		const upvote = first?.shadowRoot?.querySelector('[data-action-bar-action="upvote"]');
+		return {
+			classes: document.documentElement.className,
+			backgroundToken: rootStyle.getPropertyValue('--color-neutral-background').trim(),
+			headerHeight: header?.getBoundingClientRect().height,
+			leftDisplay: left ? getComputedStyle(left).display : null,
+			mainWidth: main?.getBoundingClientRect().width,
+			postHeight: first?.getBoundingClientRect().height,
+			mediaWidth: media?.getBoundingClientRect().width,
+			mediaHeight: media?.getBoundingClientRect().height,
+			textDisplay: text ? getComputedStyle(text).display : null,
+			filteredDisplay: filtered ? getComputedStyle(filtered).display : null,
+			adDisplay: ad ? getComputedStyle(ad).display : null,
+			outboundHref: outbound?.href,
+			adapter: first ? {
+				classes: first.className,
+				fullname: first.getAttribute('data-fullname'),
+				author: first.getAttribute('data-author'),
+				subreddit: first.getAttribute('data-subreddit'),
+				domain: first.getAttribute('data-domain'),
+				score: first.getAttribute('data-score'),
+			} : null,
+			shadowVote: upvote ? { action: upvote.getAttribute('data-action-bar-action'), pressed: upvote.getAttribute('aria-pressed') } : null,
+			absoluteTimes: document.querySelectorAll('.res-slim-abs-ts').length,
+		};
+	});
+
+	assert.match(state.classes, /\bres-pageTheme--refined\b/);
+	assert.equal(state.backgroundToken, '#0b0f14');
+	assert.equal(state.headerHeight, 44);
+	assert.equal(state.leftDisplay, 'none');
+	assert.ok(state.mainWidth > 800, `the feed should reclaim the left rail, saw ${state.mainWidth}px`);
+	assert.ok(state.postHeight <= 110, `listing rows should be compact, saw ${state.postHeight}px`);
+	assert.equal(state.mediaWidth, 96);
+	assert.equal(state.mediaHeight, 64);
+	assert.equal(state.textDisplay, 'none');
+	assert.equal(state.filteredDisplay, 'none', 'the existing filter builder should receive current Reddit Things');
+	assert.equal(state.adDisplay, 'none', 'current Reddit ad elements should be removed');
+	assert.equal(new URL(state.outboundHref).searchParams.has('utm_source'), false, 'outbound cleansing should still run');
+	assert.match(state.adapter.classes, /\bthing\b/);
+	assert.match(state.adapter.classes, /\blink\b/);
+	assert.match(state.adapter.classes, /\bres-selected\b/, 'selected-entry navigation should receive current Reddit Things');
+	assert.deepEqual({ ...state.adapter, classes: undefined }, {
+		classes: undefined,
+		fullname: 't3_fixture1',
+		author: 'alice',
+		subreddit: 'example',
+		domain: 'example.org',
+		score: '128',
+	});
+	assert.deepEqual(state.shadowVote, { action: 'upvote', pressed: 'false' });
+	assert.ok(state.absoluteTimes >= 2);
+
+	const urlChanges = await page.evaluate(async () => {
+		let changes = 0;
+		document.addEventListener('reddit.urlChanged', () => { changes += 1; });
+		history.pushState({}, '', '/r/example/comments/dynamic1/dynamic_post/');
+		const post = document.createElement('shreddit-post');
+		post.id = 't3_dynamic1';
+		post.setAttribute('author', 'dynamic-user');
+		post.setAttribute('subreddit-name', 'example');
+		post.setAttribute('domain', 'self.example');
+		post.setAttribute('post-type', 'text');
+		post.innerHTML = '<a slot="title" href="/r/example/comments/dynamic1/dynamic_post/">A streamed post</a>';
+		document.querySelector('shreddit-feed').append(post);
+		await new Promise(resolve => setTimeout(resolve, 50));
+		return { changes, compat: post.hasAttribute('data-res-shreddit-compat'), fullname: post.getAttribute('data-fullname') };
+	});
+	assert.deepEqual(urlChanges, { changes: 1, compat: true, fullname: 't3_dynamic1' });
+	assert.deepEqual(pageErrors, [], 'current Reddit listing must initialise without uncaught errors');
+
+	const dir = saveScreenshotDir();
+	await page.screenshot({ path: path.join(dir, 'shreddit-listing.png'), fullPage: false });
+});
+
+test('current Reddit comments keep full posts, nesting, and native collapse', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_THREAD) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('shreddit-comment[data-res-shreddit-compat]', { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length === 2, null, { timeout: 30000 });
+
+	const state = await page.evaluate(() => {
+		const post = document.querySelector('shreddit-post');
+		const title = post?.querySelector('[slot="title"]');
+		const body = post?.querySelector('[slot="text-body"]');
+		const top = document.querySelector('shreddit-comment[depth="0"]');
+		const nested = document.querySelector('shreddit-comment[depth="1"]');
+		const nestedAuthor = nested?.querySelector('a.author');
+		return {
+			postTitleSize: title ? getComputedStyle(title).fontSize : null,
+			postBodyDisplay: body ? getComputedStyle(body).display : null,
+			postBodyBackground: body ? getComputedStyle(body).backgroundColor : null,
+			commentCount: document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length,
+			topBackground: top ? getComputedStyle(top).backgroundColor : null,
+			topBorderWidth: top ? getComputedStyle(top).borderTopWidth : null,
+			nestedBorderWidth: nested ? getComputedStyle(nested).borderLeftWidth : null,
+			nestedAuthorClasses: nestedAuthor?.className || '',
+			topFullname: top?.getAttribute('data-fullname'),
+			topAuthor: top?.getAttribute('data-author'),
+		};
+	});
+
+	assert.equal(state.postTitleSize, '20px');
+	assert.notEqual(state.postBodyDisplay, 'none');
+	assert.notEqual(state.postBodyBackground, 'rgba(0, 0, 0, 0)');
+	assert.equal(state.commentCount, 2);
+	assert.notEqual(state.topBackground, 'rgba(0, 0, 0, 0)');
+	assert.equal(state.topBorderWidth, '1px');
+	assert.equal(state.nestedBorderWidth, '2px');
+	assert.match(state.nestedAuthorClasses, /\bsubmitter\b/);
+	assert.equal(state.topFullname, 't1_comment1');
+	assert.equal(state.topAuthor, 'carol');
+
+	const dir = saveScreenshotDir();
+	await page.screenshot({ path: path.join(dir, 'shreddit-thread.png'), fullPage: false });
+
+	await page.locator('shreddit-comment[depth="0"] > details > summary').click();
+	await page.waitForFunction(() => document.querySelector('shreddit-comment[depth="0"]')?.classList.contains('collapsed'), null, { timeout: 10000 });
+	assert.equal(await page.locator('shreddit-comment[depth="0"] > details').getAttribute('open'), null);
+	assert.deepEqual(pageErrors, [], 'current Reddit thread must initialise without uncaught errors');
+
+});
 
 test('the built extension loads and its service worker registers', async t => {
 	const manifest = assertBuilt();
@@ -245,9 +418,9 @@ test('the settings console renders in the options page', async t => {
 				advancedTop: document.querySelector('.utilityPanel--advanced').getBoundingClientRect().top,
 				viewportHeight: window.innerHeight,
 			}));
-			assert.equal(consoleLayout.moduleDisplay, 'none', 'Console preferences should not retain an empty module rail'); // eslint-disable-line no-await-in-loop
-			assert.ok(Math.abs(consoleLayout.primaryRight - consoleLayout.prefsLeft) <= 1, 'Console preferences should begin where the primary rail ends'); // eslint-disable-line no-await-in-loop
-			assert.ok(consoleLayout.advancedTop < consoleLayout.viewportHeight, 'Console preferences should expose Advanced options without an initial scroll'); // eslint-disable-line no-await-in-loop
+			assert.equal(consoleLayout.moduleDisplay, 'none', 'Console preferences should not retain an empty module rail');
+			assert.ok(Math.abs(consoleLayout.primaryRight - consoleLayout.prefsLeft) <= 1, 'Console preferences should begin where the primary rail ends');
+			assert.ok(consoleLayout.advancedTop < consoleLayout.viewportHeight, 'Console preferences should expose Advanced options without an initial scroll');
 		}
 
 		await page.screenshot({ path: path.join(pageDir, `${screenshotSlug(label)}.png`), fullPage: false, animations: 'disabled' }); // eslint-disable-line no-await-in-loop

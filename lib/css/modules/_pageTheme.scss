@@ -306,6 +306,350 @@ html.res-pageTheme--collapse-sidebar .side:hover {
 	}
 }
 
+// ---- Current Reddit (Web3X / Shreddit) -----------------------------------
+// The native token map reaches controls inside Shreddit's shadow roots.
+// Shreddit exposes a large inherited token surface and keeps post/comment
+// content in light-DOM slots. Mapping the tokens preserves native behaviour
+// inside its open shadow roots; the structural rules below then restore the
+// dense header/feed/sidebar hierarchy familiar from old Reddit.
+
+html.res-pageTheme:has(shreddit-app) {
+	--color-neutral-background: var(--rsm-th-bg);
+	--color-neutral-background-hover: var(--rsm-th-bg-raise);
+	--color-neutral-background-selected: var(--rsm-th-bg-raise);
+	--color-neutral-background-strong: var(--rsm-th-bg-raise);
+	--color-neutral-background-weak: var(--rsm-th-bg);
+	--color-neutral-content: var(--rsm-th-txt);
+	--color-neutral-content-strong: var(--rsm-th-txt-strong);
+	--color-neutral-content-weak: var(--rsm-th-muted);
+	--color-neutral-border: var(--rsm-th-control-border);
+	--color-neutral-border-strong: var(--rsm-th-control-border);
+	--color-neutral-border-weak: var(--rsm-th-border);
+	--color-primary: var(--rsm-th-accent-ui);
+	--color-primary-background: var(--rsm-th-accent-ui);
+	--color-primary-background-hover: var(--rsm-th-accent-text);
+	--color-primary-content: var(--rsm-th-bg);
+	--color-secondary-background: var(--rsm-th-bg-raise);
+	--color-secondary-background-hover: color-mix(in srgb, var(--rsm-th-accent) 14%, var(--rsm-th-bg-raise));
+	--color-secondary-content: var(--rsm-th-txt-strong);
+	--shreddit-content-background: var(--rsm-th-bg-elev);
+	--shreddit-header-height: 44px;
+	--page-y-padding: 44px;
+
+	color-scheme: dark;
+}
+
+html.res-pageTheme shreddit-app,
+html.res-pageTheme reddit-header-large,
+html.res-pageTheme reddit-header-large > header,
+html.res-pageTheme #left-sidebar-container,
+html.res-pageTheme #right-sidebar-container,
+html.res-pageTheme #subgrid-container,
+html.res-pageTheme #main-content {
+	background: var(--rsm-th-bg) !important;
+	color: var(--rsm-th-txt) !important;
+}
+
+html.res-pageTheme reddit-header-large {
+	height: 44px;
+	border-bottom: 1px solid var(--rsm-th-border);
+	box-shadow: 0 5px 18px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme reddit-header-large > header {
+	min-height: 44px;
+	height: 44px;
+	padding-block: 0;
+}
+
+html.res-pageTheme shreddit-app a {
+	color: var(--rsm-th-link);
+}
+
+html.res-pageTheme shreddit-app input,
+html.res-pageTheme shreddit-app textarea,
+html.res-pageTheme shreddit-app select {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: var(--rsm-th-control-border) !important;
+	color: var(--rsm-th-txt-strong) !important;
+}
+
+html.res-pageTheme--declutter shreddit-ad-post,
+html.res-pageTheme--declutter shreddit-comments-page-ad,
+html.res-pageTheme--declutter shreddit-comment-tree-ad,
+html.res-pageTheme--declutter shreddit-sidebar-ad,
+html.res-pageTheme--declutter [data-promoted='true'],
+html.res-pageTheme--declutter article:has(shreddit-ad-post),
+html.res-pageTheme--declutter faceplate-tracker[source='ad'] {
+	display: none !important;
+}
+
+html.res-pageTheme--refined:has(shreddit-app) {
+	scroll-padding-block-start: 52px;
+}
+
+// Old Reddit has one content rail and one information rail. The permanent
+// navigation rail is the largest source of lost horizontal space in Web3X.
+html.res-pageTheme--refined #left-sidebar-container {
+	display: none !important;
+}
+
+html.res-pageTheme--refined shreddit-app > .grid-container {
+	display: block !important;
+}
+
+html.res-pageTheme--refined #subgrid-container {
+	box-sizing: border-box;
+	width: min(100%, 1320px) !important;
+	max-width: none !important;
+	margin-inline: auto !important;
+	padding-inline: 12px !important;
+}
+
+html.res-pageTheme--refined #subgrid-container > .main-container {
+	display: grid !important;
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 316px) !important;
+	gap: 12px !important;
+	width: 100%;
+}
+
+html.res-pageTheme--refined #main-content {
+	min-width: 0;
+}
+
+html.res-pageTheme--refined #right-sidebar-container {
+	box-sizing: border-box;
+	width: 316px !important;
+	max-width: 316px !important;
+	padding-left: 10px;
+	border-left: 1px solid var(--rsm-th-border);
+	scrollbar-color: var(--rsm-th-border) var(--rsm-th-bg);
+}
+
+html.res-pageTheme--refined shreddit-feed {
+	display: block;
+	border: 1px solid var(--rsm-th-border);
+	background: var(--rsm-th-bg-elev);
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined shreddit-feed > article {
+	margin: 0 !important;
+	border-bottom: 1px solid var(--rsm-th-border);
+}
+
+html.res-pageTheme--refined shreddit-feed > article:last-child {
+	border-bottom: 0;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) {
+	position: relative;
+	box-sizing: border-box;
+	min-height: 76px;
+	margin: 0 !important;
+	padding: 7px 116px 5px 10px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 0 !important;
+	border-radius: 0;
+	box-shadow: none;
+	transition: background-color 120ms ease;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']):hover,
+html.res-pageTheme--refined shreddit-feed shreddit-post.res-selected:not([view-context='CommentsPage']) {
+	background: var(--rsm-th-bg-raise) !important;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post [slot='credit-bar'] {
+	min-height: 20px !important;
+	margin: 0 0 1px !important;
+	color: var(--rsm-th-muted) !important;
+	font-size: 11px !important;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post [slot='title'] {
+	color: var(--rsm-th-link) !important;
+	font-size: 14px !important;
+	font-weight: 600 !important;
+	line-height: 1.35 !important;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post [slot='title']:visited {
+	color: var(--rsm-th-accent-text) !important;
+}
+
+// A listing row behaves like old Reddit: prose stays collapsed and media is a
+// thumbnail-sized preview. Opened posts keep their full body and media below.
+html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='text-body'] {
+	display: none !important;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'] {
+	position: absolute !important;
+	top: 6px;
+	right: 8px;
+	width: 96px !important;
+	height: 64px !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	overflow: hidden !important;
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 4px;
+}
+
+html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'] :where(img, video, shreddit-player) {
+	width: 100% !important;
+	height: 100% !important;
+	object-fit: cover !important;
+}
+
+html.res-pageTheme--rounded shreddit-feed,
+html.res-pageTheme--rounded shreddit-post[view-context='CommentsPage'],
+html.res-pageTheme--rounded shreddit-comment[depth='0'],
+html.res-pageTheme--rounded #right-sidebar-container > * {
+	border-radius: 8px;
+}
+
+html.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] {
+	box-sizing: border-box;
+	margin: 0 0 12px !important;
+	padding: 12px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	box-shadow: 0 8px 24px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='title'] {
+	color: var(--rsm-th-txt-strong) !important;
+	font-size: 20px !important;
+	line-height: 1.35 !important;
+}
+
+html.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='text-body'] {
+	max-width: 92ch;
+	margin-top: 10px;
+	padding: 12px 14px;
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-border);
+	border-radius: 8px;
+	color: var(--rsm-th-txt-strong) !important;
+	line-height: 1.62;
+}
+
+html.res-pageTheme--refined shreddit-comment {
+	display: block;
+	box-sizing: border-box;
+	margin: 5px 0 0 14px !important;
+	padding: 0 8px 6px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-left: 2px solid color-mix(in srgb, var(--rsm-th-accent) 34%, var(--rsm-th-border)) !important;
+	box-shadow: none;
+}
+
+html.res-pageTheme--refined shreddit-comment[depth='0'] {
+	margin: 8px 0 !important;
+	padding: 4px 10px 8px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	box-shadow: 0 5px 16px var(--rsm-th-shadow);
+}
+
+html.res-pageTheme--refined shreddit-comment > details {
+	background: transparent !important;
+}
+
+html.res-pageTheme--refined shreddit-comment > details > summary {
+	min-height: 30px;
+	color: var(--rsm-th-muted);
+	cursor: pointer;
+}
+
+html.res-pageTheme--refined shreddit-comment [slot='commentAvatar'] {
+	display: none !important;
+}
+
+html.res-pageTheme--refined shreddit-comment [slot='commentMeta'] {
+	color: var(--rsm-th-muted) !important;
+	font-size: 11px !important;
+}
+
+html.res-pageTheme--refined shreddit-comment [slot='comment'] {
+	max-width: 88ch;
+	padding: 2px 6px 4px;
+	background: transparent !important;
+	color: var(--rsm-th-txt) !important;
+	font-size: 14px;
+	line-height: 1.58;
+}
+
+html.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
+	min-height: 28px;
+	color: var(--rsm-th-muted) !important;
+}
+
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar #subgrid-container > .main-container {
+	grid-template-columns: minmax(0, 1fr) 42px !important;
+}
+
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar #right-sidebar-container {
+	position: sticky;
+	top: 54px;
+	z-index: $zindex-page-furniture;
+	width: 38px !important;
+	height: 38px;
+	padding: 0;
+	overflow: hidden;
+	opacity: 0.72;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border);
+	transition: width 150ms ease, opacity 150ms ease;
+}
+
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar #right-sidebar-container:hover,
+html.res-pageTheme--refined.res-pageTheme--collapse-sidebar #right-sidebar-container:focus-within {
+	position: fixed;
+	top: 54px;
+	right: 10px;
+	width: 316px !important;
+	height: calc(100vh - 64px);
+	padding-left: 10px;
+	overflow: auto;
+	opacity: 1;
+}
+
+@media (width <= 960px) {
+	html.res-pageTheme--refined #subgrid-container > .main-container {
+		grid-template-columns: minmax(0, 1fr) !important;
+	}
+
+	html.res-pageTheme--refined #right-sidebar-container {
+		display: none !important;
+	}
+}
+
+@media (width <= 640px) {
+	html.res-pageTheme--refined #subgrid-container {
+		padding-inline: 0 !important;
+	}
+
+	html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) {
+		padding-right: 10px !important;
+	}
+
+	html.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'] {
+		display: none !important;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html.res-pageTheme--refined shreddit-feed shreddit-post,
+	html.res-pageTheme--refined.res-pageTheme--collapse-sidebar #right-sidebar-container {
+		transition: none;
+	}
+}
+
 // ---- Optional: refined desktop layout ------------------------------------
 
 html.res-pageTheme--refined {

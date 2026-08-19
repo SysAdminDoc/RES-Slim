@@ -192,6 +192,34 @@ const DELIBERATELY_UNREFERENCED = new Map([
 	['--options-shadow', 'pairs with --options-shadow-soft; both are zeroed under forced colours'],
 ]);
 
+// These names belong to Reddit's Web3X design system. RES-Slim defines them on
+// <html> so native components, including controls inside shadow roots, inherit
+// the selected palette. They are intentionally consumed by Reddit rather than
+// referenced by another declaration in this repository.
+const SHREDDIT_INHERITED_TOKENS = new Set([
+	'--color-neutral-background',
+	'--color-neutral-background-hover',
+	'--color-neutral-background-selected',
+	'--color-neutral-background-strong',
+	'--color-neutral-background-weak',
+	'--color-neutral-border',
+	'--color-neutral-border-strong',
+	'--color-neutral-border-weak',
+	'--color-neutral-content',
+	'--color-neutral-content-strong',
+	'--color-neutral-content-weak',
+	'--color-primary',
+	'--color-primary-background',
+	'--color-primary-background-hover',
+	'--color-primary-content',
+	'--color-secondary-background',
+	'--color-secondary-background-hover',
+	'--color-secondary-content',
+	'--page-y-padding',
+	'--shreddit-content-background',
+	'--shreddit-header-height',
+]);
+
 test('every defined token is referenced, or is a listed member of a live set', () => {
 	// The other direction, which the one-way scan could never see. A token nothing
 	// reads is not inert: it is a name the next reader assumes is load-bearing, and
@@ -208,6 +236,7 @@ test('every defined token is referenced, or is a listed member of a live set', (
 	const unused = [...defined].filter(([name]) => !referenced.has(name));
 	const unlisted = unused
 		.filter(([name]) => !DELIBERATELY_UNREFERENCED.has(name))
+		.filter(([name]) => !SHREDDIT_INHERITED_TOKENS.has(name))
 		.map(([name, file]) => `${name} (defined in ${file})`);
 	assert.deepEqual(unlisted.sort(), [],
 		`tokens nothing reads, and nothing explains:\n  ${unlisted.join('\n  ')}`);
@@ -219,6 +248,8 @@ test('every defined token is referenced, or is a listed member of a live set', (
 			`${name} is referenced now — drop it from the list` :
 			`${name} no longer exists — drop it from the list`);
 	assert.deepEqual(stale, [], `the deliberately-unreferenced list has drifted:\n  ${stale.join('\n  ')}`);
+	const staleShreddit = [...SHREDDIT_INHERITED_TOKENS].filter(name => !unusedNames.has(name));
+	assert.deepEqual(staleShreddit, [], `the inherited Shreddit token list has drifted:\n  ${staleShreddit.join('\n  ')}`);
 
 	// A ceiling, so the list cannot absorb a growing pile one entry at a time.
 	assert.ok(DELIBERATELY_UNREFERENCED.size <= 12,

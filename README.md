@@ -1,8 +1,8 @@
 # RES-Slim
 
-![Version](https://img.shields.io/badge/version-0.41.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
+![Version](https://img.shields.io/badge/version-0.42.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
 
-A stripped-down personal fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (forked from upstream v5.24.8), targeting **old.reddit.com** on desktop. Built for one person's use and published as-is — there is no support commitment and no release cadence.
+A stripped-down personal fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (forked from upstream v5.24.8), targeting **old.reddit.com and current Reddit** on desktop. Built for one person's use and published as-is — there is no support commitment and no release cadence.
 
 Only the features actually used are kept. Upstream self-promotion, sponsorship, announcements, and cloud-backup code have been removed.
 
@@ -12,7 +12,9 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Media tweaks**: `showImages` inline expando engine plus all 73 host handlers (imgur, youtube, reddit-native, Mastodon, Threads, etc.).
 
-**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, a focused combined-search workspace, consistent controls, visible keyboard focus, and a debloated sidebar. Open posts gain article-scale titles, wider text and centred media; discussions gain a structured sort toolbar, full-width composer, clearer author/depth states, and polished community and moderator cards. Search uses a centered desktop measure, aligned query and result cards, themed excerpts and highlights, and deliberate empty states. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
+**Appearance**: `pageTheme` — an enabled-by-default Graphite skin that keeps old Reddit's desktop density while adding a compact sticky header, clearer feed cards, calmer metadata, readable discussion surfaces, a focused combined-search workspace, consistent controls, visible keyboard focus, and a debloated sidebar. On current Reddit it maps the same theme palettes into Reddit's inherited design tokens, hides the left navigation, reclaims the feed width, compacts listings into old-Reddit-style rows, keeps the community rail useful, and restores full post and comment bodies in discussions. Open posts gain article-scale titles, wider text and centred media; discussions gain a structured sort toolbar, full-width composer, clearer author/depth states, and polished community and moderator cards. Search uses a centered desktop measure, aligned query and result cards, themed excerpts and highlights, and deliberate empty states. The refined layout is independently reversible, and ten dark palettes, custom accent colour, rounded corners, decluttering, and collapse-to-hover sidebar controls remain available. The settings console has its own themes, including the light Paper theme.
+
+**Current Reddit compatibility (v0.42.0)**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features now work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and vote controls exposed inside open shadow roots.
 
 **Browsing**: `hideAll` — a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
@@ -71,11 +73,13 @@ git config core.hooksPath .githooks
 `dist/chrome/` loaded and checks that the service worker is alive, the packaged
 ad rules block a real browser request, all settings states render, promoted
 records stay hidden across asynchronous insertion, and the content script
-initialises on a served old.reddit document. It also checks the default refined
-Graphite layout, keyboard focus treatment, feed hierarchy, opened-post and
-media geometry, the discussion composer and sort toolbar, and nested-comment
-surfaces. It needs no physical display, no existing browser profile, and no
-network: every request is either served from a local fixture or intercepted, and
+initialises on served old-Reddit and current-Reddit documents. It also checks the
+default refined Graphite layout, keyboard focus treatment, feed hierarchy,
+opened-post and media geometry, the discussion composer and sort toolbar,
+nested-comment surfaces, Shreddit semantic adaptation, SPA navigation, streamed
+posts, native comment collapse, and open-shadow-root vote controls. It needs no
+physical display, no existing browser profile, and no network: every request is
+either served from a local fixture or intercepted, and
 the browser is launched with DNS for everything but localhost pointed at a dead
 address so that stays true. Screenshots land in `tests/e2e/screenshots/`. Set
 `RES_E2E_HEADED=1` to watch it run.

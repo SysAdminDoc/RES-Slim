@@ -61,6 +61,7 @@ test('pageTheme module is registered, enabled by default, and reversible', () =>
 	// out. `page-theme-accent-contract` owns that behaviour; this only pins that
 	// the module still writes the property at all.
 	assert.match(mod, /el\.style\.setProperty\('--rsm-th-accent', roles\.accent\)/);
+	assert.match(mod, /module\.include = \['r2', 'd2x'\]/);
 
 	const index = read('lib/modules/index.js');
 	assert.match(index, /import \{ module as pageTheme \} from '\.\/pageTheme';/);
@@ -95,5 +96,8 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /\.search-expando\.collapsed::before/);
 	assert.match(scss, /body\.combined-search-page \.search-result-group footer \.info/);
 	assert.match(scss, /:focus-visible/);
+	assert.match(scss, /html\.res-pageTheme:has\(shreddit-app\)/);
+	assert.match(scss, /shreddit-feed shreddit-post/);
+	assert.match(scss, /shreddit-comment\[depth='0'\]/);
 	assert.match(read('lib/css/res.scss'), /@import 'modules\/pageTheme';/);
 });
