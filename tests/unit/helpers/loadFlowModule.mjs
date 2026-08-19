@@ -10,7 +10,7 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import flowRemoveTypes from 'flow-remove-types';
 
-const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
+export const repoRoot = path.resolve(import.meta.dirname, '..', '..', '..');
 
 export function readRepoFile(relativePath) {
 	return fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');

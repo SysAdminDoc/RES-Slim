@@ -23,6 +23,25 @@ All notable changes to RES-Slim will be documented in this file.
   `XMLHttpRequest` and fails if any of them is still the browser's original. It
   was checked by putting the old inline injection back, which fails it.
 
+- Shared post links now count as post pages. Current Reddit's `/r/sub/s/xxxxx`
+  links are what the share button gives you, and the extension worked out what
+  kind of page it was on by matching the address against a list of patterns
+  written for old Reddit. That list has no pattern for share links, so they came
+  out as a listing and every comment-related feature sat them out. Current Reddit
+  states the page type in the markup, and that is read first now, with the old
+  pattern matching kept as a fallback for anything unrecognised.
+
+- Two features returned to current Reddit's profile pages. Comment shredder and
+  spoiler tags both said they ran on profiles, and both were absent there,
+  because the two renderers had different names for the same page. The patterns
+  behind those two names were identical character for character, and nothing
+  used the second one, so it is gone. A test now fails if two page names ever
+  describe the same address again.
+
+- The search filter's old-Reddit restriction works. It listed the renderer
+  alongside the page type, and those two are combined with "or", so the
+  restriction admitted everything it was meant to exclude.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then
