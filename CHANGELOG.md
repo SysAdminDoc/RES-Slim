@@ -21,6 +21,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- The Firefox build is now verified in a real Firefox rather than on manifest
+  checks alone. `yarn firefox:audit` installs the built MV2 add-on into a fresh
+  headless profile and drives it: the content script runs on a reddit page, the
+  settings console boots, and the telemetry blocker's page-world patch is
+  delivered. All eight checks pass on Firefox 153. This was blocked for a year
+  because no tool could load a Firefox extension; WebDriver BiDi and Puppeteer
+  can now.
+
 - Both browser manifests are generated from one source. They were maintained by
   hand, and this repo has already lost a build target to that: a third manifest
   drifted until it carried permissions the shipped ones never had, and was

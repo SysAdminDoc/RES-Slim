@@ -46,6 +46,12 @@ const NON_GATE_SCRIPTS = new Set([
 	// same thing from inside the `test` gate, and a second gate running the same
 	// comparison buys nothing but a slower push.
 	'manifest', 'manifest:check',
+	// Drives the built MV2 add-on in a real Firefox over WebDriver BiDi. Needs a
+	// system Firefox the repo does not install, and a gate that cannot run on a
+	// clean checkout is a gate that gets skipped rather than fixed. Operator-run
+	// before a release, or after anything touching the manifest or the page-world
+	// injection.
+	'firefox:audit',
 ]);
 
 function declaredGates() {
