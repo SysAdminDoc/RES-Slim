@@ -1,7 +1,7 @@
 {
 	"chrome": {
-		"foreground.entry.js": 723470,
-		"options.entry.js": 794300,
+		"foreground.entry.js": 723471,
+		"options.entry.js": 794301,
 		"background.entry.js": 90485,
 		"res.css": 329362,
 		"options.css": 81024,
@@ -9,8 +9,8 @@
 		"jszip.min.js": 97630
 	},
 	"firefox": {
-		"foreground.entry.js": 723593,
-		"options.entry.js": 794423,
+		"foreground.entry.js": 723594,
+		"options.entry.js": 794424,
 		"background.entry.js": 90530,
 		"res.css": 329362,
 		"options.css": 81024,
