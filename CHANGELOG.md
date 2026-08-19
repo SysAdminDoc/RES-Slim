@@ -19,6 +19,16 @@ All notable changes to RES-Slim will be documented in this file.
   a reddit page to include them. Opened as its own tab, the report says the
   timings are unavailable rather than showing an empty heading.
 
+### Changed
+
+- Both browser manifests are generated from one source. They were maintained by
+  hand, and this repo has already lost a build target to that: a third manifest
+  drifted until it carried permissions the shipped ones never had, and was
+  deleted rather than repaired. Everything the two targets share is now written
+  once, and each MV2 against MV3 difference is recorded with the reason it
+  exists. Run `yarn manifest` after changing anything in `manifest.config.js`; a
+  contract fails if you forget.
+
 ### Fixed
 
 - The expando resize handle can be used from the keyboard. It bound a pointer

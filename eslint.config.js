@@ -465,7 +465,7 @@ export default [
 		//     what this code is allowed to use.
 		//   * `import-x/dynamic-import-chunkname` — there is no bundler here to name
 		//     a chunk for.
-		files: ['tests/**', 'scripts/**', 'build.js', 'eslint.config.js', 'eslint-rules/**', '*.mjs'],
+		files: ['tests/**', 'scripts/**', 'build.js', 'manifest.config.js', 'eslint.config.js', 'eslint-rules/**', '*.mjs'],
 		languageOptions: {
 			globals: { ...globals.node },
 		},

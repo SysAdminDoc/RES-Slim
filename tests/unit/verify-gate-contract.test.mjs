@@ -40,6 +40,12 @@ const NON_GATE_SCRIPTS = new Set([
 	// Writes a version, a commit and a tag. Deliberately operator-run: a gate
 	// must be safe to run on every push, and this is not.
 	'release',
+	// Rewrites the two shipped manifests from `manifest.config.js`, so it is a
+	// writer like `lint:baseline`, not a check. Its `--check` twin is here rather
+	// than in the gate list because `manifest-generation-contract` asserts the
+	// same thing from inside the `test` gate, and a second gate running the same
+	// comparison buys nothing but a slower push.
+	'manifest', 'manifest:check',
 ]);
 
 function declaredGates() {

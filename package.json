@@ -35,6 +35,8 @@
 		"verify": "node scripts/verify.mjs",
 		"bundle:baseline": "node build.js --mode production --browsers chrome,firefox --update-bundle-baseline",
 		"fixture:import": "node scripts/import-old-reddit-fixture.mjs",
+		"manifest": "node scripts/generate-manifests.mjs",
+		"manifest:check": "node scripts/generate-manifests.mjs --check",
 		"release": "node scripts/release.mjs"
 	},
 	"browserslist": [
