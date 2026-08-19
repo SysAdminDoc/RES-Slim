@@ -51,6 +51,8 @@ yarn test       # focused fixture checks
 yarn test:show-images
 yarn test:privacy
 yarn test:e2e   # loads the built extension in Chromium (headless) and drives it
+yarn firefox:audit  # loads the built MV2 add-on in a real Firefox and drives it
+yarn manifest   # regenerate both manifests from manifest.config.js
 yarn once       # dev build -> dist/
 yarn build      # production build + zip -> dist/zip/
 ```
@@ -91,6 +93,19 @@ either served from a local fixture or intercepted, and
 the browser is launched with DNS for everything but localhost pointed at a dead
 address so that stays true. Screenshots land in `tests/e2e/screenshots/`. Set
 `RES_E2E_HEADED=1` to watch it run.
+
+`yarn firefox:audit` is the Firefox half, and it is not part of `yarn verify`
+because it needs a Firefox installed on the machine. It installs the built
+`dist/firefox/` add-on into a fresh headless profile over WebDriver BiDi, then
+checks that the content script runs on a served reddit page, that the settings
+console boots, and that the telemetry patch reaches the page world on MV2 as
+well as MV3. Set `FIREFOX_PATH` if yours is somewhere unusual, and pass
+`--headful` to watch it.
+
+Both browser manifests come from `manifest.config.js`. Everything the two
+targets share is written once, each MV2 against MV3 difference is recorded with
+the reason for it, and a contract fails if the committed files stop matching.
+Run `yarn manifest` after changing anything there.
 
 ### Refresh old Reddit fixtures
 
