@@ -2530,6 +2530,7 @@ const CONTROL_HEAVY_MODULES = {
 	commentShredder: true, arcticShift: true, codeBlockCopy: true, searchGallery: true,
 	cobaltDownloader: true, editedCommentDiff: true, crosspostMap: true,
 	authorContextBadge: true, perSubSort: true, repostDedupe: true, topCommentsPreview: true,
+	dragResize: true,
 };
 
 async function openControlHeavyThread(context, worker) {
@@ -2567,7 +2568,11 @@ test('every injected control meets the WCAG 2.2 target size', async t => {
 
 	const report = await page.evaluate(() => {
 		const isOurs = el => /(^|\s)(rsm-|RES)/.test(`${el.className || ''} `) || /^(rsm-|RES)/.test(el.id || '');
-		const ours = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="button"]')].filter(isOurs);
+		// `[tabindex]` and `[role="separator"]` as well as the element types: the
+		// resize grip is a focusable `div` with a separator role, and a sweep that
+		// only knows about buttons and links reports a clean pass on a control it
+		// never looked at.
+		const ours = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="button"], [role="separator"], [tabindex]:not([tabindex="-1"])')].filter(isOurs);
 
 		const failures = [];
 		for (const el of ours) {
@@ -2600,6 +2605,65 @@ test('every injected control meets the WCAG 2.2 target size', async t => {
 		`injected controls under the 24x24 target:\n  ${report.failures.join('\n  ')}`);
 });
 
+test('the resize handle works from the keyboard, not only from a drag', async t => {
+	// WCAG 2.2 SC 2.5.7 Dragging Movements. The handle bound `pointerdown` and
+	// nothing else, on a `div` with no tabindex, so this feature was not merely
+	// awkward without a mouse - it was unreachable. The unit contract covers the
+	// arithmetic. Only a browser can say whether a Tab reaches the element and a
+	// keystroke gets to the listener.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+	const page = await openControlHeavyThread(context, worker);
+
+	const handle = page.locator('.rsm-dragResize-handle').first();
+	await handle.waitFor({ state: 'attached', timeout: 30000 });
+
+	const measure = () => page.evaluate(() => {
+		const grip = document.querySelector('.rsm-dragResize-handle');
+		const media = grip && grip.parentElement && grip.parentElement.querySelector('img, video, iframe');
+		return {
+			focused: document.activeElement === grip,
+			width: media ? Math.round(media.getBoundingClientRect().width) : null,
+			height: media ? Math.round(media.getBoundingClientRect().height) : null,
+			valuenow: grip && grip.getAttribute('aria-valuenow'),
+			role: grip && grip.getAttribute('role'),
+			tabindex: grip && grip.getAttribute('tabindex'),
+		};
+	});
+
+	await handle.focus();
+	const before = await measure();
+	assert.equal(before.focused, true, 'the grip must be focusable, or the keyboard path leads nowhere');
+	assert.equal(before.role, 'separator');
+	assert.equal(before.tabindex, '0');
+	assert.ok(before.width > 0, 'the probe needs a sized media element');
+	assert.equal(before.valuenow, String(before.width), 'a focusable separator has to report where it is');
+
+	await page.keyboard.press('ArrowRight');
+	const wider = await measure();
+	assert.ok(wider.width > before.width, `ArrowRight should grow the media, ${before.width} -> ${wider.width}`);
+	assert.equal(wider.valuenow, String(wider.width), 'and the reported value has to follow');
+
+	await page.keyboard.press('ArrowLeft');
+	const back = await measure();
+	assert.equal(back.width, before.width, 'ArrowLeft should undo exactly one step');
+
+	// Holding an arrow down to cross a 160..1600 range is its own barrier.
+	await page.keyboard.press('End');
+	const maxed = await measure();
+	assert.ok(maxed.width > wider.width, 'End should reach the upper limit in one keystroke');
+
+	await page.keyboard.press('Home');
+	const minimal = await measure();
+	assert.ok(minimal.width < before.width, 'and Home the lower one');
+
+	// Tab must still move on. A widget that swallows Tab traps the user on it,
+	// which trades one 2.1.1 failure for a worse one.
+	await handle.focus();
+	await page.keyboard.press('Tab');
+	assert.equal((await measure()).focused, false, 'Tab must leave the grip');
+});
+
 test('focus is never obscured by refined navigation', async t => {
 	// 2.4.11 Focus Not Obscured (Minimum), AA — and the offending element is this
 	// fork's own: the compact sticky header v0.32.0 introduced. Measured on this
@@ -2615,7 +2679,7 @@ test('focus is never obscured by refined navigation', async t => {
 	const result = await page.evaluate(() => {
 		const header = document.querySelector('#header');
 		if (getComputedStyle(header).position !== 'sticky') return { skipped: 'header is not sticky' };
-		const focusables = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select')]
+		const focusables = [...document.querySelectorAll('a[href], button, input:not([type="hidden"]), select, [role="separator"], [tabindex]:not([tabindex="-1"])')]
 			// Nothing inside the header can be obscured *by* the header.
 			.filter(el => !header.contains(el) && el.getBoundingClientRect().width > 0);
 

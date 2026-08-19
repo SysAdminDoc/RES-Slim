@@ -21,6 +21,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The expando resize handle can be used from the keyboard. It bound a pointer
+  drag and nothing else, on an element with no tab stop, so without a mouse the
+  feature was not awkward, it was unreachable. Tab to the grip and the arrow keys
+  resize the media a step at a time, Shift takes a larger step, and Home and End
+  go straight to the limits. It reports its width to a screen reader as it moves,
+  and its hit area now meets the 24 by 24 pixel minimum without the grip itself
+  growing.
+
 - Four states that vanished in Windows High Contrast. A spam comment, a spoiler
   thumbnail, an over-18 thumbnail and a storage row whose purge button is armed
   were each marked by a tinted fill, a striped gradient or an inset shadow, and

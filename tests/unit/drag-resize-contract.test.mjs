@@ -12,7 +12,7 @@ const src = fs.readFileSync(path.join(repoRoot, 'lib/utils/dragResize.js'), 'utf
 const stripped = flowRemoveTypes(src, { all: true }).toString();
 const modulePath = path.join(tmpDir, 'dragResize.mjs');
 fs.writeFileSync(modulePath, stripped);
-const { clampSize, applyAspectRatio, computeNextSize } = await import(pathToFileURL(modulePath).href);
+const { clampSize, applyAspectRatio, computeNextSize, computeKeyboardSize, KEYBOARD_STEP, KEYBOARD_STEP_LARGE } = await import(pathToFileURL(modulePath).href);
 
 test('clampSize enforces min and max independently per axis', () => {
 	const out = clampSize(50, 4000, 100, 1000, 200, 2000);
@@ -71,4 +71,74 @@ test('dragResize SCSS ships in the bundle', () => {
 	assert.ok(fs.existsSync(scssPath));
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/dragResize'/);
+});
+
+// WCAG 2.2 SC 2.5.7 Dragging Movements. The handle was `pointerdown` and nothing
+// else, on a `div` with no tabindex, so the feature was unreachable without a
+// pointer. These cover the arithmetic; the e2e covers whether a keystroke
+// actually gets to it.
+
+const BOUNDS = { minWidth: 160, maxWidth: 1600, minHeight: 100, maxHeight: 4000, keepAspect: false };
+
+test('the arrow keys move the handle the way a pointer would', () => {
+	// The grip is at the bottom right, so right and down grow. Getting this
+	// backwards is the kind of thing that reads fine in review and feels wrong in
+	// one keystroke.
+	assert.equal(computeKeyboardSize(400, 300, 'ArrowRight', false, BOUNDS).width, 400 + KEYBOARD_STEP);
+	assert.equal(computeKeyboardSize(400, 300, 'ArrowLeft', false, BOUNDS).width, 400 - KEYBOARD_STEP);
+	assert.equal(computeKeyboardSize(400, 300, 'ArrowDown', false, BOUNDS).height, 300 + KEYBOARD_STEP);
+	assert.equal(computeKeyboardSize(400, 300, 'ArrowUp', false, BOUNDS).height, 300 - KEYBOARD_STEP);
+});
+
+test('an axis the key did not touch is left alone when the aspect is free', () => {
+	const wider = computeKeyboardSize(400, 300, 'ArrowRight', false, BOUNDS);
+	assert.equal(wider.height, 300);
+	const taller = computeKeyboardSize(400, 300, 'ArrowDown', false, BOUNDS);
+	assert.equal(taller.width, 400);
+});
+
+test('Shift takes a larger step, which is what makes the range crossable', () => {
+	assert.equal(computeKeyboardSize(400, 300, 'ArrowRight', true, BOUNDS).width, 400 + KEYBOARD_STEP_LARGE);
+	assert.ok(KEYBOARD_STEP_LARGE > KEYBOARD_STEP);
+});
+
+test('a locked aspect drives the other axis from whichever one moved', () => {
+	const locked = { ...BOUNDS, keepAspect: true };
+	const wider = computeKeyboardSize(400, 300, 'ArrowRight', false, locked);
+	assert.equal(wider.width, 416);
+	assert.equal(wider.height, 312);
+
+	const taller = computeKeyboardSize(400, 300, 'ArrowDown', false, locked);
+	assert.equal(taller.height, 316);
+	assert.ok(Math.abs(taller.width - 421.33) < 0.1);
+});
+
+test('Home and End reach the limits without holding a key down', () => {
+	const locked = { ...BOUNDS, keepAspect: true };
+	assert.equal(computeKeyboardSize(400, 300, 'Home', false, locked).width, 160);
+	assert.equal(computeKeyboardSize(400, 300, 'End', false, locked).width, 1600);
+	// And they keep the shape, rather than snapping to a limit on one axis only.
+	assert.equal(computeKeyboardSize(400, 300, 'Home', false, locked).height, 120);
+});
+
+test('the clamps apply to the keyboard path too', () => {
+	assert.equal(computeKeyboardSize(160, 300, 'ArrowLeft', true, BOUNDS).width, 160);
+	assert.equal(computeKeyboardSize(1600, 300, 'ArrowRight', true, BOUNDS).width, 1600);
+});
+
+test('a key this does not handle returns null, so the caller can leave the event alone', () => {
+	// The distinction matters: consuming Tab would trap focus on the handle, and
+	// consuming Enter would break whatever the page does with it.
+	for (const key of ['Tab', 'Enter', ' ', 'Escape', 'a', 'PageDown']) {
+		assert.equal(computeKeyboardSize(400, 300, key, false, BOUNDS), null, `${key} should not be handled`);
+	}
+});
+
+test('the handle is focusable and announced, or none of the above is reachable', () => {
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/dragResize.js'), 'utf8');
+	assert.match(mod, /computeKeyboardSize\(/, 'the keyboard path must be wired, not just written');
+	assert.match(mod, /addEventListener\('keydown'/);
+	assert.match(mod, /setAttribute\('tabindex', '0'\)/, 'a separator without a tabindex cannot be focused');
+	assert.match(mod, /aria-valuenow/, 'a focusable separator has to report where it is');
+	assert.match(mod, /rsm-target-24/, 'the 14px grip needs the 24x24 target overlay for SC 2.5.8');
 });

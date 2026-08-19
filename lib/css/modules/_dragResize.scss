@@ -13,7 +13,11 @@
 	transition: opacity 0.12s ease-out;
 	z-index: 5;
 
-	&:hover {
+	// The grip rests at 40% opacity, so the shared `[class*='rsm-']:focus-visible`
+	// ring would otherwise be the most visible thing about a control the user can
+	// barely see. Focus brings the grip itself up with it.
+	&:hover,
+	&:focus-visible {
 		opacity: 0.95;
 	}
 }

@@ -227,7 +227,11 @@ html.res-pageTheme {
 	textarea[class*='rsm-'],
 	input[class*='rsm-'],
 	[class*='rsm-'] :is(button, select, textarea, input),
-	[id^='rsm-'] :is(button, select, textarea, input) {
+	[id^='rsm-'] :is(button, select, textarea, input),
+	// A resize grip is a control that happens not to be a `button` element. Its
+	// whole visual is a `linear-gradient`, so without this it is not merely
+	// unstyled in forced colours, it is invisible.
+	.rsm-dragResize-handle {
 		outline: 1px solid ButtonBorder;
 		outline-offset: -1px;
 	}
