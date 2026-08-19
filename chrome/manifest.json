@@ -107,7 +107,8 @@
         "prompt.html",
         "prompt.entry.js",
         "options.css",
-        "options.html"
+        "options.html",
+        "trackingSabotage.entry.js"
       ],
       "matches": [
         "https://*.reddit.com/*"

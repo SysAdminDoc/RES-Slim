@@ -131,6 +131,7 @@ export const context = { origin: 'https://old.reddit.com', pathname: '/' };
 export const isOptionsPage = () => false;
 export const getOptionsURL = (hash = '') => 'chrome-extension://res-slim-test/options.html' + hash;
 export const getExtensionId = () => 'res-slim-test';
+export const getURL = (file = '') => 'chrome-extension://res-slim-test/' + (file.startsWith('/') ? file.slice(1) : file);
 // i18n echoes the key, exactly as the real one does — a missing string renders as
 // its own key rather than throwing, and tests must see that same behaviour.
 export const i18n = (key, ...args) => String(key);
@@ -176,7 +177,16 @@ let stubDirPromise;
 async function stubDir() {
 	if (!stubDirPromise) {
 		stubDirPromise = (async () => {
-			const dir = path.join(repoRoot, 'tests', 'unit', '.tmp-module-stubs');
+			// Per process, not one shared path. `node --test` runs the files in
+			// parallel processes and every one of them wrote this same file on
+			// startup: a write truncates before it fills, so a sibling reading at the
+			// wrong moment got half a module and failed to parse it. That surfaced as
+			// one arbitrary contract failing with no message and passing on its own
+			// — roughly one run in three. Renaming a private copy into place is no
+			// better on Windows, where the rename fails outright if a reader has the
+			// target open. Nobody shares the file now, so there is nothing to race.
+			// `run-unit-tests.mjs` clears every `.tmp-` directory before each run.
+			const dir = path.join(repoRoot, 'tests', 'unit', `.tmp-module-stubs-${process.pid}`);
 			fs.mkdirSync(dir, { recursive: true });
 			fs.writeFileSync(path.join(dir, 'environment.js'), ENVIRONMENT_STUB);
 			return dir;

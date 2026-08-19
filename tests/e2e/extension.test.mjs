@@ -1075,6 +1075,79 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 	await page.screenshot({ path: path.join(dir, 'old-reddit-refined-search.png'), fullPage: false });
 });
 
+// The one thing no unit test in this repo can see: whether the page-world patch
+// was *delivered*. `eventTrackingSabotage` was default-on and inert for its whole
+// life because it assigned its code to a `<script>`'s `textContent`, and Chrome
+// checks that against the extension's own `script-src 'self'`. The contract under
+// tests/unit/ executed the same code directly and passed the entire time.
+//
+// Bait: change `script.src = getURL(PAGE_SCRIPT)` back to `script.textContent =`
+// in lib/modules/eventTrackingSabotage.js and both halves of this fail.
+for (const [label, fixture, url] of [
+	['old Reddit', null, 'https://old.reddit.com/r/codex/comments/1th66mb/this_has_to_stop/'],
+	['current Reddit', SHREDDIT_LISTING, 'https://www.reddit.com/r/example/'],
+]) {
+	test(`the tracking-sabotage patch reaches the page world on ${label}`, async t => {
+		const { context, dispose } = await launchWithExtension();
+		t.after(dispose);
+
+		const html = fixture ? staticFixture(fixture) : servableCapture();
+		const page = await context.newPage();
+		const cspViolations = [];
+		page.on('console', msg => {
+			const text = msg.text();
+			if (/Content Security Policy/i.test(text)) cspViolations.push(text);
+		});
+
+		const reachedNetwork = [];
+		await context.route('**/*', route => {
+			const requested = route.request().url();
+			if (!/^https?:\/\//.test(requested)) return route.continue();
+			if (/events\.reddit\.com|\/api\/event/.test(requested)) reachedNetwork.push(requested);
+			if (route.request().resourceType() === 'document' && requested.startsWith(url.split('/r/')[0])) {
+				return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+			}
+			return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+		});
+
+		await page.goto(url, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+		// `page.evaluate` runs in the main world, which is the only world where
+		// this question means anything — the isolated world has its own untouched
+		// copies of all three.
+		await page.waitForFunction(
+			() => !/\[native code\]/.test(String(navigator.sendBeacon)),
+			null,
+			{ timeout: 30000 },
+		);
+
+		const patched = await page.evaluate(() => ({
+			sendBeacon: String(navigator.sendBeacon),
+			fetch: String(window.fetch),
+			xhrOpen: String(XMLHttpRequest.prototype.open),
+		}));
+		for (const [name, source] of Object.entries(patched)) {
+			assert.doesNotMatch(source, /\[native code\]/, `${name} is still the browser's own in the page world`);
+		}
+
+		assert.deepEqual(cspViolations, [], 'the page script must load without tripping a CSP');
+
+		// Patched is not the same as working. Drive a real beacon and a real fetch
+		// through the page's own globals and check nothing left.
+		const behaviour = await page.evaluate(async () => {
+			const beacon = navigator.sendBeacon('https://events.reddit.com/v1', 'x');
+			const blocked = await window.fetch('https://www.reddit.com/api/event');
+			const allowed = await window.fetch('https://www.reddit.com/api/me.json');
+			return { beacon, blockedStatus: blocked.status, allowedStatus: allowed.status };
+		});
+		assert.equal(behaviour.beacon, true, 'a blocked beacon must still report success to its caller');
+		assert.equal(behaviour.blockedStatus, 204, 'the analytics fetch should be answered locally');
+		assert.equal(behaviour.allowedStatus, 200, 'ordinary reddit traffic must still go out');
+		assert.deepEqual(reachedNetwork, [], `telemetry reached the network: ${reachedNetwork.join(', ')}`);
+	});
+}
+
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

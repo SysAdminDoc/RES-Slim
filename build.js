@@ -164,6 +164,10 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 			'background.entry': './lib/background.entry.js',
 			'options.entry': './lib/options/options.entry.js',
 			'prompt.entry': './lib/environment/background/permissions/prompt.entry.js',
+			// Page world, not the extension's. Its own entry because it is delivered
+			// as a web-accessible file that a content script points a <script src> at
+			// — the inline form MV3 forbids is what left eventTrackingSabotage inert.
+			'trackingSabotage.entry': './lib/pageWorld/trackingSabotage.entry.js',
 			manifest,
 			options: './lib/options/options.scss',
 			res: './lib/css/res.scss',
@@ -272,6 +276,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 							'foreground.entry.js',
 							'options.entry.js',
 							'background.entry.js',
+							'trackingSabotage.entry.js',
 							'res.css',
 							'options.css',
 							...VENDORED_ASSETS.map(({ file }) => file),

@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import vm from 'node:vm';
 import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
-const { pageScript } = await loadFlowModule('lib/utils/eventTrackingSabotage.js', 'event-tracking-sabotage');
+const { installSabotage, TRACKER_HOSTS, TRACKER_PATHS } = await loadFlowModule('lib/utils/eventTrackingSabotage.js', 'event-tracking-sabotage');
 
 const HOSTS = [
 	'events.reddit.com',
@@ -15,11 +14,17 @@ const HOSTS = [
 ];
 const PATHS = ['/api/event', '/api/v1/page_view', '/api/v1/clk'];
 
-// Build the page world the injected script expects, run the script in it, and
-// hand back the wrapped globals plus a record of what reached the originals.
-// A source-text assertion cannot tell you whether a blocker blocks; this can.
+// Build the page world the patch expects, install into it, and hand back the
+// wrapped globals plus a record of what reached the originals.
+//
+// This used to build the patch as a source string and run it through `node:vm`,
+// which is exactly how the module stayed inert for its whole life: the string
+// was correct and it was never delivered. `installSabotage` is the function the
+// shipped page-world entry calls, so what runs here is what runs in the browser.
+// Delivery is now the e2e's job, since nothing in Node can observe a CSP.
 function runPageScript({ log = false } = {}) {
 	const reachedOriginal = { fetch: [], beacon: [], xhr: [] };
+	const warnings = [];
 
 	class FakeXHR {
 		open(method, url) { this._url = url; }
@@ -27,37 +32,32 @@ function runPageScript({ log = false } = {}) {
 		dispatchEvent() {}
 	}
 
-	const sandbox = {
+	const scope = {
 		location: { href: 'https://old.reddit.com/r/aww/comments/abc/' },
 		navigator: {
 			sendBeacon(url) { reachedOriginal.beacon.push(String(url)); return true; },
 		},
-		window: {
-			fetch(input) {
-				// Read defensively: one test hands in an object whose `url` getter
-				// throws, and a stub that rethrows would mask what is being measured.
-				let recorded;
-				try { recorded = typeof input === 'string' ? input : (input && input.url); } catch (e) { recorded = '<unreadable>'; }
-				reachedOriginal.fetch.push(recorded);
-				return Promise.resolve(new Response('real', { status: 200 }));
-			},
+		fetch(input) {
+			// Read defensively: one test hands in an object whose `url` getter
+			// throws, and a stub that rethrows would mask what is being measured.
+			let recorded;
+			try { recorded = typeof input === 'string' ? input : (input && input.url); } catch (e) { recorded = '<unreadable>'; }
+			reachedOriginal.fetch.push(recorded);
+			return Promise.resolve(new Response('real', { status: 200 }));
 		},
 		XMLHttpRequest: FakeXHR,
 		URL,
 		Response,
 		Event: class { constructor(type) { this.type = type; } },
-		Object,
-		Promise,
-		TypeError,
 		setTimeout,
-		console: { warn: (...args) => { sandbox.__warnings.push(args.join(' ')); } },
-		__warnings: [],
+		console: { warn: (...args) => { warnings.push(args.join(' ')); } },
 	};
 
-	vm.createContext(sandbox);
-	vm.runInContext(pageScript(HOSTS, PATHS, log), sandbox);
+	installSabotage(scope, HOSTS, PATHS, log);
 
-	return { sandbox, reachedOriginal };
+	// The old vm sandbox patched `window.fetch`; `scope` is the window now, so
+	// keep the shape the assertions below already read.
+	return { sandbox: { ...scope, window: scope, __warnings: warnings }, reachedOriginal };
 }
 
 test('a tracker fetch never reaches the original fetch', async () => {
@@ -175,14 +175,17 @@ test('logging is off by default and honoured when on', async () => {
 	assert.ok(loud.sandbox.__warnings.some(w => w.includes('blocked beacon')));
 });
 
-test('eventTrackingSabotage is registered and injects the page script', () => {
+test('eventTrackingSabotage is registered and injects a packaged file, not inline source', () => {
 	const index = readRepoFile('lib/modules/index.js');
 	assert.match(index, /import \{ module as eventTrackingSabotage \} from '\.\/eventTrackingSabotage';/);
 	assert.match(index, /^\s*eventTrackingSabotage,/m);
 
 	const source = readRepoFile('lib/modules/eventTrackingSabotage.js');
 	assert.match(source, /document\.createElement\('script'\)/);
-	assert.match(source, /script\.remove\(\)/);
+	// The bait for the delivery e2e. `textContent` is the shape MV3 rejects, and
+	// the whole defect was that nothing anywhere could tell the two apart.
+	assert.doesNotMatch(source, /script\.textContent\s*=/, 'an inline page script is blocked by the extension CSP; use a web-accessible file');
+	assert.match(source, /script\.src = getURL\(PAGE_SCRIPT\)/);
 	assert.match(source, /module\.category\s*=\s*'privacyCategory'/);
 	// Both renderers since v0.45.0. The patch is page-world only and touches no
 	// DOM, and current Reddit beacons to the same hosts more often than old
@@ -190,10 +193,57 @@ test('eventTrackingSabotage is registered and injects the page script', () => {
 	assert.match(source, /module\.include\s*=\s*\['r2', 'd2x'\]/);
 });
 
-test('the module still owns the tracker lists', () => {
-	// The lists are the reviewed surface; they must stay where a reader looking at
-	// the module can see them, not drift into the helper.
-	const source = readRepoFile('lib/modules/eventTrackingSabotage.js');
+test('the page script is packaged, web-accessible on both targets, and size-tracked', () => {
+	const build = readRepoFile('build.js');
+	assert.match(build, /'trackingSabotage\.entry': '\.\/lib\/pageWorld\/trackingSabotage\.entry\.js'/);
+	// A new entry that no ratchet watches is a bundle that can grow without
+	// anyone noticing, which is the failure the ratchet exists to catch.
+	assert.match(build, /'trackingSabotage\.entry\.js',/);
+
+	for (const manifest of ['chrome/manifest.json', 'firefox/manifest.json']) {
+		const parsed = JSON.parse(readRepoFile(manifest));
+		const resources = parsed.web_accessible_resources.flatMap(entry => (typeof entry === 'string' ? [entry] : entry.resources));
+		assert.ok(
+			resources.includes('trackingSabotage.entry.js'),
+			`${manifest} must expose the page script, or the page cannot load it`,
+		);
+	}
+});
+
+test('the tracker lists stay in the page-world source, and are what the entry ships', () => {
+	// The lists are the reviewed surface. They moved out of the module when the
+	// module stopped building the script's text — but they must stay somewhere a
+	// reader can see them, and they must be the ones actually compiled in.
+	assert.deepEqual(TRACKER_HOSTS, HOSTS);
+	assert.deepEqual(TRACKER_PATHS, PATHS);
+
+	const source = readRepoFile('lib/utils/eventTrackingSabotage.js');
 	for (const host of HOSTS) assert.ok(source.includes(`'${host}'`), `expected host ${host}`);
 	for (const path of PATHS) assert.ok(source.includes(`'${path}'`), `expected path ${path}`);
+
+	const entry = readRepoFile('lib/pageWorld/trackingSabotage.entry.js');
+	assert.match(entry, /installSabotage\(window, TRACKER_HOSTS, TRACKER_PATHS, logBlocked\)/);
+	// Handing the lists over on a data attribute would let a page script empty
+	// them before this runs. Only the log flag crosses that way.
+	assert.doesNotMatch(entry, /dataset\.resSlimSabotageHosts|dataset\.resSlimSabotagePaths/);
+});
+
+test('the paths this patches are the paths the packaged rules block', () => {
+	// The two layers are deliberately redundant, and redundancy is only worth
+	// having while both halves name the same targets.
+	const rules = JSON.parse(readRepoFile('rules/ad-block.json'));
+	const hostRule = rules.find(rule => rule.condition.requestDomains?.includes('events.reddit.com'));
+	assert.ok(hostRule, 'the tracker hosts must still be blocked at the network layer');
+	for (const host of TRACKER_HOSTS) {
+		assert.ok(hostRule.condition.requestDomains.includes(host), `${host} is patched but not blocked`);
+	}
+
+	const pathRules = rules.filter(rule => rule.condition.regexFilter);
+	for (const path of TRACKER_PATHS) {
+		const url = `https://www.reddit.com${path}`;
+		assert.ok(
+			pathRules.some(rule => new RegExp(rule.condition.regexFilter).test(url)),
+			`${path} is patched in the page but not blocked at the network layer`,
+		);
+	}
 });

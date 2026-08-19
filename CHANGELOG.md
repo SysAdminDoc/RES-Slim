@@ -4,6 +4,30 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- The event-tracking blocker now actually runs. It was on by default, it told you
+  in its own description that it was blocking Reddit's telemetry beacons, and it
+  had never executed once. It built its code as text and handed it to a `<script>`
+  element, and Chrome checks that against the extension's own security policy,
+  which forbids it. Nothing noticed, because the test for it ran the same code
+  directly and passed every time. The code ships as a packaged file now and the
+  page loads it by URL, which is the supported route.
+
+  The packaged network rules were already blocking the same destinations, so
+  telemetry was not leaving your browser in the meantime. What was missing is the
+  part that stops the page assembling the payload at all, and that covers
+  transports the network rules do not.
+
+  There is a new browser test that reads the page's own `sendBeacon`, `fetch` and
+  `XMLHttpRequest` and fails if any of them is still the browser's original. It
+  was checked by putting the old inline injection back, which fails it.
+
+- Contracts running in parallel all wrote the same stub file on startup, and a
+  write empties the file before it fills it. About one run in three, some
+  unrelated contract read a half-written module and failed with no message, then
+  passed on its own. Each process gets its own copy now.
+
 ### Security
 
 - DOMPurify updated to 3.4.14, which closes a sanitizer bypass that this
