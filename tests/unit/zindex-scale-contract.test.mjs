@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { stripComments } from './helpers/readCode.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const scalePath = path.join(repoRoot, 'lib', 'css', '_zindex.scss');
 
@@ -18,13 +20,6 @@ function collectScss(dir, found = []) {
 		else if (entry.name.endsWith('.scss')) found.push(full);
 	}
 	return found;
-}
-
-function stripComments(source) {
-	// Line-preserving, because every finding below is reported as file:line.
-	return source
-		.replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' '))
-		.replace(/(^|\s)\/\/[^\r\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
 }
 
 function toPosix(absolute) {

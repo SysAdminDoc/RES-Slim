@@ -3,15 +3,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { readCode } from './helpers/readCode.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = relative => fs.readFileSync(path.join(repoRoot, relative), 'utf8');
-// Absence assertions read the code, not the prose explaining it. `locales/index.js`
-// names the retired mappings precisely so the next reader knows what went; a
-// scanner that reads its own explanation as the thing it forbids fails on a
-// correct file. Line-preserving, per the house rule.
-const readCode = relative => read(relative)
-	.replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' '))
-	.replace(/(^|\s)\/\/[^\r\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
 
 // This fork ships one dictionary, and v0.41.0 removed the locale negotiation that
 // pretended otherwise: `redditLocaleToTransifexLocale` mapped `lol` to

@@ -4,6 +4,40 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Removed
+
+- `tinycolor2`, which shipped 28.6KB into each of the background, foreground and
+  options bundles. The roadmap proposed replacing it with `colord` plus native
+  CSS colour functions; on reading the surface, there was nothing to replace it
+  *with*. `colorToArray` and `colorFromArray` had no callers anywhere, and the
+  only remaining use was one comparison in one migration - for `keyboardNav`,
+  a module this fork removed in v0.1.0.
+
+  What that comparison needs is now `lib/utils/cssColor.js`: hex in every length
+  the spec allows, and the `rgb()` family in both the comma and the space
+  spelling. Named colours are deliberately unsupported, and the reasoning is
+  specific - the caller compares two stored values after an identical-string fast
+  path, so the parser is only ever asked whether two *different spellings* mean
+  the same colour. One behaviour changed on purpose: an unreadable value answers
+  null rather than black, so a typo in a stored option can no longer become a
+  real colour.
+
+  Minified, that is 15.5KB off the foreground bundle and 14.4KB off the
+  background - the latter 13.8% of it.
+
+- `lib/utils/color.js` and its spec. The spec looked dead, since it is written
+  for `ava` and `ava` is not installed - but `tests/unit/utils-specs.test.mjs`
+  shims `ava` and runs every spec in that directory, and deleting the file turned
+  that suite red. Its vectors are carried over to the new contract rather than
+  dropped.
+
+### Changed
+
+- Contracts share one comment stripper. Six had grown their own copy of it, and
+  the reason they need one keeps recurring: a file explaining why something was
+  removed necessarily names the thing it removed, so an absence assertion that
+  reads the prose fails on a correct file. That has now happened five times.
+
 ### Fixed
 
 - Two invalid declarations the old linter never saw, both found by upgrading it:

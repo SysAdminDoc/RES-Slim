@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
+import { stripComments } from './helpers/readCode.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 
 // Four third-party API keys shipped in this public GPL-3.0 repo until v0.40.0,
@@ -20,12 +22,6 @@ function collectJs(dir, found = []) {
 		else if (entry.name.endsWith('.js')) found.push(full);
 	}
 	return found;
-}
-
-function stripComments(source) {
-	return source
-		.replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' '))
-		.replace(/(^|\s)\/\/[^\r\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
 }
 
 // Deliberately narrow, and each one is a shape a real credential takes rather

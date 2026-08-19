@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { stripComments } from './helpers/readCode.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const modSource = fs.readFileSync(path.join(repoRoot, 'lib/modules/overlayViewer.js'), 'utf8');
 // Absence assertions have to read the code, not the prose about it: this module's
 // comments name `aria-modal` and `role` precisely to explain why they are gone,
 // and a scanner that reads its own explanation as the thing it forbids is a
 // scanner that fails on a correct file.
-const modCode = modSource
-	.replace(/\/\*[\s\S]*?\*\//g, match => match.replace(/[^\r\n]/g, ' '))
-	.replace(/(^|\s)\/\/[^\r\n]*/g, (match, lead) => lead + ' '.repeat(match.length - lead.length));
+const modCode = stripComments(modSource);
 const indexSource = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
 
 test('overlayViewer module is registered in the aggregator', () => {

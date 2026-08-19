@@ -108,7 +108,12 @@ export function makeT() {
 
 const specDir = path.join(libDir, 'utils', '__tests__');
 const specFiles = fs.readdirSync(specDir).filter(f => f.endsWith('.js')).sort();
-assert.ok(specFiles.length >= 10, `expected the ten util specs, found ${specFiles.length}`);
+// Nine since v0.41.0: `color.js` went with `lib/utils/color.js`, whose two
+// exports had no callers anywhere. Its vectors were not lost - they are in
+// `tests/unit/css-color-contract.test.mjs`, against the parser that replaced
+// tinycolor2, with the one behaviour that deliberately changed called out (an
+// unreadable colour answers null now instead of black).
+assert.ok(specFiles.length >= 9, `expected the nine util specs, found ${specFiles.length}`);
 
 const mirroredSpecDir = path.join(tmpRoot, 'utils', '__tests__');
 fs.mkdirSync(mirroredSpecDir, { recursive: true });
