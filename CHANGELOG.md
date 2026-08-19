@@ -42,6 +42,22 @@ All notable changes to RES-Slim will be documented in this file.
   alongside the page type, and those two are combined with "or", so the
   restriction admitted everything it was meant to exclude.
 
+- Features that wait for part of the page now give up, say so, and let go. The
+  waiting helpers had no time limit, never reported a failure, and only stopped
+  watching the page when they succeeded. So a feature waiting for something
+  Reddit had renamed would wait forever, holding a watcher on the whole subtree
+  that ran on every change to it. On current Reddit, where posts stream in
+  continuously, that cost is paid for the life of the tab and nothing ever
+  arrives. It is also why almost nothing showed up in the error log: there was
+  nothing to report from.
+
+  Two of these were permanent. One waited for an old-Reddit element that current
+  Reddit does not have, on every page; the other left one behind on each pass of
+  the loop that picks up newly loaded posts.
+
+  Waiters can also be handed a list of selectors to try in order, which is what
+  you want while a site is halfway through a redesign.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then

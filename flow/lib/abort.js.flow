@@ -1,0 +1,25 @@
+// Flow 0.84 ships the 2018 DOM, which predates `AbortController`. It is Chrome
+// 66 and Firefox 57, so it is a decade inside this project's floor
+// (`browserslist` in package.json), and the checker having never heard of it is
+// a fact about the checker.
+//
+// Same shape as `intl.js.flow` next door, and for the same reason: the libs
+// directory is where a browser-support decision belongs, because there it is
+// enforceable. A cast at the call site would assert the same thing and check
+// nothing.
+//
+// `signal.reason` and `AbortSignal.timeout()` are deliberately left out — they
+// are Chrome 124 / Firefox 124-ish and this codebase does not use them, so
+// leaving them undeclared makes reaching for one a type error rather than a
+// runtime surprise on a browser we claim to support.
+
+declare class AbortSignal extends EventTarget {
+	+aborted: boolean;
+	onabort: ?(event: Event) => mixed;
+}
+
+declare class AbortController {
+	constructor(): void;
+	+signal: AbortSignal;
+	abort(): void;
+}
