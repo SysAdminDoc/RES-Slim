@@ -1,0 +1,84 @@
+/* @flow */
+
+// Flow 0.84 ships the ECMA-402 surface as it stood in 2018. Two things this
+// project relies on are missing from it, and both are inside the browser floor
+// this extension targets (chrome 125 / firefox 130):
+//
+//   - `Intl.RelativeTimeFormat` — Chrome 71, Firefox 65. Absent entirely from
+//     Flow's `Intl` object type, so `Intl.RelativeTimeFormat` is a property
+//     error rather than a type error.
+//   - `style: 'unit'` on `Intl.NumberFormat` — Chrome 77, Firefox 78. Flow's
+//     `style` is an enum of `'decimal' | 'currency' | 'percent'`, so passing
+//     `'unit'` fails even though every browser this ships to accepts it.
+//
+// Declared rather than cast to `any`, so the option shapes stay checked. Flow's
+// own libdef is redeclared in full here because `declare class Intl$...` cannot
+// be extended piecemeal — replacing the object type is the only route.
+//
+// Deliberately NOT declared: `Intl.DurationFormat`. It is Chrome 129 / Firefox
+// 136, outside the floor, and leaving it undeclared means reaching for it is a
+// type error rather than a runtime one on a supported browser.
+
+type Intl$LocalesArgument = string | Array<string> | void;
+
+declare type Intl$NumberFormatOptions = {
+	localeMatcher?: 'lookup' | 'best fit',
+	style?: 'decimal' | 'currency' | 'percent' | 'unit',
+	currency?: string,
+	currencyDisplay?: 'symbol' | 'code' | 'name',
+	unit?: string,
+	unitDisplay?: 'long' | 'short' | 'narrow',
+	notation?: 'standard' | 'scientific' | 'engineering' | 'compact',
+	compactDisplay?: 'short' | 'long',
+	useGrouping?: boolean,
+	minimumIntegerDigits?: number,
+	minimumFractionDigits?: number,
+	maximumFractionDigits?: number,
+	minimumSignificantDigits?: number,
+	maximumSignificantDigits?: number,
+	...
+};
+
+declare class Intl$NumberFormat {
+	constructor(locales?: Intl$LocalesArgument, options?: Intl$NumberFormatOptions): void;
+	static (locales?: Intl$LocalesArgument, options?: Intl$NumberFormatOptions): Intl$NumberFormat;
+	format(value: number): string;
+	resolvedOptions(): Intl$NumberFormatOptions;
+	static supportedLocalesOf(locales?: Intl$LocalesArgument, options?: Intl$NumberFormatOptions): Array<string>;
+}
+
+declare type Intl$RelativeTimeFormatUnit =
+	| 'year' | 'years'
+	| 'quarter' | 'quarters'
+	| 'month' | 'months'
+	| 'week' | 'weeks'
+	| 'day' | 'days'
+	| 'hour' | 'hours'
+	| 'minute' | 'minutes'
+	| 'second' | 'seconds';
+
+declare type Intl$RelativeTimeFormatOptions = {
+	localeMatcher?: 'lookup' | 'best fit',
+	numeric?: 'always' | 'auto',
+	style?: 'long' | 'short' | 'narrow',
+	...
+};
+
+declare class Intl$RelativeTimeFormat {
+	constructor(locales?: Intl$LocalesArgument, options?: Intl$RelativeTimeFormatOptions): void;
+	static (locales?: Intl$LocalesArgument, options?: Intl$RelativeTimeFormatOptions): Intl$RelativeTimeFormat;
+	format(value: number, unit: Intl$RelativeTimeFormatUnit): string;
+	formatToParts(value: number, unit: Intl$RelativeTimeFormatUnit): Array<Object>;
+	resolvedOptions(): Intl$RelativeTimeFormatOptions;
+	static supportedLocalesOf(locales?: Intl$LocalesArgument, options?: Intl$RelativeTimeFormatOptions): Array<string>;
+}
+
+declare var Intl: {
+	Collator: Class<Intl$Collator>,
+	DateTimeFormat: Class<Intl$DateTimeFormat>,
+	NumberFormat: Class<Intl$NumberFormat>,
+	PluralRules: Class<Intl$PluralRules> | void,
+	RelativeTimeFormat: Class<Intl$RelativeTimeFormat>,
+	getCanonicalLocales?: (locales?: Intl$LocalesArgument) => Array<string>,
+	...
+};

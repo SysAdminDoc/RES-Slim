@@ -27,6 +27,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Dates, times and durations now use the browser's own formatting instead of a
+  bundled library. This drops about 22KB from each of the two main bundles, but
+  the better reason is coverage: the library shipped with ten languages compiled
+  into it, so anyone reading Reddit in, say, Japanese got English dates. The
+  browser knows every language it supports.
+
+  Two visible differences. Durations get their plurals right in every language
+  now, which the old path could not express. And the boundaries between units
+  are simple ones, so something 40 days old reads as "1 month" rather than the
+  vaguer "a month" it used to.
+
 - Dependency refresh: `dayjs` 1.11.21 to 1.11.23, `esbuild-sass-plugin` 3.3.1 to
   3.7.0, `rimraf` 6.0.1 to 6.1.3, `semver` 7.6.3 to 7.8.5, plus a full lockfile
   re-resolve. Every direct pin was already clean, so this was maintenance

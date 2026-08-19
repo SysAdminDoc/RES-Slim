@@ -43,7 +43,6 @@
 	],
 	"dependencies": {
 		"dashjs": "5.2.1",
-		"dayjs": "1.11.23",
 		"dompurify": "3.4.13",
 		"fastest-levenshtein": "1.0.16",
 		"snudown-js": "4.1.0"

@@ -25,19 +25,39 @@ export function readRepoFile(relativePath) {
 // written for a bundler that does not. Without this, a helper that grows a single
 // import to another helper breaks every contract that loads it — which is a poor
 // reason to duplicate maths that is already tested elsewhere.
-export async function loadFlowModule(relativePath, name, { deps = [] } = {}) {
+// `stubs` maps an import specifier the target reaches *outside* `lib/utils/` —
+// `'../environment'` is the one that matters — to the module source to stand in
+// for it. Without this, a helper that touches the browser boundary at all cannot
+// be executed here and falls back to being regexed, which is the failure mode
+// this whole file exists to end. The stub is written into the same temp
+// directory and the specifier is rewritten to point at it.
+export async function loadFlowModule(relativePath, name, { deps = [], stubs = {} } = {}) {
 	const tmpDir = path.join(repoRoot, 'tests', 'unit', `.tmp-${name}`);
 	fs.mkdirSync(tmpDir, { recursive: true });
 
 	const names = [relativePath, ...deps].map(p => path.basename(p, '.js'));
-	const withExtensions = source => names.reduce(
-		(acc, base) => acc.replace(new RegExp(`(from\\s+['"]\\.\\/)${base}(['"])`, 'g'), `$1${base}.mjs$2`),
+	const stubEntries = Object.entries(stubs).map(([specifier, source], index) => ({
+		specifier,
 		source,
-	);
+		file: `__stub-${index}.mjs`,
+	}));
+
+	const rewrite = source => {
+		const withDeps = names.reduce(
+			(acc, base) => acc.replace(new RegExp(`(from\\s+['"]\\.\\/)${base}(['"])`, 'g'), `$1${base}.mjs$2`),
+			source,
+		);
+		return stubEntries.reduce((acc, { specifier, file }) => {
+			const escaped = specifier.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+			return acc.replace(new RegExp(`(from\\s+['"])${escaped}(['"])`, 'g'), `$1./${file}$2`);
+		}, withDeps);
+	};
+
+	for (const { file, source } of stubEntries) fs.writeFileSync(path.join(tmpDir, file), source);
 
 	let outPath;
 	for (const dep of [relativePath, ...deps]) {
-		const stripped = withExtensions(flowRemoveTypes(readRepoFile(dep), { all: true }).toString());
+		const stripped = rewrite(flowRemoveTypes(readRepoFile(dep), { all: true }).toString());
 		const depPath = path.join(tmpDir, `${path.basename(dep, '.js')}.mjs`);
 		fs.writeFileSync(depPath, stripped);
 		if (dep === relativePath) outPath = depPath;

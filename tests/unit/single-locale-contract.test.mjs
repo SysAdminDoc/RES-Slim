@@ -66,7 +66,11 @@ test('reddit locale detection stays, because timestamps still use it', () => {
 
 	const localization = read('lib/utils/localization.js');
 	assert.match(localization, /import \{ locale \} from '\.\.\/environment';/);
-	assert.match(localization, /dayjs\.locale\(/);
+	// This asserted `dayjs.locale(` until the Intl migration. What it is actually
+	// about is that the detected locale reaches the formatters, so it now names
+	// the thing that carries it there rather than the library that used to.
+	assert.match(localization, /perLocale\(tag => new Intl\./);
+	assert.match(localization, /builtFor !== locale/);
 });
 
 test('the README describes this fork rather than upstream Transifex', () => {
