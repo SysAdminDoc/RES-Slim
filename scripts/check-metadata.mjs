@@ -26,7 +26,17 @@ const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf
 // that the README has already decided is wrong.
 const FORBIDDEN = [
 	{ pattern: /\bprivate fork\b/i, why: 'the repo is public; the README calls it a personal fork, not a private one' },
-	{ pattern: /\bnew\.reddit\b/i, why: 'this targets old.reddit.com only' },
+	// The "this targets old.reddit.com only" rule lived here until v0.45.0 and had
+	// become false: v0.42.0 added a current-Reddit adapter and v0.43.0 a Classic
+	// theme for it. A forbidden-phrase list is itself a duplicated fact, so it
+	// drifts exactly like the description it polices — the rule it replaced would
+	// have flagged an accurate description as wrong.
+	{ pattern: /\bold[.\s]?reddit(\.com)? only\b/i, why: 'both renderers are supported since v0.42.0' },
+];
+
+// Claims the description ought to make, because the README leads with them.
+const EXPECTED = [
+	{ pattern: /\breddit\b/i, why: 'the description should say what site this is for' },
 ];
 
 function note(message) { console.log(`  ${message}`); }
@@ -76,6 +86,9 @@ if (!description) {
 	for (const { pattern, why } of FORBIDDEN) {
 		if (pattern.test(description)) findings.push(`description matches ${pattern} — ${why}`);
 	}
+	for (const { pattern, why } of EXPECTED) {
+		if (!pattern.test(description)) findings.push(`description does not match ${pattern} — ${why}`);
+	}
 }
 
 const topics = Array.isArray(meta.topics) ? meta.topics : [];
@@ -86,7 +99,10 @@ if (!topics.length) {
 // The README's opening sentence is the canonical framing. Not compared word for
 // word — a description is shorter by design — but the load-bearing nouns should
 // survive into it.
-const KEY_TERMS = ['old.reddit', 'fork'];
+// `old.reddit` was in this list until v0.45.0. It is still true that the README
+// says it, but the description now has two renderers to name in ~100 characters,
+// so requiring that exact spelling would force out the newer half.
+const KEY_TERMS = ['reddit', 'fork'];
 for (const term of KEY_TERMS) {
 	if (readme.toLowerCase().includes(term) && !description.toLowerCase().includes(term)) {
 		findings.push(`description does not mention "${term}", which the README treats as central`);

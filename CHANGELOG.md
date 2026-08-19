@@ -4,6 +4,24 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Documentation
+
+- The published GitHub description, the README and the metadata checker all said
+  this targets old.reddit.com only, which stopped being true in v0.42.0. The
+  description now leads with what the project actually does - make both renderers
+  look and behave the same - and gained `new-reddit`, `shreddit`, `dark-theme`
+  and `userstyle` topics.
+
+  The checker itself carried the stale claim as a *rule*: it forbade any
+  description mentioning new Reddit, so an accurate description would have been
+  reported as drift. A forbidden-phrase list is a duplicated fact and drifts
+  exactly like the copy it polices - the same class of defect the checker was
+  written to catch. It now forbids "old.reddit only" instead, and requires the
+  description to name the site at all.
+
+  The README also claimed the classic control CSS "remains gated by the selected
+  palette", which the layout fix above made false.
+
 ### Changed
 
 - `eventTrackingSabotage` and `frictionRemovers` now run on current Reddit too.
