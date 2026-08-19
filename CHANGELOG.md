@@ -19,6 +19,17 @@ All notable changes to RES-Slim will be documented in this file.
   both relative and the wrong anchor, which is the sort of thing that survives
   when nothing reads it.
 
+### Changed
+
+- Dependency refresh: `dayjs` 1.11.21 to 1.11.23, `esbuild-sass-plugin` 3.3.1 to
+  3.7.0, `rimraf` 6.0.1 to 6.1.3, `semver` 7.6.3 to 7.8.5, plus a full lockfile
+  re-resolve. Every direct pin was already clean, so this was maintenance
+  rather than a fix, but the re-resolve did clear three transitive floors that
+  had drifted below their advisory versions: `minimatch` 10.0.1, which was
+  carried as a duplicate alongside 10.2.6, `brace-expansion` 2.0.1, likewise a
+  duplicate, and `nanoid` 3.3.17. Both duplicates collapsed. `yarn audit`
+  reports nothing, and the bundle sizes are unchanged.
+
 ### Documentation
 
 - README says how updating works. There is no automatic update and no store

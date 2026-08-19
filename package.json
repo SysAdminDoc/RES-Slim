@@ -43,7 +43,7 @@
 	],
 	"dependencies": {
 		"dashjs": "5.2.1",
-		"dayjs": "1.11.21",
+		"dayjs": "1.11.23",
 		"dompurify": "3.4.13",
 		"fastest-levenshtein": "1.0.16",
 		"snudown-js": "4.1.0"
@@ -62,7 +62,7 @@
 		"cross-env": "7.0.3",
 		"esbuild": "0.28.2",
 		"esbuild-plugin-copy": "2.1.1",
-		"esbuild-sass-plugin": "3.3.1",
+		"esbuild-sass-plugin": "3.7.0",
 		"eslint": "10.8.1",
 		"eslint-plugin-ava": "17.0.1",
 		"eslint-plugin-check-file": "3.3.2",
@@ -75,8 +75,8 @@
 		"jszip": "3.10.1",
 		"playwright": "^1.62.1",
 		"postcss": "8.5.26",
-		"rimraf": "6.0.1",
-		"semver": "7.6.3",
+		"rimraf": "6.1.3",
+		"semver": "7.8.5",
 		"stylelint": "17.14.1",
 		"stylelint-config-recommended": "18.0.0",
 		"stylelint-config-sass-guidelines": "13.0.0",
