@@ -19,6 +19,17 @@ All notable changes to RES-Slim will be documented in this file.
   a reddit page to include them. Opened as its own tab, the report says the
   timings are unavailable rather than showing an empty heading.
 
+### Fixed
+
+- Four states that vanished in Windows High Contrast. A spam comment, a spoiler
+  thumbnail, an over-18 thumbnail and a storage row whose purge button is armed
+  were each marked by a tinted fill, a striped gradient or an inset shadow, and
+  forced-colors mode deletes all three, so the flagged thing rendered exactly
+  like an unflagged one. Each is now called out with the system colour that means
+  "called out". The module error log panel gained the edge the other floating
+  panels already had, and the video scrubber handle keeps a visible outline
+  instead of dissolving into the track.
+
 ## v0.47.0 - 2026-08-19
 
 ### Fixed

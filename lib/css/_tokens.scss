@@ -238,6 +238,7 @@ html.res-pageTheme {
 	.rsm-savedBackup-panel,
 	.rsm-storageDashboard-panel,
 	.rsm-subrules-popover,
+	.rsm-error-log-panel,
 	.res-search-pane,
 	.rsm-thread-minimap-rail {
 		outline: 1px solid CanvasText;
@@ -271,6 +272,64 @@ html.res-pageTheme {
 		outline: var(--rsm-focus-width) solid Highlight;
 		outline-offset: var(--rsm-focus-offset);
 	}
+
+	// States drawn with a property the UA removes outright. Each of these is the
+	// only marker on its element, so without a restatement here the flagged thing
+	// renders exactly like an unflagged one - which is worse than not flagging at
+	// all, because the reader has been told the marker exists.
+	// `Mark` is the system colour for "called out", and is the right word for a
+	// spam comment, a spoiler or over-18 thumbnail, and a row whose button is one
+	// click from destroying a store.
+
+	// A tinted fill, from `_commentStyle.scss`.
+	.res-commentBoxes .comment.spam {
+		outline: 2px solid Mark;
+		outline-offset: -2px;
+	}
+
+	// Striped `linear-gradient` overlays over the expando, from `_showImages.scss`.
+	// The overlay pseudo-element is the whole marker, so the edge goes on it
+	// rather than on the button underneath.
+	.res-showImages-highlightSpoilerButton .thing.spoiler .title ~ .expando-button::before,
+	.res-showImages-highlightNSFWButton .thing.over18 .title ~ .expando-button::before {
+		outline: 2px solid Mark;
+		outline-offset: -2px;
+	}
+
+	// An inset shadow bar down the left of the armed row, from
+	// `_storageDashboard.scss`. The confirm button beside it keeps its own border,
+	// but the row-level warning is carried by the shadow alone.
+	.rsm-storageDashboard-row[data-armed='1'] {
+		outline: 2px solid Mark;
+		outline-offset: -2px;
+	}
+
+	// A drag handle whose entire affordance is a white circle and a bevel. The
+	// fill is forced to the canvas colour and the bevel is dropped, which leaves
+	// nothing on the track at all.
+	.res-video-position-thumb {
+		outline: 1px solid ButtonBorder;
+		outline-offset: -1px;
+	}
+
+	// Three things deliberately left alone, checked 2026-08-19 rather than
+	// assumed, because each looks like it belongs in this block and does not.
+
+	// The expando icons in `_showImages.scss` are `background-image: url()`, and
+	// the UA drops only the *generated* backgrounds - a url() survives. Media
+	// type and collapsed/expanded both stay legible. Converting them to
+	// `mask-image` with a system `background-color` would make them follow the
+	// palette, but every one of those files is a filled rounded rect with a white
+	// glyph cut out of it, so as an alpha mask each would render a solid square.
+	// That is new artwork, not a CSS change, and the icons are readable on both a
+	// black and a white canvas as they are.
+
+	// Colour emoji: Chrome 145 renders them monochrome here, which would erase an
+	// icon drawn as one. There are none in `lib/` (grep, 2026-08-19).
+
+	// Inline SVG: Chrome 145 made it inherit the parent's used colour. Nothing in
+	// `lib/` emits inline SVG either; every icon is a url() background or a font
+	// glyph.
 }
 
 // ---- Target size ------------------------------------------------------------

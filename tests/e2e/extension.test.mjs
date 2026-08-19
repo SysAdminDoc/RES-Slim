@@ -1887,19 +1887,69 @@ test('the in-page UI keeps its edges in forced colours', async t => {
 			return result;
 		};
 
+		const mark = (() => {
+			const probe = document.createElement('span');
+			probe.style.outline = '2px solid Mark';
+			document.body.append(probe);
+			const colour = getComputedStyle(probe).outlineColor;
+			probe.remove();
+			return colour;
+		})();
+
+		// States whose only marker in normal rendering is a property the UA
+		// deletes: a tinted fill, a striped gradient overlay, an inset shadow bar.
+		// Each needs its own nesting, so they cannot go through `read`.
+		const readNested = (html, target, pseudo) => {
+			const host = document.createElement('div');
+			host.innerHTML = html;
+			document.body.append(host);
+			const el = host.querySelector(target);
+			const style = el ? getComputedStyle(el, pseudo || undefined) : null;
+			const result = el ? { style: style.outlineStyle, width: style.outlineWidth, color: style.outlineColor } : null;
+			host.remove();
+			return result;
+		};
+
 		return {
 			highlight,
+			mark,
 			toast: read('rsm-toast'),
 			panel: read('rsm-savedBackup-panel'),
 			badge: read('rsm-repost-badge'),
+			errorLog: read('rsm-error-log-panel'),
 			selected: read('res-selected'),
+			spam: readNested('<div class="res-commentBoxes"><div class="comment spam">flagged</div></div>', '.comment.spam'),
+			spoiler: readNested(
+				'<div class="res-showImages-highlightSpoilerButton"><div class="thing spoiler"><p class="title">t</p><a class="expando-button"></a></div></div>',
+				'.expando-button',
+				'::before',
+			),
+			nsfw: readNested(
+				'<div class="res-showImages-highlightNSFWButton"><div class="thing over18"><p class="title">t</p><a class="expando-button"></a></div></div>',
+				'.expando-button',
+				'::before',
+			),
+			armed: readNested('<div class="rsm-storageDashboard-row" data-armed="1">row</div>', '.rsm-storageDashboard-row'),
 		};
 	});
 
-	for (const surface of ['toast', 'panel', 'badge']) {
+	for (const surface of ['toast', 'panel', 'badge', 'errorLog']) {
 		assert.equal(measured[surface].style, 'solid', `${surface} must keep an edge when its background is forced away`);
 		assert.notEqual(measured[surface].width, '0px', `${surface} outline should have width`);
 	}
+
+	// A spam comment, a spoiler thumbnail, an over-18 thumbnail and a row whose
+	// purge button is armed. In normal rendering each is marked by a tint, a
+	// striped gradient or an inset shadow, and the UA deletes all three, so
+	// without a restatement the flagged thing renders exactly like an unflagged
+	// one. `Mark` is the system colour that means "called out".
+	for (const state of ['spam', 'spoiler', 'nsfw', 'armed']) {
+		assert.ok(measured[state], `the ${state} probe should have rendered`);
+		assert.equal(measured[state].style, 'solid', `${state} loses its only marker when box-shadow and gradients are dropped`);
+		assert.notEqual(measured[state].width, '0px', `${state} outline should have width`);
+		assert.equal(measured[state].color, measured.mark, `${state} should be called out with Mark, not a forced author hue`);
+	}
+	assert.notEqual(measured.mark, measured.highlight, 'Mark and Highlight must be distinguishable, or the two meanings collapse');
 
 	// Selection is a background tint everywhere in this codebase, so under forced
 	// colours it has to be restated as the system colour that means selection.
