@@ -1,5 +1,5 @@
 // @noflow
-/* eslint-disable import/no-nodejs-modules */
+
 
 import crypto from 'node:crypto';
 import fs from 'node:fs';

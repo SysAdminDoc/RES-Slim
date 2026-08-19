@@ -4,13 +4,50 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- ESLint 8 to 10, and eslintrc to flat config. ESLint 8 went EOL 2024-10-05 and
+  ESLint 9 followed on 2026-08-06, so v10 was the only supported target and it
+  removes eslintrc outright. Six `.eslintrc.json` files collapse into one
+  `eslint.config.js`, which does not cascade, so the five nested overrides are
+  folded in as scoped blocks.
+
+  The three lint plugins that blocked this for a year are RES's own - MIT, by a
+  RES maintainer, untouched since 2019 - so they are vendored into
+  `eslint-rules/` rather than dropped. Their logic is carried line for line;
+  only the wrapper changed, because ESLint 9 removed both the function-style
+  rule and the `context.getScope()` / `context.getDeclaredVariables()` methods
+  all three used.
+
+  `eslint-plugin-filenames` becomes `eslint-plugin-check-file` and
+  `eslint-plugin-import` becomes `eslint-plugin-import-x`; `eslint-plugin-ava`
+  moves 14 to 17. `eslint-plugin-flowtype` is deprecated and pins `eslint@^8`,
+  but its problem is the peer range rather than the parser, so `fixupPluginRules`
+  carries it unchanged.
+
+  One dropped rule, recorded rather than papered over: `filenames/match-exported`
+  asserted that a file is named after the thing it default-exports, and
+  `check-file` cannot express that. Its replacement holds the weaker property
+  that module filenames stay alphanumeric.
+
+### Fixed
+
+- Restored 40 lint rules that had switched themselves off. `eslint:all` enabled
+  every core rule including deprecated ones; `js.configs.all` enables 199 of 292
+  and no deprecated rule at all. 45 of those were already set explicitly here and
+  carried over, but 40 more - `semi`, `keyword-spacing`, `space-infix-ops`,
+  `no-trailing-spaces`, `comma-spacing` and the rest - would have gone quiet
+  during a version bump, which is the worst way for a linter to change. The
+  codebase already conformed: restoring all 40 cost 14 findings.
+
+
 ## v0.43.0 - 2026-08-19
 
 ### Added
 
 - Added a Classic Reddit palette and made it the default page theme. It reproduces the archived white canvas, pale-blue chrome, blue 16px Verdana titles, compact metadata, flat surfaces, and border-based discussion nesting on both Reddit renderers.
 - Added a shadow-root CSS bridge for current Reddit's native post actions. Listing votes now occupy an old-Reddit-style left rail while the original buttons, state, listeners, and routes remain intact.
-- Added matched archived/current Reddit visual QA at a 1265x712 viewport, plus browser contracts for exact listing-row, media, header, action-rail, and comment geometry.
+- Added matched archived/current Reddit visual QA at a 1265x712 viewport, plus browser contracts for exact listing-row, media, header, action-rail, and comment geometry. The side-by-side evidence is `design/qa/v0.43.0-listing-parity.png` and `design/qa/v0.43.0-comment-parity.png`: left is old Reddit captured from the Wayback Machine on 2026-08-19, right is the current-Reddit fixture rendered with the built extension, both at device scale factor 1 with no density scaling.
 
 ### Changed
 

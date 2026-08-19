@@ -1,5 +1,5 @@
 /* @flow */
-/* eslint-disable camelcase */
+
 
 import en from './en.json';
 

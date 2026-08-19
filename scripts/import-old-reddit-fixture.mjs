@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // @noflow
-/* eslint-disable import/no-nodejs-modules */
+
 
 import path from 'node:path';
 import process from 'node:process';

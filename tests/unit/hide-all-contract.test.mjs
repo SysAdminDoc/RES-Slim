@@ -105,8 +105,12 @@ test('the source userscript is credited but never vendored or shipped', () => {
 		assert.doesNotMatch(read(`lib/modules/${file}`), /Reddit_Hide_All\.user/,
 			`${file} must not import the reference userscript`);
 	}
-	// And a stray copy must never become part of the build.
-	assert.match(read('.eslintignore'), /\/\*\.user\.js/);
+	// And a stray copy must never become part of the build. The exclusion moved
+	// from `.eslintignore` to the `ignores` block of `eslint.config.js` when the
+	// ESLint 10 migration removed eslintrc — flat config does not read
+	// `.eslintignore` at all, and would have started linting a third-party
+	// userscript rather than skipping it.
+	assert.match(read('eslint.config.js'), /'\*\.user\.js'/);
 });
 
 // --- the undo that survives leaving the page ---------------------------------
