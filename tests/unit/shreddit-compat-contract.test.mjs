@@ -57,7 +57,7 @@ test('current Reddit post controls receive the layout-gated stylesheet on every 
 	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';
 	document.body.append(post);
 	Shreddit.prepareShredditThing(post);
-	const style = post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`);
+	const style = post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`);
 	assert.ok(style, 'the open post shadow root needs the layout bridge');
 	// The gate is the refined-layout toggle, not the Classic palette: this was
 	// `--classic.--refined` until v0.45.0, which left the ten dark palettes with
@@ -65,9 +65,9 @@ test('current Reddit post controls receive the layout-gated stylesheet on every 
 	assert.match(style.textContent, /:host-context\(html\.res-pageTheme\.res-pageTheme--refined\)/);
 	assert.doesNotMatch(style.textContent, /res-pageTheme--classic/);
 	assert.match(style.textContent, /data-action-bar-action='upvote'/);
-	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`).length, 1);
+	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`).length, 1);
 	Shreddit.prepareShredditThing(post);
-	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`).length, 1, 're-preparing streamed posts must not duplicate CSS');
+	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`).length, 1, 're-preparing streamed posts must not duplicate CSS');
 	post.remove();
 });
 

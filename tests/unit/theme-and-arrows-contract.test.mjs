@@ -105,6 +105,71 @@ test('no reveal rule is emitted when nothing is hidden', () => {
 	assert.equal(css, '');
 });
 
+// --- karmaHide on current Reddit ---------------------------------------------
+//
+// Every selector above is light-DOM, and current Reddit renders the numbers
+// inside each host's open shadow root. That is why this module stayed `['r2']`
+// through v0.45.0 while `eventTrackingSabotage` and `frictionRemovers` moved:
+// it is a selector list, and every selector in it missed.
+
+test('the shadow sheet is driven by the same options as the document sheet', () => {
+	// The failure this exists for: two selector lists maintained separately, where
+	// turning an option off keeps hiding things on one of the two renderers.
+	const off = {
+		hidePostScores: false,
+		hideCommentScores: false,
+		hideUserKarma: false,
+		hideCommentCounts: false,
+		revealOnHover: false,
+	};
+	assert.equal(kh.karmaHideShadowRules(off), '', 'nothing selected means nothing emitted, same as the document side');
+
+	const only = key => kh.karmaHideShadowRules({ ...off, [key]: true });
+	assert.match(only('hidePostScores'), /:host\(shreddit-post\)/);
+	assert.doesNotMatch(only('hidePostScores'), /:host\(shreddit-comment\)/);
+	assert.match(only('hideCommentScores'), /:host\(shreddit-comment\)/);
+	assert.doesNotMatch(only('hideCommentScores'), /:host\(shreddit-post\)/);
+	assert.match(only('hideCommentCounts'), /data-action-bar-action='comments'/);
+
+	// `hideUserKarma` is light DOM on current Reddit, so it has nothing to add
+	// here — and emitting an empty rule block would be worse than emitting none.
+	assert.equal(only('hideUserKarma'), '');
+});
+
+test('the shadow sheet hides the score without touching the vote buttons', () => {
+	const css = kh.karmaHideShadowRules(ALL_KARMA);
+	assert.match(css, /visibility: hidden !important;/);
+	assert.doesNotMatch(css, /display:\s*none/, 'collapsing the score reflows the rail the classic layout just built');
+
+	// The score is the element after the upvote control, not the control itself.
+	// Hiding `[data-action-bar-action='upvote']` would hide the button you vote
+	// with, which is the one thing this module promises not to break.
+	assert.doesNotMatch(css, /:host\(shreddit-post\) \[data-action-bar-action='upvote'\] \{/);
+	assert.match(css, /\[data-action-bar-action='upvote'\] \+ faceplate-number/);
+	assert.match(css, /\[data-action-bar-action='upvote'\] \+ span/, 'the fixtures and older builds render a plain span');
+});
+
+test('reveal-on-hover hangs off the upvote control, not the hidden number', () => {
+	// `visibility: hidden` takes an element out of hit-testing, so a `:hover` on
+	// the number itself can never fire and the reveal would look implemented
+	// while doing nothing.
+	const css = kh.karmaHideShadowRules(ALL_KARMA);
+	const hover = css.split('\n').find(line => line.includes('visibility: visible'));
+	assert.ok(hover, 'expected a reveal rule');
+	assert.match(hover, /\[data-action-bar-action='upvote'\]:hover \+/);
+	assert.doesNotMatch(hover, /:host\(shreddit-post\):hover/, 'hovering anywhere on the post would reveal every score on the page');
+});
+
+test('karmaHide runs on both renderers and registers its sheet per shadow root', () => {
+	const mod = readRepoFile('lib/modules/karmaHide.js');
+	assert.match(mod, /module\.include = \['r2', 'd2x'\]/);
+	assert.match(mod, /registerShadowStyle\('karma-hide', shadowCss\)/);
+	// One options object, read once, feeding both generators.
+	assert.match(mod, /const options = selectedOptions\(\);/);
+	assert.match(mod, /karmaHideRules\(options\)/);
+	assert.match(mod, /karmaHideShadowRules\(options\)/);
+});
+
 // --- restoreVoteArrows -------------------------------------------------------
 
 test('restoring an arrow cancels all four ways a subreddit can hide it', () => {

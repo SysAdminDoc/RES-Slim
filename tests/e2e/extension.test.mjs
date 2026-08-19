@@ -87,7 +87,7 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const outbound = document.querySelector('#t3_fixture1 [slot="title"]');
 		const upvote = first?.shadowRoot?.querySelector('[data-action-bar-action="upvote"]');
 		const actionRow = first?.shadowRoot?.querySelector('.action-row, .shreddit-post-container');
-		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-classic-style]');
+		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]');
 		const relativeRect = element => {
 			if (!element || !first) return null;
 			const outer = first.getBoundingClientRect();
@@ -2495,6 +2495,102 @@ test('the controls injected into old Reddit have no accessibility violations', a
 		`accessibility violations in injected UI:\n  ${describeViolations(results.violations)}`);
 });
 
+// karmaHide is a selector list handed to addCSS, and current Reddit renders post
+// scores inside each host's open shadow root. So through v0.45.0 the module was
+// `['r2']` only: on current Reddit every selector in it missed, and there was no
+// way to observe that from any contract reading the module's CSS, because the
+// CSS was correct - it was pointed at a document that does not contain the
+// numbers.
+//
+// One option set, two renderers, and the only honest check is a computed style
+// read from inside the shadow root.
+test('hiding scores works on both renderers, from one option set', async t => {
+	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			// karmaHide ships off, being a page-altering appearance change.
+			'RES.modulePrefs': { karmaHide: true, pageTheme: true },
+			'RESoptions.karmaHide': {
+				hidePostScores: { value: true },
+				hideCommentScores: { value: true },
+				hideUserKarma: { value: true },
+				hideCommentCounts: { value: false },
+				revealOnHover: { value: true },
+			},
+		}, resolve);
+	}));
+
+	// --- current Reddit: the score lives inside the post's shadow root ---------
+	const shreddit = await context.newPage();
+	await shreddit.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await shreddit.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await shreddit.waitForSelector('shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+	await shreddit.waitForFunction(
+		() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="karma-hide"]'),
+		null, { timeout: 30000 });
+
+	const current = await shreddit.evaluate(() => {
+		const shadow = document.querySelector('#t3_fixture1').shadowRoot;
+		const upvote = shadow.querySelector('[data-action-bar-action="upvote"]');
+		const score = upvote.nextElementSibling;
+		const comments = shadow.querySelector('[data-action-bar-action="comments"]');
+		return {
+			scoreText: (score.textContent || '').trim(),
+			scoreVisibility: getComputedStyle(score).visibility,
+			upvoteVisibility: getComputedStyle(upvote).visibility,
+			commentsVisibility: getComputedStyle(comments).visibility,
+			// The classic sheet has to still be there: a second registered sheet
+			// must not have replaced the first.
+			classicStillInstalled: !!shadow.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			sheetCount: shadow.querySelectorAll('style[data-res-shreddit-shadow-style]').length,
+		};
+	});
+	await shreddit.close();
+
+	assert.equal(current.scoreText, '128', 'the fixture must still carry a score to hide');
+	assert.equal(current.scoreVisibility, 'hidden', 'the post score inside the shadow root is what this whole item was about');
+	assert.equal(current.upvoteVisibility, 'visible', 'voting must keep working - the module hides numbers, not controls');
+	assert.equal(current.commentsVisibility, 'visible', 'hideCommentCounts was off, so the comments link stays');
+	assert.ok(current.classicStillInstalled, 'registering a second sheet must not clobber the classic layout');
+	assert.equal(current.sheetCount, 2, 'one style element per owner');
+
+	// --- old Reddit: the same option set, a different DOM ----------------------
+	const old = await context.newPage();
+	await old.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: servableCapture(FRONT_CAPTURE) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await old.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	// `attached`, not the default `visible` — waiting for visible would wait for
+	// the module to fail. The first version of this line did exactly that and
+	// timed out against working code.
+	await old.waitForSelector('body.res .midcol .score', { state: 'attached', timeout: 30000 });
+
+	const legacy = await old.evaluate(() => {
+		const score = document.querySelector('.midcol .score.unvoted');
+		const arrow = document.querySelector('.midcol .arrow.up');
+		return {
+			scoreVisibility: getComputedStyle(score).visibility,
+			arrowVisibility: getComputedStyle(arrow).visibility,
+		};
+	});
+	await old.close();
+
+	assert.equal(legacy.scoreVisibility, 'hidden', 'the renderer that always worked must keep working');
+	assert.equal(legacy.arrowVisibility, 'visible');
+});
+
 // The classic layout used to be gated on the Classic palette, so choosing any of
 // the ten dark palettes on current Reddit produced a page with none of the
 // old-Reddit geometry - and, inside each post's open shadow root, no vote rail at
@@ -2530,7 +2626,7 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 		await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 		// The shadow stylesheet can land one frame after upgrade.
 		await page.waitForFunction(
-			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-classic-style]'),
+			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
 			null, { timeout: 30000 });
 
 		const state = await page.evaluate(() => {
@@ -2555,7 +2651,7 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 				colorScheme: getComputedStyle(document.documentElement).colorScheme,
 				voteColour: getComputedStyle(upvote).color,
 				titleFont: getComputedStyle(post.querySelector('[slot="title"]')).fontFamily,
-				shadowRuleCount: shadow.querySelector('style[data-res-shreddit-classic-style]').textContent.length,
+				shadowRuleCount: shadow.querySelector('style[data-res-shreddit-shadow-style="classic"]').textContent.length,
 			};
 		});
 		await page.close();

@@ -19,6 +19,12 @@ All notable changes to RES-Slim will be documented in this file.
   both relative and the wrong anchor, which is the sort of thing that survives
   when nothing reads it.
 
+- Hiding scores now works on current Reddit. `karmaHide` ran on old Reddit only,
+  because it works by handing a list of selectors to the page and current Reddit
+  keeps the numbers inside each post's shadow root, where page-level CSS cannot
+  reach them. One option set covers both interfaces now, and voting still works
+  on both: the module hides numbers, never controls.
+
 ### Changed
 
 - Dependency refresh: `dayjs` 1.11.21 to 1.11.23, `esbuild-sass-plugin` 3.3.1 to
