@@ -4,6 +4,32 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- Two rules this project states about itself now match what it does, and both
+  are enforced by `stated-rules-contract`.
+
+  "No external network calls outside Reddit/redditstatic" was false: the build
+  talks to PullPush, Arctic Shift, the Wayback Machine, Cobalt, rimgo, five
+  reverse-image engines and localhost. The true rule is that **no outbound
+  request to a non-Reddit host happens without a user action or a setting the
+  user turned on, and nothing fires on page load**. Verifying it turned up two
+  modules that are enabled by default: `archiveLinks`, which issues no request at
+  all because it renders buttons, and `viewDeleted`, whose `autoLoad` defaults to
+  false so it fetches only on click. Writing the rule as "none at all by default"
+  would have replaced one false claim with another.
+
+  "No keyboard shortcuts" was false too: seven `keycode` options ship bound. The
+  true rule is **no global or single-key shortcuts** - every binding is a modifier
+  combination (`ctrl-b`, `ctrl-i`, `ctrl-e`) inside the comment composer. The
+  contract fails on a keycode default with no modifier, and on a keycode option
+  appearing outside the two composer modules. The eighth `keycode` in the tree is
+  a field of the macros table, and both shipped rows leave it unbound.
+
+  Two notes describing a build from before v0.40.0 went with them: one promising
+  a hardcoded Google API key that was removed, and one about locale files that do
+  not exist.
+
 ### Removed
 
 - `tinycolor2`, which shipped 28.6KB into each of the background, foreground and
