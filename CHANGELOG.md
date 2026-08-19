@@ -2,6 +2,23 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Security
+
+- DOMPurify updated to 3.4.14, which closes a sanitizer bypass that this
+  extension could reach. A `<style>` element is allowed through by default, and
+  a crafted child inside one could break out of it and land executable markup in
+  the sanitized output. Everything here that renders remote HTML runs it through
+  DOMPurify first: Mastodon, Bluesky and Twitter embeds, comment bodies in the
+  auto-refresh and top-comments modules, saved comments, notification text, and
+  media captions.
+
+  The other two bypasses in that release need a DOM node handed to `sanitize()`
+  rather than a string. All ten call sites here pass strings, so those were never
+  reachable. No advisory has been filed for any of the three, so nothing that
+  scans a lockfile would have flagged this.
+
 ## v0.46.0 - 2026-08-19
 
 ### Added
