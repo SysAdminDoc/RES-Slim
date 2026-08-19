@@ -19,6 +19,13 @@ All notable changes to RES-Slim will be documented in this file.
   a reddit page to include them. Opened as its own tab, the report says the
   timings are unavailable rather than showing an empty heading.
 
+- An off switch for current Reddit's infinite feed, in the infinite scrolling
+  module's options. Reddit gives you no way to stop it, and the feed will keep
+  appending until you close the tab. Turn this on and it pauses after a number
+  of posts you choose, with a button to carry on for another batch. Off by
+  default, since it changes how reddit itself behaves. The feed stays laid out
+  where it is, because hiding it stops reddit loading into it at all.
+
 ### Changed
 
 - The Firefox build is now verified in a real Firefox rather than on manifest

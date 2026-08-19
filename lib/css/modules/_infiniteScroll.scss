@@ -1,0 +1,40 @@
+// The control that appears when current Reddit's feed is paused.
+
+// It sits after `shreddit-feed`, never inside it and never in place of it:
+// every project that tried hiding the feed found reddit stops loading into it
+// altogether, which turns a pause into a dead page.
+
+.rsm-infiniteScroll-limit {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	margin: 16px 0;
+	padding: 16px;
+	border: 1px solid var(--rsm-border);
+	border-radius: var(--rsm-radius-md);
+	background: var(--rsm-surface);
+}
+
+.rsm-infiniteScroll-limitNote {
+	margin: 0;
+	color: var(--rsm-text-soft);
+	font-size: 13px;
+}
+
+.rsm-infiniteScroll-loadMore {
+	min-height: 32px;
+	padding: 6px 18px;
+	border: 1px solid var(--rsm-border-strong);
+	border-radius: var(--rsm-radius-sm);
+	background: var(--rsm-surface-raised);
+	color: var(--rsm-text);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+
+	&:hover {
+		background: var(--rsm-surface-raised);
+		border-color: var(--rsm-accent);
+	}
+}

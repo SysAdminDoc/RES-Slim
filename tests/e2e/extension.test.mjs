@@ -179,6 +179,68 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	await page.screenshot({ path: path.join(dir, 'shreddit-listing.png'), fullPage: false });
 });
 
+test('current Reddit feed appending can be stopped and resumed', async t => {
+	// Current Reddit has an infinite feed and no way to turn it off. It loads the
+	// next page by putting a `faceplate-partial` in the DOM and letting it fetch
+	// itself, so taking that out is the whole mechanism - and putting it back is
+	// what makes this a pause rather than an amputation.
+	//
+	// Deliberately not done by hiding `shreddit-feed`: every surveyed project that
+	// tried that found reddit stops loading into it at all.
+	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
+	t.after(dispose);
+
+	// Opt-in, and with a limit low enough that the three fixture posts trip it.
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RESoptions.infiniteScroll': {
+				limitCurrentReddit: { value: true },
+				currentRedditLimit: { value: '2' },
+			},
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+
+	const control = page.locator('.rsm-infiniteScroll-limit');
+	await control.waitFor({ state: 'visible', timeout: 30000 });
+
+	const paused = await page.evaluate(() => ({
+		sentinels: document.querySelectorAll('faceplate-partial[src^="/svc/shreddit/feeds/"]').length,
+		// The feed itself must still be laid out. Hiding it is what stops reddit
+		// loading into it, so an invisible feed would be a worse outcome than the
+		// infinite scroll this replaces.
+		feedDisplay: getComputedStyle(document.querySelector('shreddit-feed')).display,
+		feedPosts: document.querySelectorAll('shreddit-post').length,
+		controlOutsideFeed: !document.querySelector('shreddit-feed').contains(document.querySelector('.rsm-infiniteScroll-limit')),
+		note: document.querySelector('.rsm-infiniteScroll-limitNote')?.textContent || '',
+	}));
+
+	assert.equal(paused.sentinels, 0, 'the feed sentinel must be out of the DOM while paused');
+	assert.notEqual(paused.feedDisplay, 'none', 'the feed must stay laid out');
+	assert.ok(paused.feedPosts >= 2, 'the fixture posts should still be there');
+	assert.equal(paused.controlOutsideFeed, true, 'the control belongs after the feed, not inside it');
+	assert.match(paused.note, /Paused after \d+ posts/);
+
+	// And the resume half. A pause with no way out is just a broken feed.
+	await page.locator('.rsm-infiniteScroll-loadMore').click();
+	const resumed = await page.evaluate(() => ({
+		sentinels: document.querySelectorAll('faceplate-partial[src^="/svc/shreddit/feeds/"]').length,
+		hidden: document.querySelector('.rsm-infiniteScroll-limit').hidden,
+	}));
+	assert.equal(resumed.sentinels, 1, 'the sentinel must go back where it came from');
+	assert.equal(resumed.hidden, true, 'and the control steps out of the way');
+});
+
 test('current Reddit comments keep full posts, nesting, and native collapse', async t => {
 	const { context, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
 	t.after(dispose);
