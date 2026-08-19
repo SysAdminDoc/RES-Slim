@@ -52,6 +52,61 @@ test('current Reddit posts are normalised into the Thing vocabulary', () => {
 	assert.equal(post.querySelector('[slot="credit-bar"]').classList.contains('tagline'), true);
 });
 
+// jsdom implements `customElements`, so `whenDefined` and `upgrade` are the real
+// ones here.
+// `attachAfter: null` means it never attaches one at all. Scheduling a very long
+// timer instead would keep this file's test process alive until it fired — which
+// it did, at 100 seconds, and turned a 3-second file into a 101-second one.
+function defineOnce(name, attachAfter) {
+	if (customElements.get(name)) return;
+	customElements.define(name, class extends HTMLElement {
+		connectedCallback() {
+			if (this.shadowRoot || attachAfter === null) return;
+			// A host that attaches its root well after it was first seen. One
+			// `requestAnimationFrame` — what this used to do — misses this entirely,
+			// and so did a MutationObserver and three seconds of polling in the three
+			// other extensions that hit the same race.
+			setTimeout(() => {
+				this.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';
+			}, attachAfter);
+		}
+	});
+}
+
+test('a shadow root that attaches late still gets the stylesheet', async () => {
+	defineOnce('shreddit-post', 120);
+
+	const post = document.createElement('shreddit-post');
+	document.body.append(post);
+	Shreddit.prepareShredditThing(post);
+
+	// The point of the test: nothing is there yet, so a single-frame retry would
+	// have already given up by now.
+	assert.equal(post.shadowRoot, null, 'the root attached immediately, so this measures nothing');
+
+	await new Promise(resolve => { setTimeout(resolve, 600); });
+	const style = post.shadowRoot && post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`);
+	assert.ok(style, 'the stylesheet never landed on a root that attached a few ticks late');
+	post.remove();
+});
+
+test('a host that never grows a shadow root stops retrying', async () => {
+	// The bound matters as much as the retry: an unbounded chain on a renderer
+	// that streams hundreds of hosts is a timer per host for the life of the page.
+	defineOnce('rsm-never-attaches', null);
+
+	const host = document.createElement('rsm-never-attaches');
+	document.body.append(host);
+	Shreddit.registerShadowStyle('never', 'div{}', 'rsm-never-attaches');
+	Shreddit.prepareShredditThing(host);
+
+	// Longer than the whole retry schedule, so a chain that failed to stop would
+	// still be running when this returns.
+	await new Promise(resolve => { setTimeout(resolve, 800); });
+	assert.equal(host.shadowRoot, null);
+	host.remove();
+});
+
 test('current Reddit post controls receive the layout-gated stylesheet on every palette', () => {
 	const post = document.createElement('shreddit-post');
 	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';

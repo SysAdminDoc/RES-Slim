@@ -70,6 +70,17 @@ All notable changes to RES-Slim will be documented in this file.
   than opening with "Old Reddit" whatever was found. Findings are recorded per
   renderer, so drift on a discussion page on one does not hide drift on the other.
 
+- Post and comment controls on current Reddit are styled reliably again. The
+  extension styles those from inside each post's own shadow root, and it used to
+  give up if Reddit had not yet registered the component, then try once more a
+  single frame later. Neither assumption holds: a post can be seen before Reddit's
+  code has loaded, and one frame is not a limit on when a shadow root appears. The
+  same mistake is the documented cause of breakage in three other Reddit
+  extensions, where a mutation observer and three seconds of polling both missed
+  it too. It now waits for the component definition however long that takes,
+  forces the upgrade rather than hoping the browser gets round to it, and retries
+  on a short bounded schedule after that.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then

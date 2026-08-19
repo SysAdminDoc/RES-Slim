@@ -204,7 +204,7 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	const dom = new JSDOM(html, { url, pretendToBeVisual: true });
 	const { window } = dom;
 
-	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'HTMLDialogElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL']) {
+	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'HTMLDialogElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL', 'customElements']) {
 		if (!(key in window)) continue;
 		// Node 24 defines `navigator` (and friends) as getter-only on globalThis, so
 		// a plain assignment throws. defineProperty replaces them outright.
@@ -222,6 +222,11 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	// implementation's Blob and looking for the other's reader, and reports "is it
 	// a supported JavaScript type?" for a perfectly ordinary Blob. The browser
 	// never sees that split, so neither should a contract.
+	//
+	// `customElements` matters more than it looks: `lib/utils/shreddit.js` opens
+	// with `typeof customElements === 'undefined'` and bails, so without this every
+	// contract that prepares a Shreddit host skipped the shadow-style install
+	// entirely while still passing.
 	//
 	// jsdom implements neither observer; several modules construct one while their
 	// module body evaluates, so these must exist before the import, not before the
