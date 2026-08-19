@@ -137,11 +137,11 @@ The extension does tell you when it has been updated. Reload it across a minor-v
 
 ## Project planning
 
-Planning lives in the working copy, not in git: `README.md` is the only Markdown
-file this repo tracks, so `ROADMAP.md`, `CHANGELOG.md`, `RESEARCH.md`,
-`Roadmap_Blocked.md` and the `docs/archive/` history are all gitignored. They
-are there after a clone only if you created them. Shipped history is in the
-commit log.
+Planning lives in the working copy, not in git. `.gitignore` ignores `*.md`, and
+only `README.md` and `CHANGELOG.md` are checked in past it, so `ROADMAP.md`,
+`RESEARCH.md`, `Roadmap_Blocked.md` and the `docs/archive/` history are all
+absent after a clone unless you created them. Shipped history is in the commit
+log and in `CHANGELOG.md`.
 
 ## License
 
