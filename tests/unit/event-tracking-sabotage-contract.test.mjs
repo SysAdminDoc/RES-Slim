@@ -184,7 +184,10 @@ test('eventTrackingSabotage is registered and injects the page script', () => {
 	assert.match(source, /document\.createElement\('script'\)/);
 	assert.match(source, /script\.remove\(\)/);
 	assert.match(source, /module\.category\s*=\s*'privacyCategory'/);
-	assert.match(source, /module\.include\s*=\s*\['r2'\]/);
+	// Both renderers since v0.45.0. The patch is page-world only and touches no
+	// DOM, and current Reddit beacons to the same hosts more often than old
+	// Reddit does, so scoping it to r2 left the noisier renderer untouched.
+	assert.match(source, /module\.include\s*=\s*\['r2', 'd2x'\]/);
 });
 
 test('the module still owns the tracker lists', () => {

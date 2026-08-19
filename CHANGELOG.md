@@ -4,6 +4,18 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- `eventTrackingSabotage` and `frictionRemovers` now run on current Reddit too.
+  Neither needed porting. The tracking patch replaces `sendBeacon`, `fetch` and
+  `XMLHttpRequest.open` in the page world and never touches the DOM, so it was
+  renderer-agnostic all along - and current Reddit beacons to the same hosts far
+  more often than old Reddit does, so the `r2`-only scope left the noisier
+  renderer untouched. The login-wall dismisser matches on shape rather than
+  markup - a viewport-covering fixed element paired with a scroll lock - and
+  Reddit began showing a login modal on www.reddit.com in mid-2026. The over-18
+  and quarantine handlers are old-Reddit forms and simply do not match there.
+
 ### Fixed
 
 - The classic layout now reaches both renderers on all eleven palettes. It was

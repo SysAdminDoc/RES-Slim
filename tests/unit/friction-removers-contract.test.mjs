@@ -39,8 +39,11 @@ test('frictionRemovers injects a CSS rule that hides all enabled banner selector
 	assert.match(source, /'#redditmobile-app-banner'/);
 });
 
-test('frictionRemovers stays in the privacy category and the r2 (old reddit) include', () => {
+test('frictionRemovers stays in the privacy category and runs on both renderers', () => {
 	const source = read('lib/modules/frictionRemovers.js');
 	assert.match(source, /module\.category\s*=\s*'privacyCategory'/);
-	assert.match(source, /module\.include\s*=\s*\['r2'\]/);
+	// Both renderers since v0.45.0. The over-18 and quarantine handlers are
+	// old-Reddit forms that simply do not match elsewhere, but the login wall is
+	// on www.reddit.com too and the dismisser matches on shape, not on markup.
+	assert.match(source, /module\.include\s*=\s*\['r2', 'd2x'\]/);
 });
