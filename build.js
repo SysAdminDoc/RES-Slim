@@ -110,7 +110,12 @@ const isBeta /*: boolean */ = isBetaVersion(version);
 const isPatch /*: boolean */ = semver.patch(version) !== 0;
 const isMinor /*: boolean */ = !isPatch && semver.minor(version) !== 0;
 const isMajor /*: boolean */ = !isPatch && !isMinor && semver.major(version) !== 0;
-const updatedURL /*: string */ = `CHANGELOG.md#v${version}`;
+// Where the update notice sends someone who wants to know what changed. This
+// was `CHANGELOG.md#v${version}` for as long as nothing read it, which is both
+// relative (unresolvable from a reddit page) and a wrong anchor — GitHub
+// slugifies `## v0.46.0 - 2026-08-19` to `#v0460---2026-08-19`. The release tag
+// is absolute, is created by `yarn release`, and carries the same notes.
+const updatedURL /*: string */ = `${packageInfo.homepage}/releases/tag/v${version}`;
 const homepageURL /*: string */ = packageInfo.homepage;
 // used for invalidating caches on each build (executed at build time)
 // production builds uses version number to keep the build reproducible

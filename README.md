@@ -119,6 +119,22 @@ Two things that look like bugs but aren't:
 - **Do not point Chrome at the repo's `chrome/` folder.** That manifest is a build template — `"name": "__name__"`, `"version": "__version__"` — and Chrome rejects it with *Invalid value for 'version'*. Only `dist/chrome/` is loadable.
 - **`--load-extension` on the command line no longer works** in Google Chrome stable (it logs `--load-extension is not allowed in Google Chrome, ignoring` and continues without the extension). Use the Load-unpacked UI above; for scripted checks use a Chrome for Testing / Chromium build, which still honours the flag.
 
+## Updating
+
+There is no automatic update. Neither manifest declares an `update_url` and there is no store listing, so an installed copy stays on whatever version you built. Updating means pulling and rebuilding:
+
+```bash
+git pull
+yarn install
+yarn once
+```
+
+Then hit **Reload** on the extension in `chrome://extensions`. Firefox temporary add-ons do not survive a browser restart at all, so reload the folder from `about:debugging` when you need it.
+
+Self-hosted updates would mean CRX3 packing plus a hosted update manifest for Chrome, and AMO signing for Firefox. Neither is set up, and the CRX3 route was dropped deliberately: Chromium 75 and later reject self-signed CRX files with `CRX_REQUIRED_PROOF_MISSING`, so the packed file would not install anyway.
+
+The extension does tell you when it has been updated. Reload it across a minor-version boundary and the first Reddit page you open shows one dismissible notice with a link to that release's notes. Patch releases stay quiet on purpose, since a notice that fires on every fix is one people stop reading.
+
 ## Project planning
 
 Planning lives in the working copy, not in git: `README.md` is the only Markdown

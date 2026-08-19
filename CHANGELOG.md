@@ -4,7 +4,26 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- An update across a minor-version boundary now shows one dismissible notice on
+  the first Reddit page you open, linking to that release's notes. Patch
+  releases stay quiet, because a notice that fires on every fix is one people
+  learn to dismiss without reading.
+
+  Three mechanisms for saying "something changed" already existed here and none
+  of them reached anybody: the background returned early on `reason === 'update'`,
+  the built-in `updatedURL` was read by no shipped file, and a `highestVersion`
+  key was written by a migration nothing consulted. One is now live and the
+  other two are gone. The link `updatedURL` described was broken anyway, being
+  both relative and the wrong anchor, which is the sort of thing that survives
+  when nothing reads it.
+
 ### Documentation
+
+- README says how updating works. There is no automatic update and no store
+  listing, so an installed copy stays on whatever version you built until you
+  pull and rebuild. It also says why self-hosted updates are not offered.
 
 - The mandatory-login overlay dismisser now says what it cannot do. Reddit's
   login wall has two forms, and where the rollout has finished it is a
