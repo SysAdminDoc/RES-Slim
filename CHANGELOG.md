@@ -89,6 +89,14 @@ All notable changes to RES-Slim will be documented in this file.
   anywhere. They belong to the ad remover now, which is always on, and the theme
   setting no longer decides whether ads appear.
 
+- Triple-backtick code blocks look the same in the comment preview as they do
+  once posted. The markdown library this uses is built without fenced-code
+  support, so the preview turned a code block into a run of inline code while the
+  page turned the same text into a real code block. The preview and the page
+  disagreed about the one thing the fenced-code feature exists for. Both now go
+  through the same renderer. A half-typed block stays as plain text, so writing
+  one does not swallow the rest of your comment while you type.
+
 - Contracts running in parallel all wrote the same stub file on startup, and a
   write empties the file before it fills it. About one run in three, some
   unrelated contract read a half-written module and failed with no message, then

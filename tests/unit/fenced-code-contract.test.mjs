@@ -13,8 +13,8 @@ fs.mkdirSync(tmpDir, { recursive: true });
 const stripped = flowRemoveTypes(read('lib/utils/fencedCode.js'), { all: true }).toString();
 const modulePath = path.join(tmpDir, 'fencedCode.mjs');
 fs.writeFileSync(modulePath, stripped);
-const { escapeHtml, parseSingleFence, hasFencePair, tokenizeToHtml, buildCodeBlockHtml } =
-	await import(pathToFileURL(modulePath).href);
+const Fenced = await import(pathToFileURL(modulePath).href);
+const { escapeHtml, parseSingleFence, hasFencePair, tokenizeToHtml, buildCodeBlockHtml } = Fenced;
 
 test('parseSingleFence extracts language and code for a whole-block fence', () => {
 	assert.deepEqual(parseSingleFence('```js\nconst x = 1;\n```'), { lang: 'js', code: 'const x = 1;' });
@@ -76,4 +76,51 @@ test('fencedCodeBlocks is on by default, with highlighting opt-in', () => {
 	assert.match(index, /^\s*fencedCodeBlocks,/m);
 
 	assert.match(read('lib/css/res.scss'), /@import 'modules\/fencedCodeBlocks';/);
+});
+
+test('the preview and the page agree about a fenced block', async () => {
+	// snudown-js is built without MKDEXT_FENCED_CODE, so a triple-backtick block
+	// came out of the preview as `<p><code>` while `fencedCodeBlocks` rendered the
+	// same text on the page as `<pre><code>`. The preview and the page disagreed
+	// about the one construct that module exists for.
+	const { markdown } = await import('snudown-js');
+	const raw = markdown('```\njs code here\n```');
+	assert.doesNotMatch(raw, /<pre/, 'snudown grew fenced-code support; this workaround can go');
+	assert.match(raw, /<p><code>/);
+
+	const segments = Fenced.splitFences('```js\nconst a = 1;\n```');
+	assert.equal(segments.length, 1);
+	assert.equal(segments[0].type, 'fence');
+	assert.equal(segments[0].lang, 'js');
+	assert.equal(segments[0].content, 'const a = 1;');
+
+	// Same builder, so the two cannot drift apart.
+	const preview = Fenced.buildCodeBlockHtml(segments[0].lang, segments[0].content, false);
+	const onPage = Fenced.buildCodeBlockHtml('js', 'const a = 1;', false);
+	assert.equal(preview, onPage);
+	assert.match(preview, /^<pre class="rsm-fenced"/);
+});
+
+test('prose around a fence is still snudown\'s job', () => {
+	const segments = Fenced.splitFences('before\n\n```py\nx = 1\n```\n\nafter');
+	assert.deepEqual(segments.map(s => s.type), ['text', 'fence', 'text']);
+	assert.match(segments[0].content, /before/);
+	assert.equal(segments[1].content, 'x = 1');
+	assert.match(segments[2].content, /after/);
+});
+
+test('an unterminated fence is left as prose', () => {
+	// A live preview sees every intermediate state of what is being typed. Treating
+	// a half-typed fence as a block would swallow the rest of the comment while the
+	// user is still writing it.
+	const segments = Fenced.splitFences('text\n```js\nstill typing');
+	assert.deepEqual(segments.map(s => s.type), ['text']);
+});
+
+test('the preview routes fences through the page builder, not through snudown', () => {
+	const source = read('lib/modules/commentPreview.js');
+	assert.match(source, /renderMarkdownWithFences\(md, markdown\)/);
+	assert.match(source, /buildCodeBlockHtml\(segment\.lang, segment\.content, highlight\)/);
+	// Colouring is the fencedCodeBlocks option; the preview must not invent its own.
+	assert.match(source, /fencedCodeBlocks\.options\.highlight\.value/);
 });
