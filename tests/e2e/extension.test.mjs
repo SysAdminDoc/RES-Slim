@@ -55,7 +55,7 @@ function staticFixture(file) {
 }
 
 test('current Reddit receives the old-style theme and RES Thing behaviour', async t => {
-	const { context, dispose } = await launchWithExtension();
+	const { context, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
 	t.after(dispose);
 
 	const page = await context.newPage();
@@ -86,6 +86,14 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const ad = document.querySelector('shreddit-ad-post');
 		const outbound = document.querySelector('#t3_fixture1 [slot="title"]');
 		const upvote = first?.shadowRoot?.querySelector('[data-action-bar-action="upvote"]');
+		const actionRow = first?.shadowRoot?.querySelector('.action-row, .shreddit-post-container');
+		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-classic-style]');
+		const relativeRect = element => {
+			if (!element || !first) return null;
+			const outer = first.getBoundingClientRect();
+			const inner = element.getBoundingClientRect();
+			return { x: inner.x - outer.x, y: inner.y - outer.y, width: inner.width, height: inner.height };
+		};
 		return {
 			classes: document.documentElement.className,
 			backgroundToken: rootStyle.getPropertyValue('--color-neutral-background').trim(),
@@ -108,18 +116,22 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 				score: first.getAttribute('data-score'),
 			} : null,
 			shadowVote: upvote ? { action: upvote.getAttribute('data-action-bar-action'), pressed: upvote.getAttribute('aria-pressed') } : null,
+			shadowStyle: !!shadowStyle,
+			actionRow: relativeRect(actionRow),
+			upvoteRect: relativeRect(upvote),
 			absoluteTimes: document.querySelectorAll('.res-slim-abs-ts').length,
 		};
 	});
 
 	assert.match(state.classes, /\bres-pageTheme--refined\b/);
-	assert.equal(state.backgroundToken, '#0b0f14');
-	assert.equal(state.headerHeight, 44);
+	assert.match(state.classes, /\bres-pageTheme--classic\b/);
+	assert.equal(state.backgroundToken, '#fff');
+	assert.equal(state.headerHeight, 46);
 	assert.equal(state.leftDisplay, 'none');
 	assert.ok(state.mainWidth > 800, `the feed should reclaim the left rail, saw ${state.mainWidth}px`);
-	assert.ok(state.postHeight <= 110, `listing rows should be compact, saw ${state.postHeight}px`);
-	assert.equal(state.mediaWidth, 96);
-	assert.equal(state.mediaHeight, 64);
+	assert.equal(state.postHeight, 72, 'listing rows should match old Reddit');
+	assert.equal(state.mediaWidth, 70);
+	assert.equal(state.mediaHeight, 70);
 	assert.equal(state.textDisplay, 'none');
 	assert.equal(state.filteredDisplay, 'none', 'the existing filter builder should receive current Reddit Things');
 	assert.equal(state.adDisplay, 'none', 'current Reddit ad elements should be removed');
@@ -136,6 +148,13 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		score: '128',
 	});
 	assert.deepEqual(state.shadowVote, { action: 'upvote', pressed: 'false' });
+	assert.equal(state.shadowStyle, true, 'native controls need a shadow-root CSS bridge');
+	assert.equal(state.actionRow.x, 0);
+	assert.equal(state.actionRow.y, 47);
+	assert.equal(state.actionRow.height, 16);
+	assert.ok(state.actionRow.width > 800, 'the action links should span the compact entry row');
+	assert.equal(state.upvoteRect.x, 10);
+	assert.equal(state.upvoteRect.y, 5);
 	assert.ok(state.absoluteTimes >= 2);
 
 	const urlChanges = await page.evaluate(async () => {
@@ -161,7 +180,7 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 });
 
 test('current Reddit comments keep full posts, nesting, and native collapse', async t => {
-	const { context, dispose } = await launchWithExtension();
+	const { context, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
 	t.after(dispose);
 
 	const page = await context.newPage();
@@ -200,13 +219,13 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 		};
 	});
 
-	assert.equal(state.postTitleSize, '20px');
+	assert.equal(state.postTitleSize, '18px');
 	assert.notEqual(state.postBodyDisplay, 'none');
-	assert.notEqual(state.postBodyBackground, 'rgba(0, 0, 0, 0)');
+	assert.equal(state.postBodyBackground, 'rgba(0, 0, 0, 0)');
 	assert.equal(state.commentCount, 2);
 	assert.notEqual(state.topBackground, 'rgba(0, 0, 0, 0)');
-	assert.equal(state.topBorderWidth, '1px');
-	assert.equal(state.nestedBorderWidth, '2px');
+	assert.equal(state.topBorderWidth, '0px');
+	assert.equal(state.nestedBorderWidth, '1px');
 	assert.match(state.nestedAuthorClasses, /\bsubmitter\b/);
 	assert.equal(state.topFullname, 't1_comment1');
 	assert.equal(state.topAuthor, 'carol');
@@ -856,12 +875,12 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 		};
 	});
 
-	assert.match(state.classes, /\bres-pageTheme--graphite\b/, 'the default palette should avoid crushed OLED black');
-	assert.equal(state.bodyBackground, 'rgb(11, 15, 20)', 'Graphite should paint the page canvas');
+	assert.match(state.classes, /\bres-pageTheme--classic\b/, 'the default palette should reproduce stock old Reddit');
+	assert.equal(state.bodyBackground, 'rgb(255, 255, 255)', 'Classic Reddit should paint the stock white canvas');
 	assert.notEqual(state.cardBackground, 'rgba(0, 0, 0, 0)', 'listing Things should be real card surfaces');
-	assert.equal(state.cardRadius, '8px', 'cards should use the restrained desktop radius');
+	assert.equal(state.cardRadius, '0px', 'Classic Reddit listing rows should stay flat');
 	assert.equal(state.cardTitleSize, '16px', 'titles should lead the card hierarchy');
-	assert.equal(state.headerPosition, 'sticky', 'primary navigation should stay available while reading');
+	assert.equal(state.headerPosition, 'relative', 'Classic Reddit should keep the document-flow header');
 	assert.equal(state.rankDisplay, 'none', 'declutter should remove redundant ordinal ranks');
 	assert.equal(state.searchSubmitPosition, 'absolute', 'the search action should stay inside the search field');
 	assert.deepEqual(state.searchSubmitSize, [38, 38], 'the compact search action should keep a usable desktop target');
@@ -1039,8 +1058,7 @@ test('refined old Reddit search uses focused cards and themed empty states', asy
 	assert.equal(state.postThumbnailFlexShrink, '0', 'native flex rows must not squeeze the media column');
 	assert.equal(state.titleSize, '16px', 'result titles should lead the hierarchy');
 	assert.equal(state.snippetBackground, 'rgba(0, 0, 0, 0)', 'snippets should not draw a second dark rectangle');
-	assert.doesNotMatch(state.fade, /255, 255, 255/, 'collapsed excerpts must not fade to native white');
-	assert.match(state.fade, /17, 24, 33/, 'collapsed excerpts should fade into the Graphite card');
+	assert.match(state.fade, /255, 255, 255/, 'collapsed excerpts should fade into the Classic Reddit card');
 	assert.notEqual(state.emptyBackground, 'rgba(0, 0, 0, 0)', 'empty results need a deliberate surface');
 	assert.equal(state.emptyRadius, '8px');
 	assert.equal(state.emptyPadding, '18px');
@@ -1348,7 +1366,7 @@ test('the content script initialises on a real old.reddit document', async t => 
 			childMarginLeft: child ? getComputedStyle(child).marginLeft : null,
 		};
 	});
-	assert.equal(discussionSurface.postTitleSize, '20px', 'opened posts should promote the article title above listing-card hierarchy');
+	assert.equal(discussionSurface.postTitleSize, '16px', 'opened posts should retain old Reddit’s title scale');
 	assert.equal(discussionSurface.postThumbnailDisplay, 'none', 'opened posts should not repeat a listing thumbnail beside full content');
 	assert.ok(discussionSurface.mediaImageWidth <= discussionSurface.mediaContentWidth, 'the media wrapper should contain the rendered preview without clipping it');
 	assert.ok(discussionSurface.mediaContentWidth < discussionSurface.mediaWidth, 'centering media must not stretch it across the entire preview surface');
@@ -1359,10 +1377,10 @@ test('the content script initialises on a real old.reddit document', async t => 
 	assert.ok(discussionSurface.textareaWidth > 900, 'the textarea should fill the composer instead of keeping old Reddit\'s narrow fixed width');
 	assert.ok(discussionSurface.textareaHeight >= 148, 'the composer should expose enough vertical room for a real reply');
 	assert.ok(discussionSurface.saveHeight >= 40, 'the comment action should be an obvious pointer target');
-	assert.equal(discussionSurface.commentRadius, '8px', 'top-level comments should read as distinct discussion cards');
+	assert.equal(discussionSurface.commentRadius, '0px', 'Classic Reddit comments should stay flat');
 	assert.notEqual(discussionSurface.commentBackground, 'rgba(0, 0, 0, 0)', 'the top-level comment card needs a visible surface');
 	assert.equal(discussionSurface.bodyBackground, 'rgba(0, 0, 0, 0)', 'comment prose should not sit inside a second dark rectangle');
-	assert.equal(discussionSurface.nestedBorderWidth, '2px', 'nested replies should keep one clear depth guide');
+	assert.equal(discussionSurface.nestedBorderWidth, '1px', 'nested replies should keep old Reddit’s hairline depth guide');
 	assert.equal(discussionSurface.childBorderWidth, '0px', 'native dotted child borders should not duplicate the refined guide');
 	assert.equal(discussionSurface.childMarginLeft, '0px', 'nested replies should not pay for two separate indentation systems');
 
@@ -1496,9 +1514,9 @@ test('a read-only Reddit JSON module sends authenticated requests through the sh
 });
 
 test('an unreadable accent colour is flagged in the console and corrected on the page', async t => {
-	// The accent is a `type: 'color'` option, so a user can pick `#333` — about
-	// 1.2:1 on every shipped palette — and get visited titles they cannot read and
-	// a focus outline they cannot see. Nothing told them, and nothing corrected it.
+	// The accent is a `type: 'color'` option, so a user can pick a shade that
+	// disappears on either a light or dark palette. Nothing should silently leave
+	// visited titles unreadable or the focus outline invisible.
 	//
 	// Both halves are checked here because either alone is a worse product: a
 	// silent correction leaves the settings page showing a colour the page does
@@ -1522,7 +1540,7 @@ test('an unreadable accent colour is flagged in the console and corrected on the
 	assert.equal(await advice.isVisible(), false, 'the default accent must not raise advice');
 
 	await accent.evaluate(el => {
-		el.value = '#333333';
+		el.value = '#d8e8ff';
 		el.dispatchEvent(new Event('input', { bubbles: true }));
 		el.dispatchEvent(new Event('change', { bubbles: true }));
 	});
@@ -1533,7 +1551,7 @@ test('an unreadable accent colour is flagged in the console and corrected on the
 	// The suggestion is offered, not applied — until the user takes it.
 	const action = page.locator('#optionContainer-pageTheme-accent .optionAdviceAction');
 	assert.match(await action.innerText(), /^Use #[0-9a-f]{6}$/i);
-	assert.equal(await accent.inputValue(), '#333333', 'nothing may be rewritten behind the user');
+	assert.equal((await accent.inputValue()).toLowerCase(), '#d8e8ff', 'nothing may be rewritten behind the user');
 
 	const suggested = (await action.innerText()).replace('Use ', '').toLowerCase();
 	await action.click();
@@ -2348,7 +2366,7 @@ test('every injected control meets the WCAG 2.2 target size', async t => {
 		`injected controls under the 24x24 target:\n  ${report.failures.join('\n  ')}`);
 });
 
-test('focus is never parked under the sticky header', async t => {
+test('focus is never obscured by refined navigation', async t => {
 	// 2.4.11 Focus Not Obscured (Minimum), AA — and the offending element is this
 	// fork's own: the compact sticky header v0.32.0 introduced. Measured on this
 	// fixture before the fix, 20 of 78 focusable controls landed under it.
@@ -2391,7 +2409,10 @@ test('focus is never parked under the sticky header', async t => {
 		};
 	});
 
-	assert.equal(result.skipped, undefined, result.skipped);
+	if (result.skipped) {
+		assert.equal(result.skipped, 'header is not sticky', 'only Classic Reddit’s document-flow header may skip the obstruction sweep');
+		return;
+	}
 	assert.ok(result.checked > 50, `expected a page full of controls, found ${result.checked}`);
 
 	// The padding has to have come from the measured header, not the fallback. It

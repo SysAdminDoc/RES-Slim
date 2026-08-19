@@ -203,12 +203,10 @@ test('form controls take their boundary from the control token, not the decorati
 	for (const rule of controlRules) assert.match(scss, rule);
 });
 
-test('no palette is secretly light', () => {
-	// The module is a dark skin for old reddit and the repo ships no light variant.
-	// A palette whose background is bright would invert every other assumption in
-	// the stylesheet, and the contrast checks above would still pass.
+test('Classic Reddit is light and every alternative palette remains dark', () => {
 	for (const id of PAGE_THEME_IDS) {
 		const bg = luminance(hex(palette(id)['rsm-th-bg']));
-		assert.ok(bg < 0.2, `${id} has a background luminance of ${bg.toFixed(3)} — that is not a dark theme`);
+		if (id === 'classic') assert.ok(bg > 0.9, `Classic Reddit should keep its white canvas, saw ${bg.toFixed(3)}`);
+		else assert.ok(bg < 0.2, `${id} has a background luminance of ${bg.toFixed(3)} — that is not a dark theme`);
 	}
 });

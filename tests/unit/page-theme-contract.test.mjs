@@ -14,17 +14,17 @@ const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, sanitizeAccent } =
 	await loadFlowModule('lib/utils/pageTheme.js', 'page-theme', { deps: ['lib/utils/usernameColors.js'] });
 
-test('normalizeTheme falls back to graphite for unknown values', () => {
+test('normalizeTheme falls back to Classic Reddit for unknown values', () => {
 	assert.equal(normalizeTheme('catppuccin'), 'catppuccin');
-	assert.equal(normalizeTheme('does-not-exist'), 'graphite');
-	assert.equal(normalizeTheme(null), 'graphite');
+	assert.equal(normalizeTheme('does-not-exist'), 'classic');
+	assert.equal(normalizeTheme(null), 'classic');
 	for (const id of PAGE_THEME_IDS) assert.equal(normalizeTheme(id), id);
 });
 
 test('desiredThemeClasses always yields master + exactly one palette class', () => {
-	const base = desiredThemeClasses({ theme: 'graphite' });
-	assert.deepEqual(base, ['res-pageTheme', 'res-pageTheme--graphite']);
-	const paletteClasses = base.filter(c => /^res-pageTheme--(oled|graphite|midnight|catppuccin|tokyonight|rosepine|nord|dracula|gruvbox|solarized)$/.test(c));
+	const base = desiredThemeClasses({ theme: 'classic' });
+	assert.deepEqual(base, ['res-pageTheme', 'res-pageTheme--classic']);
+	const paletteClasses = base.filter(c => new RegExp(`^res-pageTheme--(${PAGE_THEME_IDS.join('|')})$`).test(c));
 	assert.equal(paletteClasses.length, 1);
 });
 
@@ -52,8 +52,9 @@ test('sanitizeAccent accepts only hex colours', () => {
 test('pageTheme module is registered, enabled by default, and reversible', () => {
 	const mod = read('lib/modules/pageTheme.js');
 	assert.doesNotMatch(mod, /module\.disabledByDefault\s*=/);
-	assert.match(mod, /theme:\s*\{[\s\S]*?value: 'graphite'/);
+	assert.match(mod, /theme:\s*\{[\s\S]*?value: 'classic'/);
 	assert.match(mod, /refinedLayout:\s*\{[\s\S]*?value: true/);
+	assert.match(mod, /roundedCorners:\s*\{[\s\S]*?value: false/);
 	assert.match(mod, /if \(!Modules\.isRunning\(module\)\) \{\s*clearAll\(\);/);
 	assert.match(mod, /localStorage\.getItem\(CACHE_KEY\)/); // anti-FOUC early apply
 	// The accent is written from `accentRoles`, not raw, so a value that cannot

@@ -52,6 +52,21 @@ test('current Reddit posts are normalised into the Thing vocabulary', () => {
 	assert.equal(post.querySelector('[slot="credit-bar"]').classList.contains('tagline'), true);
 });
 
+test('current Reddit post controls receive the gated Classic layout stylesheet', () => {
+	const post = document.createElement('shreddit-post');
+	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';
+	document.body.append(post);
+	Shreddit.prepareShredditThing(post);
+	const style = post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`);
+	assert.ok(style, 'the open post shadow root needs the layout bridge');
+	assert.match(style.textContent, /res-pageTheme--classic\.res-pageTheme--refined/);
+	assert.match(style.textContent, /data-action-bar-action='upvote'/);
+	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`).length, 1);
+	Shreddit.prepareShredditThing(post);
+	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_CLASSIC_STYLE_ATTR}]`).length, 1, 're-preparing streamed posts must not duplicate CSS');
+	post.remove();
+});
+
 test('current Reddit comments retain native collapse state and semantic roles', () => {
 	Shreddit.prepareShredditTree(document);
 	const comment = document.querySelector('shreddit-comment');

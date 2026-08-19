@@ -1,18 +1,18 @@
 {
 	"chrome": {
-		"foreground.entry.js": 717830,
-		"options.entry.js": 788660,
+		"foreground.entry.js": 723470,
+		"options.entry.js": 794300,
 		"background.entry.js": 90485,
-		"res.css": 316963,
+		"res.css": 329362,
 		"options.css": 81024,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630
 	},
 	"firefox": {
-		"foreground.entry.js": 717953,
-		"options.entry.js": 788783,
+		"foreground.entry.js": 723593,
+		"options.entry.js": 794423,
 		"background.entry.js": 90530,
-		"res.css": 316963,
+		"res.css": 329362,
 		"options.css": 81024,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630

@@ -4,6 +4,26 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+## v0.43.0 - 2026-08-19
+
+### Added
+
+- Added a Classic Reddit palette and made it the default page theme. It reproduces the archived white canvas, pale-blue chrome, blue 16px Verdana titles, compact metadata, flat surfaces, and border-based discussion nesting on both Reddit renderers.
+- Added a shadow-root CSS bridge for current Reddit's native post actions. Listing votes now occupy an old-Reddit-style left rail while the original buttons, state, listeners, and routes remain intact.
+- Added matched archived/current Reddit visual QA at a 1265x712 viewport, plus browser contracts for exact listing-row, media, header, action-rail, and comment geometry.
+
+### Changed
+
+- Rebuilt current Reddit listings around the measured old Reddit proportions: 72px rows, 43px vote rail, 70px thumbnails, 300px sidebar, flat 10px interface chrome, and full-width content without the permanent navigation rail.
+- Reworked current Reddit threads into flat opened posts and compact 14px comments with 10px metadata, native collapse controls, and one-pixel nesting guides.
+- Generalized custom-accent correction to move toward the nearest readable lightness in either direction, supporting the new light palette without weakening the ten dark palettes.
+- Rounded corners now default off so fresh installs match Classic Reddit; the option remains available for users who prefer it.
+
+### Fixed
+
+- Prevented current Reddit's modern card/media rules from overriding Classic Reddit thumbnail sizing at equal selector specificity.
+- Kept Classic Reddit metadata, form boundaries, injected controls, and nested old Reddit comments WCAG-readable even when the independent night-mode class is also present.
+
 ## v0.42.0 - 2026-08-19
 
 ### Added

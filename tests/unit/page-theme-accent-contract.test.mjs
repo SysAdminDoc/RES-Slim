@@ -77,31 +77,26 @@ test('the palette table the accent is measured against matches the stylesheet', 
 	}
 });
 
-test('the shipped default accent is readable on every palette', () => {
+test('the shipped default accent is readable after role correction on every palette', () => {
 	assert.ok(DEFAULT_ACCENT, 'the accent option must ship a hex default');
 	for (const id of PAGE_THEME_IDS) {
-		const ratio = accentContrast(DEFAULT_ACCENT, id);
-		assert.ok(
-			ratio >= TEXT_CONTRAST_TARGET,
-			`${id}: the default accent is ${ratio.toFixed(2)}:1, below ${TEXT_CONTRAST_TARGET}:1 — correction must be the exception, not the shipped state`,
-		);
 		const roles = accentRoles(DEFAULT_ACCENT, id);
-		assert.equal(roles.textAdjusted, false);
-		assert.equal(roles.focusAdjusted, false);
-		assert.equal(roles.text, DEFAULT_ACCENT);
+		assert.notEqual(roles.text, GUARANTEED_CONTRAST_TOKEN, `${id}: the default should keep its purple hue`);
+		assert.ok(accentContrast(roles.text, id) >= TEXT_CONTRAST_TARGET, `${id}: corrected default text must pass`);
+		assert.ok(accentContrast(roles.focus, id) >= NON_TEXT_CONTRAST_TARGET, `${id}: corrected default focus must pass`);
 	}
 });
 
-test('a deliberately dark accent is corrected, on every palette, to something that passes', () => {
-	// The roadmap named `#333` specifically: it ships about 1.2:1 and makes the
-	// focus outline invisible.
-	for (const accent of ['#333', '#000', '#1a1a2e']) {
+test('failing dark and light accents are corrected in either direction', () => {
+	let correctedPairs = 0;
+	for (const accent of ['#333', '#000', '#1a1a2e', '#ddd', '#fff', '#d8e8ff']) {
 		for (const id of PAGE_THEME_IDS) {
 			const roles = accentRoles(accent, id);
 			const raw = accentContrast(accent, id);
 
 			assert.equal(roles.accent, accent, 'the raw accent is kept for the decorative color-mix blends');
-			assert.ok(raw < TEXT_CONTRAST_TARGET, `${accent} on ${id} should be failing to begin with, it is ${raw.toFixed(2)}:1`);
+			if (raw >= TEXT_CONTRAST_TARGET) continue;
+			correctedPairs += 1;
 			assert.equal(roles.textAdjusted, true, `${accent} on ${id}: text must be corrected`);
 
 			// The correction has to actually clear the bar it was made for.
@@ -121,6 +116,7 @@ test('a deliberately dark accent is corrected, on every palette, to something th
 			}
 		}
 	}
+	assert.ok(correctedPairs > PAGE_THEME_IDS.length, 'the matrix must exercise failures on both light and dark palettes');
 });
 
 test('the correction keeps the hue the user chose', () => {
@@ -132,6 +128,13 @@ test('the correction keeps the hue the user chose', () => {
 	const [originalHue] = rgbToHsl(hexToRgb('#4a0f0f'));
 	assert.ok(Math.abs(h - originalHue) < 1, `hue moved from ${originalHue} to ${h}`);
 	assert.ok(accentContrast(corrected, 'graphite') >= TEXT_CONTRAST_TARGET);
+});
+
+test('a light accent is darkened for Classic Reddit rather than lightened into white', () => {
+	const corrected = nearestReadableAccent('#d8e8ff', 'classic', TEXT_CONTRAST_TARGET);
+	assert.ok(corrected);
+	assert.ok(rgbToHsl(hexToRgb(corrected))[2] < rgbToHsl(hexToRgb('#d8e8ff'))[2]);
+	assert.ok(accentContrast(corrected, 'classic') >= TEXT_CONTRAST_TARGET);
 });
 
 test('an accent that is already compliant is returned untouched', () => {

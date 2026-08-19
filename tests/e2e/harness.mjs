@@ -66,7 +66,7 @@ export function assertBuilt() {
 // service worker has actually registered. A context that opens but never
 // registers a worker is a failed load, not a slow one, so this throws rather
 // than letting later assertions fail somewhere less informative.
-export async function launchWithExtension({ timeout = 30000 } = {}) {
+export async function launchWithExtension({ timeout = 30000, viewport = { width: 1440, height: 900 } } = {}) {
 	assertBuilt();
 
 	const userDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'res-slim-e2e-'));
@@ -100,7 +100,7 @@ export async function launchWithExtension({ timeout = 30000 } = {}) {
 	const context = await chromium.launchPersistentContext(userDataDir, {
 		channel: 'chromium',
 		headless: !HEADED,
-		viewport: { width: 1440, height: 900 },
+		viewport,
 		args,
 	});
 
