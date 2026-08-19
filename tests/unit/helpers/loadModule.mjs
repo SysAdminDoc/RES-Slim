@@ -136,7 +136,16 @@ export const getExtensionId = () => 'res-slim-test';
 export const i18n = (key, ...args) => String(key);
 export const openNewTab = () => {};
 export const openNewTabs = () => {};
-export const ajax = async () => { throw new Error('ajax() is not stubbed for this test; inject a fake instead'); };
+// Throws by default so a test that reaches the network by accident fails loudly
+// rather than hanging. A test that *means* to exercise a request sets
+// \`globalThis.__resSlimAjax\` and observes the arguments — which is the only way
+// to assert the URL a host actually builds. Asserting that from source cannot
+// distinguish \`groups[1]\` from \`groups[2]\`, which is exactly how two imgur URL
+// spellings shipped resolving to \`undefined\`.
+export const ajax = async (...args) => {
+	if (typeof globalThis.__resSlimAjax === 'function') return globalThis.__resSlimAjax(...args);
+	throw new Error('ajax() is not stubbed for this test; set globalThis.__resSlimAjax to a fake');
+};
 export const Storage = {
 	get: async () => null,
 	set: async () => {},

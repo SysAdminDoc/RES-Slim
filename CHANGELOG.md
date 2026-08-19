@@ -2,6 +2,28 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Two of the four ways imgur writes an id got no working expando. A slugged URL
+  puts the id after a hyphen and `\w` excludes the hyphen, so the pattern needs
+  two alternatives and therefore two capture groups for one value - and the
+  gallery handler read only the second, so every *bare* `imgur.com/gallery/<id>`
+  asked the API for a resource literally named `undefined`. The album pattern had
+  only the bare alternative, so every *slugged* `imgur.com/a/title-<id>` - which
+  is imgur's current album URL shape - matched nothing and fell through to no
+  expando at all.
+
+  Upstream RES has the same defect, filed as issues #5610 and #5611 on
+  2026-08-08 and still open there; this file is inherited verbatim.
+
+  `tests/unit/imgur-url-shapes-contract.test.mjs` drives `detect()` and watches
+  the endpoint it builds, because a source assertion cannot tell `groups[1]` from
+  `groups[2]`. Both halves were baited: reverting the gallery read reproduces
+  `gallery/undefined`, and reverting the album pattern reproduces "produced no
+  request at all".
+
 ## v0.41.0 - 2026-08-19
 
 ### Changed
