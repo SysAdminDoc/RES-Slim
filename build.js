@@ -23,8 +23,12 @@ import packageInfo from './package.json' with { type: 'json' };
 const VENDORED_ASSETS = [
 	{
 		file: 'dash.mediaplayer.min.js',
-		from: './node_modules/dashjs/dist/dash.mediaplayer.min.js',
-		sha256: '66dff6f83ec1e22418f3fa17a2b2b9b21b7b3ffc290fd17a6a6595678c35ed9b',
+		// dashjs v5 restructured dist/ into legacy|modern x umd|esm; the flat
+		// dist/dash.mediaplayer.min.js this used to name does not exist any more.
+		// `modern` deliberately: `legacy` carries IE11 polyfills and is 942KB
+		// against modern's 714KB, for browsers far below this extension's floor.
+		from: './node_modules/dashjs/dist/modern/umd/dash.mediaplayer.min.js',
+		sha256: 'd4ee2d6fd00a3944f448964787d4603ca1e4ae5ce2956d0a755b78e0d3566b57',
 	},
 	{
 		file: 'jszip.min.js',
@@ -365,6 +369,26 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 				name: 'verify-vendored-integrity',
 				setup(build) {
 					build.onEnd(async () => {
+						// Check the source as well as the copy. Hashing only the copy meant a
+						// stale artifact in dist/ validated itself: after `dashjs` moved its
+						// dist layout in v5, `yarn build` exited 0 and reported a passing
+						// integrity check while dist/chrome/dash.mediaplayer.min.js was
+						// still the v4 file from a build three days earlier. Only a clean
+						// dist/ failed, which is the one case a developer upgrading a
+						// dependency locally does not hit.
+						await Promise.all(VENDORED_ASSETS.map(async ({ from, sha256 }) => {
+							let content;
+							try {
+								content = await fs.promises.readFile(from);
+							} catch (e) {
+								throw new Error(`${from} is missing.\nA vendored package moved or renamed its distribution file. Update VENDORED_ASSETS in build.js.`);
+							}
+							const actual = crypto.createHash('sha256').update(content).digest('hex');
+							if (actual !== sha256) {
+								throw new Error(`${from} integrity check failed!\n  expected: ${sha256}\n  actual:   ${actual}\nThe vendored file may have been tampered with. Update its entry in VENDORED_ASSETS in build.js if you intentionally upgraded the package.`);
+							}
+						}));
+
 						await Promise.all(VENDORED_ASSETS.map(async ({ file, sha256 }) => {
 							const content = await fs.promises.readFile(`./dist/${targetName}/${file}`);
 							const actual = crypto.createHash('sha256').update(content).digest('hex');

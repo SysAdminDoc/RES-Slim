@@ -1,0 +1,35 @@
+/* @flow */
+
+// dashjs v5 declares only an `exports` map — no `main`, no `module`. Flow 0.84
+// predates the `exports` field by six years, so `import dashjs from 'dashjs'`
+// stopped resolving the moment the package was upgraded, and the type import in
+// `lib/modules/showImages/mediaTypes.js` became a hard Flow error.
+//
+// Declaring it here instead of chasing the package layout is the more durable
+// answer: the library is loaded at runtime as a vendored script tag, not bundled,
+// so nothing about node_modules' shape should be able to break the type check.
+// The same reasoning already applies to `snudown.js.flow` beside this file.
+//
+// Only the surface `mediaTypes.js` actually drives is declared. A method that is
+// not here is one this extension does not call.
+declare module 'dashjs' {
+	declare type MediaPlayerInstance = {
+		initialize(view?: HTMLMediaElement, source?: ?string, autoPlay?: boolean): void,
+		setAutoPlay(value: boolean): void,
+		attachView(element: HTMLMediaElement): void,
+		// `null` is the documented way to detach a source, and it is what the
+		// expando's `stop()` hands back.
+		attachSource(urlOrManifest: ?(string | Object), startTime?: number | string): void,
+		destroy(): void,
+		on(type: string, listener: (event: any) => void, scope?: Object): void,
+		off(type: string, listener: (event: any) => void, scope?: Object): void,
+	};
+
+	declare type MediaPlayerFactory = {
+		create(): MediaPlayerInstance,
+	};
+
+	declare function MediaPlayer(): MediaPlayerFactory;
+
+	declare var Version: string;
+}

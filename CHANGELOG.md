@@ -4,6 +4,42 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- dashjs 4.7.4 -> 5.2.1, which fixes Cta608Parser and ResizeObserver memory
+  leaks - the kind that matter in a content script that lives as long as the tab
+  does.
+
+  The upgrade was not a version bump. v5 restructured `dist/` into
+  `legacy|modern x umd|esm`, so the flat path `build.js` copied no longer exists;
+  `modern/umd` is vendored deliberately, since `legacy` carries IE11 polyfills at
+  942KB against modern's 714KB for browsers far below this extension's floor.
+
+  Two things the upgrade exposed:
+
+  - **The integrity check validated the wrong file.** It hashed the copy in
+    `dist/`, so a stale artifact re-validated itself: with the source path
+    pointing at a file that no longer existed, `yarn build` exited 0 and reported
+    a passing integrity check while shipping the v4 library from a build three
+    days earlier. Only a clean `dist/` failed - the one case a developer
+    upgrading a dependency locally does not hit. The source is now hashed too,
+    and a missing source names itself.
+  - **`dashjs.skipAutoCreate` no longer exists.** In v4 it stopped the library
+    adopting every `[data-dashjs-player]` video on the page via a
+    `DOMContentLoaded` listener. v5 removed that machinery outright, so the line
+    set an unused property while reading as a guard that was still doing work.
+
+  Flow needed a libdef: v5 ships only an `exports` map, and Flow 0.84 predates
+  that field by six years, so `import dashjs from 'dashjs'` stopped resolving.
+  Declaring the surface in `flow/lib/dashjs.js.flow` also means a future dist
+  reshuffle cannot break the type check again.
+
+  Verified against live MPEG-DASH: both `dash.akamaized.net/akamai/bbb_30fps` and
+  `livesim.dashif.org` reach `readyState: 4` with real dimensions and a buffered
+  ahead, driven through the exact call sequence `mediaTypes.js` uses, including
+  the `attachSource(null)` teardown. This is the one dependency whose failure
+  mode the offline suite cannot see.
+
 ### Changed
 
 - The Transifex locale negotiation is retired. `redditLocaleToTransifexLocale`
