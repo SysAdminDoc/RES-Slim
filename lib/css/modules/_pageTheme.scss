@@ -523,6 +523,23 @@ html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(#red
 	letter-spacing: -2px;
 }
 
+// Reddit ships the wordmark as an inline SVG whose colour is normally owned by
+// the site's light/dark preference. The page theme can deliberately use the
+// opposite scheme, so keep the real asset and make it follow this palette.
+html.res-pageTheme.res-pageTheme--refined reddit-header-large #reddit-logo svg {
+	display: block;
+	width: auto;
+	max-width: 88px;
+	height: 22px;
+	color: currentcolor !important;
+	fill: currentcolor;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(button, [role='button']) svg {
+	flex: none;
+	fill: currentcolor;
+}
+
 html.res-pageTheme.res-pageTheme--refined reddit-header-large > header > a:first-child,
 html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-header-action-items > header > a:first-child {
 	color: var(--rsm-th-txt-strong) !important;
@@ -774,8 +791,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='cre
 	white-space: nowrap;
 }
 
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='post-media-container'],
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='thumbnail'] {
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'],
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail'] {
 	position: absolute !important;
 	top: 1px !important;
 	left: 52px !important;
@@ -791,11 +808,17 @@ html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shredd
 	border-radius: 0 !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='post-media-container'] :where(img, video, shreddit-player),
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='thumbnail'] :where(img, video) {
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'] :where(img, video, shreddit-player),
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail'] :where(img, video) {
+	display: block !important;
 	width: 70px !important;
 	height: 70px !important;
 	object-fit: cover !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) shreddit-player {
+	overflow: hidden !important;
+	background: #000;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='post-flair'] {
@@ -996,8 +1019,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed {
 		padding-left: 50px !important;
 	}
 
-	html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='post-media-container'],
-	html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post [slot='thumbnail'] {
+	html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'],
+	html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail'] {
 		display: none !important;
 	}
 
@@ -1042,6 +1065,7 @@ html.res-pageTheme:has(shreddit-app) {
 	--color-secondary-background-hover: color-mix(in srgb, var(--rsm-th-accent) 14%, var(--rsm-th-bg-raise));
 	--color-secondary-content: var(--rsm-th-txt-strong);
 	--shreddit-content-background: var(--rsm-th-bg-elev);
+	--shreddit-color-wordmark: var(--rsm-th-txt-strong);
 	--shreddit-header-height: 44px;
 	--page-y-padding: 44px;
 

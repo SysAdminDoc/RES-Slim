@@ -2,6 +2,35 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- Current Reddit's real SVG wordmark, vote arrows, comment icon and share icon
+  now follow the selected RES-Slim palette. Native controls stay in place, so
+  their Reddit behavior is unchanged.
+
+- Listing previews now cover decoded Reddit images and H.264 video instead of
+  text placeholders. Both render as 70px old-Reddit thumbnails, with video
+  clipped inside its player rather than spilling across the row.
+
+### Fixed
+
+- Opened images and video no longer inherit listing thumbnail geometry. The
+  fix applies at desktop and responsive breakpoints, where a comments-page post
+  must remain full width and keep the source aspect ratio.
+
+- Reddit's nested share button now uses its exported parts for compact sizing.
+  Vote icon pairs follow `aria-pressed`, which prevents the outline and filled
+  variants from appearing at the same time.
+
+### Verified
+
+- The browser suite now waits for a 440x280 image to decode and a 440x280 video
+  to reach a playable state. It measures the native SVGs inside both shadow
+  roots, checks the live wordmark token, and captures listing plus opened-post
+  screenshots before acceptance.
+
 ## v0.49.0 - 2026-08-20
 
 ### Changed

@@ -167,7 +167,20 @@ test('the current renderer participates in page types, watchers, theming, and bo
 	assert.match(scss, /#left-sidebar-container/);
 	assert.match(scss, /shreddit-feed shreddit-post/);
 	assert.match(scss, /shreddit-comment\[depth='0'\]/);
-	assert.match(read('tests/fixtures/shreddit/listing.html'), /rpl-action-bar>[\s\S]*?class="shreddit-post-container"[\s\S]*?rpl-vote-button-group/);
+	assert.match(scss, /--shreddit-color-wordmark:\s*var\(--rsm-th-txt-strong\)/);
+	assert.match(scss, /shreddit-post:not\(\[view-context='CommentsPage'\]\) \[slot='post-media-container'\]/);
+	assert.match(scss, /shreddit-post:not\(\[view-context='CommentsPage'\]\) shreddit-player/);
+	const bridge = read('lib/utils/shreddit.js');
+	assert.match(bridge, /svg\[icon-name\]/);
+	assert.match(bridge, /shreddit-post-share-button::part\(share-button\)/);
+	assert.match(bridge, /vote-icon-outline/);
+	const listing = read('tests/fixtures/shreddit/listing.html');
+	assert.match(listing, /rpl-action-bar>[\s\S]*?class="shreddit-post-container"[\s\S]*?rpl-vote-button-group/);
+	assert.match(listing, /icon-name="upvote-outline"[\s\S]*?icon-name="downvote-outline"[\s\S]*?icon-name="comment-outline"[\s\S]*?icon-name="share-outline"/);
+	assert.match(listing, /https:\/\/preview\.redd\.it\/media00000001\.png/);
+	assert.match(listing, /https:\/\/v\.redd\.it\/media00000002\.mp4/);
+	assert.doesNotMatch(listing, /data-fixture-icon|media preview/);
+	assert.ok(fs.statSync(path.join(repoRoot, 'tests', 'fixtures', 'media', 'fixture-video.mp4')).size > 1_000, 'the video fixture should contain decodable media');
 
 	for (const file of ['chrome/manifest.json', 'firefox/manifest.json']) {
 		const manifest = JSON.parse(read(file));

@@ -218,6 +218,7 @@ const SHREDDIT_INHERITED_TOKENS = new Set([
 	'--page-y-padding',
 	'--shreddit-content-background',
 	'--shreddit-header-height',
+	'--shreddit-color-wordmark',
 ]);
 
 test('every defined token is referenced, or is a listed member of a live set', () => {

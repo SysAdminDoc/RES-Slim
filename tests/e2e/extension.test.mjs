@@ -29,6 +29,8 @@ const CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'thread.html')
 const FRONT_CAPTURE = path.join(repoRoot, 'tests', 'fixtures', 'mhtml', 'frontpage.html');
 const SHREDDIT_LISTING = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'listing.html');
 const SHREDDIT_THREAD = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html');
+const SHREDDIT_MEDIA_IMAGE = path.join(repoRoot, 'images', 'promo440x280.png');
+const SHREDDIT_MEDIA_VIDEO = path.join(repoRoot, 'tests', 'fixtures', 'media', 'fixture-video.mp4');
 
 function screenshotSlug(value) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -54,6 +56,21 @@ function staticFixture(file) {
 	return fs.readFileSync(file, 'utf8');
 }
 
+function fulfillShredditRequest(route, documentFixture) {
+	const request = route.request();
+	const url = new URL(request.url());
+	if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+		return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(documentFixture) });
+	}
+	if (url.hostname === 'preview.redd.it' && url.pathname.endsWith('.png')) {
+		return route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(SHREDDIT_MEDIA_IMAGE) });
+	}
+	if (url.hostname === 'v.redd.it' && url.pathname.endsWith('.mp4')) {
+		return route.fulfill({ status: 200, contentType: 'video/mp4', body: fs.readFileSync(SHREDDIT_MEDIA_VIDEO) });
+	}
+	return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+}
+
 async function dismissVisualNotifications(page) {
 	await page.locator('#RESNotifications .RESCloseButton').evaluateAll(buttons => {
 		buttons.forEach(button => button.click());
@@ -67,18 +84,18 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	const page = await context.newPage();
 	const pageErrors = [];
 	page.on('pageerror', error => pageErrors.push(String(error)));
-	await page.route('**/*', route => {
-		const request = route.request();
-		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
-		}
-		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-	});
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
 
 	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 	await page.waitForFunction(() => document.querySelectorAll('.res-slim-abs-ts').length >= 2, null, { timeout: 30000 });
 	await page.waitForFunction(() => document.querySelector('#t3_fixture3')?.dataset.rsmFilterHit === 'i-built', null, { timeout: 30000 });
+	await page.waitForFunction(() => {
+		const image = document.querySelector('#t3_fixture1 [slot="post-media-container"] img');
+		const video = document.querySelector('#t3_fixture2')?.shadowRoot?.querySelector('slot[name="post-media-container"]')
+			?.assignedElements()[0]?.querySelector('shreddit-player')?.shadowRoot?.querySelector('video');
+		return image?.complete && image.naturalWidth > 0 && video?.readyState >= 2 && video.videoWidth > 0;
+	}, null, { timeout: 30000 });
 
 	const state = await page.evaluate(() => {
 		const rootStyle = getComputedStyle(document.documentElement);
@@ -93,6 +110,10 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const feedError = document.querySelector('shreddit-feed-error-banner');
 		const first = document.querySelector('#t3_fixture1');
 		const media = first?.querySelector('[slot="post-media-container"]');
+		const mediaImage = media?.querySelector('img');
+		const second = document.querySelector('#t3_fixture2');
+		const player = second?.querySelector('shreddit-player');
+		const video = player?.shadowRoot?.querySelector('video');
 		const text = document.querySelector('#t3_fixture2 [slot="text-body"]');
 		const filtered = document.querySelector('#t3_fixture3');
 		const ad = document.querySelector('shreddit-ad-post');
@@ -100,6 +121,17 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const upvote = first?.shadowRoot?.querySelector('[data-action-bar-action="upvote"]');
 		const actionRow = first?.shadowRoot?.querySelector('.action-row, .shreddit-post-container');
 		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]');
+		const logoSvg = document.querySelector('#reddit-logo svg');
+		const share = first?.shadowRoot?.querySelector('shreddit-post-share-button');
+		const actionIcons = [
+			...(first?.shadowRoot?.querySelectorAll('[data-action-bar-action] svg[icon-name]') || []),
+			...(share?.shadowRoot?.querySelectorAll('svg[icon-name]') || []),
+		];
+		const rect = element => {
+			if (!element) return null;
+			const value = element.getBoundingClientRect();
+			return { width: value.width, height: value.height };
+		};
 		const relativeRect = element => {
 			if (!element || !first) return null;
 			const outer = first.getBoundingClientRect();
@@ -109,6 +141,8 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		return {
 			classes: document.documentElement.className,
 			backgroundToken: rootStyle.getPropertyValue('--color-neutral-background').trim(),
+			wordmarkToken: rootStyle.getPropertyValue('--shreddit-color-wordmark').trim(),
+			logo: logoSvg ? { ...rect(logoSvg), color: getComputedStyle(logoSvg).color, fill: getComputedStyle(logoSvg).fill } : null,
 			headerHeight: header?.getBoundingClientRect().height,
 			headerInnerHeight: headerInner?.getBoundingClientRect().height,
 			headerNavHeight: headerNav?.getBoundingClientRect().height,
@@ -121,6 +155,20 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 			postHeight: first?.getBoundingClientRect().height,
 			mediaWidth: media?.getBoundingClientRect().width,
 			mediaHeight: media?.getBoundingClientRect().height,
+			mediaImage: mediaImage ? {
+				complete: mediaImage.complete,
+				naturalWidth: mediaImage.naturalWidth,
+				naturalHeight: mediaImage.naturalHeight,
+				objectFit: getComputedStyle(mediaImage).objectFit,
+				...rect(mediaImage),
+			} : null,
+			player: rect(player),
+			video: video ? {
+				readyState: video.readyState,
+				videoWidth: video.videoWidth,
+				videoHeight: video.videoHeight,
+				...rect(video),
+			} : null,
 			textDisplay: text ? getComputedStyle(text).display : null,
 			filteredDisplay: filtered ? getComputedStyle(filtered).display : null,
 			adDisplay: ad ? getComputedStyle(ad).display : null,
@@ -137,6 +185,13 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 			shadowStyle: !!shadowStyle,
 			actionRow: relativeRect(actionRow),
 			upvoteRect: relativeRect(upvote),
+			actionIcons: actionIcons.map(icon => ({
+				name: icon.getAttribute('icon-name'),
+				display: getComputedStyle(icon).display,
+				fill: getComputedStyle(icon).fill,
+				...rect(icon),
+			})),
+			shareButton: rect(share?.shadowRoot?.querySelector('[part="share-button"]')),
 			absoluteTimes: document.querySelectorAll('.res-slim-abs-ts').length,
 		};
 	});
@@ -144,6 +199,9 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.match(state.classes, /\bres-pageTheme--refined\b/);
 	assert.match(state.classes, /\bres-pageTheme--classic\b/);
 	assert.equal(state.backgroundToken, '#fff');
+	assert.equal(state.wordmarkToken, '#000');
+	assert.ok(state.logo.width >= 70 && state.logo.height === 22, `the native Reddit wordmark should remain legible, saw ${state.logo.width}x${state.logo.height}`);
+	assert.notEqual(state.logo.color, 'rgba(0, 0, 0, 0)');
 	assert.equal(state.headerHeight, 46);
 	assert.equal(state.headerInnerHeight, 45, 'the nested live header must inherit the compact shell');
 	assert.equal(state.headerNavHeight, 45, 'the live header nav must not retain Reddit\'s 56px row');
@@ -156,6 +214,22 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.equal(state.postHeight, 72, 'listing rows should match old Reddit');
 	assert.equal(state.mediaWidth, 70);
 	assert.equal(state.mediaHeight, 70);
+	assert.deepEqual(state.mediaImage, {
+		complete: true,
+		naturalWidth: 440,
+		naturalHeight: 280,
+		objectFit: 'cover',
+		width: 70,
+		height: 70,
+	});
+	assert.deepEqual(state.player, { width: 70, height: 70 });
+	assert.ok(state.video.readyState >= 2, `the Reddit video should decode, saw readyState ${state.video.readyState}`);
+	assert.deepEqual({ videoWidth: state.video.videoWidth, videoHeight: state.video.videoHeight, width: state.video.width, height: state.video.height }, {
+		videoWidth: 440,
+		videoHeight: 280,
+		width: 70,
+		height: 70,
+	});
 	assert.equal(state.textDisplay, 'none');
 	assert.equal(state.filteredDisplay, 'none', 'the existing filter builder should receive current Reddit Things');
 	assert.equal(state.adDisplay, 'none', 'current Reddit ad elements should be removed');
@@ -179,6 +253,10 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.ok(state.actionRow.width > 800, 'the action links should span the compact entry row');
 	assert.equal(state.upvoteRect.x, 10);
 	assert.equal(state.upvoteRect.y, 5);
+	assert.ok(['upvote-outline', 'downvote-outline', 'comment-outline', 'share-outline'].every(name => state.actionIcons.some(icon => icon.name === name)), `native action icon coverage is incomplete: ${state.actionIcons.map(icon => icon.name).join(', ')}`);
+	assert.ok(state.actionIcons.filter(icon => icon.name.endsWith('-outline')).every(icon => icon.display === 'block' && icon.width === 16 && icon.height === 16 && icon.fill !== 'none'), 'native action SVGs should render at a consistent visible size');
+	assert.equal(state.shareButton.height, 16);
+	assert.ok(state.shareButton.width >= 40 && state.shareButton.width <= 60, `the native share control should remain compact, saw ${state.shareButton.width}px`);
 	assert.ok(state.absoluteTimes >= 2);
 
 	const visibleError = await page.evaluate(() => {
@@ -221,13 +299,7 @@ test('current Reddit keeps the classic shell usable at responsive and 200 percen
 	const page = await context.newPage();
 	const pageErrors = [];
 	page.on('pageerror', error => pageErrors.push(String(error)));
-	await page.route('**/*', route => {
-		const request = route.request();
-		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
-		}
-		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-	});
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
 
 	const dir = saveScreenshotDir();
 	const capture = async viewport => {
@@ -302,13 +374,7 @@ test('current Reddit feed appending can be stopped and resumed', async t => {
 	}));
 
 	const page = await context.newPage();
-	await page.route('**/*', route => {
-		const request = route.request();
-		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
-		}
-		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-	});
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
 	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 
@@ -349,29 +415,60 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 	const page = await context.newPage();
 	const pageErrors = [];
 	page.on('pageerror', error => pageErrors.push(String(error)));
-	await page.route('**/*', route => {
-		const request = route.request();
-		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_THREAD) });
-		}
-		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-	});
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_THREAD));
 
 	await page.goto('https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/', { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('shreddit-comment[data-res-shreddit-compat]', { timeout: 30000 });
 	await page.waitForFunction(() => document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length === 2, null, { timeout: 30000 });
+	await page.waitForFunction(() => {
+		const image = document.querySelector('shreddit-post[view-context="CommentsPage"] [slot="post-media-container"] img');
+		return image?.complete && image.naturalWidth > 0;
+	}, null, { timeout: 30000 });
 
 	const state = await page.evaluate(() => {
 		const post = document.querySelector('shreddit-post');
 		const title = post?.querySelector('[slot="title"]');
 		const body = post?.querySelector('[slot="text-body"]');
+		const media = post?.querySelector('[slot="post-media-container"]');
+		const mediaImage = media?.querySelector('img');
+		const headerNav = document.querySelector('reddit-header-action-items > header > nav');
+		const logo = document.querySelector('#reddit-logo svg');
+		const search = document.querySelector('reddit-search-large input');
+		const share = post?.shadowRoot?.querySelector('shreddit-post-share-button');
+		const actionIcons = [
+			...(post?.shadowRoot?.querySelectorAll('[data-action-bar-action] svg[icon-name]') || []),
+			...(share?.shadowRoot?.querySelectorAll('svg[icon-name]') || []),
+		];
 		const top = document.querySelector('shreddit-comment[depth="0"]');
 		const nested = document.querySelector('shreddit-comment[depth="1"]');
 		const nestedAuthor = nested?.querySelector('a.author');
 		return {
+			scrollY,
+			headerNav: headerNav ? { y: headerNav.getBoundingClientRect().y, height: headerNav.getBoundingClientRect().height } : null,
+			logo: logo ? { y: logo.getBoundingClientRect().y, width: logo.getBoundingClientRect().width, height: logo.getBoundingClientRect().height } : null,
+			search: search ? { y: search.getBoundingClientRect().y, width: search.getBoundingClientRect().width, height: search.getBoundingClientRect().height } : null,
 			postTitleSize: title ? getComputedStyle(title).fontSize : null,
 			postBodyDisplay: body ? getComputedStyle(body).display : null,
 			postBodyBackground: body ? getComputedStyle(body).backgroundColor : null,
+			media: media ? {
+				width: media.getBoundingClientRect().width,
+				height: media.getBoundingClientRect().height,
+				position: getComputedStyle(media).position,
+			} : null,
+			mediaImage: mediaImage ? {
+				complete: mediaImage.complete,
+				naturalWidth: mediaImage.naturalWidth,
+				naturalHeight: mediaImage.naturalHeight,
+				width: mediaImage.getBoundingClientRect().width,
+				height: mediaImage.getBoundingClientRect().height,
+				objectFit: getComputedStyle(mediaImage).objectFit,
+			} : null,
+			actionIcons: actionIcons.map(icon => ({
+				name: icon.getAttribute('icon-name'),
+				display: getComputedStyle(icon).display,
+				width: icon.getBoundingClientRect().width,
+				height: icon.getBoundingClientRect().height,
+			})),
 			commentCount: document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length,
 			topBackground: top ? getComputedStyle(top).backgroundColor : null,
 			topBorderWidth: top ? getComputedStyle(top).borderTopWidth : null,
@@ -383,8 +480,23 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 	});
 
 	assert.equal(state.postTitleSize, '18px');
+	assert.equal(state.scrollY, 0);
+	assert.deepEqual(state.headerNav, { y: 0, height: 45 });
+	assert.ok(state.logo.y >= 10 && state.logo.width >= 70 && state.logo.height === 22, `the thread wordmark should be visible in the header, saw ${JSON.stringify(state.logo)}`);
+	assert.ok(state.search.y >= 4 && state.search.width > 250 && state.search.height >= 28, `the thread search control should be visible, saw ${JSON.stringify(state.search)}`);
 	assert.notEqual(state.postBodyDisplay, 'none');
 	assert.equal(state.postBodyBackground, 'rgba(0, 0, 0, 0)');
+	assert.equal(state.media.position, 'static', 'opened media must stay in the document flow');
+	assert.ok(state.media.width > 600 && state.media.height > 350, `opened media should not collapse to a listing thumbnail, saw ${state.media.width}x${state.media.height}`);
+	assert.deepEqual({ complete: state.mediaImage.complete, naturalWidth: state.mediaImage.naturalWidth, naturalHeight: state.mediaImage.naturalHeight }, {
+		complete: true,
+		naturalWidth: 440,
+		naturalHeight: 280,
+	});
+	assert.ok(state.mediaImage.width > 600 && state.mediaImage.height > 350, `the decoded image should fill the opened post, saw ${state.mediaImage.width}x${state.mediaImage.height}`);
+	assert.ok(Math.abs(state.mediaImage.width / state.mediaImage.height - 440 / 280) < 0.02, 'opened media should preserve its intrinsic aspect ratio');
+	assert.ok(['upvote-outline', 'downvote-outline', 'comment-outline', 'share-outline'].every(name => state.actionIcons.some(icon => icon.name === name)), `thread action icon coverage is incomplete: ${state.actionIcons.map(icon => icon.name).join(', ')}`);
+	assert.ok(state.actionIcons.filter(icon => icon.name.endsWith('-outline')).every(icon => icon.display === 'block' && icon.width === 16 && icon.height === 16), 'thread action icons should remain visible');
 	assert.equal(state.commentCount, 2);
 	assert.notEqual(state.topBackground, 'rgba(0, 0, 0, 0)');
 	assert.equal(state.topBorderWidth, '0px');
@@ -3058,13 +3170,7 @@ test('hiding scores works on both renderers, from one option set', async t => {
 
 	// --- current Reddit: the score lives inside the post's shadow root ---------
 	const shreddit = await context.newPage();
-	await shreddit.route('**/*', route => {
-		const request = route.request();
-		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
-		}
-		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-	});
+	await shreddit.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
 	await shreddit.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
 	await shreddit.waitForSelector('shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 	await shreddit.waitForFunction(
@@ -3140,13 +3246,7 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 
 	async function measure(theme) {
 		const page = await context.newPage();
-		await page.route('**/*', route => {
-			const request = route.request();
-			if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
-				return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
-			}
-			return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
-		});
+		await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
 		await worker.evaluate(value => new Promise(resolve => {
 			chrome.storage.local.set({
 				'RES.modulePrefs': { pageTheme: true },
