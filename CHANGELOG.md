@@ -2,6 +2,38 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## v0.49.0 - 2026-08-20
+
+### Changed
+
+- Current Reddit now uses the same compact page shell even after Reddit's live
+  header upgrade. The theme follows the nested header and navigation elements,
+  keeps search and account controls inside a 46px bar, and preserves Reddit's
+  own listeners and routes.
+
+- Community mastheads, sort controls, highlights, information panels, loading
+  states, feed errors and the comment composer now share the old Reddit
+  hierarchy. The result is a dense content rail with a 300px information rail,
+  without the large cards and permanent navigation column from current Reddit.
+
+### Fixed
+
+- Native post voting and action links are positioned against Reddit's current
+  `rpl-action-bar` structure. The stylesheet still runs inside each open post
+  shadow root, so voting, comments and sharing remain native controls instead
+  of replicas.
+
+- Mobile flair no longer overlaps post titles at 200 percent zoom. Hidden feed
+  errors stay hidden, dark palettes set the correct native colour scheme, and
+  the discussion composer no longer inherits the oversized old Reddit button
+  rules.
+
+- The browser fixture now mirrors the live nested header and action-bar shape.
+  Visual coverage includes Classic and Gruvbox listings, discussions, 960px
+  layouts and the 640px width used to check 200 percent zoom. Geometry, focus,
+  shadow-root controls and horizontal overflow are asserted before screenshots
+  are accepted.
+
 ## v0.48.0 - 2026-08-19
 
 ### Added

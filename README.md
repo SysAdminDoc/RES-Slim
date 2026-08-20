@@ -1,6 +1,6 @@
 # RES-Slim
 
-![Version](https://img.shields.io/badge/version-0.48.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
+![Version](https://img.shields.io/badge/version-0.49.0-blue) ![License](https://img.shields.io/badge/license-GPL--3.0-green) ![Platform](https://img.shields.io/badge/platform-JavaScript-lightgrey)
 
 A stripped-down personal fork of [Reddit Enhancement Suite](https://github.com/honestbleeps/Reddit-Enhancement-Suite) (forked from upstream v5.24.8), targeting **old.reddit.com and current Reddit** on desktop.
 
@@ -14,9 +14,9 @@ Only the features actually used are kept. Upstream self-promotion, sponsorship, 
 
 **Media tweaks**: `showImages` inline expando engine plus all 73 host handlers (imgur, youtube, reddit-native, Mastodon, Threads, etc.).
 
-**Appearance**: `pageTheme` now defaults to **Classic Reddit**, a measured white-and-blue recreation of the archived desktop interface. On current Reddit it removes the permanent left rail, restores a 300px information sidebar, uses 72px listing rows with a 43px native vote rail and 70px thumbnails, returns titles to 16px Verdana blue links, flattens cards and rounding, compacts metadata and action links, and rebuilds discussions as border-nested comments. Native current-Reddit voting, comments, sharing, links, collapse, streaming, and routing stay functional; the vote/action controls are styled inside their open shadow roots instead of replaced. The **layout is not tied to the palette**: the same measured geometry is applied on all eleven palettes, so OLED, Graphite, Midnight, Catppuccin, Tokyo Night, Rosé Pine, Nord, Dracula, Gruvbox, and Solarized give you the classic old-Reddit shape in dark colours on *both* renderers. Every palette also sets `color-scheme`, so scrollbars and native form controls match the theme instead of staying light. Accent correction now works in both directions so custom colours remain readable on light and dark surfaces.
+**Appearance**: `pageTheme` defaults to **Classic Reddit**, a measured white-and-blue recreation of the archived desktop interface. On current Reddit it removes the permanent left rail, restores a 300px information sidebar, and uses 72px listing rows with a 43px native vote rail and 70px thumbnails. Titles return to 16px Verdana blue links. Cards, rounding, metadata and action links follow the old desktop hierarchy. Community mastheads, sort controls and highlights become compact strips instead of large cards, while feed errors and the discussion composer receive deliberate classic states. Native current-Reddit voting, comments, sharing, links, collapse, streaming, and routing stay functional. The vote and action controls are styled inside their open shadow roots instead of replaced. The **layout is not tied to the palette**: the same measured geometry is applied on all eleven palettes, so OLED, Graphite, Midnight, Catppuccin, Tokyo Night, Rosé Pine, Nord, Dracula, Gruvbox, and Solarized give you the classic old-Reddit shape in dark colours on *both* renderers. Every palette also sets `color-scheme`, so scrollbars and native form controls match the theme instead of staying light. Accent correction works in both directions so custom colours remain readable on light and dark surfaces.
 
-**Current Reddit compatibility**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and native vote/action controls; The classic control CSS is installed once per post shadow root and is gated by the refined-layout toggle rather than by the palette, so the left vote rail appears under every theme. Document CSS cannot reach inside a shadow root, which is why that distinction matters.
+**Current Reddit compatibility**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and native vote/action controls. It also follows Reddit's nested `reddit-header-action-items` header and the current `rpl-action-bar` vote structure. The classic control CSS is installed once per post shadow root and is gated by the refined-layout toggle rather than by the palette, so the left vote rail appears under every theme. Document CSS cannot reach inside a shadow root, which is why that distinction matters.
 
 **Browsing**: `hideAll` adds a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
@@ -80,10 +80,12 @@ git config core.hooksPath .githooks
 ad rules block a real browser request, all settings states render, promoted
 records stay hidden across asynchronous insertion, and the content script
 initialises on served old-Reddit and current-Reddit documents. It also checks the
-default refined Graphite layout, keyboard focus treatment, feed hierarchy,
+default refined Classic layout, keyboard focus treatment, feed hierarchy,
 opened-post and media geometry, the discussion composer and sort toolbar,
 nested-comment surfaces, Shreddit semantic adaptation, SPA navigation, streamed
-posts, native comment collapse, and open-shadow-root vote controls. It also
+posts, native comment collapse, and open-shadow-root vote controls. Current
+Reddit screenshots cover desktop, 960px, 640px and a dark palette, with
+horizontal overflow and focus visibility checked before capture. It also
 checks that the telemetry patch reached the page world on both renderers, that
 an ad inside a discussion is removed with the theme setting off, and that
 selector drift is reported on a deliberately broken current-Reddit fixture and
