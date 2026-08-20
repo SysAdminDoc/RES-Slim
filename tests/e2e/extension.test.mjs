@@ -1086,7 +1086,7 @@ test('an enabled pageTheme palette paints its own background', async t => {
 });
 
 test('the default old Reddit theme is refined, readable, and reversible', async t => {
-	const { context, dispose } = await launchWithExtension();
+	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
 
 	const page = await context.newPage();
@@ -1106,7 +1106,7 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
 	await page.waitForTimeout(250);
 
-	const state = await page.evaluate(() => {
+	const state = await page.evaluate(async () => {
 		const firstThing = document.querySelector('#siteTable > .thing.link');
 		const rank = firstThing?.querySelector('.rank');
 		const title = firstThing?.querySelector('a.title');
@@ -1117,10 +1117,27 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 		const searchDispatcher = search?.querySelector('.rsm-search-dispatcher');
 		const searchExpando = search?.querySelector('#searchexpando');
 		const hiddenSidebarSpacer = document.querySelector('.rsm-e2e-hidden-spacer');
+		const selfPost = document.querySelector('#thing_t3_post00000002.self');
+		const selfThumbnail = selfPost?.querySelector(':scope > .thumbnail.self');
+		const selfExpando = selfPost?.querySelector('.expando-button.selftext');
 		const styles = element => element ? getComputedStyle(element) : null;
 		const rect = element => element ? element.getBoundingClientRect() : null;
 		const closedSearchHeight = rect(search)?.height;
 		if (searchExpando instanceof HTMLElement) searchExpando.hidden = false;
+		const selfThumbnailImage = styles(selfThumbnail)?.backgroundImage || '';
+		const selfExpandoImage = styles(selfExpando)?.backgroundImage || '';
+		const decodeBackgroundSize = backgroundImage => {
+			const url = /^url\("(.+)"\)$/.exec(backgroundImage)?.[1];
+			if (!url) return Promise.resolve(null);
+			return new Promise(resolve => {
+				const image = new Image();
+				image.addEventListener('load', () => resolve([image.naturalWidth, image.naturalHeight]), { once: true });
+				image.addEventListener('error', () => resolve(null), { once: true });
+				image.src = url;
+			});
+		};
+		const selfThumbnailSourceSize = await decodeBackgroundSize(selfThumbnailImage);
+		const selfExpandoSourceSize = await decodeBackgroundSize(selfExpandoImage);
 		return {
 			bodyBackground: styles(document.body)?.backgroundColor,
 			cardBackground: styles(firstThing)?.backgroundColor,
@@ -1147,6 +1164,14 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 			searchAdvancedSize: styles(searchExpando?.querySelector('#search_showmore'))?.fontSize,
 			searchInputBorder: styles(searchInput)?.borderColor,
 			hiddenSidebarSpacerDisplay: styles(hiddenSidebarSpacer)?.display,
+			selfThumbnailSize: selfThumbnail ? [rect(selfThumbnail)?.width, rect(selfThumbnail)?.height] : null,
+			selfThumbnailImage,
+			selfThumbnailSourceSize,
+			selfThumbnailPosition: styles(selfThumbnail)?.backgroundPosition,
+			selfThumbnailBackgroundSize: styles(selfThumbnail)?.backgroundSize,
+			selfExpandoSize: selfExpando ? [rect(selfExpando)?.width, rect(selfExpando)?.height] : null,
+			selfExpandoImage,
+			selfExpandoSourceSize,
 			classes: document.documentElement.className,
 		};
 	});
@@ -1180,6 +1205,14 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	assert.equal(state.searchExpandoLabelHeight, 24, 'search scope choices should remain easy to target');
 	assert.equal(state.searchAdvancedSize, '10px', 'advanced search should stay visible without dominating the rail');
 	assert.equal(state.hiddenSidebarSpacerDisplay, 'none', 'decluttering should remove wrappers around hidden sidebar clutter');
+	assert.deepEqual(state.selfThumbnailSize, [70, 70], 'self posts should retain the shared listing media rail');
+	assert.match(state.selfThumbnailImage, /^url\("data:image\/png;base64,/, 'self posts should use the isolated native Reddit artwork');
+	assert.deepEqual(state.selfThumbnailSourceSize, [140, 100], 'the bundled high-resolution self-post icon must decode');
+	assert.equal(state.selfThumbnailPosition, '50% 50%', 'the 50px native icon should be centred instead of exposing the next sprite cell');
+	assert.equal(state.selfThumbnailBackgroundSize, '70px 50px', 'the high-resolution source should render at Reddit\'s native CSS size');
+	assert.deepEqual(state.selfExpandoSize, [23, 23], 'the independent selftext expando must remain available');
+	assert.match(state.selfExpandoImage, /^url\("data:image\/png;base64,/, 'the selftext expando should use bundled Reddit artwork too');
+	assert.deepEqual(state.selfExpandoSourceSize, [23, 23], 'the bundled selftext expando icon must decode');
 
 	const firstTitle = page.locator('#siteTable > .thing.link a.title').first();
 	await firstTitle.focus();
@@ -1192,6 +1225,26 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 
 	const dir = saveScreenshotDir();
 	await page.screenshot({ path: path.join(dir, 'old-reddit-refined-listing.png'), fullPage: false });
+	await page.locator('#thing_t3_post00000002').screenshot({ path: path.join(dir, 'old-reddit-self-post.png') });
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, accent: { value: '#8a5cff' } },
+		}, resolve);
+	}));
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--gruvbox'), null, { timeout: 30000 });
+	await page.waitForTimeout(250);
+	const darkSelfPost = await page.evaluate(() => {
+		const thumbnail = document.querySelector('#thing_t3_post00000002 > .thumbnail.self');
+		return {
+			body: getComputedStyle(document.body).backgroundColor,
+			image: thumbnail ? getComputedStyle(thumbnail).backgroundImage : 'none',
+		};
+	});
+	assert.equal(darkSelfPost.body, 'rgb(40, 40, 40)', 'the self-post icon must also be checked on a dark palette');
+	assert.match(darkSelfPost.image, /^url\("data:image\/png;base64,/, 'the dark palette must keep the bundled self-post icon');
+	await page.locator('#thing_t3_post00000002').screenshot({ path: path.join(dir, 'old-reddit-self-post-gruvbox.png') });
 });
 
 test('refined old Reddit search uses focused cards and themed empty states', async t => {

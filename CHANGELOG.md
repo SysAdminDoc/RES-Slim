@@ -2,6 +2,24 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Old Reddit's self-post thumbnail no longer reveals a Snoo underneath the
+  document icon. RES-Slim now centers a clean crop of Reddit's high-resolution
+  artwork inside the 70px tile.
+
+- The same treatment covers Reddit's default, link, mature-content and spoiler
+  placeholders. The Aa+ and Aa- selftext expand controls are bundled too, so
+  neither icon layer depends on a neighboring cell in Reddit's shared sprite.
+
+### Verified
+
+- The old Reddit browser fixture now includes a real self post. Chromium checks
+  both icon sources decode at their intended dimensions, preserves the separate
+  expand control, and captures the row in Classic plus Gruvbox before release.
+
 ## v0.50.0 - 2026-08-20
 
 ### Changed
