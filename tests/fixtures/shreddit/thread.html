@@ -7,7 +7,9 @@
 		* { box-sizing: border-box; }
 		body { margin: 0; font: 14px/1.4 Arial, sans-serif; }
 		reddit-header-large { display: block; position: fixed; inset: 0 0 auto; z-index: 4; height: 56px; }
-		reddit-header-large > header { display: flex; height: 56px; padding: 8px 16px; align-items: center; gap: 18px; }
+		reddit-header-action-items, reddit-header-action-items > header { display: block; height: 56px; }
+		reddit-header-large nav { display: flex; height: 56px; padding: 8px 16px; align-items: center; gap: 18px; }
+		reddit-search-large { display: block; flex: 1; }
 		reddit-header-large input { flex: 1; min-height: 36px; }
 		shreddit-app { display: block; padding-top: 56px; }
 		.grid-container { display: grid; grid-template-columns: 240px 1fr; }
@@ -18,6 +20,9 @@
 		shreddit-post { padding: 14px; }
 		[slot='credit-bar'], [slot='title'], [slot='text-body'], [slot='commentMeta'], [slot='comment'] { display: block; }
 		[slot='title'] { margin: 5px 0; font-size: 22px; }
+		shreddit-comment-composer { display: block; margin: 12px 0; padding: 12px; }
+		shreddit-comment-composer textarea { display: block; width: 100%; min-height: 96px; }
+		.comment-toolbar { display: flex; min-height: 42px; padding: 6px; justify-content: space-between; }
 		shreddit-comment { margin: 10px 0 0 20px; padding: 8px; }
 		shreddit-comment[depth='0'] { margin-left: 0; }
 		.panel { margin-bottom: 12px; padding: 12px; border: 1px solid currentColor; }
@@ -25,22 +30,25 @@
 </head>
 <body>
 <shreddit-app routename="post_page" pagetype="post_detail">
-	<reddit-header-large><header><a href="/">reddit</a><input aria-label="Search Reddit" placeholder="Search Reddit"><a href="/user/fixture-reader/">fixture-reader</a></header></reddit-header-large>
+	<reddit-header-large><reddit-header-action-items><header><nav><a id="reddit-logo" data-header-logo href="/">reddit</a><reddit-search-large><input aria-label="Search Reddit" placeholder="Search Reddit"></reddit-search-large><button type="button">Messages</button><a data-header-user href="/user/fixture-reader/">fixture-reader</a></nav></header></reddit-header-action-items></reddit-header-large>
 	<div class="grid-container flex-nav-expanded">
 		<flex-left-nav-container id="left-sidebar-container"><nav><strong>Home</strong><p>Popular</p><p>Communities</p></nav></flex-left-nav-container>
 		<div id="subgrid-container">
+			<section class="rsm-community-masthead" slot="masthead"><strong>r/example</strong><span> Current Reddit discussion</span></section>
 			<div class="main-container fixed-sidebar">
 				<main id="main-content">
 					<article>
 						<shreddit-post id="t3_thread01" author="alice" subreddit-name="example" domain="self.example" post-type="text"
 							view-context="CommentsPage" score="64" comment-count="2" permalink="/r/example/comments/thread01/current_reddit_thread/"
 							content-href="https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/">
-							<template shadowrootmode="open"><slot name="credit-bar"></slot><slot name="title"></slot><slot name="text-body"></slot><div><button data-action-bar-action="upvote" aria-pressed="false">up</button><button data-action-bar-action="downvote" aria-pressed="false">down</button><a data-action-bar-action="comments" href="/r/example/comments/thread01/current_reddit_thread/">2 comments</a></div></template>
+							<template shadowrootmode="open"><slot name="credit-bar"></slot><slot name="title"></slot><slot name="text-body"></slot><rpl-action-bar><div data-testid="action-row" class="shreddit-post-container"><span><shreddit-vote-animations><span class="rpl-vote-button-group"><button data-action-bar-action="upvote" aria-label="Upvote" aria-pressed="false"></button><span>64</span><button data-action-bar-action="downvote" aria-label="Downvote" aria-pressed="false"></button></span></shreddit-vote-animations></span><a data-action-bar-action="comments" href="/r/example/comments/thread01/current_reddit_thread/">2 comments</a><button data-action-bar-action="share" type="button">share</button></div></rpl-action-bar></template>
 							<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/alice/">alice</a> <time datetime="2026-08-19T12:00:00Z">2h ago</time></span>
 							<a slot="title" href="/r/example/comments/thread01/current_reddit_thread/">A current Reddit discussion</a>
 							<shreddit-post-text-body slot="text-body">The full post remains visible on a comments page.</shreddit-post-text-body>
 						</shreddit-post>
 					</article>
+					<shreddit-comment-composer><label for="fixture-comment">Join the discussion</label><textarea id="fixture-comment" placeholder="What are your thoughts?"></textarea><button type="button">Comment</button></shreddit-comment-composer>
+					<div class="comment-toolbar"><shreddit-sort-dropdown><button type="button">Best</button></shreddit-sort-dropdown><span>2 comments</span></div>
 					<section id="comment-tree">
 						<shreddit-comment thingid="t1_comment1" author="carol" score="18" depth="0" created="2026-08-19T12:30:00Z" permalink="/r/example/comments/thread01/comment/comment1/">
 							<details open><summary>collapse</summary><div>

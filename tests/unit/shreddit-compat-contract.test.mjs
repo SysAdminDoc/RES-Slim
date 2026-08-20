@@ -162,9 +162,12 @@ test('the current renderer participates in page types, watchers, theming, and bo
 	assert.match(thing, /data-action-bar-action="\$\{action\}"/);
 	assert.match(theme, /module\.include = \['r2', 'd2x'\]/);
 	assert.match(scss, /html\.res-pageTheme:has\(shreddit-app\)/);
+	assert.match(scss, /reddit-header-large reddit-header-action-items > header/);
+	assert.match(scss, /#main-content > :where\(div, section\):has\(shreddit-sort-dropdown\)/);
 	assert.match(scss, /#left-sidebar-container/);
 	assert.match(scss, /shreddit-feed shreddit-post/);
 	assert.match(scss, /shreddit-comment\[depth='0'\]/);
+	assert.match(read('tests/fixtures/shreddit/listing.html'), /rpl-action-bar>[\s\S]*?class="shreddit-post-container"[\s\S]*?rpl-vote-button-group/);
 
 	for (const file of ['chrome/manifest.json', 'firefox/manifest.json']) {
 		const manifest = JSON.parse(read(file));

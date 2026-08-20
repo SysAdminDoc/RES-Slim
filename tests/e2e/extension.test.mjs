@@ -54,6 +54,12 @@ function staticFixture(file) {
 	return fs.readFileSync(file, 'utf8');
 }
 
+async function dismissVisualNotifications(page) {
+	await page.locator('#RESNotifications .RESCloseButton').evaluateAll(buttons => {
+		buttons.forEach(button => button.click());
+	});
+}
+
 test('current Reddit receives the old-style theme and RES Thing behaviour', async t => {
 	const { context, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
 	t.after(dispose);
@@ -77,8 +83,14 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	const state = await page.evaluate(() => {
 		const rootStyle = getComputedStyle(document.documentElement);
 		const header = document.querySelector('reddit-header-large');
+		const headerInner = document.querySelector('reddit-header-action-items > header');
+		const headerNav = headerInner?.querySelector('nav');
 		const left = document.querySelector('#left-sidebar-container');
 		const main = document.querySelector('#main-content');
+		const masthead = document.querySelector('[slot="masthead"]');
+		const sortToolbar = document.querySelector('#main-content > div:has(shreddit-sort-dropdown)');
+		const highlights = document.querySelector('community-highlight-carousel');
+		const feedError = document.querySelector('shreddit-feed-error-banner');
 		const first = document.querySelector('#t3_fixture1');
 		const media = first?.querySelector('[slot="post-media-container"]');
 		const text = document.querySelector('#t3_fixture2 [slot="text-body"]');
@@ -98,8 +110,14 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 			classes: document.documentElement.className,
 			backgroundToken: rootStyle.getPropertyValue('--color-neutral-background').trim(),
 			headerHeight: header?.getBoundingClientRect().height,
+			headerInnerHeight: headerInner?.getBoundingClientRect().height,
+			headerNavHeight: headerNav?.getBoundingClientRect().height,
 			leftDisplay: left ? getComputedStyle(left).display : null,
 			mainWidth: main?.getBoundingClientRect().width,
+			mastheadHeight: masthead?.getBoundingClientRect().height,
+			sortToolbarHeight: sortToolbar?.getBoundingClientRect().height,
+			highlightsHeight: highlights?.getBoundingClientRect().height,
+			feedErrorDisplay: feedError ? getComputedStyle(feedError).display : null,
 			postHeight: first?.getBoundingClientRect().height,
 			mediaWidth: media?.getBoundingClientRect().width,
 			mediaHeight: media?.getBoundingClientRect().height,
@@ -127,8 +145,14 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.match(state.classes, /\bres-pageTheme--classic\b/);
 	assert.equal(state.backgroundToken, '#fff');
 	assert.equal(state.headerHeight, 46);
+	assert.equal(state.headerInnerHeight, 45, 'the nested live header must inherit the compact shell');
+	assert.equal(state.headerNavHeight, 45, 'the live header nav must not retain Reddit\'s 56px row');
 	assert.equal(state.leftDisplay, 'none');
 	assert.ok(state.mainWidth > 800, `the feed should reclaim the left rail, saw ${state.mainWidth}px`);
+	assert.ok(state.mastheadHeight >= 38 && state.mastheadHeight <= 42, `the community masthead should be compact, saw ${state.mastheadHeight}px`);
+	assert.equal(state.sortToolbarHeight, 32);
+	assert.ok(state.highlightsHeight <= 70, `community highlights should not become a hero, saw ${state.highlightsHeight}px`);
+	assert.equal(state.feedErrorDisplay, 'none', 'a hidden feed error must stay hidden');
 	assert.equal(state.postHeight, 72, 'listing rows should match old Reddit');
 	assert.equal(state.mediaWidth, 70);
 	assert.equal(state.mediaHeight, 70);
@@ -157,6 +181,20 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.equal(state.upvoteRect.y, 5);
 	assert.ok(state.absoluteTimes >= 2);
 
+	const visibleError = await page.evaluate(() => {
+		const banner = document.querySelector('shreddit-feed-error-banner');
+		banner.hidden = false;
+		const style = getComputedStyle(banner);
+		const state = { display: style.display, height: Math.round(banner.getBoundingClientRect().height) };
+		banner.hidden = true;
+		return state;
+	});
+	assert.deepEqual(visibleError, { display: 'block', height: 38 }, 'the feed error state should be compact and deliberate');
+
+	const dir = saveScreenshotDir();
+	await dismissVisualNotifications(page);
+	await page.screenshot({ path: path.join(dir, 'shreddit-listing.png'), fullPage: false });
+
 	const urlChanges = await page.evaluate(async () => {
 		let changes = 0;
 		document.addEventListener('reddit.urlChanged', () => { changes += 1; });
@@ -174,9 +212,72 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	});
 	assert.deepEqual(urlChanges, { changes: 1, compat: true, fullname: 't3_dynamic1' });
 	assert.deepEqual(pageErrors, [], 'current Reddit listing must initialise without uncaught errors');
+});
+
+test('current Reddit keeps the classic shell usable at responsive and 200 percent zoom widths', async t => {
+	const { context, dispose } = await launchWithExtension({ viewport: { width: 960, height: 800 } });
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.route('**/*', route => {
+		const request = route.request();
+		if (request.resourceType() === 'document' && request.url().includes('www.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
 
 	const dir = saveScreenshotDir();
-	await page.screenshot({ path: path.join(dir, 'shreddit-listing.png'), fullPage: false });
+	const capture = async viewport => {
+		await page.setViewportSize(viewport);
+		await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+		await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+		await page.waitForFunction(
+			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			null, { timeout: 30000 });
+		await dismissVisualNotifications(page);
+		await page.locator('reddit-header-large input').focus();
+
+		const state = await page.evaluate(() => {
+			const post = document.querySelector('#t3_fixture1');
+			const media = post.querySelector('[slot="post-media-container"]');
+			const search = document.querySelector('reddit-header-large input');
+			const vote = post.shadowRoot.querySelector('[data-action-bar-action="upvote"]');
+			const postBox = post.getBoundingClientRect();
+			const voteBox = vote.getBoundingClientRect();
+			return {
+				overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+				rightSidebar: getComputedStyle(document.querySelector('#right-sidebar-container')).display,
+				postHeight: Math.round(postBox.height),
+				mediaDisplay: getComputedStyle(media).display,
+				searchWidth: Math.round(search.getBoundingClientRect().width),
+				searchOutline: getComputedStyle(search).outlineWidth,
+				voteX: Math.round(voteBox.x - postBox.x),
+				voteVisible: voteBox.width > 0 && voteBox.height > 0,
+			};
+		});
+
+		assert.ok(state.overflow <= 1, `${viewport.width}px layout overflowed by ${state.overflow}px`);
+		assert.equal(state.rightSidebar, 'none', `${viewport.width}px should reclaim the information rail`);
+		assert.equal(state.postHeight, 72);
+		assert.ok(state.searchWidth >= 150, `${viewport.width}px search collapsed to ${state.searchWidth}px`);
+		assert.equal(state.searchOutline, '2px', 'keyboard focus must stay visible under the compact header');
+		assert.ok(state.voteVisible && state.voteX < 50, `${viewport.width}px vote rail left the post (x=${state.voteX})`);
+		if (viewport.width === 640) assert.equal(state.mediaDisplay, 'none', 'zoomed layout should trade the thumbnail for title width');
+
+		await page.screenshot({
+			path: path.join(dir, `shreddit-listing-${viewport.width}.png`),
+			fullPage: false,
+			animations: 'disabled',
+		});
+	};
+
+	await capture({ width: 960, height: 800 });
+	await capture({ width: 640, height: 900 });
+
+	assert.deepEqual(pageErrors, [], 'responsive current Reddit must initialise without uncaught errors');
 });
 
 test('current Reddit feed appending can be stopped and resumed', async t => {
@@ -293,6 +394,7 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 	assert.equal(state.topAuthor, 'carol');
 
 	const dir = saveScreenshotDir();
+	await dismissVisualNotifications(page);
 	await page.screenshot({ path: path.join(dir, 'shreddit-thread.png'), fullPage: false });
 
 	await page.locator('shreddit-comment[depth="0"] > details > summary').click();
@@ -3034,6 +3136,7 @@ test('hiding scores works on both renderers, from one option set', async t => {
 test('the classic layout reaches current Reddit on every palette, and the palette still decides the colours', async t => {
 	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
 	t.after(dispose);
+	const dir = saveScreenshotDir();
 
 	async function measure(theme) {
 		const page = await context.newPage();
@@ -3085,6 +3188,12 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 				titleFont: getComputedStyle(post.querySelector('[slot="title"]')).fontFamily,
 				shadowRuleCount: shadow.querySelector('style[data-res-shreddit-shadow-style="classic"]').textContent.length,
 			};
+		});
+		await dismissVisualNotifications(page);
+		await page.screenshot({
+			path: path.join(dir, `shreddit-listing-${theme}.png`),
+			fullPage: false,
+			animations: 'disabled',
 		});
 		await page.close();
 		return state;

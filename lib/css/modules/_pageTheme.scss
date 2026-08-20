@@ -484,33 +484,91 @@ html.res-pageTheme.res-pageTheme--refined reddit-header-large {
 	box-shadow: none !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined reddit-header-large > header {
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-header-action-items {
+	display: block !important;
 	height: 45px !important;
 	min-height: 45px !important;
-	padding: 5px 8px !important;
-	gap: 10px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large > header,
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-header-action-items > header {
+	display: block !important;
+	height: 45px !important;
+	min-height: 45px !important;
+	padding: 0 !important;
 	background: var(--rsm-th-header) !important;
 	color: var(--rsm-th-txt-strong) !important;
 	font: 10px/normal verdana, arial, helvetica, sans-serif;
 }
 
-html.res-pageTheme.res-pageTheme--refined reddit-header-large > header > a:first-child {
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav {
+	display: flex !important;
+	box-sizing: border-box;
+	width: 100%;
+	height: 45px !important;
+	min-height: 45px !important;
+	padding: 5px 8px !important;
+	align-items: center !important;
+	gap: 8px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(#reddit-logo, [data-header-logo]) {
+	display: inline-flex !important;
+	min-width: 92px;
+	height: 34px;
+	align-items: center;
+	color: var(--rsm-th-txt-strong) !important;
+	text-decoration: none !important;
+	font: bold 28px/34px arial, helvetica, sans-serif;
+	letter-spacing: -2px;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large > header > a:first-child,
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-header-action-items > header > a:first-child {
 	color: var(--rsm-th-txt-strong) !important;
 	font: bold 28px/34px arial, helvetica, sans-serif;
 	letter-spacing: -2px;
 }
 
-html.res-pageTheme.res-pageTheme--refined reddit-header-large input {
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-search-large {
+	display: block !important;
+	flex: 0 1 300px !important;
 	width: min(300px, 42vw) !important;
+	max-width: 300px !important;
+	margin-left: auto !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large input {
+	box-sizing: border-box;
+	width: 100% !important;
 	min-height: 28px !important;
 	height: 28px !important;
-	margin-left: auto;
+	margin: 0 !important;
 	padding: 4px 7px !important;
 	background: var(--rsm-th-bg) !important;
 	border: 1px solid var(--rsm-th-control-border) !important;
 	border-radius: 0 !important;
 	color: var(--rsm-th-txt-strong) !important;
 	font: 13px/18px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(button, [role='button']) {
+	box-sizing: border-box;
+	min-width: 28px !important;
+	min-height: 28px !important;
+	height: 28px !important;
+	padding: 3px 6px !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt-strong) !important;
+	font: 10px/18px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(button, [role='button']):hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: var(--rsm-th-control-border) !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-app {
@@ -533,6 +591,19 @@ html.res-pageTheme.res-pageTheme--refined #main-content > h1 {
 	font: normal 18px/24px verdana, arial, helvetica, sans-serif;
 }
 
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > :where(shreddit-subreddit-header, [slot='masthead'], .rsm-community-masthead) {
+	box-sizing: border-box;
+	min-height: 38px;
+	margin: 0 0 5px !important;
+	padding: 6px 8px !important;
+	overflow: hidden;
+	background: var(--rsm-th-header) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt-strong) !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined #subgrid-container > .main-container {
 	grid-template-columns: minmax(0, 1fr) 300px !important;
 	gap: 5px !important;
@@ -544,6 +615,14 @@ html.res-pageTheme.res-pageTheme--refined #right-sidebar-container {
 	padding: 0 !important;
 	background: var(--rsm-th-bg) !important;
 	border: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container:not(:empty) {
+	position: sticky;
+	top: 51px;
+	align-self: start;
+	max-height: calc(100vh - 56px);
+	overflow: auto;
 }
 
 html.res-pageTheme.res-pageTheme--refined #right-sidebar-container > * {
@@ -561,6 +640,82 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed {
 	background: var(--rsm-th-bg) !important;
 	border: 0 !important;
 	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) {
+	display: flex !important;
+	box-sizing: border-box;
+	min-height: 32px !important;
+	margin: 0 0 4px !important;
+	padding: 2px 5px !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 6px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) :where(button, [role='button']) {
+	min-height: 24px !important;
+	height: 24px !important;
+	padding: 2px 6px !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) :where(button, [role='button']):hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: var(--rsm-th-control-border) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel {
+	display: flex;
+	box-sizing: border-box;
+	min-height: 0 !important;
+	height: 32px !important;
+	max-height: 70px;
+	margin: 0 0 4px !important;
+	padding: 7px 9px !important;
+	align-items: flex-start;
+	gap: 6px;
+	overflow: hidden;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden]),
+html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-loader,
+html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-partial:not([src]) {
+	display: block;
+	box-sizing: border-box;
+	min-height: 38px;
+	margin: 4px 0 !important;
+	padding: 9px 10px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font: normal 11px/18px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed > hr,
+html.res-pageTheme.res-pageTheme--refined #main-content > hr {
+	height: 1px !important;
+	margin: 0 !important;
+	background: var(--rsm-th-border) !important;
+	border: 0 !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > article {
@@ -594,6 +749,10 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='tit
 	font: normal 16px/21px verdana, arial, helvetica, sans-serif !important;
 	white-space: nowrap;
 	text-overflow: ellipsis;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:has([slot='post-flair']) [slot='title'] {
+	padding-right: 172px;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='title']:visited {
@@ -687,6 +846,52 @@ html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPa
 	font: normal 14px/20px verdana, arial, helvetica, sans-serif;
 }
 
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-composer {
+	display: block;
+	box-sizing: border-box;
+	margin: 8px 0 !important;
+	padding: 8px !important;
+	background: var(--rsm-th-bg-elev) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt) !important;
+	font: normal 11px/16px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-composer label {
+	display: block;
+	margin: 0 0 5px;
+	color: var(--rsm-th-txt-strong);
+	font-weight: bold;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-composer textarea {
+	display: block;
+	box-sizing: border-box;
+	width: 100% !important;
+	min-height: 86px !important;
+	margin: 0 0 6px !important;
+	padding: 7px 8px !important;
+	resize: vertical;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	color: var(--rsm-th-txt) !important;
+	font: normal 13px/19px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-composer button {
+	min-height: 26px !important;
+	padding: 3px 9px !important;
+	background: var(--rsm-th-bg-raise) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined #comment-tree {
 	background: var(--rsm-th-bg);
 }
@@ -755,6 +960,15 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
 	font: bold 10px/15px verdana, arial, helvetica, sans-serif;
 }
 
+html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed > details > summary::before {
+	content: '[+]';
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed {
+	min-height: 28px;
+	padding-block: 5px !important;
+}
+
 @media (width <= 960px) {
 	html.res-pageTheme.res-pageTheme--refined #subgrid-container > .main-container {
 		grid-template-columns: minmax(0, 1fr) !important;
@@ -762,6 +976,22 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
 }
 
 @media (width <= 640px) {
+	html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav {
+		padding-inline: 5px !important;
+		gap: 5px !important;
+	}
+
+	html.res-pageTheme.res-pageTheme--refined reddit-header-large header :where(#reddit-logo, [data-header-logo]) {
+		min-width: 58px;
+		font-size: 22px;
+		letter-spacing: -1px;
+	}
+
+	html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-search-large {
+		flex-basis: 180px !important;
+		width: min(180px, 45vw) !important;
+	}
+
 	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) {
 		padding-left: 50px !important;
 	}
@@ -771,13 +1001,17 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
 		display: none !important;
 	}
 
-	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='credit-bar'],
-	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='post-flair'] {
+	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='credit-bar'] {
 		left: 50px !important;
 	}
 
 	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='post-flair'] {
-		right: auto;
+		left: auto !important;
+		right: 4px !important;
+	}
+
+	html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:has([slot='post-flair']) [slot='title'] {
+		padding-right: 46px;
 	}
 }
 
@@ -811,12 +1045,13 @@ html.res-pageTheme:has(shreddit-app) {
 	--shreddit-header-height: 44px;
 	--page-y-padding: 44px;
 
-	color-scheme: dark;
+	color-scheme: var(--rsm-th-scheme);
 }
 
 html.res-pageTheme shreddit-app,
 html.res-pageTheme reddit-header-large,
 html.res-pageTheme reddit-header-large > header,
+html.res-pageTheme reddit-header-large reddit-header-action-items > header,
 html.res-pageTheme #left-sidebar-container,
 html.res-pageTheme #right-sidebar-container,
 html.res-pageTheme #subgrid-container,
@@ -831,7 +1066,8 @@ html.res-pageTheme reddit-header-large {
 	box-shadow: 0 5px 18px var(--rsm-th-shadow);
 }
 
-html.res-pageTheme reddit-header-large > header {
+html.res-pageTheme reddit-header-large > header,
+html.res-pageTheme reddit-header-large reddit-header-action-items > header {
 	min-height: 44px;
 	height: 44px;
 	padding-block: 0;
@@ -2122,11 +2358,11 @@ html.res-pageTheme--refined .comment .expand:hover {
 }
 
 // Inputs and buttons stop falling back to the platform-grey 2005 treatment.
-html.res-pageTheme--refined textarea,
-html.res-pageTheme--refined input[type='text'],
-html.res-pageTheme--refined input[type='password'],
-html.res-pageTheme--refined input[type='number'],
-html.res-pageTheme--refined select {
+html.res-pageTheme--refined:not(:has(shreddit-app)) textarea,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='text'],
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='password'],
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='number'],
+html.res-pageTheme--refined:not(:has(shreddit-app)) select {
 	box-sizing: border-box;
 	min-height: 38px;
 	padding: 8px 10px;
@@ -2137,15 +2373,15 @@ html.res-pageTheme--refined select {
 	font: inherit;
 }
 
-html.res-pageTheme--refined textarea {
+html.res-pageTheme--refined:not(:has(shreddit-app)) textarea {
 	line-height: 1.55;
 	resize: vertical;
 }
 
-html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type='button']:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type='submit']:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined input[type='reset']:not(:where(#RESConsoleContainer *)) {
+html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *)) {
 	min-height: 34px;
 	padding: 6px 12px;
 	background: var(--rsm-th-bg-raise);
@@ -2157,10 +2393,10 @@ html.res-pageTheme--refined input[type='reset']:not(:where(#RESConsoleContainer 
 	font-weight: 650;
 }
 
-html.res-pageTheme--refined button:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type='button']:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type='submit']:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined input[type='reset']:not(:where(#RESConsoleContainer *)):hover {
+html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *)):hover {
 	background: color-mix(in srgb, var(--rsm-th-accent) 15%, var(--rsm-th-bg-raise));
 	border-color: color-mix(in srgb, var(--rsm-th-accent) 50%, var(--rsm-th-border));
 }

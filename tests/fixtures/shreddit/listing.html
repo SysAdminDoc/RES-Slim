@@ -7,7 +7,9 @@
 		* { box-sizing: border-box; }
 		body { margin: 0; font: 14px/1.4 Arial, sans-serif; }
 		reddit-header-large { display: block; position: fixed; inset: 0 0 auto; z-index: 4; height: 56px; }
-		reddit-header-large > header { display: flex; height: 56px; padding: 8px 16px; align-items: center; gap: 18px; }
+		reddit-header-action-items, reddit-header-action-items > header { display: block; height: 56px; }
+		reddit-header-large nav { display: flex; height: 56px; padding: 8px 16px; align-items: center; gap: 18px; }
+		reddit-search-large { display: block; flex: 1; }
 		reddit-header-large input { flex: 1; min-height: 36px; }
 		shreddit-app { display: block; padding-top: 56px; }
 		.grid-container { display: grid; grid-template-columns: 240px 1fr; }
@@ -22,20 +24,28 @@
 		[slot='credit-bar'], [slot='title'], [slot='text-body'] { display: block; }
 		[slot='title'] { margin: 5px 0; font-size: 18px; }
 		[slot='post-media-container'] { width: 100%; height: 180px; margin-top: 10px; background: #45515a; }
+		.rsm-community-masthead { min-height: 82px; padding: 14px; }
+		.sort-toolbar { display: flex; min-height: 42px; padding: 6px; justify-content: space-between; }
+		community-highlight-carousel { display: block; min-height: 84px; padding: 10px; }
 		.panel { margin-bottom: 12px; padding: 12px; border: 1px solid currentColor; }
 	</style>
 </head>
 <body>
 <shreddit-app routename="subreddit" pagetype="subreddit">
 	<reddit-header-large>
-		<header><a href="/">reddit</a><input aria-label="Search Reddit" placeholder="Search Reddit"><a href="/user/fixture-reader/">fixture-reader</a></header>
+		<reddit-header-action-items>
+			<header><nav><a id="reddit-logo" data-header-logo href="/">reddit</a><reddit-search-large><input aria-label="Search Reddit" placeholder="Search Reddit"></reddit-search-large><button type="button">Messages</button><a data-header-user href="/user/fixture-reader/">fixture-reader</a></nav></header>
+		</reddit-header-action-items>
 	</reddit-header-large>
 	<div class="grid-container flex-nav-expanded">
 		<flex-left-nav-container id="left-sidebar-container"><nav><strong>Home</strong><p>Popular</p><p>Explore</p><p>Communities</p></nav></flex-left-nav-container>
 		<div id="subgrid-container">
-			<h1>r/example</h1>
+			<section class="rsm-community-masthead" slot="masthead"><strong>r/example</strong><span> A deterministic community</span></section>
 			<div class="main-container fixed-sidebar">
 				<main id="main-content">
+					<div class="sort-toolbar"><shreddit-sort-dropdown><button type="button">Hot</button></shreddit-sort-dropdown><button type="button">Compact view</button></div>
+					<community-highlight-carousel><strong>Community highlights</strong><a href="/r/example/comments/highlight/">Read the welcome thread</a></community-highlight-carousel>
+					<shreddit-feed-error-banner hidden>Reddit could not load more posts. Try again.</shreddit-feed-error-banner>
 					<shreddit-feed>
 						<article>
 							<shreddit-post id="t3_fixture1" author="alice" subreddit-name="example" domain="example.org"
@@ -43,7 +53,7 @@
 								content-href="https://example.org/story?utm_source=reddit">
 								<template shadowrootmode="open">
 									<slot name="credit-bar"></slot><slot name="title"></slot><slot name="post-flair"></slot><slot name="post-media-container"></slot>
-									<div class="action-row"><button data-action-bar-action="upvote" aria-pressed="false">up</button><span>128</span><button data-action-bar-action="downvote" aria-pressed="false">down</button><a data-action-bar-action="comments" href="/r/example/comments/fixture1/current_reddit_post/">24 comments</a></div>
+									<rpl-action-bar><div data-testid="action-row" class="shreddit-post-container"><span><shreddit-vote-animations><span class="rpl-vote-button-group"><button data-action-bar-action="upvote" data-fixture-icon="up" aria-label="Upvote" aria-pressed="false"></button><span>128</span><button data-action-bar-action="downvote" data-fixture-icon="down" aria-label="Downvote" aria-pressed="false"></button></span></shreddit-vote-animations></span><a data-action-bar-action="comments" href="/r/example/comments/fixture1/current_reddit_post/">24 comments</a><button data-action-bar-action="share" type="button">share</button></div></rpl-action-bar>
 								</template>
 								<a slot="full-post-link" href="/r/example/comments/fixture1/current_reddit_post/"></a>
 								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/alice/">alice</a> <time datetime="2026-08-19T12:00:00Z">2h ago</time></span>
@@ -57,7 +67,7 @@
 							<shreddit-post id="t3_fixture2" author="bob" subreddit-name="example" domain="self.example"
 								post-type="text" score="31" comment-count="5" permalink="/r/example/comments/fixture2/text_post/"
 								content-href="https://www.reddit.com/r/example/comments/fixture2/text_post/">
-								<template shadowrootmode="open"><slot name="credit-bar"></slot><slot name="title"></slot><slot name="text-body"></slot><div class="action-row"><button data-action-bar-action="upvote" aria-pressed="false">up</button><a data-action-bar-action="comments" href="/r/example/comments/fixture2/text_post/">5 comments</a></div></template>
+								<template shadowrootmode="open"><slot name="credit-bar"></slot><slot name="title"></slot><slot name="text-body"></slot><rpl-action-bar><div data-testid="action-row" class="shreddit-post-container"><span><shreddit-vote-animations><span class="rpl-vote-button-group"><button data-action-bar-action="upvote" data-fixture-icon="up" aria-label="Upvote" aria-pressed="false"></button><span>31</span><button data-action-bar-action="downvote" data-fixture-icon="down" aria-label="Downvote" aria-pressed="false"></button></span></shreddit-vote-animations></span><a data-action-bar-action="comments" href="/r/example/comments/fixture2/text_post/">5 comments</a><button data-action-bar-action="share" type="button">share</button></div></rpl-action-bar></template>
 								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/bob/">bob</a> <time datetime="2026-08-19T11:00:00Z">3h ago</time></span>
 								<a slot="title" href="/r/example/comments/fixture2/text_post/">A compact text post</a>
 								<shreddit-post-text-body slot="text-body">The listing preview should stay collapsed.</shreddit-post-text-body>
