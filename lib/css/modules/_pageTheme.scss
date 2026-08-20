@@ -2136,7 +2136,7 @@ html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.
 }
 
 html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link > .thumbnail {
-	display: none;
+	display: none !important;
 }
 
 html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.link .title {
