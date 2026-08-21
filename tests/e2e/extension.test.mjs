@@ -3526,3 +3526,72 @@ test('the support report is built on demand and carries timings from the reddit 
 	assert.match(standalone, /showImages: off \(default on\)/, 'the settings half works with no page at all');
 	assert.equal(await options.locator('#RESSupportDumpCopy').isDisabled(), false, 'a built report must be copyable');
 });
+
+test('vote enhancements colour real score elements on old and current Reddit', async t => {
+	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { voteEnhancements: true, pageTheme: true },
+			'RESoptions.voteEnhancements': {
+				colorLinkScore: { value: 'user' },
+				colorCommentScore: { value: 'user' },
+			},
+		}, resolve);
+	}));
+
+	const oldThreadHtml = servableCapture(CAPTURE);
+	const oldListingHtml = servableCapture(FRONT_CAPTURE);
+	await context.route('**/*', route => {
+		const url = new URL(route.request().url());
+		if (url.hostname === 'www.reddit.com') return fulfillShredditRequest(route, SHREDDIT_LISTING);
+		if (route.request().resourceType() === 'document' && url.hostname === 'old.reddit.com') {
+			return route.fulfill({
+				status: 200,
+				contentType: 'text/html; charset=utf-8',
+				body: url.pathname.includes('/comments/') ? oldThreadHtml : oldListingHtml,
+			});
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const current = await context.newPage();
+	await current.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await current.waitForSelector('shreddit-post[data-res-vote-enhancements-score]', { timeout: 30000 });
+	const currentState = await current.evaluate(() => {
+		const post = document.querySelector('shreddit-post');
+		const score = post?.shadowRoot?.querySelector('.rpl-vote-button-group > span');
+		return {
+			value: score?.textContent,
+			color: score ? getComputedStyle(score).color : null,
+			bridge: Boolean(post?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="vote-enhancements"]')),
+		};
+	});
+	assert.deepEqual(currentState, { value: '128', color: 'rgb(217, 43, 43)', bridge: true });
+
+	const oldListing = await context.newPage();
+	await oldListing.goto('https://old.reddit.com/r/fixture/', { waitUntil: 'domcontentloaded' });
+	await oldListing.waitForSelector('#thing_t3_post00000001[data-res-vote-enhancements-score]', { timeout: 30000 });
+	const oldListingColor = await oldListing.evaluate(() => (
+		getComputedStyle(document.querySelector('#thing_t3_post00000001 .score.unvoted')).color
+	));
+	assert.equal(oldListingColor, 'rgb(243, 171, 50)');
+
+	const oldThread = await context.newPage();
+	await oldThread.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
+	await oldThread.waitForFunction(() => (
+		getComputedStyle(document.querySelector('#thing_t1_comment000001 .score.unvoted')).color === 'rgb(217, 43, 43)'
+	), null, { timeout: 30000 });
+	const oldThreadState = await oldThread.evaluate(() => ({
+		post: getComputedStyle(document.querySelector('#thing_t3_post00000001 .score.unvoted')).color,
+		comment: getComputedStyle(document.querySelector('#thing_t1_comment000001 .score.unvoted')).color,
+	}));
+	assert.deepEqual(oldThreadState, { post: 'rgb(243, 171, 50)', comment: 'rgb(217, 43, 43)' });
+
+	const dir = saveScreenshotDir();
+	await dismissVisualNotifications(current);
+	await current.screenshot({ path: path.join(dir, 'vote-enhancements-current.png'), fullPage: false, animations: 'disabled' });
+	await dismissVisualNotifications(oldThread);
+	await oldThread.screenshot({ path: path.join(dir, 'vote-enhancements-old.png'), fullPage: false, animations: 'disabled' });
+});

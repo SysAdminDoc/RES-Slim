@@ -1,0 +1,17 @@
+.res-voteEnhancements-colorLinkScore-automatic,
+.res-voteEnhancements-colorLinkScore-user {
+	.link .rank {
+		min-width: 1em;
+		height: 1em;
+		padding: 4px;
+		border-radius: 8px;
+		color: #fff;
+		font-size: 12px;
+		line-height: 1;
+		text-align: center;
+	}
+}
+
+.res-voteEnhancements-highlightScores span.score {
+	font-weight: 700;
+}
