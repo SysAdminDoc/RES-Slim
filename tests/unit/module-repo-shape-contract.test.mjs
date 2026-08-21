@@ -31,6 +31,14 @@ const moduleIDs = new Map(moduleFiles.map(moduleName => {
 	return [moduleName, match ? match[1] : ''];
 }));
 
+function listJavaScriptFiles(directory) {
+	return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+		const entryPath = path.join(directory, entry.name);
+		if (entry.isDirectory()) return listJavaScriptFiles(entryPath);
+		return /\.m?js$/.test(entry.name) ? [entryPath] : [];
+	});
+}
+
 test('every module file is registered and exported exactly once', () => {
 	assert.deepEqual(registeredFiles, moduleFiles, 'lib/modules/index.js must import every module file');
 	assert.deepEqual(exportedModules, exportedAliases, 'lib/modules/index.js must export every imported module');
@@ -75,4 +83,14 @@ test('broken feature overrides are local, valid, and never remotely fetched', ()
 	assert.deepEqual(brokenFeatures.filter(id => ![...moduleIDs.values()].includes(id)), [], 'broken features must name registered module ids');
 	assert.match(registrySource, /from '\.\/broken-features\.json'/);
 	assert.doesNotMatch(registrySource, /fetch\s*\(|https?:\/\//, 'the kill switch must remain an in-bundle file');
+});
+
+test('module declarations avoid Flow existential syntax', () => {
+	const existentialGeneric = ['Module<', '*>'].join('');
+	const sourceFiles = ['lib', 'scripts', 'tests'].flatMap(directory => listJavaScriptFiles(path.join(repoRoot, directory)));
+	const offenders = sourceFiles
+		.filter(filename => fs.readFileSync(filename, 'utf8').includes(existentialGeneric))
+		.map(filename => path.relative(repoRoot, filename).replaceAll('\\', '/'));
+
+	assert.deepEqual(offenders, [], 'module declarations must use an explicit option-map type');
 });

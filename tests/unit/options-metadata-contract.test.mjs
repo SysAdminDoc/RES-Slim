@@ -14,7 +14,7 @@ test('module metadata extraction retains settings schema without runtime hooks',
 		import heavyRuntime from 'large-runtime';
 		import { Module } from '../core/module';
 		const description = 'sampleDescription';
-		export const module: Module<*> = new Module('sample');
+		export const module: Module<{ [string]: any }> = new Module('sample');
 		module.moduleName = 'sampleName';
 		module.category = 'sampleCategory';
 		module.description = description;

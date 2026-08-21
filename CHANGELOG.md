@@ -13,8 +13,9 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
-- The first 94 module declarations now use an explicit option-map type instead
-  of Flow's removed existential generic syntax.
+- All 114 runtime module declarations now use an explicit option-map type
+  instead of Flow's removed existential generic syntax. The metadata parser
+  fixture uses the same supported shape.
 
 - Current Reddit score colors, action paint, and icon sizing now use shared
   Shadow Parts rules. Per-post stylesheets retain only the selectors needed to
