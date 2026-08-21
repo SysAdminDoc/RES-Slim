@@ -65,12 +65,12 @@ test('the current version has a CHANGELOG section', () => {
 	const pkg = JSON.parse(read('package.json'));
 
 	assert.ok(
-		changelog.includes(`## v${pkg.version} -`),
+		changelog.includes(`## v${pkg.version},`),
 		`CHANGELOG.md has no "## v${pkg.version}" section — bump the version and document it in the same change`,
 	);
 	assert.doesNotMatch(
-		changelog.slice(0, changelog.indexOf(`## v${pkg.version} -`)),
-		/## v\d+\.\d+\.\d+ -/,
+		changelog.slice(0, changelog.indexOf(`## v${pkg.version},`)),
+		/## v\d+\.\d+\.\d+,/,
 		'the current version must be the newest section in CHANGELOG.md',
 	);
 });

@@ -70,7 +70,7 @@ const changelog = read('CHANGELOG.md');
 if (!/^## Unreleased$/m.test(changelog)) {
 	fail('CHANGELOG.md has no "## Unreleased" section — write the entries first, then release them');
 }
-const changelogUpdated = changelog.replace(/^## Unreleased$/m, `## v${version} - ${today}`);
+const changelogUpdated = changelog.replace(/^## Unreleased$/m, `## v${version}, ${today}`);
 
 const files = [
 	['package.json', pkgUpdated],
@@ -106,7 +106,7 @@ git('commit', '-m', `chore: release ${version}`);
 // them can close — and it is the exact gap this script fell into on its first
 // real run.
 const committedChangelog = git('show', `HEAD:CHANGELOG.md`);
-if (!committedChangelog.includes(`## v${version} -`)) {
+if (!committedChangelog.includes(`## v${version},`)) {
 	fail(`the release commit does not contain the "## v${version}" CHANGELOG section — a fresh clone of this tag would fail docs-drift-contract`);
 }
 const committedPkg = JSON.parse(git('show', 'HEAD:package.json'));
