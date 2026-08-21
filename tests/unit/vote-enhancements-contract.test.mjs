@@ -6,6 +6,7 @@ const colors = await loadFlowModule('lib/utils/voteEnhancements.js', 'vote-enhan
 	deps: ['lib/utils/cssColor.js'],
 });
 const mod = readRepoFile('lib/modules/voteEnhancements.js');
+const theme = readRepoFile('lib/css/modules/_pageTheme.scss');
 
 test('custom score thresholds clamp and interpolate across the full range', () => {
 	const rows = [[0, '#000000'], [10, '#ffffff'], [50, '#ff0000']];
@@ -37,7 +38,8 @@ test('the port is opt-in, registered by the repo contract, and reaches both rend
 	assert.match(mod, /module\.include = \['r2', 'd2x'\]/);
 	assert.match(mod, /watchForThings\(\['post'\], applyLinkScoreColor\)/);
 	assert.match(mod, /watchForThings\(\['comment'\], applyCommentScoreColor\)/);
-	assert.match(mod, /registerShadowStyle\('vote-enhancements'/);
+	assert.doesNotMatch(mod, /registerShadowStyle|shadowRoot\.querySelectorAll/);
+	assert.match(theme, /shreddit-post\[data-res-vote-enhancements-score\]::part\(rsm-score\)/);
+	assert.match(theme, /shreddit-comment\[data-res-vote-enhancements-score\]::part\(rsm-score\)/);
 	assert.doesNotMatch(mod, /estimatePost(?:Score|Votes)|totalvotes|upvotes|downvotes/);
 });
-

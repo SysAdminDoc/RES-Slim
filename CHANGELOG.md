@@ -13,6 +13,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Current Reddit score colors, action paint, and icon sizing now use shared
+  Shadow Parts rules. Per-post stylesheets retain only the selectors needed to
+  position Reddit's native vote and action controls.
+
 - Wayback snapshot checks now use the live CDX API and request the matching
   optional host permission when the module is enabled. The retired availability
   route no longer blocks snapshot checks or release verification.

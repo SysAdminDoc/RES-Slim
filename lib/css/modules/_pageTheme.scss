@@ -598,6 +598,93 @@ html.res-pageTheme.res-pageTheme--refined shreddit-app {
 	font: 10px/normal verdana, arial, helvetica, sans-serif;
 }
 
+// Paint and icon sizing can cross Shreddit's shadow boundary through explicit
+// parts. Structural selectors still live in the per-post sheet because parts
+// cannot re-parent the native vote group into the classic left rail.
+html.res-pageTheme.res-pageTheme--refined shreddit-post:not([view-context='CommentsPage'])::part(rsm-action-row) {
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage']::part(rsm-action-row) {
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/18px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-cluster) {
+	background: transparent !important;
+	color: var(--rsm-th-txt) !important;
+	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-group) {
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-button) {
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font-size: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-score) {
+	color: var(--rsm-th-txt) !important;
+	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+	text-align: center !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-action-control),
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-button) {
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-action-icon),
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-icon) {
+	width: 16px !important;
+	height: 16px !important;
+	fill: currentcolor !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-icon) {
+	display: inline-flex !important;
+	margin: 0 !important;
+	color: currentcolor !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-button):hover,
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-action-control):hover,
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-button):hover {
+	color: var(--rsm-th-link) !important;
+	text-decoration: underline !important;
+}
+
+shreddit-post,
+shreddit-comment {
+	--rsm-vote-enhancements-score: currentcolor;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[data-res-vote-enhancements-score]::part(rsm-score),
+html.res-pageTheme.res-pageTheme--refined shreddit-comment[data-res-vote-enhancements-score]::part(rsm-score),
+shreddit-post[data-res-vote-enhancements-score]::part(rsm-score),
+shreddit-comment[data-res-vote-enhancements-score]::part(rsm-score) {
+	color: var(--rsm-vote-enhancements-score) !important;
+}
+
+.res-voteEnhancements-highlightScores shreddit-post::part(rsm-score),
+.res-voteEnhancements-highlightScores shreddit-comment::part(rsm-score) {
+	font-weight: 700 !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined #subgrid-container {
 	width: 100% !important;
 	margin: 0 !important;

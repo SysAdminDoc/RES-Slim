@@ -3324,9 +3324,9 @@ test('hiding scores works on both renderers, from one option set', async t => {
 
 // The classic layout used to be gated on the Classic palette, so choosing any of
 // the ten dark palettes on current Reddit produced a page with none of the
-// old-Reddit geometry - and, inside each post's open shadow root, no vote rail at
-// all. That gap was invisible to every stylesheet-level contract, because the
-// shadow root is the one surface document CSS cannot reach.
+// old-Reddit geometry, and inside each post's open shadow root, no vote rail at
+// all. The rail geometry still requires a root stylesheet; the palette paint now
+// reaches the stable controls through explicit parts.
 //
 // This drives the real fixture under a dark palette and a light one and asserts
 // the geometry is identical while the colours are not.
@@ -3568,10 +3568,11 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 		return {
 			value: score?.textContent,
 			color: score ? getComputedStyle(score).color : null,
+			part: score?.getAttribute('part') || null,
 			bridge: Boolean(post?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="vote-enhancements"]')),
 		};
 	});
-	assert.deepEqual(currentState, { value: '128', color: 'rgb(217, 43, 43)', bridge: true });
+	assert.deepEqual(currentState, { value: '128', color: 'rgb(217, 43, 43)', part: 'rsm-vote-score rsm-score', bridge: false });
 
 	const oldListing = await context.newPage();
 	await oldListing.goto('https://old.reddit.com/r/fixture/', { waitUntil: 'domcontentloaded' });

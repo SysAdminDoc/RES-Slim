@@ -88,18 +88,21 @@ test('the parity rules keep the specificity that lets them win', () => {
 	}
 });
 
-test('the shadow-root stylesheet follows the layout toggle, not the palette', () => {
-	// Document CSS cannot reach inside a post's open shadow root, so a
-	// stylesheet-level check of `_pageTheme.scss` can never see this file. It is
-	// the one surface where the classic-only gate was invisible.
+test('shadow geometry follows the layout toggle while part paint follows the palette', () => {
+	// Structural selectors stay inside the root because ::part() cannot express
+	// the relationships that move Reddit's action row into the left vote rail.
 	assert.doesNotMatch(shreddit, /res-pageTheme--classic/,
 		'the shadow stylesheet is gated on the Classic palette, so dark palettes get no vote rail');
 	assert.match(shreddit, /:host-context\(html\.res-pageTheme\.res-pageTheme--refined\)/);
+	assert.match(shreddit, /position: absolute !important/);
 
-	// Its colours must come from the inherited tokens rather than the literals it
-	// was first written with.
+	// Paint and icon sizing are shared once in the document sheet. The injected
+	// per-host sheet must not duplicate palette declarations.
+	assert.doesNotMatch(shreddit, /var\(--rsm-th-/);
+	assert.match(scss, /shreddit-post::part\(rsm-vote-button\)/);
+	assert.match(scss, /shreddit-post::part\(rsm-action-icon\)/);
 	for (const token of ['--rsm-th-muted', '--rsm-th-txt', '--rsm-th-link']) {
-		assert.ok(shreddit.includes(`var(${token}`), `the shadow stylesheet does not read ${token}`);
+		assert.ok(scss.includes(`var(${token}`), `the part stylesheet does not read ${token}`);
 	}
 });
 

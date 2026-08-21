@@ -109,7 +109,15 @@ test('a host that never grows a shadow root stops retrying', async () => {
 
 test('current Reddit post controls receive the layout-gated stylesheet on every palette', () => {
 	const post = document.createElement('shreddit-post');
-	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote">up</button></div>';
+	post.attachShadow({ mode: 'open' }).innerHTML = `
+		<div class="action-row shreddit-post-container">
+			<span><shreddit-vote-animations><span class="rpl-vote-button-group">
+				<button data-action-bar-action="upvote"><svg icon-name="upvote-outline"></svg></button>
+				<span part="reddit-score">42</span>
+			</span></shreddit-vote-animations></span>
+			<a data-action-bar-action="comments">comments</a>
+			<shreddit-post-share-button></shreddit-post-share-button>
+		</div>`;
 	document.body.append(post);
 	Shreddit.prepareShredditThing(post);
 	const style = post.shadowRoot.querySelector(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`);
@@ -120,10 +128,26 @@ test('current Reddit post controls receive the layout-gated stylesheet on every 
 	assert.match(style.textContent, /:host-context\(html\.res-pageTheme\.res-pageTheme--refined\)/);
 	assert.doesNotMatch(style.textContent, /res-pageTheme--classic/);
 	assert.match(style.textContent, /data-action-bar-action='upvote'/);
+	assert.doesNotMatch(style.textContent, /var\(--rsm-th-/, 'palette paint belongs in the shared ::part() sheet');
+	assert.match(post.shadowRoot.querySelector('[data-action-bar-action="upvote"]').getAttribute('part'), /\brsm-vote-button\b/);
+	assert.match(post.shadowRoot.querySelector('[icon-name]').getAttribute('part'), /\brsm-action-icon\b/);
+	assert.match(post.shadowRoot.querySelector('.rpl-vote-button-group > span').getAttribute('part'), /\breddit-score\b.*\brsm-score\b/);
+	assert.match(post.shadowRoot.querySelector('shreddit-post-share-button').getAttribute('exportparts'), /share-button:rsm-share-button/);
 	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`).length, 1);
 	Shreddit.prepareShredditThing(post);
 	assert.equal(post.shadowRoot.querySelectorAll(`style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`).length, 1, 're-preparing streamed posts must not duplicate CSS');
 	post.remove();
+});
+
+test('current Reddit comment scores are exposed without a per-comment stylesheet', () => {
+	const comment = document.createElement('shreddit-comment');
+	comment.attachShadow({ mode: 'open' }).innerHTML = '<div data-testid="comment-sub-header"><faceplate-number>9</faceplate-number></div>';
+	document.body.append(comment);
+	Shreddit.prepareShredditThing(comment);
+	const score = comment.shadowRoot.querySelector('faceplate-number');
+	assert.match(score.getAttribute('part'), /\brsm-score\b/);
+	assert.equal(comment.shadowRoot.querySelector(`[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}]`), null);
+	comment.remove();
 });
 
 test('current Reddit comments retain native collapse state and semantic roles', () => {
@@ -172,7 +196,8 @@ test('the current renderer participates in page types, watchers, theming, and bo
 	assert.match(scss, /shreddit-post:not\(\[view-context='CommentsPage'\]\) shreddit-player/);
 	const bridge = read('lib/utils/shreddit.js');
 	assert.match(bridge, /svg\[icon-name\]/);
-	assert.match(bridge, /shreddit-post-share-button::part\(share-button\)/);
+	assert.match(bridge, /share-button:rsm-share-button/);
+	assert.match(scss, /shreddit-post::part\(rsm-share-button\)/);
 	assert.match(bridge, /vote-icon-outline/);
 	const listing = read('tests/fixtures/shreddit/listing.html');
 	assert.match(listing, /rpl-action-bar>[\s\S]*?class="shreddit-post-container"[\s\S]*?rpl-vote-button-group/);
