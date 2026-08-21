@@ -6,12 +6,21 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- Reddit surface selectors now live in a versioned JSON bundle. Console
+  preferences includes a local JSON editor that validates named surfaces and
+  CSS syntax before saving, plus import, export, and restore controls.
+
 - The optional subreddit emoji module restores known `:emote:` tokens in old
   Reddit comments as accessible inline images. It uses signed-in thread JSON,
   accepts Reddit-hosted media only, and keeps a seven-day local cache that can
   be inspected or purged from the storage dashboard.
 
 ### Changed
+
+- Selector overrides load before module startup and take priority over bundled
+  values. Theme header measurement, promoted-content status, vote history,
+  current Reddit feed limiting, and the subreddit bar now use named surfaces.
+  Drift diagnostics resolve through the same active values.
 
 - All 114 runtime module declarations now use an explicit option-map type
   instead of Flow's removed existential generic syntax. The metadata parser
@@ -44,6 +53,10 @@ All notable changes to RES-Slim will be documented in this file.
   search, navigation and option storage behavior remains unchanged.
 
 ### Verified
+
+- Browser coverage saves a selector override, reloads the extension page,
+  rejects malformed CSS without losing the last good value, restores the
+  bundled file, and captures the full-width repair editor.
 
 - Browser coverage types `/r/` links, spoiler text, and superscript into an old
   Reddit comment preview, then checks the rendered elements. A build gate keeps

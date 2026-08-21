@@ -188,7 +188,6 @@ const DELIBERATELY_UNREFERENCED = new Map([
 	['--rsm-scrim', 'the shared overlay scrim; overlayViewer paints its own ::backdrop now'],
 	['--prompt-border-strong', 'pairs with --prompt-border, which is used five times'],
 	['--prompt-warning', 'status trio in the permission prompt: success / warning / danger'],
-	['--options-danger', 'status trio in the console: success / warning / danger'],
 	['--options-shadow', 'pairs with --options-shadow-soft; both are zeroed under forced colours'],
 ]);
 

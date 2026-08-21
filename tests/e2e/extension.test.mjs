@@ -842,6 +842,70 @@ test('settings console themes and display controls work by keyboard', async t =>
 	assert.equal(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
 });
 
+test('selector overrides validate, persist, export a visible state, and restore cleanly', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension({ viewport: { width: 1440, height: 1000 } });
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await page.locator('#RESCategoryTab-console').click();
+	await page.waitForSelector('#RESSelectorOverrideEditor');
+	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideEditor').value.includes('"schemaVersion": 1'));
+
+	const override = {
+		schemaVersion: 1,
+		selectors: {
+			r2: {
+				header: { stable: ['header[data-res-repaired]'] },
+			},
+		},
+	};
+	await page.locator('#RESSelectorOverrideEditor').fill(JSON.stringify(override, null, 2));
+	await page.locator('#RESSelectorOverrideSave').click();
+	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').textContent.includes('Saved 1 overridden surface'));
+	assert.equal(await page.locator('#RESSelectorOverrideEditor').getAttribute('aria-invalid'), 'false');
+
+	const stored = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	assert.deepEqual(stored.RESSelectorOverrides.selectors.r2.header.stable, ['header[data-res-repaired]']);
+	assert.match(stored.RESSelectorOverrides.bundleVersion, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
+
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await page.locator('#RESCategoryTab-console').click();
+	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideEditor').value.includes('header[data-res-repaired]'));
+
+	await page.locator('#RESSelectorOverrideEditor').fill(JSON.stringify({
+		schemaVersion: 1,
+		selectors: { r2: { header: { stable: ['div>>broken'] } } },
+	}));
+	await page.locator('#RESSelectorOverrideSave').click();
+	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').classList.contains('is-error'));
+	assert.equal(await page.locator('#RESSelectorOverrideEditor').getAttribute('aria-invalid'), 'true');
+	assert.match(await page.locator('#RESSelectorOverrideStatus').innerText(), /not valid CSS/);
+	const afterRejectedSave = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	assert.deepEqual(afterRejectedSave.RESSelectorOverrides.selectors.r2.header.stable, ['header[data-res-repaired]']);
+
+	await page.locator('#RESSelectorOverrideReset').click();
+	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').textContent.includes('Bundled selectors restored'));
+	const afterRestore = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	assert.equal(afterRestore.RESSelectorOverrides, undefined);
+	const editorState = JSON.parse(await page.locator('#RESSelectorOverrideEditor').inputValue());
+	assert.deepEqual(editorState.selectors, {});
+
+	const panel = page.locator('#RESSelectorOverridePanel');
+	await panel.scrollIntoViewIfNeeded();
+	await page.mouse.move(0, 0);
+	const restoreToast = page.locator('.RESNotification').filter({ hasText: 'Bundled selectors restored.' });
+	if (await restoreToast.count()) await restoreToast.waitFor({ state: 'hidden', timeout: 10000 });
+	const box = await panel.boundingBox();
+	assert.ok(box && box.width >= 800, 'selector repair should use the full Console preferences width');
+	await panel.screenshot({ path: path.join(saveScreenshotDir(), 'selector-overrides.png'), animations: 'disabled' });
+	assert.deepEqual(pageErrors, [], 'selector override editor should not raise page errors');
+});
+
 // What actually keeps the nine `include`-less modules off the extension's own
 // options page — and it is not `include`.
 //

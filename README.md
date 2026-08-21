@@ -34,6 +34,13 @@ The optional subreddit emoji module restores known custom emoji tokens in old Re
 
 Console preferences also carries a support report. Press Build report and you get your version, your browser, the modules whose enablement or options you have changed, the slowest modules by stage, recent module failures and any selector drift, as plain text to paste into a bug report. It is built only when you press the button and never stored. Anything that could carry something private is described rather than printed, so a subreddit list reports its count and a text field its length. Module timings are measured on the reddit page, so open the console from one if you want them included.
 
+The Selector repair panel is for Reddit markup changes that arrive between
+releases. It edits a small local JSON layer over the versioned selector bundle.
+Unknown surface names, invalid CSS, duplicate selectors, and incompatible
+schemas are refused before storage. Saved overrides load before modules run,
+also drive selector drift diagnostics, and can be imported or exported as a
+plain JSON file. Nothing is fetched remotely.
+
 ![RES-Slim settings console in the Paper theme](images/settings-console-paper.png)
 
 The selected 1440×900 design references for all 11 categories, Console preferences, and search live in [`design/mockups/`](design/mockups/). They are reference images only; the shipped interface is HTML/CSS/JavaScript.

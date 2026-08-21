@@ -7,19 +7,39 @@ import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-const selectors = read('lib/core/dom/selectors.js');
+const selectorSource = read('lib/core/dom/selectors.js');
+const selectorBundleSource = read('lib/core/dom/selector-bundle.v1.json');
+const selectorBundle = JSON.parse(selectorBundleSource);
 const {
+	SELECTOR_BUNDLE_SCHEMA_VERSION,
+	SELECTOR_BUNDLE_VERSION,
 	findSurface,
 	formatSelectorDriftMessage,
+	getSelectorOverrides,
 	getSurfaceSelectorList,
 	getStableSelector,
 	inspectSurfaceMatch,
 	matchedSelectorFor,
+	normalizeSelectorOverrides,
+	parseSelectorOverrides,
+	resetSelectorOverrides,
+	selectorOverrideCount,
 	selectorDriftForPage,
+	serializeSelectorOverrides,
+	setSelectorOverrides,
 } =
-	await loadFlowModule('lib/core/dom/selectors.js', 'selectors');
+	await loadFlowModule('lib/core/dom/selectors.js', 'selectors', {
+		stubs: {
+			'./selector-bundle.v1.json': `export default ${JSON.stringify(selectorBundle)};`,
+		},
+	});
 const { JSDOM } = await import('jsdom');
 const trustedHtml = read('lib/core/dom/trustedHtml.js');
+const selectorStorageSource = read('lib/core/dom/selectorOverrideStorage.js');
+const coreInitSource = read('lib/core/init.js');
+const settingsSource = read('lib/options/settingsConsole.js');
+const settingsTemplate = read('lib/options/templates.js');
+const settingsStyles = read('lib/options/options.scss');
 const frontpageFixture = read('tests/fixtures/mhtml/frontpage.html');
 const threadFixture = read('tests/fixtures/mhtml/thread.html');
 
@@ -59,36 +79,36 @@ const requiredSurfaces = [
 ];
 
 function surfaceBlock(surfaceName) {
-	const match = selectors.match(new RegExp(`\\n\\t${surfaceName}: \\{[\\s\\S]*?\\n\\t\\},`));
-	assert.ok(match, `${surfaceName} is present in the selector map`);
-	return match[0];
+	const surface = selectorBundle.renderers.r2.surfaces[surfaceName];
+	assert.ok(surface, `${surfaceName} is present in the selector bundle`);
+	return surface;
 }
 
 test('old Reddit selector map records stable and fallback selectors for every key surface', () => {
 	for (const surfaceName of requiredSurfaces) {
 		const block = surfaceBlock(surfaceName);
-		assert.match(block, /stable: \[/, `${surfaceName} exposes stable selectors`);
-		assert.match(block, /fallback: \[/, `${surfaceName} exposes fallback selectors`);
+		assert.ok(Array.isArray(block.stable), `${surfaceName} exposes stable selectors`);
+		assert.ok(Array.isArray(block.fallback), `${surfaceName} exposes fallback selectors`);
 	}
 
-	assert.match(selectors, /#siteTable\.sitetable\.linklisting/);
-	assert.match(selectors, /\.thing\.link\[data-fullname\]\[data-permalink\]/);
-	assert.match(selectors, /\.thing\.comment\[data-fullname\]\[data-author\]/);
-	assert.match(selectors, /form\.usertext textarea\[name="text"\]/);
-	assert.match(selectors, /#search\[role="search"\] input\[name="q"\]/);
-	assert.match(selectors, /#RESSettingsButton/);
+	assert.ok(surfaceBlock('listingFeed').stable.includes('#siteTable.sitetable.linklisting'));
+	assert.ok(surfaceBlock('post').stable.includes('.thing.link[data-fullname][data-permalink]'));
+	assert.ok(surfaceBlock('comment').stable.includes('.thing.comment[data-fullname][data-author]'));
+	assert.ok(surfaceBlock('composerForm').stable.includes('form.usertext textarea[name="text"]'));
+	assert.ok(surfaceBlock('search').stable.includes('#search[role="search"] input[name="q"]'));
+	assert.ok(surfaceBlock('settingsButton').stable.includes('#RESSettingsButton'));
 });
 
 test('primary stable selectors avoid old Reddit churn-prone styling classes', () => {
 	for (const surfaceName of requiredSurfaces) {
-		const stableBlock = surfaceBlock(surfaceName).match(/stable: \[[\s\S]*?\],/)[0];
+		const stableBlock = surfaceBlock(surfaceName).stable.join('\n');
 		assert.doesNotMatch(stableBlock, /res-v0(?:-\d+-\d+)?/);
 		assert.doesNotMatch(stableBlock, /\.odd\b/);
 		assert.doesNotMatch(stableBlock, /\.even\b/);
 	}
 
-	assert.match(surfaceBlock('post'), /\.link\.odd/);
-	assert.match(surfaceBlock('post'), /\.link\.even/);
+	assert.ok(surfaceBlock('post').fallback.some(selector => selector.includes('.link.odd')));
+	assert.ok(surfaceBlock('post').fallback.some(selector => selector.includes('.link.even')));
 });
 
 // `appType()` in lib/utils/currentLocation.js reports 'r2' (old reddit) purely on
@@ -135,10 +155,80 @@ test('fresh sanitized fixtures preserve front page and thread DOM surfaces', () 
 });
 
 test('high-churn surfaces are enumerated', () => {
-	assert.match(selectors, /highChurnSurfaces = Object\.freeze\(\[/);
+	assert.match(selectorSource, /highChurnSurfaces = Object\.freeze\(\[/);
 	for (const surfaceName of ['expando', 'commentChildren', 'composerForm', 'reportForm', 'settingsOverlay']) {
-		assert.match(selectors, new RegExp(`'${surfaceName}'`));
+		assert.match(selectorSource, new RegExp(`'${surfaceName}'`));
 	}
+});
+
+test('selector data is versioned separately from the resolver', () => {
+	assert.equal(selectorBundle.schemaVersion, 1);
+	assert.match(selectorBundle.bundleVersion, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
+	assert.equal(SELECTOR_BUNDLE_SCHEMA_VERSION, selectorBundle.schemaVersion);
+	assert.equal(SELECTOR_BUNDLE_VERSION, selectorBundle.bundleVersion);
+	assert.doesNotMatch(selectorSource, /#siteTable\.sitetable\.linklisting/);
+});
+
+test('validated user selectors replace bundle values and preserve unspecified lists', () => {
+	resetSelectorOverrides();
+	const originalFallbacks = surfaceBlock('header').fallback;
+	const overrides = normalizeSelectorOverrides({
+		schemaVersion: 1,
+		bundleVersion: 'older-bundle',
+		selectors: { r2: { header: { stable: ['header[data-res-custom]'] } } },
+	}, selector => new JSDOM('<header data-res-custom></header>').window.document.querySelector(selector));
+
+	setSelectorOverrides(overrides);
+	assert.deepEqual(getSurfaceSelectorList('header'), ['header[data-res-custom]', ...originalFallbacks]);
+	assert.equal(getStableSelector('header'), 'header[data-res-custom]');
+	assert.equal(selectorOverrideCount(), 1);
+	assert.equal(getSelectorOverrides().bundleVersion, SELECTOR_BUNDLE_VERSION);
+	resetSelectorOverrides();
+});
+
+test('drift detection resolves the active override instead of a second selector map', () => {
+	const stableRoot = new JSDOM(frontpageFixture).window.document;
+	resetSelectorOverrides();
+	setSelectorOverrides({
+		schemaVersion: 1,
+		selectors: { r2: { listingFeed: { stable: ['#user-repaired-feed'], fallback: [] } } },
+	});
+	assert.deepEqual(selectorDriftForPage('linklist', stableRoot).map(finding => finding.surfaceName), ['listingFeed']);
+	stableRoot.querySelector('#siteTable').id = 'user-repaired-feed';
+	assert.deepEqual(selectorDriftForPage('linklist', stableRoot), []);
+	resetSelectorOverrides();
+});
+
+test('override parser rejects unknown surfaces, malformed CSS, duplicates, and empty stable lists', () => {
+	const probe = selector => new JSDOM('').window.document.querySelector(selector);
+	const make = header => JSON.stringify({ schemaVersion: 1, selectors: { r2: { header } } });
+	assert.throws(() => parseSelectorOverrides(JSON.stringify({ schemaVersion: 1, selectors: { r2: { missing: { stable: ['body'] } } } })), /Unknown r2 surface/);
+	assert.throws(() => parseSelectorOverrides(make({ stable: ['div>>broken'] }), probe), /not valid CSS/);
+	assert.throws(() => parseSelectorOverrides(make({ stable: ['body', 'body'] }), probe), /duplicate selector/);
+	assert.throws(() => parseSelectorOverrides(make({ stable: [] }), probe), /needs at least one selector/);
+	assert.throws(() => parseSelectorOverrides('{not json'), /not valid JSON/);
+});
+
+test('override exports are deterministic and carry the active bundle version', () => {
+	resetSelectorOverrides();
+	setSelectorOverrides({ schemaVersion: 1, selectors: { d2x: { post: { fallback: ['article[data-post]'] } } } });
+	const serialized = serializeSelectorOverrides();
+	assert.equal(serialized, `${JSON.stringify(getSelectorOverrides(), null, 2)}\n`);
+	assert.match(serialized, new RegExp(`"bundleVersion": "${SELECTOR_BUNDLE_VERSION.replaceAll('.', '\\.')}"`));
+	resetSelectorOverrides();
+});
+
+test('override storage loads before modules and the console exposes save, import, export, and restore', () => {
+	assert.match(selectorStorageSource, /Storage\.wrap\(SELECTOR_OVERRIDE_STORAGE_KEY/);
+	assert.match(selectorStorageSource, /setSelectorOverrides\(stored\)/);
+	assert.match(coreInitSource, /loadOptions[\s\S]*loadSelectorOverrides\(\)[\s\S]*_loadModuleOptions\(\)/);
+	for (const id of ['RESSelectorOverrideEditor', 'RESSelectorOverrideSave', 'RESSelectorOverrideImport', 'RESSelectorOverrideExport', 'RESSelectorOverrideReset']) {
+		assert.match(settingsTemplate, new RegExp(`id="${id}"`));
+	}
+	assert.match(settingsSource, /parseSelectorOverrides\(editor\.value\)/);
+	assert.match(settingsSource, /saveSelectorOverrides/);
+	assert.match(settingsSource, /clearSelectorOverrides/);
+	assert.match(settingsStyles, /\.utilityPanel--selectors[\s\S]*grid-column: 1 \/ -1/);
 });
 
 test('findSurface falls back through the list in order', () => {

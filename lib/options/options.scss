@@ -849,6 +849,59 @@ li {
 	background: var(--options-panel-alt);
 }
 
+.consolePrefsGrid .utilityPanel--selectors {
+	grid-column: 1 / -1;
+}
+
+.selectorOverrideSummary {
+	max-width: 82ch;
+	margin: 0;
+	color: var(--options-text-muted);
+	font-size: 12px;
+	line-height: 1.55;
+}
+
+.selectorOverrideLabel {
+	color: var(--options-text);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.selectorOverrideEditor {
+	width: 100%;
+	min-height: 220px;
+	padding: 12px;
+	border: 1px solid var(--options-border-strong);
+	border-radius: var(--options-radius-sm);
+	background: var(--options-field);
+	color: var(--options-text);
+	font: 12px/1.5 ui-monospace, sfmono-regular, consolas, monospace;
+	resize: vertical;
+	box-sizing: border-box;
+	tab-size: 2;
+}
+
+.selectorOverrideEditor:focus-visible {
+	border-color: var(--options-accent-line-strong);
+	outline: 2px solid var(--options-accent-line);
+	outline-offset: 2px;
+}
+
+.selectorOverrideEditor[aria-invalid='true'] {
+	border-color: var(--options-danger);
+}
+
+.selectorOverrideStatus {
+	min-height: 1.35em;
+	margin: 0;
+	color: var(--options-text-soft);
+	font-size: 11px;
+}
+
+.selectorOverrideStatus.is-error {
+	color: var(--options-danger);
+}
+
 .consolePrefsGrid .consoleControlGroup {
 	display: flex;
 	flex-wrap: wrap;
