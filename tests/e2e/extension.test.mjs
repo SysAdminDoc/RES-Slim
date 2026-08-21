@@ -31,6 +31,8 @@ const SHREDDIT_LISTING = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'l
 const SHREDDIT_THREAD = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html');
 const SHREDDIT_MEDIA_IMAGE = path.join(repoRoot, 'images', 'promo440x280.png');
 const SHREDDIT_MEDIA_VIDEO = path.join(repoRoot, 'tests', 'fixtures', 'media', 'fixture-video.mp4');
+const SUBREDDIT_EMOTE_THREAD = path.join(repoRoot, 'tests', 'fixtures', 'reddit', 'subreddit-emote-thread.json');
+const SUBREDDIT_EMOTE_IMAGE = path.join(repoRoot, 'images', 'icon48.png');
 
 function screenshotSlug(value) {
 	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -3595,4 +3597,103 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 	await current.screenshot({ path: path.join(dir, 'vote-enhancements-current.png'), fullPage: false, animations: 'disabled' });
 	await dismissVisualNotifications(oldThread);
 	await oldThread.screenshot({ path: path.join(dir, 'vote-enhancements-old.png'), fullPage: false, animations: 'disabled' });
+});
+
+test('subreddit emoji render as accessible inline media and reuse the local cache', async t => {
+	const { context, worker, dispose } = await launchWithExtension({ viewport: { width: 1265, height: 712 } });
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { subredditEmotes: true, pageTheme: true },
+		}, resolve);
+	}));
+
+	const capture = servableCapture(CAPTURE).replace(
+		'Fixture comment body.',
+		'Known subreddit emoji :9678: · unknown token :not_in_map:',
+	);
+	const fixture = JSON.parse(fs.readFileSync(SUBREDDIT_EMOTE_THREAD, 'utf8'));
+	let metadataRequests = 0;
+	const metadataUrls = [];
+	await context.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (url.hostname === 'old.reddit.com' && url.pathname.endsWith('/fixture-thread.json')) {
+			metadataRequests += 1;
+			metadataUrls.push(url.href);
+			return route.fulfill({
+				status: 200,
+				contentType: 'application/json; charset=utf-8',
+				body: JSON.stringify(fixture.response),
+			});
+		}
+		if (url.hostname === 'old.reddit.com' && url.pathname === '/api/me.json') {
+			return route.fulfill({ status: 200, contentType: 'application/json', body: '{"data":null}' });
+		}
+		if (url.hostname === 'www.redditstatic.com' && url.pathname.endsWith('/dizzy_face.gif')) {
+			return route.fulfill({ status: 200, contentType: 'image/png', body: fs.readFileSync(SUBREDDIT_EMOTE_IMAGE) });
+		}
+		if (request.resourceType() === 'document' && url.hostname === 'old.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: capture });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const url = 'https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/';
+	const page = await context.newPage();
+	await page.goto(url, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#thing_t1_comment000001 img.rsm-subredditEmote', { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelector('.rsm-subredditEmote')?.naturalWidth > 0, null, { timeout: 30000 });
+
+	const state = await page.evaluate(async () => {
+		const paragraph = document.querySelector('#thing_t1_comment000001 .usertext-body p');
+		const image = paragraph?.querySelector('img.rsm-subredditEmote');
+		const record = await new Promise((resolve, reject) => {
+			const request = indexedDB.open('rsm-subredditEmotes', 1);
+			request.onsuccess = () => {
+				const db = request.result;
+				const transaction = db.transaction('maps', 'readonly');
+				const get = transaction.objectStore('maps').get('fixture');
+				get.onsuccess = () => { db.close(); resolve(get.result); };
+				get.onerror = () => { db.close(); reject(get.error); };
+			};
+			request.onerror = () => reject(request.error);
+		});
+		return {
+			alt: image?.alt,
+			title: image?.title,
+			naturalWidth: image?.naturalWidth,
+			height: image?.getBoundingClientRect().height,
+			fontSize: paragraph ? parseFloat(getComputedStyle(paragraph).fontSize) : 0,
+			text: paragraph?.textContent,
+			cache: record ? {
+				subreddit: record.subreddit,
+				emotes: Object.keys(record.emotes),
+				threads: Object.keys(record.threads),
+			} : null,
+		};
+	});
+	assert.equal(state.alt, ':9678:');
+	assert.equal(state.title, ':9678:');
+	assert.ok(state.naturalWidth > 0, 'the Reddit-hosted emoji asset must decode');
+	assert.ok(Math.abs(state.height - state.fontSize) < 0.6, 'the emoji should follow the comment line height');
+	assert.match(state.text, /unknown token :not_in_map:/, 'unknown tokens must remain selectable text');
+	assert.deepEqual(state.cache, {
+		subreddit: 'fixture',
+		emotes: ['9678'],
+		threads: ['/r/fixture/comments/thread000001/fixture-thread'],
+	});
+	assert.deepEqual(metadataUrls, ['https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread.json?raw_json=1&limit=500&depth=10']);
+
+	const dir = saveScreenshotDir();
+	await dismissVisualNotifications(page);
+	await page.locator('#thing_t1_comment000001 > .entry .usertext-body .md > p').screenshot({
+		path: path.join(dir, 'subreddit-emotes-old.png'),
+		animations: 'disabled',
+	});
+
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#thing_t1_comment000001 img.rsm-subredditEmote', { timeout: 30000 });
+	assert.equal(metadataRequests, 1, 'a fresh thread map should be served from IndexedDB');
 });

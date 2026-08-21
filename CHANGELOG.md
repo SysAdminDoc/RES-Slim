@@ -4,6 +4,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- The optional subreddit emoji module restores known `:emote:` tokens in old
+  Reddit comments as accessible inline images. It uses signed-in thread JSON,
+  accepts Reddit-hosted media only, and keeps a seven-day local cache that can
+  be inspected or purged from the storage dashboard.
+
 ### Changed
 
 - Wayback snapshot checks now use the live CDX API and request the matching

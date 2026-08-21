@@ -1,0 +1,69 @@
+{
+  "capture": {
+    "capturedAt": "2026-08-21T18:29:00Z",
+    "renderer": "signed-in reddit JSON",
+    "source": "https://www.reddit.com/r/forsen/comments/1h6gj07.json?raw_json=1&limit=500",
+    "note": "Public comment text and media metadata only. Account and session data were not captured."
+  },
+  "response": [
+    {
+      "kind": "Listing",
+      "data": {
+        "children": []
+      }
+    },
+    {
+      "kind": "Listing",
+      "data": {
+        "children": [
+          {
+            "kind": "t1",
+            "data": {
+              "name": "t1_m0djw5p",
+              "body": "Going to eat something else![img](emote|t5_33td5|9678)",
+              "body_html": "<div class=\"md\"><p>Going to eat something else<img src=\"https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/dizzy_face.gif\" width=\"20\" height=\"20\" style=\"vertical-align:middle\"></p>\n</div>",
+              "media_metadata": {
+                "emote|t5_33td5|9678": {
+                  "e": "AnimatedImage",
+                  "id": "emote|t5_33td5|9678",
+                  "m": "image/gif",
+                  "s": {
+                    "gif": "https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/dizzy_face.gif",
+                    "x": 20,
+                    "y": 20
+                  },
+                  "status": "valid",
+                  "t": "emoji"
+                }
+              },
+              "replies": ""
+            }
+          },
+          {
+            "kind": "t1",
+            "data": {
+              "name": "t1_m0dce2k",
+              "body": "Mods ![gif](emote|free_emotes_pack|facepalm)",
+              "body_html": "<div class=\"md\"><p>Mods <img src=\"https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/dizzy_face.gif\" width=\"20\" height=\"20\" style=\"vertical-align:middle\"></p>\n</div>",
+              "media_metadata": {
+                "emote|free_emotes_pack|facepalm": {
+                  "e": "AnimatedImage",
+                  "id": "emote|free_emotes_pack|facepalm",
+                  "m": "image/gif",
+                  "s": {
+                    "gif": "https://www.redditstatic.com/marketplace-assets/v1/core/emotes/snoomoji_emotes/free_emotes_pack/dizzy_face.gif",
+                    "x": 20,
+                    "y": 20
+                  },
+                  "status": "valid",
+                  "t": "emoji"
+                }
+              },
+              "replies": ""
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
