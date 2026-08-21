@@ -868,7 +868,7 @@ test('selector overrides validate, persist, export a visible state, and restore 
 	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').textContent.includes('Saved 1 overridden surface'));
 	assert.equal(await page.locator('#RESSelectorOverrideEditor').getAttribute('aria-invalid'), 'false');
 
-	const stored = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	const stored = await page.evaluate(() => new Promise(resolve => { chrome.storage.local.get('RESSelectorOverrides', resolve); }));
 	assert.deepEqual(stored.RESSelectorOverrides.selectors.r2.header.stable, ['header[data-res-repaired]']);
 	assert.match(stored.RESSelectorOverrides.bundleVersion, /^\d{4}\.\d{2}\.\d{2}\.\d+$/);
 
@@ -885,12 +885,12 @@ test('selector overrides validate, persist, export a visible state, and restore 
 	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').classList.contains('is-error'));
 	assert.equal(await page.locator('#RESSelectorOverrideEditor').getAttribute('aria-invalid'), 'true');
 	assert.match(await page.locator('#RESSelectorOverrideStatus').innerText(), /not valid CSS/);
-	const afterRejectedSave = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	const afterRejectedSave = await page.evaluate(() => new Promise(resolve => { chrome.storage.local.get('RESSelectorOverrides', resolve); }));
 	assert.deepEqual(afterRejectedSave.RESSelectorOverrides.selectors.r2.header.stable, ['header[data-res-repaired]']);
 
 	await page.locator('#RESSelectorOverrideReset').click();
 	await page.waitForFunction(() => document.querySelector('#RESSelectorOverrideStatus').textContent.includes('Bundled selectors restored'));
-	const afterRestore = await page.evaluate(() => new Promise(resolve => chrome.storage.local.get('RESSelectorOverrides', resolve)));
+	const afterRestore = await page.evaluate(() => new Promise(resolve => { chrome.storage.local.get('RESSelectorOverrides', resolve); }));
 	assert.equal(afterRestore.RESSelectorOverrides, undefined);
 	const editorState = JSON.parse(await page.locator('#RESSelectorOverrideEditor').inputValue());
 	assert.deepEqual(editorState.selectors, {});
