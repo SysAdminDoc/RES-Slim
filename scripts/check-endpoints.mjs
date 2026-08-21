@@ -61,7 +61,7 @@ const FETCHED = [
 	{ name: 'Arctic Shift comments (arcticShift, editedCommentDiff)', url: 'https://arctic-shift.photon-reddit.com/api/comments/ids?ids=abc123' },
 	{ name: 'Arctic Shift posts (arcticShift)', url: 'https://arctic-shift.photon-reddit.com/api/posts/ids?ids=abc123' },
 	{ name: 'PullPush API (viewDeleted, editedCommentDiff)', url: 'https://api.pullpush.io/reddit/search/comment/?size=1' },
-	{ name: 'Wayback availability API (waybackSnapshot)', url: 'https://archive.org/wayback/available?url=example.com' },
+	{ name: 'Wayback CDX API (waybackSnapshot)', url: 'https://web.archive.org/cdx/search/cdx?url=example.com&output=json&filter=statuscode%3A200&fl=timestamp%2Coriginal&limit=-1' },
 	{ name: 'Bluesky oEmbed (hosts/bluesky)', url: 'https://embed.bsky.app/oembed?url=https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l' },
 	// v0.40.0 dropped Giphy's API call for the media paths the id already
 	// determines, so these two URLs are the whole host now. If the pattern ever

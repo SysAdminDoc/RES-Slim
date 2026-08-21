@@ -24,7 +24,7 @@ const {
 
 test('canonical bases are the documented endpoints', () => {
 	assert.equal(SAVE_BASE, 'https://web.archive.org/save/');
-	assert.equal(AVAILABILITY_BASE, 'https://archive.org/wayback/available');
+	assert.equal(AVAILABILITY_BASE, 'https://web.archive.org/cdx/search/cdx');
 });
 
 test('buildSaveUrl appends the target URL verbatim', () => {
@@ -32,22 +32,22 @@ test('buildSaveUrl appends the target URL verbatim', () => {
 	assert.equal(buildSaveUrl(''), 'https://web.archive.org/save/');
 });
 
-test('buildAvailabilityUrl uses the documented `url` query param', () => {
+test('buildAvailabilityUrl requests the latest successful CDX capture', () => {
 	const out = buildAvailabilityUrl('https://example.com/page');
-	assert.match(out, /^https:\/\/archive\.org\/wayback\/available\?/);
-	assert.match(out, /url=https/);
+	const url = new URL(out);
+	assert.equal(url.origin + url.pathname, AVAILABILITY_BASE);
+	assert.equal(url.searchParams.get('url'), 'https://example.com/page');
+	assert.equal(url.searchParams.get('output'), 'json');
+	assert.equal(url.searchParams.get('filter'), 'statuscode:200');
+	assert.equal(url.searchParams.get('fl'), 'timestamp,original');
+	assert.equal(url.searchParams.get('limit'), '-1');
 });
 
-test('parseAvailabilityResponse extracts the closest snapshot', () => {
-	const ok = parseAvailabilityResponse({
-		archived_snapshots: {
-			closest: {
-				url: 'https://web.archive.org/web/20230101000000/https://example.com',
-				timestamp: '20230101000000',
-				available: true,
-			},
-		},
-	});
+test('parseAvailabilityResponse extracts the latest CDX snapshot', () => {
+	const ok = parseAvailabilityResponse([
+		['timestamp', 'original'],
+		['20230101000000', 'https://example.com'],
+	]);
 	assert.equal(ok.url, 'https://web.archive.org/web/20230101000000/https://example.com');
 	assert.equal(ok.timestamp, '20230101000000');
 	assert.equal(ok.available, true);
@@ -55,7 +55,7 @@ test('parseAvailabilityResponse extracts the closest snapshot', () => {
 
 test('parseAvailabilityResponse returns null when there is no closest snapshot', () => {
 	assert.equal(parseAvailabilityResponse({}), null);
-	assert.equal(parseAvailabilityResponse({ archived_snapshots: {} }), null);
+	assert.equal(parseAvailabilityResponse([['timestamp', 'original']]), null);
 	assert.equal(parseAvailabilityResponse(null), null);
 });
 
@@ -107,7 +107,7 @@ const NOW = Date.UTC(2026, 7, 18, 12, 0, 0);
 const YEAR = 365 * 24 * 60 * 60 * 1000;
 
 function availableAt(timestamp) {
-	return { archived_snapshots: { closest: { available: true, url: `https://web.archive.org/web/${timestamp}/https://example.com`, timestamp, status: '200' } } };
+	return [['timestamp', 'original'], [timestamp, 'https://example.com']];
 }
 
 test('a fresh snapshot is reported as available', () => {
@@ -124,15 +124,14 @@ test('an old snapshot is available but stale', () => {
 });
 
 test('a URL the API says is not archived is absent, not an outage', () => {
-	assert.deepEqual(classifyAvailability({ archived_snapshots: {} }, NOW, YEAR), { state: 'absent' });
-	assert.deepEqual(classifyAvailability({ archived_snapshots: { closest: { available: false } } }, NOW, YEAR), { state: 'absent' });
+	assert.deepEqual(classifyAvailability([['timestamp', 'original']], NOW, YEAR), { state: 'absent' });
 });
 
 test('a response the parser cannot read is an outage, not an absence', () => {
 	// The distinction that matters: "archive.org told us there is nothing" versus
 	// "archive.org did not tell us anything". Reading the second as the first is
 	// how a changed API shape becomes a silent wrong answer.
-	for (const unreadable of [null, undefined, '', 'not json', 42, [], {}]) {
+	for (const unreadable of [null, undefined, '', 'not json', 42, [], {}, [['timestamp', 'original'], ['bad', 'not a url']]]) {
 		const result = classifyAvailability(unreadable, NOW, YEAR);
 		assert.equal(result.state, 'unavailable', `${JSON.stringify(unreadable)} is not an answer`);
 		assert.match(result.reason, /unreadable/);

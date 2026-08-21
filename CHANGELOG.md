@@ -6,6 +6,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Wayback snapshot checks now use the live CDX API and request the matching
+  optional host permission when the module is enabled. The retired availability
+  route no longer blocks snapshot checks or release verification.
+
 - Reddit Markdown is now loaded only when a preview, saved-comments help panel,
   Markdown gist, or Markdown Tumblr post needs it. The production foreground
   entry is 646.7 KB, down from 708.2 KB.

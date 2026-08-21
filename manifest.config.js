@@ -70,6 +70,7 @@ const OPTIONAL_HOST_PERMISSIONS = [
 	'https://embed.bsky.app/oembed',
 	'https://www.threads.com/*',
 	'https://www.threads.net/*',
+	'https://web.archive.org/*',
 	'https://rimgo.reallyaweso.me/*',
 	'https://rmgur.com/*',
 ];

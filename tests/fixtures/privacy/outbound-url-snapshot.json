@@ -762,6 +762,10 @@
       "url": "https://old.reddit.com${perma}"
     },
     {
+      "file": "lib/modules/waybackSnapshot.js",
+      "url": "https://web.archive.org/*"
+    },
+    {
       "file": "lib/utils/__tests__/escapeHTML.js",
       "url": "https://www.reddit.com"
     },
@@ -935,11 +939,15 @@
     },
     {
       "file": "lib/utils/wayback.js",
-      "url": "https://archive.org/wayback/available"
+      "url": "https://web.archive.org/cdx/search/cdx"
     },
     {
       "file": "lib/utils/wayback.js",
       "url": "https://web.archive.org/save/"
+    },
+    {
+      "file": "lib/utils/wayback.js",
+      "url": "https://web.archive.org/web/${timestamp}/${original}"
     }
   ]
 }
