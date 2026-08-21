@@ -86,11 +86,15 @@ test('broken feature overrides are local, valid, and never remotely fetched', ()
 });
 
 test('module declarations avoid Flow existential syntax', () => {
-	const existentialGeneric = ['Module<', '*>'].join('');
+	const existentialGeneric = /Module\s*<\s*\*\s*>/m;
 	const sourceFiles = ['lib', 'scripts', 'tests'].flatMap(directory => listJavaScriptFiles(path.join(repoRoot, directory)));
 	const offenders = sourceFiles
-		.filter(filename => fs.readFileSync(filename, 'utf8').includes(existentialGeneric))
+		.filter(filename => existentialGeneric.test(fs.readFileSync(filename, 'utf8')))
 		.map(filename => path.relative(repoRoot, filename).replaceAll('\\', '/'));
 
+	const whitespaceBait = ['const module: Module<', ' *> = value;'].join('');
+	const multilineBait = ['const module: Module<', '\n\t*\n> = value;'].join('');
+	assert.equal(existentialGeneric.test(whitespaceBait), true, 'the guard must catch whitespace variants');
+	assert.equal(existentialGeneric.test(multilineBait), true, 'the guard must catch multiline variants');
 	assert.deepEqual(offenders, [], 'module declarations must use an explicit option-map type');
 });

@@ -203,8 +203,19 @@ test('override parser rejects unknown surfaces, malformed CSS, duplicates, and e
 	const probe = selector => new JSDOM('').window.document.querySelector(selector);
 	const make = header => JSON.stringify({ schemaVersion: 1, selectors: { r2: { header } } });
 	assert.throws(() => parseSelectorOverrides(JSON.stringify({ schemaVersion: 1, selectors: { r2: { missing: { stable: ['body'] } } } })), /Unknown r2 surface/);
+	for (const reserved of ['constructor', 'toString', '__proto__']) {
+		assert.throws(
+			() => parseSelectorOverrides(`{"schemaVersion":1,"selectors":{"${reserved}":{}}}`),
+			/Unknown renderer/,
+		);
+		assert.throws(
+			() => parseSelectorOverrides(`{"schemaVersion":1,"selectors":{"r2":{"${reserved}":{"stable":["body"]}}}}`),
+			/Unknown r2 surface/,
+		);
+	}
 	assert.throws(() => parseSelectorOverrides(make({ stable: ['div>>broken'] }), probe), /not valid CSS/);
 	assert.throws(() => parseSelectorOverrides(make({ stable: ['body', 'body'] }), probe), /duplicate selector/);
+	assert.throws(() => parseSelectorOverrides(make({ stable: ['body'], fallback: ['body'] }), probe), /across stable and fallback/);
 	assert.throws(() => parseSelectorOverrides(make({ stable: [] }), probe), /needs at least one selector/);
 	assert.throws(() => parseSelectorOverrides('{not json'), /not valid JSON/);
 });
@@ -221,7 +232,9 @@ test('override exports are deterministic and carry the active bundle version', (
 test('override storage loads before modules and the console exposes save, import, export, and restore', () => {
 	assert.match(selectorStorageSource, /Storage\.wrap\(SELECTOR_OVERRIDE_STORAGE_KEY/);
 	assert.match(selectorStorageSource, /setSelectorOverrides\(stored\)/);
-	assert.match(coreInitSource, /loadOptions[\s\S]*loadSelectorOverrides\(\)[\s\S]*_loadModuleOptions\(\)/);
+	assert.match(selectorStorageSource, /saveSelectorOverrides[\s\S]*normalizeSelectorOverrides\(raw\)[\s\S]*overrideStorage\.set\(normalized\)/);
+	assert.match(coreInitSource, /loadSelectors[^=]*= start[\s\S]*loadSelectorOverrides\(\)/);
+	assert.match(coreInitSource, /onInit[^=]*= loadSelectors[\s\S]*_runModuleStage\('onInit'/);
 	for (const id of ['RESSelectorOverrideEditor', 'RESSelectorOverrideSave', 'RESSelectorOverrideImport', 'RESSelectorOverrideExport', 'RESSelectorOverrideReset']) {
 		assert.match(settingsTemplate, new RegExp(`id="${id}"`));
 	}
