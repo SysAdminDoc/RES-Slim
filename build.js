@@ -277,6 +277,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 						// banking rather than silently losing.
 						const TRACKED = [
 							'foreground.entry.js',
+							'snudown.entry.js',
 							'options.entry.js',
 							'background.entry.js',
 							'trackingSabotage.entry.js',
@@ -351,6 +352,26 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 					});
 				},
 			} : undefined,
+			{
+				name: 'verify-snudown-lazy',
+				setup(build) {
+					build.onEnd(result => {
+						if (!result.metafile) return;
+						const entries = Object.entries(result.metafile.outputs);
+						const foreground = entries.find(([outFile]) => outFile.endsWith('foreground.entry.js'));
+						const snudown = entries.find(([outFile]) => outFile.endsWith('snudown.entry.js'));
+						if (!foreground || !snudown) throw new Error('Could not find both foreground and snudown outputs in the build metafile.');
+
+						const hasSnudown = output => Object.keys(output.inputs || {}).some(input => input.includes('node_modules/snudown-js/'));
+						if (hasSnudown(foreground[1])) {
+							throw new Error('snudown-js reached foreground.entry.js. Load /snudown.entry.js only when Markdown is rendered.');
+						}
+						if (!hasSnudown(snudown[1])) {
+							throw new Error('snudown.entry.js no longer contains snudown-js. The lazy renderer artifact is incomplete.');
+						}
+					});
+				},
+			},
 			{
 				// A vendored library exists precisely so it is *not* in a bundle. Nothing
 				// enforced that: `galleryZip` wrote `await import('jszip')`, which reads as

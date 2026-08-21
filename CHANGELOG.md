@@ -6,6 +6,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Reddit Markdown is now loaded only when a preview, saved-comments help panel,
+  Markdown gist, or Markdown Tumblr post needs it. The production foreground
+  entry is 646.7 KB, down from 708.2 KB.
+
 - Module page conditions now use declarative `include`, `exclude` and
   `asLongAs` predicates. Every lifecycle stage receives a shared abort signal,
   which is cancelled when the page is left.
@@ -21,6 +25,10 @@ All notable changes to RES-Slim will be documented in this file.
   search, navigation and option storage behavior remains unchanged.
 
 ### Verified
+
+- Browser coverage types `/r/` links, spoiler text, and superscript into an old
+  Reddit comment preview, then checks the rendered elements. A build gate keeps
+  `snudown-js` out of the foreground entry and dialect fixtures pin its output.
 
 - A file-derived contract checks that every module is registered, exported,
   described, and either owns a stylesheet or explicitly declares that it needs

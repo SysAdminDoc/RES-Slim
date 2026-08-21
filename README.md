@@ -64,7 +64,9 @@ declared through `include`, `exclude`, and `asLongAs`. Lifecycle hooks receive a
 shared abort signal that fires when the page is left, so long-lived work has one
 consistent teardown path. A file-derived contract also requires every module to
 be registered, described, and paired with either its own stylesheet or an
-explicit styleless declaration.
+explicit styleless declaration. Reddit's Markdown renderer is a separate 62 KB
+production entry and loads only when Markdown is actually rendered, keeping it
+out of the content script parsed at the start of every Reddit page.
 
 `yarn verify` runs lint, Flow, the unit suite, a production build, the e2e suite,
 the third-party endpoint probe, and an advisory check that the published GitHub

@@ -986,6 +986,41 @@ test('the extension does not reach into reddit-origin subframes', async t => {
 	);
 });
 
+test('the Reddit Markdown renderer loads only when a preview is requested', async t => {
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	const html = servableCapture();
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/r/codex/comments/1th66mb/markdown/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	const textarea = page.locator('.commentarea .usertext-edit textarea').first();
+	await textarea.fill('/r/claude >!spoiler!< ^superscript');
+	const preview = page.locator('.commentarea .livePreview .RESDialogContents').first();
+	await assert.doesNotReject(() => preview.locator('a[href="/r/claude"]').waitFor({ timeout: 30000 }));
+
+	const rendered = await preview.evaluate(element => ({
+		text: element.textContent,
+		spoiler: element.querySelector('.md-spoiler-text')?.textContent,
+		superscript: element.querySelector('sup')?.textContent,
+	}));
+	assert.equal(rendered.spoiler, 'spoiler');
+	assert.equal(rendered.superscript, 'superscript');
+	assert.match(rendered.text, /\/r\/claude/);
+	assert.deepEqual(pageErrors, []);
+});
+
 // The first-run greeting, driven rather than reasoned about.
 //
 // Its first implementation inferred "fresh install" from an empty local store and
