@@ -13,7 +13,7 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
-- The first 22 module declarations now use an explicit option-map type instead
+- The first 47 module declarations now use an explicit option-map type instead
   of Flow's removed existential generic syntax.
 
 - Current Reddit score colors, action paint, and icon sizing now use shared
