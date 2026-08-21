@@ -1,0 +1,3 @@
+declare module 'res-options-metadata' {
+	declare module.exports: { [string]: any };
+}

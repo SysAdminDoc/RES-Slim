@@ -12,6 +12,7 @@ import flowRemoveTypes from 'flow-remove-types';
 import { copy } from 'esbuild-plugin-copy';
 import { sassPlugin } from 'esbuild-sass-plugin';
 import isBetaVersion from './build/isBetaVersion.js';
+import optionsMetadataPlugin from './build/optionsMetadataPlugin.js';
 import packageInfo from './package.json' with { type: 'json' };
 
 // Third-party libraries that ship as separate on-demand files rather than being
@@ -162,6 +163,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 		entryPoints: {
 			'foreground.entry': './lib/foreground.entry.js',
 			'background.entry': './lib/background.entry.js',
+			'snudown.entry': './lib/options/snudown.entry.js',
 			'options.entry': './lib/options/options.entry.js',
 			'prompt.entry': './lib/environment/background/permissions/prompt.entry.js',
 			// Page world, not the extension's. Its own entry because it is delivered
@@ -212,6 +214,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 			'process.env.homepageURL': `"${homepageURL}"`,
 		},
 		plugins: [
+			optionsMetadataPlugin(),
 			{
 				name: 'remove-flow-types',
 				setup(build) {

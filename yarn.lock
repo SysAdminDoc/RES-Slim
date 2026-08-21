@@ -83,7 +83,7 @@
     eslint-visitor-keys "^5.0.0"
     semver "^7.7.3"
 
-"@babel/generator@^8.0.0":
+"@babel/generator@8.0.0", "@babel/generator@^8.0.0":
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/@babel/generator/-/generator-8.0.0.tgz#24b7b53a74fa8e74cc2377e054fecef4dcdada96"
   integrity sha512-NT9NrVwJsbSV6Y2FSstWa71EETOnzrjkL5/wX3D2mYHtKM+qvqB1DvR4D0Setb/gDBsHzRICifwEWMO8CnTF6g==
@@ -139,7 +139,7 @@
     "@babel/template" "^8.0.0"
     "@babel/types" "^8.0.0"
 
-"@babel/parser@^8.0.0", "@babel/parser@^8.0.4":
+"@babel/parser@8.0.4", "@babel/parser@^8.0.0", "@babel/parser@^8.0.4":
   version "8.0.4"
   resolved "https://registry.yarnpkg.com/@babel/parser/-/parser-8.0.4.tgz#244e21ca23ab54c6f5373af2122cb3a618f9dd39"
   integrity sha512-srpptsAkEbbNIC/q8nT7o+m6CQe8CJUTV/t7MYc9NnWlgYVtHOb7JH6SorxMhN0kuRJjVqXbKClG6xSbPtzz+g==

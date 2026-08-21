@@ -344,24 +344,15 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 	fs.mkdirSync(outDir, { recursive: true });
 	const outFile = path.join(outDir, `${path.basename(relativePath, '.js')}.cjs`);
 
-	// Enter through `lib/core/modules/modules.js`, then re-export the target.
-	//
-	// There is a genuine import cycle here: `modules.js` builds its registry from
-	// `Object.values()` of the module index at module-body time, and the modules in
-	// that index import the registry back. The product survives it because esbuild
-	// emits bundled modules in depth-first *post* order — reaching the registry
-	// first means the whole index is emitted before the registry's own body runs.
-	//
-	// Enter at a module file (or at the index) instead and the traversal arrives at
-	// `modules.js` from inside the index, so the registry's body is emitted first
-	// and every module reads back as `undefined`. `lib/core/init.js` reaches it the
-	// same way this does, which is why the shipped bundle works.
+	// Product entries explicitly populate the shared registry. Mirror that startup
+	// contract here so focused module tests exercise a complete concrete catalog.
 	const entryFile = path.join(outDir, '__entry.js');
 	// esbuild resolves plain paths, not file:// URLs. Forward slashes so the
 	// generated source is valid on Windows too.
 	const posix = p => p.split(path.sep).join('/');
 	const toTarget = posix(path.join(repoRoot, relativePath));
 	const toRegistry = posix(path.join(repoRoot, 'lib', 'core', 'modules', 'modules.js'));
+	const toModules = posix(path.join(repoRoot, 'lib', 'modules', 'index.js'));
 	//
 	// The registry is also re-exported as `__registry`. Two `loadModule` calls
 	// produce two independent bundles, so a module object reached through one is a
@@ -371,6 +362,8 @@ export async function loadModule(relativePath, name, { globals = {}, dom, stubEn
 	// module actually reads.
 	fs.writeFileSync(entryFile, [
 		`import * as __registry from ${JSON.stringify(toRegistry)};`,
+		`import * as __modules from ${JSON.stringify(toModules)};`,
+		'__registry.registerModules(Object.values(__modules));',
 		'export { __registry };',
 		`export * from ${JSON.stringify(toTarget)};`,
 		exportDefault ? `export { default as __targetDefault } from ${JSON.stringify(toTarget)};` : '',

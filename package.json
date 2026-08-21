@@ -57,6 +57,8 @@
 		"@axe-core/playwright": "^4.13.0",
 		"@babel/core": "^8",
 		"@babel/eslint-parser": "^8",
+		"@babel/generator": "8.0.0",
+		"@babel/parser": "8.0.4",
 		"@eslint/compat": "2.1.0",
 		"@eslint/js": "10.0.1",
 		"@stylistic/eslint-plugin": "^5.10.0",

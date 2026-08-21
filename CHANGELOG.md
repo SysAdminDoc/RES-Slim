@@ -2,6 +2,22 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- The settings page now reads generated module metadata instead of bundling all
+  module implementations. Its development JavaScript entry is 613 KB, down
+  from about 1.41 MB, and no longer contains snudown or JSZip.
+
+- Settings Markdown is isolated in its own page entry. The existing settings
+  search, navigation and option storage behavior remains unchanged.
+
+### Verified
+
+- Metadata contracts cover every registered module and media host. The browser
+  settings walk still renders every destination and exercises global search.
+
 ## v0.50.1 - 2026-08-20
 
 ### Fixed

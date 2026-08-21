@@ -219,7 +219,7 @@ test('console-level controls live in the Console tab, not a third column', () =>
 	assert.match(template, /class="consoleHeaderActions"[\s\S]{0,900}id="RESGlobalSave"/);
 
 	assert.match(styles, /#RESConsoleContent[\s\S]{0,220}grid-template-columns: minmax\(270px, 312px\) minmax\(0, 1fr\);/);
-	assert.match(controller, /setSidebarCollapsed\(moduleID \? moduleID !== Search\.module\.moduleID : true\)/);
+	assert.match(controller, /setSidebarCollapsed\(moduleID \? moduleID !== SEARCH_MODULE_ID : true\)/);
 
 	for (const key of [
 		'settingsConsoleDisplayTitle',

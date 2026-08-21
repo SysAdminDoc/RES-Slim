@@ -1,7 +1,7 @@
 {
 	"note": "Per-file flow error counts. Regenerate with `node scripts/flow-baseline.mjs --update` and commit the change.",
 	"flowVersion": "0.84.0",
-	"total": 120,
+	"total": 117,
 	"files": {
 		"lib/core/theme/antiFouc.js": 1,
 		"lib/environment/foreground/storage.js": 2,
@@ -13,10 +13,8 @@
 		"lib/modules/commentQuickCollapse.js": 1,
 		"lib/modules/commentShredder.js": 2,
 		"lib/modules/commentTools.js": 15,
-		"lib/modules/context.js": 1,
 		"lib/modules/continueThreadInline.js": 1,
 		"lib/modules/dragResize.js": 2,
-		"lib/modules/hideChildComments.js": 1,
 		"lib/modules/hosts/bluesky.js": 1,
 		"lib/modules/hosts/mastodon.js": 3,
 		"lib/modules/hosts/threads.js": 2,
@@ -27,7 +25,7 @@
 		"lib/modules/perSubSort.js": 2,
 		"lib/modules/randomSubreddit.js": 2,
 		"lib/modules/saveComments.js": 2,
-		"lib/modules/search.js": 2,
+		"lib/modules/search.js": 1,
 		"lib/modules/searchFilterPersist.js": 4,
 		"lib/modules/searchGallery.js": 2,
 		"lib/modules/searchScope.js": 1,
