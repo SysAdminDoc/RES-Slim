@@ -2322,9 +2322,10 @@ test('the in-page UI keeps its edges in forced colours', async t => {
 });
 
 test('Escape inside a text field clears the field rather than closing the console', async t => {
-	// `document.body.addEventListener('keyup', handleEscapeKey)` had no target
-	// guard, so the keystroke that normally means "abandon what I am typing" threw
-	// away the whole workspace — including anything staged but unsaved.
+	// `document.body.addEventListener('keyup', handleEscapeKey)` ran after the
+	// native search control could move focus, so its target was the page rather
+	// than the field. The keystroke that means "abandon what I am typing" threw
+	// away the whole workspace, including anything staged but unsaved.
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
 
