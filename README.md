@@ -59,7 +59,12 @@ yarn build      # production build + zip -> dist/zip/
 
 The build generates a metadata-only module catalog for the settings page. This
 keeps runtime module code and large media dependencies out of the options
-bundle while preserving the same settings schema.
+bundle while preserving the same settings schema. Module page conditions are
+declared through `include`, `exclude`, and `asLongAs`. Lifecycle hooks receive a
+shared abort signal that fires when the page is left, so long-lived work has one
+consistent teardown path. A file-derived contract also requires every module to
+be registered, described, and paired with either its own stylesheet or an
+explicit styleless declaration.
 
 `yarn verify` runs lint, Flow, the unit suite, a production build, the e2e suite,
 the third-party endpoint probe, and an advisory check that the published GitHub

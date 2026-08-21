@@ -16,15 +16,18 @@ const VIRTUAL_ID = 'res-options-metadata';
 
 const DISPLAY_PROPERTIES = new Set([
 	'alwaysEnabled',
+	'asLongAs',
 	'bodyClass',
 	'category',
 	'description',
 	'descriptionRaw',
 	'disabledByDefault',
 	'hidden',
+	'include',
 	'keywords',
 	'moduleName',
 	'options',
+	'exclude',
 	'permissions',
 	'sort',
 ]);

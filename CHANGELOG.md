@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Module page conditions now use declarative `include`, `exclude` and
+  `asLongAs` predicates. Every lifecycle stage receives a shared abort signal,
+  which is cancelled when the page is left.
+
+- A local `broken-features.json` can disable a module in the shipped build
+  without fetching code or configuration from a remote host.
+
 - The settings page now reads generated module metadata instead of bundling all
   module implementations. Its development JavaScript entry is 613 KB, down
   from about 1.41 MB, and no longer contains snudown or JSZip.
@@ -14,6 +21,10 @@ All notable changes to RES-Slim will be documented in this file.
   search, navigation and option storage behavior remains unchanged.
 
 ### Verified
+
+- A file-derived contract checks that every module is registered, exported,
+  described, and either owns a stylesheet or explicitly declares that it needs
+  none. Lifecycle coverage confirms that page teardown aborts the shared signal.
 
 - Metadata contracts cover every registered module and media host. The browser
   settings walk still renders every destination and exercises global search.

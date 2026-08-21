@@ -115,9 +115,9 @@ test('a module that runs everywhere is deliberate, not an omission', () => {
 	//
 	// There are **four** scoping mechanisms, then, and this check knows three of
 	// them. The first version knew only `include` and `exclude`, and so reported
-	// `noParticipation` as unscoped when it is in fact gated by `module.shouldRun =
-	// () => isNpHostname(location.hostname)` — the framework checks `shouldRun`
-	// before running any stage. Over-reporting is not harmless: it sent an audit
+	// `noParticipation` as unscoped when it is in fact gated by an `asLongAs`
+	// hostname predicate. The framework checks every predicate before running a
+	// stage. Over-reporting is not harmless: it sent an audit
 	// chasing a bug that did not exist, and a list that cries wolf stops being read.
 	const EXPECTED_GLOBAL = [
 		'RESMenu', 'hover', 'newCommentCount', 'nightMode',
@@ -125,19 +125,17 @@ test('a module that runs everywhere is deliberate, not an omission', () => {
 		'search', 'settingsNavigation', 'version',
 	].sort();
 
-	const overridesShouldRun = module => String(module.shouldRun).replace(/\s/g, '') !== '()=>true';
-
 	const actual = all
 		.filter(module => (!module.include || !module.include.length))
 		.filter(module => (!module.exclude || !module.exclude.length))
-		.filter(module => !overridesShouldRun(module))
+		.filter(module => !module.asLongAs.length)
 		.map(module => module.moduleID)
 		.sort();
 
 	assert.deepEqual(
 		actual,
 		EXPECTED_GLOBAL,
-		'a module with no include, no exclude and no shouldRun runs on every page including the options page — scope it, or update this list if running everywhere is intentional',
+		'a module with no include, no exclude and no asLongAs predicate runs everywhere — scope it, or update this list if that is intentional',
 	);
 });
 
