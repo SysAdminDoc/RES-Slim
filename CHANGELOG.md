@@ -11,10 +11,24 @@ All notable changes to RES-Slim will be documented in this file.
   The import commits the full map once, keeps a pre-import rollback snapshot,
   clears the payload only after verification, and exports the committed map.
 
+- Saved-content schema v2 keys every record by normalized Reddit username and
+  fullname. Search, tags, sync, export, and purge stay inside the account shown
+  in the manager. Existing v1 rows are copied into an unassigned partition,
+  while the untouched v1 store remains available as the migration backup.
+
+### Fixed
+
+- The saved-content manager's Add tag control now submits its form when clicked.
+  Previously, only an implicit form submission could reach the tag write.
+
 ### Tests
 
 - Added transaction failure coverage and a browser-driven import, export, and
   reload check for the user-tag settings controls.
+
+- Added a browser migration and account-switch test that syncs Alice, then Bob,
+  then Alice again with the same fullname. It checks account-only search, tags,
+  export and purge, verifies the v1 recovery copy, and runs Axe over the manager.
 
 ## v0.51.0, 2026-08-21
 

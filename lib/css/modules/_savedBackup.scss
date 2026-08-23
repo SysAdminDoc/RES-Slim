@@ -89,6 +89,17 @@
 	color: var(--rsm-accent-strong);
 }
 
+.rsm-savedBackup-purge {
+	grid-column: 3 / -1;
+	justify-self: end;
+
+	&[data-armed='1'] {
+		border-color: var(--rsm-danger-line);
+		background: var(--rsm-danger-soft);
+		color: var(--rsm-danger-text);
+	}
+}
+
 .rsm-savedBackup-toolbar button:disabled {
 	opacity: 0.55;
 	cursor: wait;
@@ -220,6 +231,10 @@
 	}
 
 	.rsm-savedBackup-toolbar .rsm-savedBackup-search {
+		grid-column: 1 / -1;
+	}
+
+	.rsm-savedBackup-purge {
 		grid-column: 1 / -1;
 	}
 }

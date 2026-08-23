@@ -303,7 +303,8 @@ html.res-pageTheme {
 	// An inset shadow bar down the left of the armed row, from
 	// `_storageDashboard.scss`. The confirm button beside it keeps its own border,
 	// but the row-level warning is carried by the shadow alone.
-	.rsm-storageDashboard-row[data-armed='1'] {
+	.rsm-storageDashboard-row[data-armed='1'],
+	.rsm-savedBackup-purge[data-armed='1'] {
 		outline: 2px solid Mark;
 		outline-offset: -2px;
 	}

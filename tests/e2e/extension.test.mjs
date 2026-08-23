@@ -917,6 +917,201 @@ test('user-tag imports preview conflicts, commit once, and cannot replay', async
 	assert.deepEqual(pageErrors, []);
 });
 
+test('saved content stays isolated across an Alice to Bob to Alice account switch', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { savedBackup: true },
+		}, resolve);
+	}));
+
+	const baseCapture = servableCapture(CAPTURE);
+	const captureForAccount = username => baseCapture.replace(
+		'<span class="user"><a href="/user/fixture_author/">fixture</a>',
+		`<span class="user"><a href="/user/${username}/">${username}</a>`,
+	);
+	const savedListing = username => ({
+		kind: 'Listing',
+		data: {
+			after: null,
+			children: [{
+				kind: 't3',
+				data: {
+					name: 't3_shared',
+					id: 'shared',
+					subreddit: username,
+					author: `${username}_author`,
+					permalink: `/r/${username}/comments/shared/saved/`,
+					created_utc: username === 'alice' ? 10 : 20,
+					title: `${username} saved title`,
+					selftext: `${username} private phrase`,
+					url: `https://example.com/${username}`,
+					score: username === 'alice' ? 1 : 2,
+				},
+			}],
+		},
+	});
+
+	await context.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		const savedMatch = /^\/user\/(alice|bob)\/saved\.json$/.exec(url.pathname);
+		if (url.hostname === 'old.reddit.com' && savedMatch) {
+			return route.fulfill({
+				status: 200,
+				contentType: 'application/json; charset=utf-8',
+				body: JSON.stringify(savedListing(savedMatch[1])),
+			});
+		}
+		if (request.resourceType() === 'document' && url.hostname === 'old.reddit.com') {
+			const account = url.pathname.includes('account-bob') ? 'bob' : 'alice';
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: captureForAccount(account) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.goto('https://old.reddit.com/r/account-alice/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#rsm-savedBackup-trigger', { timeout: 30000 });
+
+	const legacyRecord = {
+		kind: 't1', fullname: 't1_legacy', id: 'legacy', subreddit: 'legacy', author: 'unknown', permalink: '/legacy',
+		createdUtc: 1, body: 'legacy ownership unknown', title: '', url: '', score: 0,
+		tags: ['legacy-tag'], savedAt: 1, lastSeenAt: 1,
+	};
+	await page.evaluate(record => new Promise((resolve, reject) => {
+		const request = indexedDB.open('rsm-savedContent', 1);
+		request.onupgradeneeded = () => request.result.createObjectStore('items', { keyPath: 'fullname' });
+		request.onsuccess = () => {
+			const db = request.result;
+			const transaction = db.transaction('items', 'readwrite');
+			transaction.objectStore('items').put(record);
+			transaction.oncomplete = () => { db.close(); resolve(); };
+			transaction.onerror = () => { db.close(); reject(transaction.error); };
+		};
+		request.onerror = () => reject(request.error);
+	}), legacyRecord);
+
+	const openManager = async () => {
+		await page.locator('#rsm-savedBackup-trigger').click();
+		await page.waitForSelector('#rsm-savedBackup-panel', { timeout: 30000 });
+		await page.waitForFunction(() => document.querySelector('.rsm-savedBackup-status')?.textContent.length > 0);
+	};
+	const syncCurrentAccount = async expectedTitle => {
+		await page.locator('.rsm-savedBackup-sync').click();
+		await page.waitForFunction(title => document.querySelector('.rsm-savedBackup-item-title')?.textContent === title, expectedTitle);
+	};
+	const addTag = async tag => {
+		await page.locator('.rsm-savedBackup-tag-form input').fill(tag);
+		await page.locator('.rsm-savedBackup-tag-form button').click();
+		await page.waitForFunction(value => [...document.querySelectorAll('.rsm-savedBackup-tag')]
+			.some(element => element.firstChild?.textContent === value), tag);
+	};
+	const exportedPayload = async () => {
+		const downloadStarted = page.waitForEvent('download');
+		await page.locator('.rsm-savedBackup-export').click();
+		const download = await downloadStarted;
+		const downloadPath = await download.path();
+		assert.ok(downloadPath, 'saved-content export should produce a JSON file');
+		return JSON.parse(fs.readFileSync(downloadPath, 'utf8'));
+	};
+	const readDatabase = () => page.evaluate(() => new Promise((resolve, reject) => {
+		const request = indexedDB.open('rsm-savedContent', 2);
+		request.onsuccess = () => {
+			const db = request.result;
+			const stores = [...db.objectStoreNames];
+			const transaction = db.transaction(['items', 'accountItems'], 'readonly');
+			const legacy = transaction.objectStore('items').getAll();
+			const accounts = transaction.objectStore('accountItems').getAll();
+			transaction.oncomplete = () => {
+				db.close();
+				resolve({ stores, legacy: legacy.result, accounts: accounts.result });
+			};
+			transaction.onerror = () => { db.close(); reject(transaction.error); };
+		};
+		request.onerror = () => reject(request.error);
+	}));
+
+	await openManager();
+	assert.doesNotMatch(await page.locator('#rsm-savedBackup-panel').innerText(), /legacy ownership unknown/);
+	const migrated = await readDatabase();
+	assert.deepEqual(migrated.stores, ['accountItems', 'items']);
+	assert.equal(migrated.legacy[0].fullname, 't1_legacy', 'the untouched v1 store is the recovery copy');
+	assert.deepEqual(
+		migrated.accounts.map(record => [record.username, record.fullname]),
+		[['<unassigned>', 't1_legacy']],
+		'v1 data without ownership must not be assigned to the signed-in account',
+	);
+
+	await syncCurrentAccount('alice saved title');
+	await addTag('alice-tag');
+	await page.locator('.rsm-savedBackup-search').fill('bob private phrase');
+	assert.match(await page.locator('.rsm-savedBackup-empty').innerText(), /No saved items match/);
+	await page.locator('.rsm-savedBackup-search').fill('');
+	const aliceExport = await exportedPayload();
+	assert.equal(aliceExport.schemaVersion, 2);
+	assert.equal(aliceExport.username, 'alice');
+	assert.deepEqual(aliceExport.items.map(record => [record.username, record.fullname, record.tags]), [
+		['alice', 't3_shared', ['alice-tag']],
+	]);
+
+	await page.goto('https://old.reddit.com/r/account-bob/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#rsm-savedBackup-trigger', { timeout: 30000 });
+	await openManager();
+	assert.doesNotMatch(await page.locator('#rsm-savedBackup-panel').innerText(), /alice saved title|alice-tag/);
+	await syncCurrentAccount('bob saved title');
+	await addTag('bob-tag');
+	const bobExport = await exportedPayload();
+	assert.equal(bobExport.username, 'bob');
+	assert.deepEqual(bobExport.items.map(record => [record.username, record.fullname, record.tags]), [
+		['bob', 't3_shared', ['bob-tag']],
+	]);
+
+	const beforePurge = await readDatabase();
+	assert.deepEqual(
+		beforePurge.accounts.filter(record => record.fullname === 't3_shared').map(record => [record.username, record.tags]),
+		[['alice', ['alice-tag']], ['bob', ['bob-tag']]],
+		'the compound key must retain both accounts even when Reddit returns the same fullname',
+	);
+	await page.locator('.rsm-savedBackup-purge').click();
+	assert.match(await page.locator('.rsm-savedBackup-purge').innerText(), /Confirm purge for u\/bob/);
+	await page.locator('.rsm-savedBackup-purge').click();
+	assert.match(await page.locator('.rsm-savedBackup-purge').innerText(), /Purging|Purged|Retry/);
+	await page.waitForFunction(() => /Purged|Could not purge/.test(document.querySelector('.rsm-savedBackup-status')?.textContent || ''));
+	assert.match(await page.locator('.rsm-savedBackup-status').innerText(), /Purged 1/);
+	assert.match(await page.locator('.rsm-savedBackup-empty').innerText(), /Nothing indexed yet/);
+
+	await page.goto('https://old.reddit.com/r/account-alice/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#rsm-savedBackup-trigger', { timeout: 30000 });
+	await openManager();
+	await page.waitForFunction(() => document.querySelector('.rsm-savedBackup-item-title')?.textContent === 'alice saved title');
+	const aliceAgain = await page.locator('#rsm-savedBackup-panel').innerText();
+	assert.match(aliceAgain, /alice saved title/);
+	assert.match(aliceAgain, /alice-tag/);
+	assert.doesNotMatch(aliceAgain, /bob saved title|bob-tag/);
+	const accessibility = await new AxeBuilder({ page })
+		.include('#rsm-savedBackup-panel')
+		.withTags(WCAG_TAGS)
+		.analyze();
+	assert.ok(accessibility.passes.flatMap(result => result.nodes).length > 0, 'Axe should inspect saved-content controls');
+	assert.deepEqual(accessibility.violations.map(violation => violation.id), []);
+	await page.screenshot({
+		path: path.join(saveScreenshotDir(), 'saved-content-account-isolation.png'),
+		fullPage: false,
+		animations: 'disabled',
+	});
+	const finalDatabase = await readDatabase();
+	assert.deepEqual(
+		finalDatabase.accounts.map(record => [record.username, record.fullname]),
+		[['<unassigned>', 't1_legacy'], ['alice', 't3_shared']],
+	);
+	assert.deepEqual(pageErrors, []);
+});
+
 test('selector overrides validate, persist, export a visible state, and restore cleanly', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension({ viewport: { width: 1440, height: 1000 } });
 	t.after(dispose);

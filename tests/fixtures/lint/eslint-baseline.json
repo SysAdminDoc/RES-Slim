@@ -1,6 +1,6 @@
 {
 	"note": "Per-rule eslint error counts. Regenerate with `node scripts/lint-baseline.mjs --update` and commit the change.",
-	"total": 508,
+	"total": 498,
 	"rules": {
 		"array-bracket-spacing": 1,
 		"ava/no-conditional-assertion": 1,
@@ -31,7 +31,7 @@
 		"no-unused-vars": 4,
 		"no-useless-assignment": 7,
 		"no-useless-concat": 1,
-		"object-property-newline": 71,
+		"object-property-newline": 61,
 		"object-shorthand": 2,
 		"one-var": 2,
 		"one-var-declaration-per-line": 2,
