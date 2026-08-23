@@ -95,8 +95,9 @@ description still matches this README, in that order, stopping at the first
 failure. It is the one command worth running before a push; the individual
 scripts above are for iterating on a single gate. `yarn verify --skip-network`
 omits the two network steps, which are the only ones that can fail for reasons
-outside this repository. The metadata check reports drift but never fails a
-push, since it needs a `gh` login as well as a network.
+outside this repository. Endpoint transport failures get three bounded attempts,
+while an HTTP failure still stops immediately. The metadata check reports drift
+but never fails a push, since it needs a `gh` login as well as a network.
 
 To run it automatically before every push, enable the shipped hook once per
 clone:

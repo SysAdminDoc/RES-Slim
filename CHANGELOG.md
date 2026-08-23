@@ -21,6 +21,9 @@ All notable changes to RES-Slim will be documented in this file.
 - The saved-content manager's Add tag control now submits its form when clicked.
   Previously, only an implicit form submission could reach the tag write.
 
+- The endpoint gate now retries transport failures up to three times. HTTP
+  failures still stop immediately, so a real service outage cannot pass.
+
 ### Tests
 
 - Added transaction failure coverage and a browser-driven import, export, and

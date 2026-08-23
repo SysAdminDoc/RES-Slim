@@ -39,6 +39,8 @@
 
 import process from 'node:process';
 
+import { withTransportRetries } from './endpoint-retry.mjs';
+
 const TIMEOUT_MS = 15000;
 
 // A real rimgo instance titles its documents `rimgo`; challenge pages do not.
@@ -61,7 +63,10 @@ const FETCHED = [
 	{ name: 'Arctic Shift comments (arcticShift, editedCommentDiff)', url: 'https://arctic-shift.photon-reddit.com/api/comments/ids?ids=abc123' },
 	{ name: 'Arctic Shift posts (arcticShift)', url: 'https://arctic-shift.photon-reddit.com/api/posts/ids?ids=abc123' },
 	{ name: 'PullPush API (viewDeleted, editedCommentDiff)', url: 'https://api.pullpush.io/reddit/search/comment/?size=1' },
-	{ name: 'Wayback CDX API (waybackSnapshot)', url: 'https://web.archive.org/cdx/search/cdx?url=example.com&output=json&filter=statuscode%3A200&fl=timestamp%2Coriginal&limit=-1' },
+	// The example.com root has a large capture index and routinely spends more
+	// than 15 seconds finding its final row. This smaller, stable IANA page still
+	// exercises the exact CDX query shape the module builds.
+	{ name: 'Wayback CDX API (waybackSnapshot)', url: 'https://web.archive.org/cdx/search/cdx?url=iana.org/domains/reserved&output=json&filter=statuscode%3A200&fl=timestamp%2Coriginal&limit=-1' },
 	{ name: 'Bluesky oEmbed (hosts/bluesky)', url: 'https://embed.bsky.app/oembed?url=https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l' },
 	// v0.40.0 dropped Giphy's API call for the media paths the id already
 	// determines, so these two URLs are the whole host now. If the pattern ever
@@ -87,7 +92,7 @@ const LINKED = [
 
 const healthy = status => status === 429 || (status >= 200 && status < 400);
 
-async function probeOne({ name, url, expect }) {
+async function probeAttempt({ name, url, expect }) {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
 	try {
@@ -114,6 +119,10 @@ async function probeOne({ name, url, expect }) {
 	}
 }
 
+function probeOne(entry) {
+	return withTransportRetries(() => probeAttempt(entry));
+}
+
 // A group stands in for one ordered setting: the feature works if any member
 // answers, so the group's verdict is the disjunction of its members'.
 async function probe(entry) {
@@ -128,13 +137,15 @@ function report(results) {
 			const alive = r.members.filter(m => m.ok).length;
 			console.log(`[${r.ok ? 'ok  ' : 'FAIL'}]      ${r.name} (${alive}/${r.members.length} alive)`);
 			for (const m of r.members) {
-				const detail = m.error ? ` (${m.error})` : '';
+				const retryDetail = m.attempts > 1 ? ` after ${m.attempts} attempts` : '';
+				const detail = m.error ? ` (${m.error}; ${m.attempts} attempts)` : retryDetail;
 				console.log(`         ${m.ok ? ' ok ' : 'FAIL'} ${String(m.status).padStart(3)}  ${m.name}${detail}`);
 				console.log(`                   ${m.url}`);
 			}
 			continue;
 		}
-		const detail = r.error ? ` (${r.error})` : '';
+		const retryDetail = r.attempts > 1 ? ` after ${r.attempts} attempts` : '';
+		const detail = r.error ? ` (${r.error}; ${r.attempts} attempts)` : retryDetail;
 		console.log(`[${r.ok ? 'ok  ' : 'FAIL'}] ${String(r.status).padStart(3)}  ${r.name}${detail}`);
 		console.log(`            ${r.url}`);
 	}
