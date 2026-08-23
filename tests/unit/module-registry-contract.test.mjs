@@ -83,7 +83,7 @@ test('every enum option default is one of its own values', () => {
 test('option types are drawable by the settings console', () => {
 	// The console switches on `type`; an unrecognised one renders nothing at all,
 	// so the option exists in storage but the user can never reach it.
-	const DRAWABLE = new Set(['boolean', 'text', 'password', 'list', 'enum', 'keycode', 'color', 'table', 'builder']);
+	const DRAWABLE = new Set(['boolean', 'text', 'password', 'list', 'enum', 'keycode', 'color', 'table', 'builder', 'button']);
 	const offenders = [];
 
 	for (const module of all) {

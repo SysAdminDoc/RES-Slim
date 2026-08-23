@@ -2,6 +2,20 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- User-tag JSON imports now show valid, invalid, new, and conflicting record
+  counts before any write. Existing tags win unless replacement is selected.
+  The import commits the full map once, keeps a pre-import rollback snapshot,
+  clears the payload only after verification, and exports the committed map.
+
+### Tests
+
+- Added transaction failure coverage and a browser-driven import, export, and
+  reload check for the user-tag settings controls.
+
 ## v0.51.0, 2026-08-21
 
 ### Added

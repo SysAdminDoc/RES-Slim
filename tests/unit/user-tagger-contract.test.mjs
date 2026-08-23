@@ -21,6 +21,9 @@ const {
 	parseTagsJson,
 	stringifyTags,
 	mergeTags,
+	inspectTagImport,
+	buildTagImportMap,
+	commitTagImport,
 	tagBadgeText,
 } = await import(pathToFileURL(modulePath).href);
 
@@ -102,6 +105,111 @@ test('mergeTags right-wins on collisions and ignores empty entries', () => {
 	assert.equal(merged.bob.tag, 'b');
 });
 
+test('tag import preview counts valid, invalid, new, and conflicting records', () => {
+	const current = {
+		alice: { tag: 'kept', color: '', ignore: false, ts: 1 },
+	};
+	const preview = inspectTagImport(JSON.stringify({
+		Alice: { tag: 'replacement', color: '#FF0000', ignore: false, ts: 2 },
+		Bob: { ignore: true },
+		'  bob  ': { tag: 'duplicate' },
+		Carol: { tag: '', color: '', ignore: false },
+	}), current);
+
+	assert.deepEqual(preview.counts, {
+		valid: 2,
+		invalid: 2,
+		newRecords: 1,
+		conflicting: 1,
+	});
+	assert.equal(preview.error, null);
+	assert.deepEqual(Object.keys(preview.incoming).sort(), ['alice', 'bob']);
+});
+
+test('tag import preview reports malformed payloads without inventing records', () => {
+	const preview = inspectTagImport('{not json', {});
+	assert.deepEqual(preview.incoming, {});
+	assert.deepEqual(preview.counts, {
+		valid: 0,
+		invalid: 1,
+		newRecords: 0,
+		conflicting: 0,
+	});
+	assert.match(preview.error, /valid JSON/i);
+});
+
+test('existing tags win by default unless replacement is explicit', () => {
+	const current = {
+		alice: { tag: 'old', color: '', ignore: false, ts: 1 },
+	};
+	const incoming = {
+		alice: { tag: 'new', color: '#000000', ignore: true, ts: 2 },
+		bob: { tag: 'added', color: '', ignore: false, ts: 3 },
+	};
+
+	const kept = buildTagImportMap(current, incoming);
+	assert.equal(kept.alice.tag, 'old');
+	assert.equal(kept.bob.tag, 'added');
+
+	const replaced = buildTagImportMap(current, incoming, 'replace');
+	assert.equal(replaced.alice.tag, 'new');
+	assert.equal(replaced.alice.ignore, true);
+});
+
+test('a tag import snapshots, commits once, verifies, then clears its payload', async () => {
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const next = { alice: original.alice, bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
+	let stored = original;
+	let snapshot;
+	let clears = 0;
+	const writes = [];
+
+	const committed = await commitTagImport({
+		original,
+		next,
+		saveRollback: value => { snapshot = value; return Promise.resolve(); },
+		writeMap: value => { writes.push(value); stored = value; return Promise.resolve(); },
+		readMap: () => Promise.resolve(stored),
+		clearPayload: () => { clears += 1; return Promise.resolve(); },
+	});
+
+	assert.deepEqual(snapshot, original);
+	assert.deepEqual(committed, next);
+	assert.deepEqual(writes, [next], 'the committed map is written in one operation');
+	assert.equal(clears, 1);
+});
+
+test('a failed tag import restores the original map and leaves its payload', async () => {
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const next = { bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
+	let stored = original;
+	let attempts = 0;
+	let clears = 0;
+	const writes = [];
+
+	await assert.rejects(commitTagImport({
+		original,
+		next,
+		saveRollback: () => Promise.resolve(),
+		writeMap: value => {
+			writes.push(value);
+			attempts += 1;
+			if (attempts === 1) {
+				stored = next;
+				return Promise.reject(new Error('quota exceeded'));
+			}
+			stored = value;
+			return Promise.resolve();
+		},
+		readMap: () => Promise.resolve(stored),
+		clearPayload: () => { clears += 1; return Promise.resolve(); },
+	}), /quota exceeded/);
+
+	assert.deepEqual(stored, original);
+	assert.deepEqual(writes, [next, original]);
+	assert.equal(clears, 0);
+});
+
 test('tagBadgeText prefers tag text, falls back to ignored, then empty', () => {
 	assert.equal(tagBadgeText({ tag: 'spammer', color: '', ignore: false, ts: 0 }), 'spammer');
 	assert.equal(tagBadgeText({ tag: '', color: '', ignore: true, ts: 0 }), 'ignored');
@@ -119,9 +227,14 @@ test('userTagger module is registered and uses the helpers', () => {
 	assert.match(mod, /rsm-userTagger-btn/);
 	assert.match(mod, /rsm-userTagger-popover/);
 	assert.match(mod, /rsm-userTagger-badge/);
-	for (const opt of ['showTagBadges', 'colorizeUsername', 'hideIgnored', 'defaultBadgeColor', 'importJson']) {
+	for (const opt of ['showTagBadges', 'colorizeUsername', 'hideIgnored', 'defaultBadgeColor', 'importJson', 'importConflicts', 'importActions']) {
 		assert.ok(mod.includes(opt), `expected option ${opt} to be declared`);
 	}
+	assert.doesNotMatch(mod, /applyImportJson/);
+	assert.match(mod, /RESmodules\.userTagger\.tags\.rollback/);
+	assert.match(mod, /commitTagImport/);
+	assert.match(mod, /tagMapStore\.set/);
+	assert.match(mod, /URL\.createObjectURL/);
 });
 
 test('userTagger popover exposes dialog semantics, status feedback, and trigger state', () => {

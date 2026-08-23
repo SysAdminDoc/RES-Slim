@@ -842,6 +842,81 @@ test('settings console themes and display controls work by keyboard', async t =>
 	assert.equal(await page.locator('#RESCategoryTabs [role="tab"][aria-selected="true"]').getAttribute('data-category'), '__console');
 });
 
+test('user-tag imports preview conflicts, commit once, and cannot replay', async t => {
+	const { context, extensionId, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const original = {
+		alice: { tag: 'existing', color: '', ignore: false, ts: 1 },
+	};
+	await worker.evaluate(tags => new Promise(resolve => {
+		chrome.storage.local.set({ 'RESmodules.userTagger.tags': tags }, resolve);
+	}), original);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	const consoleErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	page.on('console', message => { if (message.type() === 'error') consoleErrors.push(message.text()); });
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/userTagger`, { waitUntil: 'domcontentloaded' });
+	await page.waitForTimeout(1000);
+	assert.deepEqual({ pageErrors, consoleErrors }, { pageErrors: [], consoleErrors: [] });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await page.locator('.moduleButton[data-module="userTagger"]').click();
+	await page.waitForSelector('#userTagger-importJson', { timeout: 30000 });
+
+	const payload = JSON.stringify({
+		Alice: { tag: 'replacement', color: '#112233', ignore: true, ts: 2 },
+		Bob: { tag: 'new', color: '', ignore: false, ts: 3 },
+		Carol: { tag: '', color: '', ignore: false },
+	});
+	await page.locator('#userTagger-importJson').fill(payload);
+	await page.getByRole('button', { name: 'Preview import' }).click();
+	const status = page.locator('.rsm-userTagger-import-status');
+	await status.waitFor({ state: 'visible' });
+	assert.match(await status.innerText(), /2 valid, 1 invalid, 1 new, 1 conflicting/);
+	const accessibility = await new AxeBuilder({ page })
+		.include('#optionContainer-userTagger-importActions')
+		.withTags(WCAG_TAGS)
+		.analyze();
+	assert.deepEqual(accessibility.violations.map(violation => violation.id), []);
+	await page.screenshot({ path: path.join(saveScreenshotDir(), 'user-tag-import-preview.png'), fullPage: false, animations: 'disabled' });
+
+	const beforeCommit = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RESmodules.userTagger.tags', result => resolve(result['RESmodules.userTagger.tags']));
+	}));
+	assert.deepEqual(beforeCommit, original, 'preview must not write feature data');
+
+	await page.getByRole('button', { name: 'Import previewed tags' }).click();
+	await page.waitForFunction(() => document.querySelector('.rsm-userTagger-import-status')?.textContent.includes('Imported 2 valid'));
+	const afterCommit = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get([
+			'RESmodules.userTagger.tags',
+			'RESmodules.userTagger.tags.rollback',
+			'RESoptions.userTagger',
+		], resolve);
+	}));
+	assert.equal(afterCommit['RESmodules.userTagger.tags'].alice.tag, 'existing', 'existing records win by default');
+	assert.equal(afterCommit['RESmodules.userTagger.tags'].bob.tag, 'new');
+	assert.deepEqual(afterCommit['RESmodules.userTagger.tags.rollback'].tags, original);
+	assert.equal(afterCommit['RESoptions.userTagger'].importJson.value, '');
+	const downloadStarted = page.waitForEvent('download');
+	await page.getByRole('button', { name: 'Export committed tags' }).click();
+	const download = await downloadStarted;
+	const downloadPath = await download.path();
+	assert.ok(downloadPath, 'the export should produce a downloadable JSON file');
+	assert.deepEqual(JSON.parse(fs.readFileSync(downloadPath, 'utf8')), afterCommit['RESmodules.userTagger.tags']);
+
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#userTagger-importJson', { timeout: 30000 });
+	assert.equal(await page.locator('#userTagger-importJson').inputValue(), '');
+	const afterReload = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RESmodules.userTagger.tags', result => resolve(result['RESmodules.userTagger.tags']));
+	}));
+	assert.deepEqual(afterReload, afterCommit['RESmodules.userTagger.tags']);
+	assert.deepEqual(pageErrors, []);
+});
+
 test('selector overrides validate, persist, export a visible state, and restore cleanly', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension({ viewport: { width: 1440, height: 1000 } });
 	t.after(dispose);

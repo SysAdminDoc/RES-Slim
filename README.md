@@ -20,6 +20,12 @@ The optional subreddit emoji module restores known custom emoji tokens in old Re
 
 **Current Reddit compatibility**: a Web3X/Shreddit adapter translates live post and comment components into the semantic vocabulary used by RES-Slim. Theme controls and the high-value DOM features work across both interfaces, including filtering, promoted-post removal, absolute timestamps, clean outbound links, author context, role highlights, user tags, vote history, layout controls, and scroll restore. The adapter follows streamed posts, nested comments, native comment collapse, SPA navigation, and native vote/action controls. It also follows Reddit's nested `reddit-header-action-items` header and the current `rpl-action-bar` vote structure. Stable controls are exposed as CSS parts for shared paint rules. The smaller per-post stylesheet is gated by the refined-layout toggle rather than by the palette, so the left vote rail appears under every theme.
 
+**User tag data**: JSON imports are a two-step operation in the module settings.
+Preview shows valid, invalid, new, and conflicting record counts without writing.
+Existing tags win unless you choose replacement. A successful import writes the
+whole map once, saves a rollback snapshot, clears the payload, and can export the
+exact committed map.
+
 **Browsing**: `hideAll` adds a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
 **Ads and measurement**: an always-on static `declarativeNetRequest` ruleset blocks separable Reddit ad assets, click trackers, pixels, and telemetry requests before load. Promoted records embedded in Reddit's essential first-party listing response are suppressed at `document_start`, counted locally, and rechecked as listings append. No claim is made that those inseparable records disappear from the listing response itself. Current Reddit's ad elements, including the ones that appear inside a discussion, belong to the same module rather than to a theme setting. A second layer patches `sendBeacon`, `fetch` and `XMLHttpRequest` in the page so a telemetry payload is never assembled, which covers transports the network rules do not; it ships as a packaged file the page loads by URL, because Manifest V3 refuses an inline script a content script writes.
