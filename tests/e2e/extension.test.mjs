@@ -1499,6 +1499,47 @@ async function servePalette(page, capture, html = null) {
 	});
 }
 
+test('turning the theme off leaves the page unpainted, not black', async t => {
+	// The anti-FOUC guard runs unconditionally at document_start and paints
+	// `:root.rsm-theme-oled body` #050608 so the page is not white while the
+	// lifecycle decides. Two paths took it back down - applying a palette, and the
+	// early-blocker branch in foreground.entry.js - and neither runs when the
+	// module is simply switched off. So the guard stayed up forever and the page
+	// rendered near-black with reddit's own light-page styling on top of it.
+	//
+	// The test above covers the enabled path and passed throughout. This is the
+	// disabled path, which nothing exercised.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, FRONT_CAPTURE);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({ 'RES.modulePrefs': { pageTheme: false, nightMode: false } }, resolve);
+	}));
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForTimeout(800);
+
+	const state = await page.evaluate(() => ({
+		antiFoucStyle: !!document.getElementById('rsm-anti-fouc-style'),
+		classes: document.documentElement.className,
+		bodyBackground: getComputedStyle(document.body).backgroundColor,
+		themed: document.documentElement.className.includes('res-pageTheme'),
+	}));
+
+	assert.equal(state.themed, false, 'the module is off, so no palette class should be applied');
+	assert.equal(state.antiFoucStyle, false, 'the early style must come down once the lifecycle has decided not to theme');
+	assert.notEqual(state.bodyBackground, 'rgb(5, 6, 8)', 'the page is still painted the anti-FOUC black');
+	assert.doesNotMatch(state.classes, /rsm-theme-oled/, 'the marker class outlives the style it gates');
+	// nightMode owns res-nightmode and is off here, so it should not be on the
+	// root either - but the assertion that matters is that this module cleaned up
+	// only what belongs to it.
+	assert.doesNotMatch(state.classes, /rsm-theme-dark/);
+});
+
 test('the light palette keeps dark inline ink, so injected chips stay readable', async t => {
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);

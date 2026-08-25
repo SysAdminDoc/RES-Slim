@@ -34,6 +34,14 @@ All notable changes to RES-Slim will be documented in this file.
   API response into an anchor or an iframe, and an iframe with a `javascript:`
   source runs in reddit.com's own origin.
 
+### Performance
+
+- Two references that were never released. Every post and comment object was
+  kept in a set that only a development-only debugger reads, and the build could
+  not strip the line that filled it, so a long session held all of them along
+  with their elements. The duplicate-post map had the same shape and is now
+  cleared when current Reddit changes route.
+
 ### Changed
 
 - Rewrote 62 user-facing strings that used an em dash as punctuation, across
@@ -56,6 +64,17 @@ All notable changes to RES-Slim will be documented in this file.
   while the untouched v1 store remains available as the migration backup.
 
 ### Fixed
+
+- Turning the Reddit theme off no longer leaves the page painted near-black. The
+  guard that covers the gap before the theme loads was taken down when a palette
+  was applied, but not when the module decided not to apply one, so it stayed up
+  for the life of the page. Measured at rgb(5, 6, 8) with Reddit's own light-page
+  styling on top of it.
+
+- Scrolling to a comment or a post no longer parks it under the sticky header.
+  The function that was meant to compensate for the header summed a list nothing
+  ever added to, so it returned zero on every call. It now reads the header
+  height the theme already measures for the CSS side of the same problem.
 
 - Filtering a post now stops what it was playing. Hiding a post takes it out of
   the layout and does nothing to a video or audio inside it, so filtering a
@@ -164,6 +183,12 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added browser coverage for the theme's disabled path, which nothing exercised:
+  the enabled path had a test and passed throughout.
+
+- Added coverage for the header offset, including that the dead registration
+  function is gone rather than left in place looking like a measurement.
 
 - Added a copy contract covering the two style rules that are mechanical: no
   dash used as punctuation in anything a reader sees, and one spelling. It reads

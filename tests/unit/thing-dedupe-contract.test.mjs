@@ -143,3 +143,31 @@ test('a repeat whose original has already left the document is kept', () => {
 	assert.equal(second.isConnected, true, 'nothing on the page is showing this post any more');
 	listing.remove();
 });
+
+test('an SPA route change clears the map rather than growing it forever', () => {
+	// Current Reddit replaces the whole feed without a reload. The map keyed
+	// fullname to element and was never pruned, so it grew without bound and
+	// pinned every element of every feed the session had rendered. Clearing is
+	// also correct on its own terms: the next page legitimately shows a post the
+	// previous one did.
+	// The old feed is left attached on purpose. That is the case the stale entry
+	// gets wrong: with the map still holding it, the post rendered by the *new*
+	// route is deleted as a duplicate of the one the previous route showed.
+	const first = document.createElement('div');
+	document.body.append(first);
+	const a = post('t3_1ul777a');
+	first.append(a);
+	registerAll(first);
+
+	document.dispatchEvent(new Event('reddit.urlChanged'));
+
+	const second = document.createElement('div');
+	document.body.append(second);
+	const b = post('t3_1ul777a');
+	second.append(b);
+	registerAll(second);
+
+	assert.equal(b.isConnected, true, 'a post on the next page is not a duplicate of one on the last');
+	first.remove();
+	second.remove();
+});
