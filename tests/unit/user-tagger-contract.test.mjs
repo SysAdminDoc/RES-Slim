@@ -248,10 +248,13 @@ test('userTagger popover exposes dialog semantics, status feedback, and trigger 
 	assert.match(mod, /setPopoverBusy\(pop, true, 'Saving tag…'\)/);
 	// Failures report an outcome state as well as a message, so the status line
 	// is coloured rather than relying on wording alone.
-	assert.match(mod, /setPopoverBusy\(pop, false, 'Couldn’t save[^']*', 'error'\)/);
+	// The apostrophe's escaping is not the property under test, so it is matched
+	// loosely: pinning the exact backslash count made a copy edit look like an
+	// accessibility regression.
+	assert.match(mod, /setPopoverBusy\(pop, false, 'Couldn.{0,2}'t save[^']*', 'error'\)/);
 	// The failure message says what state the data is actually in, not just that
 	// something went wrong.
-	assert.match(mod, /the tag is still only in this box/);
+	assert.match(mod, /tag is still only in this box/);
 });
 
 test('userTagger positions the popover against viewport edges', () => {

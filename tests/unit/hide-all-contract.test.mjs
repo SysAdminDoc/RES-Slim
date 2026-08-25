@@ -77,7 +77,7 @@ test('hideAll is reversible, and the undo reports its own failures', () => {
 	assert.match(mod, /async function undo\(/);
 	assert.match(mod, /Undo/);
 	// A partial undo must not read as a complete one.
-	assert.match(mod, /could not be restored/);
+	assert.match(mod, /couldn\\'t be restored/);
 });
 
 test('hideAll only targets visible, unhidden posts it has a fullname for', () => {

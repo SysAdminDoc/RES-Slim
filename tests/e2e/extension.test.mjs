@@ -3652,6 +3652,49 @@ test('the options page has no accessibility violations', async t => {
 		`accessibility violations on the options page:\n  ${describeViolations(results.violations)}`);
 });
 
+// The same page, in the other ten themes.
+//
+// The test above runs on whatever theme is active, which is the default one. A
+// settings theme changes nothing but colour, and colour is exactly what axe's
+// contrast rules measure - so a theme-specific violation is invisible to a
+// single-theme run. That is not hypothetical here: the light theme shipped a
+// white toggle knob on a white track, four status tones authored for a dark
+// panel, and five white-alpha fills that are nothing at all on white.
+//
+// axe did not catch those either - a knob drawn as a ::before pseudo-element and
+// a background fill are both outside its contrast rules, which is why the fix
+// came with its own token contract. This covers what axe *can* see, in every
+// theme rather than one.
+const SETTINGS_THEMES = ['oled', 'paper', 'graphite', 'midnight', 'catppuccin', 'tokyonight', 'rosepine', 'nord', 'dracula', 'gruvbox', 'solarized'];
+
+test('the options page has no accessibility violations in any theme', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#moduleOptionsScrim, #optionContainer, .optionContainer', { timeout: 30000 }).catch(() => {});
+	await page.waitForTimeout(1000);
+
+	const failures = [];
+	// Sequential on purpose: each pass mutates the theme attribute on the one
+	// page and then measures it, so these cannot overlap.
+	/* eslint-disable no-await-in-loop */
+	for (const theme of SETTINGS_THEMES) {
+		await page.evaluate(id => { document.documentElement.dataset.settingsTheme = id; }, theme);
+		await page.waitForTimeout(150);
+		const applied = await page.evaluate(() => document.documentElement.dataset.settingsTheme);
+		assert.equal(applied, theme, 'the theme attribute must actually be applied');
+
+		const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+		assert.ok(results.passes.length > 0, `axe inspected nothing under ${theme}`);
+		if (results.violations.length) failures.push(`${theme}:\n  ${describeViolations(results.violations)}`);
+	}
+	/* eslint-enable no-await-in-loop */
+
+	assert.deepEqual(failures, [], `accessibility violations by settings theme:\n${failures.join('\n')}`);
+});
+
 test('the controls injected into old Reddit have no accessibility violations', async t => {
 	// Scoped, unlike the options page: old.reddit's own markup fails plenty that
 	// this fork did not write and cannot fix without rewriting reddit. `include`

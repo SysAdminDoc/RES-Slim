@@ -31,6 +31,7 @@ async function host(file, label) {
 
 const strawpoll = await host('lib/modules/hosts/strawpollcom.js', 'strawpoll-url-shapes');
 const redgifs = await host('lib/modules/hosts/redgifs.js', 'redgifs-url-shapes');
+const soundcloud = await host('lib/modules/hosts/soundcloud.js', 'soundcloud-url-shapes');
 
 function embedFor(site, href) {
 	const detected = site.detect(new URL(href));
@@ -81,4 +82,31 @@ test('redgifs makes no request to build an embed', async () => {
 		delete globalThis.__resSlimAjax;
 	}
 	assert.equal(requested, 0, 'the retired v1 metadata API must not be called');
+});
+
+// soundcloud's `detect` was `() => true`, so every soundcloud.com URL got an
+// expando - including the site's own navigation, where the widget answers with
+// an error panel. The button existed only to produce one. Upstream #5568.
+test('soundcloud expands a track and a set', () => {
+	for (const href of [
+		'https://soundcloud.com/forss/flickermood',
+		'https://soundcloud.com/forss/sets/soulhack',
+		'https://on.soundcloud.com/abc123',
+	]) {
+		assert.ok(soundcloud.detect(new URL(href)), `${href} should expand`);
+	}
+});
+
+test('soundcloud leaves the site\'s own pages and a bare profile alone', () => {
+	for (const href of [
+		'https://soundcloud.com/',
+		'https://soundcloud.com/discover',
+		'https://soundcloud.com/search?q=x',
+		'https://soundcloud.com/stream',
+		'https://soundcloud.com/you/likes',
+		'https://soundcloud.com/forss',
+		'https://soundcloud.com/forss/flickermood/comments/12345',
+	]) {
+		assert.equal(Boolean(soundcloud.detect(new URL(href))), false, `${href} should be left alone`);
+	}
 });

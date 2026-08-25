@@ -200,7 +200,7 @@ test('the two failure modes are reported separately and never conflated', () => 
 	const message = summariseOutcome({ overwritten: 3, deleted: 2, stranded: 1, untouched: 4 });
 
 	assert.match(message, /Overwrote 3, deleted 2\./);
-	assert.match(message, /\b1\b[^.]*overwritten but could not be deleted/i, 'the stranded count is reported on its own');
+	assert.match(message, /\b1\b[^.]*overwritten but couldn't be deleted/i, 'the stranded count is reported on its own');
 	assert.match(message, /\b4\b[^.]*could not be overwritten/i, 'the genuinely untouched count is reported on its own');
 });
 
@@ -211,8 +211,8 @@ test('a clean run says nothing alarming', () => {
 });
 
 test('singular and plural agree, because this message is read under stress', () => {
-	assert.match(summariseOutcome({ overwritten: 1, deleted: 0, stranded: 1, untouched: 0 }), /1 was overwritten but could not be deleted/);
-	assert.match(summariseOutcome({ overwritten: 2, deleted: 0, stranded: 2, untouched: 0 }), /2 were overwritten but could not be deleted/);
+	assert.match(summariseOutcome({ overwritten: 1, deleted: 0, stranded: 1, untouched: 0 }), /1 was overwritten but couldn't be deleted/);
+	assert.match(summariseOutcome({ overwritten: 2, deleted: 0, stranded: 2, untouched: 0 }), /2 were overwritten but couldn't be deleted/);
 	assert.match(summariseOutcome({ overwritten: 0, deleted: 0, stranded: 0, untouched: 1 }), /1 could not be overwritten and was left unchanged/);
 	assert.match(summariseOutcome({ overwritten: 0, deleted: 0, stranded: 0, untouched: 2 }), /2 could not be overwritten and were left unchanged/);
 });

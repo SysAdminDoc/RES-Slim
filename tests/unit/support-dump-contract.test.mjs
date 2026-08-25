@@ -75,7 +75,7 @@ test('the slowest modules are capped and the cap is stated', () => {
 	}));
 	const text = formatSupportDump(baseInput({ timings }));
 	assert.match(text, new RegExp(`Slowest modules \\(${TIMING_LIMIT} of ${TIMING_LIMIT + 5}\\)`));
-	assert.match(text, /module0 100ms — afterLoad 100ms/);
+	assert.match(text, /module0 100ms: afterLoad 100ms/);
 	// The tail is dropped, and the heading is what says so.
 	assert.doesNotMatch(text, /module9 /);
 });
@@ -84,7 +84,7 @@ test('a module stage breakdown is ordered slowest first', () => {
 	const text = formatSupportDump(baseInput({
 		timings: [{ moduleID: 'showImages', totalMs: 90, stages: { go: 20, afterLoad: 70 } }],
 	}));
-	assert.match(text, /showImages 90ms — afterLoad 70ms, go 20ms/);
+	assert.match(text, /showImages 90ms: afterLoad 70ms, go 20ms/);
 });
 
 test('module errors are capped and the total is kept', () => {
@@ -111,8 +111,10 @@ test('drift is reported by renderer and page, not by its storage key', () => {
 			},
 		},
 	}));
-	assert.match(text, /Old Reddit — comments:/);
-	assert.match(text, /comment body — not found/);
+	// The parentheses are literal: `describeDriftScope` renders `r2:comments` as
+	// "Old Reddit (comments)" so the storage key never reaches the report.
+	assert.match(text, /Old Reddit \(comments\)/);
+	assert.match(text, /comment body: not found/);
 	assert.doesNotMatch(text, /r2:comments/);
 });
 

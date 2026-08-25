@@ -111,9 +111,9 @@ test('the report is pasteable and says nothing about where the user was', () => 
 
 	const report = formatDriftReport(state, '0.37.0');
 	assert.match(report, /^RES-Slim selector drift report \(v0\.37\.0\)/);
-	assert.match(report, /linklist — first seen 2026-08-10/);
-	assert.match(report, /listingFeed — matched fallback selector \.linklisting \.thing\.link/);
-	assert.match(report, /userbar — not found/);
+	assert.match(report, /linklist, first seen 2026-08-10/);
+	assert.match(report, /listingFeed: matched fallback selector \.linklisting \.thing\.link/);
+	assert.match(report, /userbar: not found/);
 	assert.match(report, /No URLs, subreddits or account details are included/);
 
 	// The record itself is the guarantee, not the sentence about it.
@@ -124,9 +124,9 @@ test('the report is pasteable and says nothing about where the user was', () => 
 });
 
 test('a finding describes itself the same way everywhere', () => {
-	assert.equal(describeFinding({ surfaceName: 'userbar', status: 'missing', selector: null }), 'userbar — not found');
-	assert.equal(describeFinding({ surfaceName: 'listingFeed', status: 'fallback', selector: '.x' }), 'listingFeed — matched fallback selector .x');
-	assert.equal(describeFinding({ surfaceName: 'listingFeed', status: 'fallback', selector: null }), 'listingFeed — matched fallback selector (unknown)');
+	assert.equal(describeFinding({ surfaceName: 'userbar', status: 'missing', selector: null }), 'userbar: not found');
+	assert.equal(describeFinding({ surfaceName: 'listingFeed', status: 'fallback', selector: '.x' }), 'listingFeed: matched fallback selector .x');
+	assert.equal(describeFinding({ surfaceName: 'listingFeed', status: 'fallback', selector: null }), 'listingFeed: matched fallback selector (unknown)');
 });
 
 test('the diagnostics recorder writes the structured record alongside the log entry', () => {

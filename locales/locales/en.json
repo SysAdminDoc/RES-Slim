@@ -1,6 +1,6 @@
 {
     "redditApiForbidden": {
-        "message": "Reddit blocked a data request ($1). Make sure you are logged in — Reddit removed anonymous access to this data."
+        "message": "Reddit blocked a data request ($1). Make sure you are logged in. Reddit removed anonymous access to this data."
     },
     "redditApiRateLimited": {
         "message": "Reddit is rate-limiting requests ($1). RES-Slim is slowing down for a bit."
@@ -354,7 +354,7 @@
         "message": "Classic Reddit Favicon"
     },
     "classicFaviconDesc": {
-        "message": "Replace Reddit's current tab icon with the older orange reddit alien favicon."
+        "message": "Replace Reddit's current tab icon with the older orange Reddit alien favicon."
     },
     "noPartName": {
         "message": "No Participation"
@@ -447,7 +447,7 @@
         "message": "Save Comments"
     },
     "saveCommentsDesc": {
-        "message": "To save comments with RES-Slim click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES-Slim saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES-Slim if you are not logged in, or if you are logged in to any account—all the comments will be visible in one location. You will only be able to view saved RES-Slim comments on whichever browser you have RES-Slim installed on.\n\nWhen saving comments with reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with reddit looks the same as saving with RES-Slim—but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES-Slim.)"
+        "message": "To save comments with RES-Slim click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES-Slim saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES-Slim if you are not logged in, or if you are logged in to any account. All the comments will be visible in one location. You will only be able to view saved RES-Slim comments on whichever browser you have RES-Slim installed on.\n\nWhen saving comments with reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with reddit looks the same as saving with RES-Slim, but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES-Slim.)"
     },
     "searchName": {
         "message": "Search RES-Slim Settings"
@@ -822,7 +822,7 @@
         "message": "Saved just now"
     },
     "settingsConsoleSaving": {
-        "message": "Saving changes..."
+        "message": "Saving changes…"
     },
     "settingsConsoleDiscard": {
         "message": "Revert"
@@ -918,7 +918,7 @@
         "message": "Press Build report to gather your version, browser, changed settings and any recent failures."
     },
     "settingsConsoleSupportBuilding": {
-        "message": "Gathering..."
+        "message": "Gathering…"
     },
     "settingsConsoleSupportReady": {
         "message": "Report ready. Check it before you paste it anywhere."
@@ -1104,10 +1104,10 @@
         "message": "Search results"
     },
     "settingsConsoleTabModuleCountOne": {
-        "message": "$1 — $2 module"
+        "message": "$1 ($2 module)"
     },
     "settingsConsoleTabModuleCountMany": {
-        "message": "$1 — $2 modules"
+        "message": "$1 ($2 modules)"
     },
     "settingsConsoleTabStagedSuffix": {
         "message": ", has unsaved changes"
@@ -1593,10 +1593,10 @@
         "message": "Mark selftext links visited when opening the expando."
     },
     "showImagesSfwHistoryTitle": {
-        "message": "Sfw History"
+        "message": "SFW History"
     },
     "showImagesSfwHistoryDesc": {
-        "message": "Keeps NSFW links out of the local visited set that \"Mark Visited\" records, so they are not marked as seen on later visits.\n\nThis does not change your browser’s own behaviour: clicking a link still adds it to your browser history as normal. It is not a substitute for a private window."
+        "message": "Keeps NSFW links out of the local visited set that \"Mark Visited\" records, so they are not marked as seen on later visits.\n\nThis does not change your browser's own behavior: clicking a link still adds it to your browser history as normal. It is not a substitute for a private window."
     },
     "showImagesGalleryRememberWidthTitle": {
         "message": "Gallery Remember Width"
@@ -1674,7 +1674,7 @@
         "message": "Start Videos Muted"
     },
     "showImagesStartVideosMutedDesc": {
-        "message": "Don't auto-play audio when using RES-Slim' video player."
+        "message": "Don't auto-play audio when using RES-Slim's video player."
     },
     "showImagesMaxSimultaneousPlayingTitle": {
         "message": "Max Simultaneous Playing"
@@ -1731,7 +1731,7 @@
         "message": "Prefer RES-Slim Albums"
     },
     "imgurPreferResAlbumsDesc": {
-        "message": "Prefer RES-Slim support for imgur albums rather than reddit's built in support."
+        "message": "Prefer RES-Slim support for imgur albums rather than Reddit's built-in support."
     },
     "imgurPreferredImgurLinkTitle": {
         "message": "Preferred Imgur Link"

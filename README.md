@@ -113,7 +113,7 @@ clone:
 git config core.hooksPath .githooks
 ```
 
-`git push --no-verify` skips it when you genuinely need to.
+`git push --no-verify` skips it when you need to.
 
 `yarn test:e2e` rebuilds first, then launches Playwright's Chromium with
 `dist/chrome/` loaded and checks that the service worker is alive, the packaged

@@ -36,6 +36,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Rewrote 62 user-facing strings that used an em dash as punctuation, across
+  module descriptions, option help, notifications, error messages and aria
+  labels. Also settled on one apostrophe character and one ellipsis character.
+
 - Module-owned data stores now declare one shared private-context policy.
   Visited posts, user tags, votes, media history, saved content, and subreddit
   emoji metadata make no persistent writes from private windows. Saved-content
@@ -52,6 +56,30 @@ All notable changes to RES-Slim will be documented in this file.
   while the untouched v1 store remains available as the migration backup.
 
 ### Fixed
+
+- Filtering a post now stops what it was playing. Hiding a post takes it out of
+  the layout and does nothing to a video or audio inside it, so filtering a
+  subreddit mid-playback left the sound running with nothing on screen to pause.
+  All three filter modules had it separately.
+
+- SoundCloud links only get an expando when the player can actually play them.
+  Every soundcloud.com URL used to get one, including the site's own navigation
+  pages, where the widget answers with an error panel.
+
+- The "mark all read" failure message says you are not signed in instead of
+  naming an internal Reddit token, and several other error messages now say what
+  to do next rather than only what went wrong.
+
+- One spelling across the settings list. "Color-coded comment depth" and "Colour
+  usernames" were two module names a row apart, and the user tagger shipped
+  three spellings of the same word within twenty lines.
+
+- Fixed a description that said the banner asks you to redesign Reddit, a
+  possessive missing its s, two "a" before a vowel, and a title that parsed as
+  "stop current Reddit loading forever" rather than stopping it.
+
+- Numeric defaults name their units. "Default 24" is now "Defaults to 24 hours",
+  and the same for the two other settings that gave a bare number.
 
 - Boolean options show their off state on the light settings theme. The toggle's
   knob was white on a white track, so nothing distinguished off from on except
@@ -136,6 +164,18 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added a copy contract covering the two style rules that are mechanical: no
+  dash used as punctuation in anything a reader sees, and one spelling. It reads
+  string literals on user-facing fields rather than whole lines, so the
+  thousands of code comments are left alone.
+
+- Added coverage for silencing media on a filtered post, and for the SoundCloud
+  URL shapes that should and should not expand.
+
+- Added an accessibility sweep of the settings page in all eleven themes. The
+  existing one ran on whichever theme was active, which is the default, so a
+  theme-specific violation was invisible to it.
 
 - Added a contract for the colours that have to differ between a light and a dark
   settings console. Every one of the defects above was a literal at the call
