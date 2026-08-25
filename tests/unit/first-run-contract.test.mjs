@@ -69,7 +69,7 @@ test('the greeting is wired into a stage that actually runs', () => {
 
 	const source = codeOnly(readRepoFile('lib/modules/version.js'));
 	assert.match(source, /greetOnFirstRun\(\)/, 'afterLoad must call it');
-	assert.match(source, /Storage\.wrap\(/, 'the flag has to persist, or it fires once per page load');
+	assert.match(source, /Storage\.wrapFeature\('versionLifecycle'/, 'the flag has to persist through a declared feature policy, or it fires once per page load');
 });
 
 test('the flag is written before the toast, not after', () => {

@@ -81,7 +81,7 @@ test('perSubSort module is registered and uses the helpers', () => {
 
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/perSubSort.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/perSubSort'/);
-	assert.match(mod, /Storage\.wrapBlob\('RESmodules\.perSubSort\.prefs'/);
+	assert.match(mod, /Storage\.wrapFeatureBlob\('perSubSort', 'RESmodules\.perSubSort\.prefs'/);
 	for (const opt of ['redirectOnEntry', 'showSaveButton']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
 	}

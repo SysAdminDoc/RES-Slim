@@ -32,6 +32,13 @@ purge work only on the account named in the panel. Upgrading from schema v1 keep
 the original store as a recovery copy and moves records with unknown ownership
 into an unassigned partition instead of attaching them to the active account.
 
+**Private-window storage**: Every module-owned data store declares whether it can
+write from a private context. Visited posts, user tags, vote history, media
+history, saved content, and subreddit emoji metadata are blocked by default.
+Saved-content sync and tag edits still work for the current private tab, but the
+temporary index is discarded when it closes. IndexedDB stays unopened for these
+features in private windows.
+
 **Browsing**: `hideAll` adds a "hide all" link in the listing tab menu that bulk-hides every post on the page, rate-limited, with undo. Disabled by default.
 
 **Ads and measurement**: an always-on static `declarativeNetRequest` ruleset blocks separable Reddit ad assets, click trackers, pixels, and telemetry requests before load. Promoted records embedded in Reddit's essential first-party listing response are suppressed at `document_start`, counted locally, and rechecked as listings append. No claim is made that those inseparable records disappear from the listing response itself. Current Reddit's ad elements, including the ones that appear inside a discussion, belong to the same module rather than to a theme setting. A second layer patches `sendBeacon`, `fetch` and `XMLHttpRequest` in the page so a telemetry payload is never assembled, which covers transports the network rules do not; it ships as a packaged file the page loads by URL, because Manifest V3 refuses an inline script a content script writes.

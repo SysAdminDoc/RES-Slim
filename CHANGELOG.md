@@ -6,6 +6,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- Module-owned data stores now declare one shared private-context policy.
+  Visited posts, user tags, votes, media history, saved content, and subreddit
+  emoji metadata make no persistent writes from private windows. Saved-content
+  sync and tag edits remain available as temporary in-tab data.
+
 - User-tag JSON imports now show valid, invalid, new, and conflicting record
   counts before any write. Existing tags win unless replacement is selected.
   The import commits the full map once, keeps a pre-import rollback snapshot,
@@ -25,6 +30,11 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added executable private-context coverage for local-storage set, patch,
+  delete, and clear operations. Direct IndexedDB checks prove the saved-content,
+  vote, media, and subreddit emoji databases are never opened, while a registry
+  contract rejects new module-owned stores without a declared policy.
 
 - Added transaction failure coverage and a browser-driven import, export, and
   reload check for the user-tag settings controls.

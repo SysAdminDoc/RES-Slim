@@ -2,16 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
-import flowRemoveTypes from 'flow-remove-types';
+import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
-const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-saved-backup');
-fs.mkdirSync(tmpDir, { recursive: true });
-const src = fs.readFileSync(path.join(repoRoot, 'lib/utils/savedBackup.js'), 'utf8');
-const stripped = flowRemoveTypes(src, { all: true }).toString();
-const modulePath = path.join(tmpDir, 'savedBackup.mjs');
-fs.writeFileSync(modulePath, stripped);
 const {
 	parseSavedPage,
 	buildSavedUrl,
@@ -27,7 +20,11 @@ const {
 	SAVED_CONTENT_SCHEMA_VERSION,
 	SAVED_CONTENT_STORE_NAME,
 	UNASSIGNED_SAVED_ACCOUNT,
-} = await import(pathToFileURL(modulePath).href);
+} = await loadFlowModule('lib/utils/savedBackup.js', 'saved-backup', {
+	stubs: {
+		'../environment': 'export const canPersistFeatureData = () => true;',
+	},
+});
 
 test('parseSavedPage extracts t1 and t3 items, falling back to selftext for posts', () => {
 	const page = parseSavedPage({

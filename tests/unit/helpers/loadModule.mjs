@@ -156,6 +156,10 @@ export const Storage = {
 	wrapBlob: () => ({ get: async () => ({}), set: async () => {}, patch: async () => {} }),
 	wrapPrefix: () => ({ get: async () => null, set: async () => {}, delete: async () => {} }),
 	wrapPrefix2: () => ({ get: async () => null, set: async () => {}, delete: async () => {} }),
+	wrapFeature: () => ({ get: async () => null, set: async () => {}, patch: async () => {}, delete: async () => {}, has: async () => false }),
+	wrapFeatureBlob: () => ({ get: async () => ({}), getNullable: async () => null, getAll: async () => ({}), set: async () => {}, patch: async () => {}, delete: async () => {}, deleteMultiple: async () => {}, clear: async () => {} }),
+	wrapFeaturePrefix: () => ({ get: async () => null, getAll: async () => ({}), set: async () => {}, delete: async () => {}, has: async () => false }),
+	wrapFeaturePrefix2: () => ({ get: async () => null, getAll: async () => ({}), set: async () => {}, delete: async () => {}, has: async () => false }),
 };
 export const Session = { get: async () => null, set: async () => {}, has: async () => false, delete: async () => {} };
 export const XhrCache = { new: async () => {}, check: async () => null, clear: async () => {} };
@@ -171,6 +175,7 @@ export const setLastRedditLocale = async () => {};
 export const locale = 'en';
 export const _loadI18n = async () => {};
 export const isPrivateBrowsing = () => false;
+export const canPersistFeatureData = () => true;
 `;
 
 let stubDirPromise;
