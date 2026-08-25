@@ -18,6 +18,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadModule, installDom } from './helpers/loadModule.mjs';
+import { readRepoFile } from './helpers/loadFlowModule.mjs';
 
 installDom({ url: 'https://old.reddit.com/r/example/' });
 
@@ -170,4 +171,22 @@ test('an SPA route change clears the map rather than growing it forever', () => 
 	assert.equal(b.isConnected, true, 'a post on the next page is not a duplicate of one on the last');
 	first.remove();
 	second.remove();
+});
+
+test('the removal is scoped to old Reddit', () => {
+	// On current Reddit every `shreddit-post` gets a `data-fullname` copied from
+	// its `id`, so replacing the length test with a shape test brought a whole
+	// renderer into scope that the removal had never run on. Reddit's own SPA can
+	// legitimately render the same post twice - a pinned post that also appears in
+	// the feed, a related rail on a comments page - and taking an element out of
+	// its page is not a thing to start doing on a renderer where nobody has
+	// reported a duplicate. Old Reddit is where the overlap actually comes from and
+	// where this was designed.
+	//
+	// Asserted at the source: `appType` is memoized per page and this suite loads
+	// the module under old Reddit, so the alternative is a second renderer in the
+	// same process, which the memo makes impossible.
+	const source = readRepoFile('lib/utils/watchers.js');
+	assert.match(source, /appType\(\) === 'r2'/, 'the removal is not renderer-scoped');
+	assert.match(source, /dupeSet\.set\(id, element\)/, 'the map is still kept for both renderers');
 });

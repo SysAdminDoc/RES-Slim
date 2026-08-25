@@ -129,6 +129,7 @@ test('all three hide paths route through the helper', () => {
 		'lib/modules/hideAll.js',
 		'lib/modules/removePromoted.js',
 		'lib/modules/hideChildComments.js',
+		'lib/modules/visitedPosts.js',
 	]) {
 		const source = codeOnly(readRepoFile(file));
 		assert.match(source, /hideAndSilence\(/, `${file} does not silence what it hides`);

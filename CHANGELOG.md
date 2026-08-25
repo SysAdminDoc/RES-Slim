@@ -84,7 +84,7 @@ All notable changes to RES-Slim will be documented in this file.
 - Filtering a post now stops what it was playing. Hiding a post takes it out of
   the layout and does nothing to a video or audio inside it, so filtering a
   subreddit mid-playback left the sound running with nothing on screen to pause.
-  Nine hide paths had it separately, including bulk hide, the promoted-post remover and collapsing a comment subtree.
+  Ten hide paths had it separately, including bulk hide, the promoted-post remover, hiding posts you have already opened, and collapsing a comment subtree.
 
 - SoundCloud links only get an expando when the player can actually play them.
   Every soundcloud.com URL used to get one, including the site's own navigation
@@ -164,12 +164,14 @@ All notable changes to RES-Slim will be documented in this file.
 - Wikipedia articles whose title contains a plus sign, such as C++, load. The
   unencoded name reached MediaWiki as a space.
 
-- Duplicate posts are removed from infinite scroll again. The check accepted a
+- Duplicate posts are removed from old Reddit's infinite scroll again. The check accepted a
   fullname only when it was exactly nine characters, which was true while
   reddit's post ids were five or six characters wide. Ids reached seven some
   years ago, so nothing posted recently was ever deduplicated. A comment subtree
   spliced in by the inline "continue thread" loader is no longer mistaken for a
-  repeat and deleted.
+  repeat and deleted. Removal stays on old Reddit, where the overlapping pages
+  come from; current Reddit can legitimately show the same post twice, and taking
+  an element out of its page is not something to start doing there.
 
 - Strawpoll links written as `/polls/<id>` embed the poll they point at. The
   detect pattern only knew the `/embed/` prefix, so it captured the word "polls"
