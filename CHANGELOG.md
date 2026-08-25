@@ -65,6 +65,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Exporting your selector overrides from settings works in Firefox. It clicked a
+  link that was never added to the page, which Firefox ignores, and released the
+  file on the very next line, which can beat the download starting. Seven exports
+  built this by hand and six agreed; they now share one helper.
+
 - Turning the Reddit theme off no longer leaves the page painted near-black. The
   guard that covers the gap before the theme loads was taken down when a palette
   was applied, but not when the module decided not to apply one, so it stayed up
@@ -183,6 +188,10 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added coverage for the download helper: the link is in the page when it is
+  clicked, the file is still alive at that moment, and every export in the
+  product goes through it rather than building a seventh copy.
 
 - Added browser coverage for the theme's disabled path, which nothing exercised:
   the enabled path had a test and passed throughout.

@@ -234,7 +234,11 @@ test('userTagger module is registered and uses the helpers', () => {
 	assert.match(mod, /RESmodules\.userTagger\.tags\.rollback/);
 	assert.match(mod, /commitTagImport/);
 	assert.match(mod, /tagMapStore\.set/);
-	assert.match(mod, /URL\.createObjectURL/);
+	// The export used to build its own object URL and anchor here. Seven places
+	// did, and one of them got it wrong, so they now share `downloadText`. What
+	// this line is for is that the export exists at all, which the shared call
+	// shows just as well; `download-blob-contract` covers how it behaves.
+	assert.match(mod, /downloadText\(stringifyTags\(committed\)/);
 });
 
 test('userTagger popover exposes dialog semantics, status feedback, and trigger state', () => {
