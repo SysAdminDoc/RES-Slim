@@ -53,6 +53,27 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Boolean options show their off state on the light settings theme. The toggle's
+  knob was white on a white track, so nothing distinguished off from on except
+  the track fill, which only changes when the option is enabled.
+
+- The module state badge, the ADVANCED marker and the save bar's unsaved and
+  saved indicators keep their colour on the light settings theme. All four were
+  written for a dark panel and came out between 1.9:1 and 2.5:1.
+
+- A count pill, an inline code chip and three hover states are visible on the
+  light settings theme. Each was painted with a white wash, which is nothing at
+  all on a white panel.
+
+- The breadcrumb trail in settings shows its separators. They were drawn in a
+  panel-divider colour and measured between 1.3:1 and 2.5:1 in all eleven
+  themes, so the trail read as one run-on word.
+
+- Four in-page surfaces that failed contrast now use the shared ink tokens: the
+  hover card's dropdown labels (2.2:1, and hovering an item made it worse rather
+  than better), the macro menu title, the filter builder's error text, and its
+  empty-state prompt.
+
 - Injected chips are readable again with the theme on and the default Classic
   palette. The dark text tokens were gated on a class that every palette carries,
   including the white one, so badges, status text and inline buttons across
@@ -115,6 +136,11 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added a contract for the colours that have to differ between a light and a dark
+  settings console. Every one of the defects above was a literal at the call
+  site, which no token-level contrast check can see, so it asserts that such a
+  colour is a token and that the light theme redefines each one.
 
 - Added browser coverage for the three theme defects above, each measured from
   computed style in a real page: the ink contrast on the light palette, a nested

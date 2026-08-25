@@ -29,6 +29,24 @@
 	--options-danger: #f85149;
 	--options-shadow: 0 18px 46px rgb(0 0 0 / 28%);
 	--options-shadow-soft: 0 10px 28px rgb(0 0 0 / 18%);
+
+	// Status *text* tones, distinct from the status colours above. A saturated
+	// green reads as a fill or a border; as small label text on a dark panel it is
+	// too dim, which is why these were written as literals at every call site -
+	// and being literals, they were authored for the dark themes only. On the
+	// light theme the same labels measured 1.9-2.5:1: the module state badge, the
+	// ADVANCED marker and the whole unsaved/saved indicator on the save bar were
+	// effectively blank.
+	--options-success-text: #b5f4bf;
+	--options-warning-text: #f6d47a;
+	--options-warning-text-strong: #f8df91;
+	--options-danger-text: #ffb7b1;
+
+	// The moving part of a toggle. It was #fff at every call site, which on the
+	// light theme put a white knob on a white track: 1.0:1, so a boolean option
+	// had no visible off state at all. The on state was fine, which is exactly how
+	// this survives a look-over.
+	--options-knob: #fff;
 	--options-radius-xs: 4px;
 	--options-radius-sm: 6px;
 	--options-radius-md: 8px;
@@ -78,6 +96,14 @@ html[data-settings-theme='paper'] {
 	--options-danger: #b91c1c;
 	--options-shadow: 0 18px 46px rgb(19 33 59 / 12%);
 	--options-shadow-soft: 0 8px 24px rgb(19 33 59 / 8%);
+
+	// The only light theme, so the only one that has to invert these. A dark
+	// theme inherits the :root values unchanged.
+	--options-success-text: #15803d;
+	--options-warning-text: #8a5200;
+	--options-warning-text-strong: #7a4800;
+	--options-danger-text: #b91c1c;
+	--options-knob: #4c5a70;
 }
 
 html[data-settings-theme='graphite'] {
@@ -513,7 +539,7 @@ li {
 .themeOptionSwatch {
 	width: 12px;
 	height: 12px;
-	border: 1px solid rgb(255 255 255 / 24%);
+	border: 1px solid color-mix(in srgb, var(--options-text) 30%, transparent);
 	border-radius: var(--options-radius-xs);
 	flex: 0 0 auto;
 }
@@ -573,13 +599,13 @@ li {
 	&.is-dirty {
 		border-color: rgb(210 153 34 / 40%);
 		background: rgb(210 153 34 / 12%);
-		color: #f6d47a;
+		color: var(--options-warning-text);
 	}
 
 	&.is-saved {
 		border-color: rgb(63 185 80 / 36%);
 		background: rgb(63 185 80 / 12%);
-		color: #b5f4bf;
+		color: var(--options-success-text);
 	}
 
 	&.is-saved-pulse {
@@ -589,7 +615,7 @@ li {
 	&.is-attention {
 		border-color: rgb(210 153 34 / 52%);
 		background: rgb(210 153 34 / 16%);
-		color: #f8df91;
+		color: var(--options-warning-text-strong);
 		box-shadow: 0 0 0 3px rgb(210 153 34 / 12%);
 	}
 
@@ -1078,8 +1104,14 @@ li {
 	justify-content: center;
 	min-width: 18px;
 	padding: 0 5px;
+	// A white wash is only a wash on a dark theme. On the light one these were
+	// white on white, so a count pill and an inline code chip lost their shape
+	// entirely and two hover states gave no feedback at all. Mixing the theme's own
+	// text colour instead flips with the theme and needs no per-theme override:
+	// light text on a dark panel gives a light wash, dark text on a light panel a
+	// dark one.
 	border-radius: var(--options-radius-xs);
-	background: rgb(255 255 255 / 6%);
+	background: color-mix(in srgb, var(--options-text) 10%, transparent);
 	color: inherit;
 	font-size: 11px;
 	font-variant-numeric: tabular-nums;
@@ -1295,17 +1327,17 @@ li {
 
 .moduleStateBadge.is-enabled {
 	border-color: rgb(63 185 80 / 34%);
-	color: #b5f4bf;
+	color: var(--options-success-text);
 }
 
 .moduleStateBadge.is-disabled {
 	border-color: rgb(248 81 73 / 34%);
-	color: #ffb7b1;
+	color: var(--options-danger-text);
 }
 
 .moduleStateBadge.is-locked {
 	border-color: rgb(210 153 34 / 34%);
-	color: #f6d47a;
+	color: var(--options-warning-text);
 }
 
 .moduleHeaderTopRow {
@@ -1466,7 +1498,7 @@ li {
 		width: 10px;
 		height: 10px;
 		margin: 9px auto 0;
-		border: 2px solid #f6d47a;
+		border: 2px solid var(--options-warning-text);
 		border-top: 0;
 		border-left: 0;
 		transform: rotate(45deg);
@@ -1502,7 +1534,7 @@ li {
 	&.dependsOnDisabledOptions { display: none; }
 
 	&:hover {
-		background: rgb(255 255 255 / 2%);
+		background: color-mix(in srgb, var(--options-text) 6%, transparent);
 	}
 
 	&.highlight {
@@ -1517,7 +1549,7 @@ li {
 		padding: 2px 7px;
 		border: 1px solid rgb(210 153 34 / 32%);
 		border-radius: var(--options-radius-sm);
-		color: #f6d47a;
+		color: var(--options-warning-text);
 		font-size: 10px;
 		font-weight: 700;
 		letter-spacing: 0;
@@ -1557,7 +1589,7 @@ li {
 	code {
 		padding: 1px 5px;
 		border-radius: 6px;
-		background: rgb(255 255 255 / 5%);
+		background: color-mix(in srgb, var(--options-text) 9%, transparent);
 		color: var(--options-text);
 	}
 }
@@ -1693,7 +1725,7 @@ li {
 		width: 16px;
 		height: 16px;
 		border-radius: var(--options-radius-xs);
-		background: #fff;
+		background: var(--options-knob);
 		transition: transform 0.18s ease, background-color 0.18s ease;
 	}
 }
@@ -1835,7 +1867,7 @@ li {
 .res-icon-button:hover,
 .SearchRES-result-copybutton:hover { @extend %icon-button-hover; }
 
-.deleteButton { color: #ffb7b1; }
+.deleteButton { color: var(--options-danger-text); }
 .handle { cursor: grab; }
 
 // Shown and hidden via the `hidden` attribute, which the container rule at the
@@ -2865,7 +2897,7 @@ html[res-options]:root {
 	}
 
 	.consoleBreadcrumbSeparator {
-		color: var(--options-border-strong);
+		color: var(--options-text-soft);
 	}
 
 	.consoleBreadcrumbModule {
@@ -3006,7 +3038,7 @@ html[res-options]:root {
 	}
 
 	.categoryTab:hover {
-		background: rgb(255 255 255 / 2%);
+		background: color-mix(in srgb, var(--options-text) 6%, transparent);
 		color: var(--options-text);
 	}
 
@@ -3164,7 +3196,7 @@ html[res-options]:root {
 	}
 
 	.moduleButton:hover {
-		background: rgb(255 255 255 / 2%);
+		background: color-mix(in srgb, var(--options-text) 6%, transparent);
 		color: var(--options-text);
 		transform: none;
 	}

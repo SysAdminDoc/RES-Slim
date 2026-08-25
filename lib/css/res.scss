@@ -580,7 +580,10 @@ dialog#alert_message {
 		&::before {
 			content: 'Error: ' attr(error);
 			display: block;
-			color: red;
+			// Bare `red` is 4.00:1 on white, under AA, and this is an error message -
+			// the one string on the page that has to be legible. The ink token is
+			// checked against both grounds by inline-chip-contrast-contract.
+			color: var(--rsm-ink-danger);
 		}
 	}
 }
@@ -622,9 +625,11 @@ dialog#alert_message {
 	}
 
 	&:empty::before {
-		border: medium dashed grey;
+		// `grey` measured 3.95:1 on white and 3.83:1 on the night-mode panel, so
+		// this empty-state prompt failed AA on both grounds it can appear on.
+		border: medium dashed var(--rsm-chip-line);
 		border-radius: 4px;
-		color: grey;
+		color: var(--rsm-ink-muted);
 		content: 'nothing here yet. add something!';
 		padding: 5px 10px;
 		text-align: center;

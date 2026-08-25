@@ -109,7 +109,12 @@
 		border-bottom: 1px solid #369;
 		line-height: 19px;
 		font-weight: bold;
-		color: #c9def2;
+		// #c9def2 on the #5f99cf list background measured 2.19:1 - the worst
+		// reading anywhere in the in-page UI, on a menu whose items are the only
+		// thing it contains. White only reaches 3.02:1 on that blue, so the label
+		// goes dark instead: 5.81:1, and it matches how old Reddit renders text on
+		// its own blue chrome.
+		color: #001a33;
 		padding: 8px 3px 8px 10px;
 		box-sizing: content-box;
 
@@ -138,7 +143,10 @@
 	li:hover,
 	a:hover {
 		background-color: #9cc6ec;
-		color: #369;
+		// #369 on this lighter blue is 3.34:1, so hovering an item made its label
+		// *less* readable than leaving it alone. Same dark ink as the rest state,
+		// which reaches 9.79:1 here.
+		color: #001a33;
 		text-decoration: none;
 	}
 }

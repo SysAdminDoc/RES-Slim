@@ -55,7 +55,10 @@
 	cursor: pointer;
 	display: inline-block;
 	font-size: 11px;
-	color: gray;
+	// 3.95:1 on white, and at 11px there is no large-text exemption to fall back
+	// on. --rsm-ink-muted is the token for secondary label text and flips with
+	// the page.
+	color: var(--rsm-ink-muted);
 	padding-left: 2px;
 	padding-right: 21px;
 	background: url('../images/droparrowgray.gif') no-repeat 100% 50%;
