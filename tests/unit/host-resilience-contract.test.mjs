@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { codeOnly } from './helpers/loadFlowModule.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
@@ -19,9 +21,17 @@ test('redditgallery handler skips items with missing media type instead of crash
 	assert.match(src, /if \(typeof m !== 'string'\) return undefined;/);
 });
 
-test('redgifs handler degrades to a fixed-ratio embed on API failure', () => {
-	const src = read('lib/modules/hosts/redgifs.js');
-	// The v1 metadata API is deprecated; the catch fallback must still yield an embed.
-	assert.match(src, /catch \(error\)/);
+test('redgifs builds its embed without calling a retired API', () => {
+	const src = codeOnly(read('lib/modules/hosts/redgifs.js'));
+	// This used to assert a `catch (error)` fallback around a call to
+	// `api.redgifs.com/v1/gfycats/<id>`. That endpoint answers 404 for every id
+	// (checked 2026-08-25), so the "fallback" was the only path anything ever
+	// took and the request bought a guaranteed failure per expanded link. The
+	// handler now builds the fixed-ratio embed directly, so the assertion the old
+	// test made is no longer a property this file has.
+	assert.doesNotMatch(src, /api\.redgifs\.com/);
+	assert.doesNotMatch(src, /\bajax\b/);
 	assert.match(src, /fixedRatio: true/);
+	// `host-url-shapes-contract` executes `detect` and `handleLink` and proves no
+	// request is made; this only keeps the dead endpoint from coming back.
 });

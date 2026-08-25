@@ -451,10 +451,6 @@
     },
     {
       "file": "lib/modules/hosts/redgifs.js",
-      "url": "https://api.redgifs.com/v1/gfycats/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/redgifs.js",
       "url": "https://redgifs.com/assets/favicon.ico"
     },
     {
@@ -738,10 +734,6 @@
       "url": "https://${siteModule.domains[0]}"
     },
     {
-      "file": "lib/modules/showImages/mediaTypes.js",
-      "url": "https://images.google.com/searchbyimage?client=app&sbisrc=cr_1_5_2&image_url=${lookupUrl}"
-    },
-    {
       "file": "lib/modules/userProfileSearch.js",
       "url": "https://duckduckgo.com/?q=${q}"
     },
@@ -836,6 +828,14 @@
     {
       "file": "lib/utils/crosspostMap.js",
       "url": "https://old.reddit.com/duplicates/${id}/.json?limit=50"
+    },
+    {
+      "file": "lib/utils/downloadFilename.js",
+      "url": "https://reddit.com"
+    },
+    {
+      "file": "lib/utils/downloadFilename.js",
+      "url": "https://reddit.com"
     },
     {
       "file": "lib/utils/floater.js",

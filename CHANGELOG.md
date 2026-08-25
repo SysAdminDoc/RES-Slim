@@ -4,6 +4,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Security
+
+- Media URLs returned by a site module are now checked against a scheme
+  allowlist before anything is rendered. Only http, https, blob and inline
+  images are accepted. Several handlers pass a URL straight out of a third-party
+  API response into an anchor or an iframe, and an iframe with a `javascript:`
+  source runs in reddit.com's own origin.
+
 ### Changed
 
 - Module-owned data stores now declare one shared private-context policy.
@@ -23,6 +31,34 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Duplicate posts are removed from infinite scroll again. The check accepted a
+  fullname only when it was exactly nine characters, which was true while
+  reddit's post ids were five or six characters wide. Ids reached seven some
+  years ago, so nothing posted recently was ever deduplicated. A comment subtree
+  spliced in by the inline "continue thread" loader is no longer mistaken for a
+  repeat and deleted.
+
+- Strawpoll links written as `/polls/<id>` embed the poll they point at. The
+  detect pattern only knew the `/embed/` prefix, so it captured the word "polls"
+  and every such link expanded to the wrong poll.
+
+- RedGifs share links (`/i/<id>`, including on `i.redgifs.com`) get an expando.
+  The handler also stopped calling `api.redgifs.com/v1`, which was retired and
+  answers 404 for every id, so each expanded link made one guaranteed-failing
+  request before falling back to the embed it now builds directly.
+
+- The expando's "search this image" control opens Google Lens. The endpoint it
+  used, `images.google.com/searchbyimage`, was retired and answers 404, so the
+  control had quietly stopped working. It now shares the URL builder the reverse
+  image search module already uses.
+
+- Downloading media from an expando names the file correctly. A URL with no file
+  extension threw a TypeError that surfaced as "Could not start the download.
+  Check the downloads permission", a title made only of emoji produced a hidden
+  dotfile called `.jpg`, a very long title produced a name no filesystem accepts,
+  and the character strip deleted CJK punctuation, so Japanese titles came out in
+  pieces.
+
 - The saved-content manager's Add tag control now submits its form when clicked.
   Previously, only an implicit form submission could reach the tag write.
 
@@ -30,6 +66,19 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added executable coverage for duplicate-post removal across the historical
+  five-character ids, today's seven-character ids, and a subtree spliced inside
+  its own original. Both halves fail when the fix is reverted.
+
+- Added executed URL-shape coverage for the strawpoll and redgifs handlers, and
+  a check that expanding a redgifs link makes no network request at all.
+
+- Added filename coverage for emoji-only titles, extensionless URLs, signed
+  preview URLs, very long titles, reserved characters, and non-Latin scripts.
+
+- Added a scheme allowlist contract for every URL-bearing media field, covering
+  images, video and audio sources, iframe embeds, and gallery members.
 
 - Added executable private-context coverage for local-storage set, patch,
   delete, and clear operations. Direct IndexedDB checks prove the saved-content,
