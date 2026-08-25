@@ -67,9 +67,18 @@ test('no light palette receives the dark ink tokens', () => {
 	assert.ok(light.length > 0, 'there is at least one light palette to exclude');
 
 	for (const id of light) {
+		// One form only. An earlier version of this accepted
+		// `:not(.res-pageTheme--classic)` OR the bare `.res-pageTheme--classic)`,
+		// and the second is implied by the first *and* satisfied by the exact
+		// inversion `:is(.res-pageTheme--classic)` - an assertion nothing could
+		// fail.
 		assert.ok(
-			selector.includes(`:not(.res-pageTheme--${id})`) || selector.includes(`.res-pageTheme--${id})`),
+			selector.includes(`:not(.res-pageTheme--${id})`),
 			`palette "${id}" is light, but the dark ink block does not exclude it:\n  ${selector}`,
+		);
+		assert.ok(
+			!new RegExp(`:is\\([^)]*res-pageTheme--${id}`).test(selector),
+			`palette "${id}" is matched rather than excluded:\n  ${selector}`,
 		);
 	}
 });
@@ -89,23 +98,22 @@ test('every dark palette still receives them', () => {
 	assert.ok(selector.includes('body.res-nightmode'), 'nightMode must keep the dark inks');
 });
 
-test('the nightMode arm is guarded by the palette on the ancestor', () => {
-	// This is the combination the browser found and the source read missed.
-	// nightMode is on by default and its class lands on `<body>`, while
-	// `html.res-pageTheme body { background-color: var(--rsm-th-bg) }` at (0,1,2)
-	// outranks nightMode's own (0,1,1) page background. So with the theme on and
-	// the default palette, pageTheme paints the page white and nightMode hands out
-	// dark-page ink on top of it. Excluding the palette from the `html.res-pageTheme`
-	// arm alone does nothing about that; the body selector needs a negated ancestor.
+test('the nightMode arm is guarded by whatever repaints the surface under it', () => {
+	// This is the combination the browser found and no amount of reading the
+	// stylesheet would have. nightMode is on by default and its class lands on
+	// `<body>`, so which of the two actually paints the surface behind an inline
+	// chip is decided by a *layout* toggle: `refinedLayout` is on by default and
+	// its `html.res-pageTheme.res-pageTheme--refined .comment` rule is (0,3,1)
+	// with `!important`, which outranks nightMode's (0,3,0) `!important`. Turn
+	// the refined layout off and nightMode wins instead.
+	//
+	// So with the light Classic palette and nightMode both on, the same chip sits
+	// on white with refined on and on #161616 with it off. Measured at 17.4:1 and
+	// 1.04:1. Gating the nightMode arm on the palette alone fixed the first and
+	// broke the second; it has to key on the same thing the ground does.
 	const selector = darkInkSelector();
-	const light = [...palettes()].filter(([, scheme]) => scheme === 'light').map(([id]) => id);
-	assert.ok(light.length > 0);
-
-	for (const id of light) {
-		const guarded = new RegExp(`html:not\\(\\.res-pageTheme--${id}\\)[^,]*body\\.res-nightmode`);
-		assert.match(selector, guarded,
-			`the nightMode arm does not exclude the light palette "${id}":\n  ${selector}`);
-	}
+	assert.match(selector, /html:not\(\.res-pageTheme--refined\)[^,]*body\.res-nightmode/,
+		`the nightMode arm is not gated on the refined layout:\n  ${selector}`);
 });
 
 test('the light palette carries a light page colour, so the two agree', () => {

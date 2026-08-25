@@ -61,6 +61,46 @@ test('the article name is encoded, so a plus sign is not read as a space', async
 	assert.ok(api.asked[0].includes('page=C%2B%2B'), `expected an encoded page parameter, got ${api.asked[0]}`);
 });
 
+test('a non-ASCII title is encoded once, not twice', async () => {
+	// `URL.pathname` is already percent-encoded, so encoding it straight produced
+	// `Caf%25C3%25A9` and asked MediaWiki for an article that does not exist. That
+	// is every title on every non-English Wikipedia, plus every accented one on
+	// the English site. The first draft of the encoding fix had exactly this bug
+	// and the two cases below the test then covered - `C++` and `Foo` - are both
+	// pure ASCII, so neither could see it.
+	// Sequential: each pass installs its own stub on the shared global and reads
+	// back what that one call asked for, so they cannot overlap.
+	/* eslint-disable no-await-in-loop */
+	for (const [title, expected] of [
+		['Café', 'Caf%C3%A9'],
+		['日本', '%E6%97%A5%E6%9C%AC'],
+		['Привет', '%D0%9F%D1%80%D0%B8%D0%B2%D0%B5%D1%82'],
+	]) {
+		const href = `https://en.wikipedia.org/wiki/${title}`;
+		const api = withApi([parsed(title)]);
+		try {
+			await wikipedia.handleLink(href, wikipedia.detect(new URL(href)));
+		} finally {
+			api.restore();
+		}
+		assert.ok(api.asked[0].includes(`page=${expected}`),
+			`expected page=${expected}, got ${api.asked[0]}`);
+		assert.ok(!api.asked[0].includes('%25'), `the title was encoded twice: ${api.asked[0]}`);
+	}
+	/* eslint-enable no-await-in-loop */
+});
+
+test('a malformed escape in the path does not throw', async () => {
+	const href = 'https://en.wikipedia.org/wiki/100%_orange_juice';
+	const api = withApi([parsed('100% orange juice')]);
+	try {
+		await wikipedia.handleLink(href, wikipedia.detect(new URL(href)));
+	} finally {
+		api.restore();
+	}
+	assert.equal(api.asked.length, 1, 'the request should still have been made');
+});
+
 test('an ampersand in the path cannot append a parameter of its own', async () => {
 	const hostile = 'https://en.wikipedia.org/wiki/Foo&action=query&list=allusers';
 	const api = withApi([parsed('Foo')]);

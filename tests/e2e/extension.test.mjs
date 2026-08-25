@@ -1540,6 +1540,83 @@ test('turning the theme off leaves the page unpainted, not black', async t => {
 	assert.doesNotMatch(state.classes, /rsm-theme-dark/);
 });
 
+// Inline-chip ink against the surface that is actually behind it, over the
+// combinations that decide which of two stylesheets paints that surface.
+//
+// One measurement is not enough here and the first version of this test proved
+// it. `--rsm-ink` flips on a palette class, but the *ground* is decided by a
+// three-way cascade: pageTheme's palette, nightMode's legacy skin, and the
+// `refinedLayout` toggle, whose `html.res-pageTheme.res-pageTheme--refined
+// .comment` rule is (0,3,1) with `!important` and so outranks nightMode's
+// (0,3,0). Turn the layout toggle off and nightMode wins the background instead.
+//
+// So with the light Classic palette and nightMode both on, the same chip sat on
+// white with refined on and on #161616 with it off: 17.4:1 and 1.04:1. A gate
+// keyed on the palette alone fixed the first and broke the second, and only a
+// matrix in a real browser shows that.
+const INK_MATRIX = [
+	{ label: 'classic, nightMode on, refined on', prefs: { pageTheme: true, nightMode: true }, theme: 'classic', refined: true },
+	{ label: 'classic, nightMode on, refined off', prefs: { pageTheme: true, nightMode: true }, theme: 'classic', refined: false },
+	{ label: 'classic, nightMode off, refined on', prefs: { pageTheme: true, nightMode: false }, theme: 'classic', refined: true },
+	{ label: 'classic, nightMode off, refined off', prefs: { pageTheme: true, nightMode: false }, theme: 'classic', refined: false },
+	{ label: 'gruvbox, nightMode on, refined on', prefs: { pageTheme: true, nightMode: true }, theme: 'gruvbox', refined: true },
+	{ label: 'gruvbox, nightMode off, refined off', prefs: { pageTheme: true, nightMode: false }, theme: 'gruvbox', refined: false },
+	{ label: 'nightMode alone, no theme', prefs: { pageTheme: false, nightMode: true }, theme: null, refined: true },
+];
+
+test('inline ink is readable on whatever surface ends up behind it', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, CAPTURE);
+
+	const failures = [];
+	/* eslint-disable no-await-in-loop */
+	for (const combination of INK_MATRIX) {
+		const stored = { 'RES.modulePrefs': { ...combination.prefs, commentStyle: true } };
+		if (combination.theme) {
+			stored['RESoptions.pageTheme'] = {
+				theme: { value: combination.theme },
+				refinedLayout: { value: combination.refined },
+			};
+		}
+		await worker.evaluate(payload => new Promise(resolve => { chrome.storage.local.set(payload, resolve); }), stored);
+		await page.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await page.waitForTimeout(700);
+
+		const measured = await page.evaluate(() => {
+			const host = document.querySelector('.comment .usertext-body') || document.querySelector('.comment') || document.body;
+			const probe = document.createElement('span');
+			probe.style.color = 'var(--rsm-ink)';
+			probe.textContent = 'probe';
+			host.append(probe);
+			const opaque = value => {
+				const parts = (String(value).match(/[\d.]+/g) || []).map(Number);
+				return parts.length < 4 || parts[3] > 0.95;
+			};
+			const ancestors = [];
+			for (let node = probe; node; node = node.parentElement) ancestors.push(node); // eslint-disable-line no-restricted-syntax
+			const painted = ancestors
+				.map(node => getComputedStyle(node).backgroundColor)
+				.find(background => background !== 'rgba(0, 0, 0, 0)' && opaque(background));
+			const ground = painted || 'rgb(255, 255, 255)';
+			const ink = getComputedStyle(probe).color;
+			probe.remove();
+			return { ink, ground };
+		});
+
+		const ratio = contrastRatio(measured.ink, measured.ground);
+		if (ratio < 4.5) {
+			failures.push(`${combination.label}: ${measured.ink} on ${measured.ground} = ${ratio.toFixed(2)}:1`);
+		}
+	}
+	/* eslint-enable no-await-in-loop */
+
+	assert.deepEqual(failures, [], `inline ink below AA:\n  ${failures.join('\n  ')}`);
+});
+
 test('the light palette keeps dark inline ink, so injected chips stay readable', async t => {
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
@@ -1681,7 +1758,10 @@ test('the refined layout leaves RES-Slim\'s own buttons alone', async t => {
 	// The stripe keeps its own geometry and, more importantly, paints the colour
 	// the module computed for it rather than a button fill.
 	assert.notEqual(measured.stripeMinHeight, '34px', 'the blanket button rule reached the minimap stripe');
-	assert.equal(measured.stripePadding, '0px', 'the stripe must keep its own zero padding');
+	// Not "zero padding": the stripe carries 5px horizontal padding on purpose, so
+	// that its own box is a 24px WCAG target while the painted bar stays 14px.
+	// What this is checking is that the blanket rule's padding did not reach it.
+	assert.notEqual(measured.stripePadding, '6px 12px', 'the blanket button padding reached the minimap stripe');
 	assert.equal(measured.stripeBackground, measured.stripeWanted,
 		'the stripe is not painted with its own --minimap-stripe-color');
 
@@ -3111,10 +3191,10 @@ test('drift on a real page shows up as a dated view in the settings console', as
 	// Keyed by renderer as well as page kind, since `comments` exists on both and
 	// one would otherwise overwrite the other in storage.
 	assert.equal(rendered.pageType, 'r2:linklist', 'the view is per renderer and page kind, not one flat list');
-	assert.equal(rendered.heading, 'Old Reddit — linklist', 'the storage key is not what a reader should be shown');
+	assert.equal(rendered.heading, 'Old Reddit (linklist)', 'the storage key is not what a reader should be shown');
 	assert.match(rendered.dates, /Seen |Since /, 'and dated');
 	assert.ok(
-		rendered.findings.some(text => /listingFeed — matched fallback selector/.test(text)),
+		rendered.findings.some(text => /listingFeed: matched fallback selector/.test(text)),
 		`expected the drifted surface to be named, saw ${JSON.stringify(rendered.findings)}`,
 	);
 	assert.notEqual(rendered.background, 'rgba(0, 0, 0, 0)');
@@ -3706,7 +3786,20 @@ test('the options page has no accessibility violations', async t => {
 // a background fill are both outside its contrast rules, which is why the fix
 // came with its own token contract. This covers what axe *can* see, in every
 // theme rather than one.
-const SETTINGS_THEMES = ['oled', 'paper', 'graphite', 'midnight', 'catppuccin', 'tokyonight', 'rosepine', 'nord', 'dracula', 'gruvbox', 'solarized'];
+// Derived rather than restated. The first version of this list was written from
+// memory and mixed in four *page*-theme ids (nord, dracula, gruvbox, solarized)
+// that the console does not have - so those four silently fell back to the
+// default and the two the console really does have, forest and ember, were never
+// tested at all. A list that names nine themes and tests seven is worse than no
+// list.
+const SETTINGS_THEMES = (() => {
+	// Read out of the source of truth rather than imported: that file is Flow
+	// annotated, so Node cannot load it directly from here.
+	const source = fs.readFileSync(path.join(repoRoot, 'lib', 'constants', 'settingsThemes.js'), 'utf8');
+	const ids = [...source.matchAll(/id: '([a-z]+)'/g)].map(([, id]) => id);
+	assert.ok(ids.length >= 8, `expected the console's theme presets, found ${ids.length}`);
+	return ids;
+})();
 
 test('the options page has no accessibility violations in any theme', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
@@ -4114,7 +4207,7 @@ test('the support report is built on demand and carries timings from the reddit 
 	// is the round trip succeeding rather than a value the console could read.
 	assert.match(embedded, /^Page: Old Reddit \(linklist\)$/m);
 	assert.match(embedded, /Slowest modules \(\d+ of \d+\)/, `expected timings from the page, got:\n${embedded}`);
-	assert.match(embedded, /^ {2}\w+ [\d.]+ms — \w+ [\d.]+ms/m, 'a timing line names the module and its slowest stage');
+	assert.match(embedded, /^ {2}\w+ [\d.]+ms: \w+ [\d.]+ms/m, 'a timing line names the module and its slowest stage');
 	assert.match(embedded, /showImages: off \(default on\)/, 'a module turned off is what the report exists to say');
 
 	// Nothing in it identifies the reader or where they were.

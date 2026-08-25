@@ -92,6 +92,10 @@ test('soundcloud expands a track and a set', () => {
 		'https://soundcloud.com/forss/flickermood',
 		'https://soundcloud.com/forss/sets/soulhack',
 		'https://on.soundcloud.com/abc123',
+		// A private track's share link carries a secret token. These played before
+		// this handler had a detect at all, so narrowing it must not drop them.
+		'https://soundcloud.com/forss/flickermood/s-a1B2c3D',
+		'https://soundcloud.com/forss/sets/soulhack/s-a1B2c3D',
 	]) {
 		assert.ok(soundcloud.detect(new URL(href)), `${href} should expand`);
 	}
@@ -106,6 +110,13 @@ test('soundcloud leaves the site\'s own pages and a bare profile alone', () => {
 		'https://soundcloud.com/you/likes',
 		'https://soundcloud.com/forss',
 		'https://soundcloud.com/forss/flickermood/comments/12345',
+		// An artist's own sub-pages are two segments, exactly like a track, so
+		// counting segments is not enough on its own.
+		'https://soundcloud.com/forss/likes',
+		'https://soundcloud.com/forss/tracks',
+		'https://soundcloud.com/forss/albums',
+		'https://soundcloud.com/forss/reposts',
+		'https://soundcloud.com/forss/followers',
 	]) {
 		assert.equal(Boolean(soundcloud.detect(new URL(href))), false, `${href} should be left alone`);
 	}

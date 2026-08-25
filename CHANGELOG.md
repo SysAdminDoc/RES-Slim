@@ -2,7 +2,7 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
-## Unreleased
+## v0.52.0, 2026-08-25
 
 ### Security
 
@@ -44,7 +44,7 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
-- Rewrote 62 user-facing strings that used an em dash as punctuation, across
+- Rewrote 59 user-facing strings that used an em dash as punctuation, across
   module descriptions, option help, notifications, error messages and aria
   labels. Also settled on one apostrophe character and one ellipsis character.
 
@@ -84,7 +84,7 @@ All notable changes to RES-Slim will be documented in this file.
 - Filtering a post now stops what it was playing. Hiding a post takes it out of
   the layout and does nothing to a video or audio inside it, so filtering a
   subreddit mid-playback left the sound running with nothing on screen to pause.
-  All three filter modules had it separately.
+  Nine hide paths had it separately, including bulk hide, the promoted-post remover and collapsing a comment subtree.
 
 - SoundCloud links only get an expando when the player can actually play them.
   Every soundcloud.com URL used to get one, including the site's own navigation
@@ -99,7 +99,7 @@ All notable changes to RES-Slim will be documented in this file.
   three spellings of the same word within twenty lines.
 
 - Fixed a description that said the banner asks you to redesign Reddit, a
-  possessive missing its s, two "a" before a vowel, and a title that parsed as
+  possessive missing its s, an "a" before a vowel, and a title that parsed as
   "stop current Reddit loading forever" rather than stopping it.
 
 - Numeric defaults name their units. "Default 24" is now "Defaults to 24 hours",
@@ -110,7 +110,7 @@ All notable changes to RES-Slim will be documented in this file.
   the track fill, which only changes when the option is enabled.
 
 - The module state badge, the ADVANCED marker and the save bar's unsaved and
-  saved indicators keep their colour on the light settings theme. All four were
+  saved indicators keep their color on the light settings theme. All four were
   written for a dark panel and came out between 1.9:1 and 2.5:1.
 
 - A count pill, an inline code chip and three hover states are visible on the
@@ -118,8 +118,8 @@ All notable changes to RES-Slim will be documented in this file.
   all on a white panel.
 
 - The breadcrumb trail in settings shows its separators. They were drawn in a
-  panel-divider colour and measured between 1.3:1 and 2.5:1 in all eleven
-  themes, so the trail read as one run-on word.
+  panel-divider color and measured between 1.3:1 and 2.5:1 in every
+  theme, so the trail read as one run-on word.
 
 - Four in-page surfaces that failed contrast now use the shared ink tokens: the
   hover card's dropdown labels (2.2:1, and hovering an item made it worse rather
@@ -133,9 +133,9 @@ All notable changes to RES-Slim will be documented in this file.
   the same guard, because its class sits on the body while the palette paints the
   page underneath it.
 
-- The thread minimap draws its colours again. Two blanket rules restyled every
+- The thread minimap draws its colors again. Two blanket rules restyled every
   button on the page and excluded only the settings console, and a minimap stripe
-  is a button whose colour is the whole point. The same rules were flattening the
+  is a button whose color is the whole point. The same rules were flattening the
   storage dashboard's purge button and the user tagger's save and clear buttons
   to plain grey, so a destructive action looked like any other.
 
@@ -145,6 +145,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 - The "show bot comment" link keeps its contrast in every theme. It carried two
   hardcoded blues, one of which was applied on the light palette.
+
+- The expando's "search this image" control opens Google Lens. The endpoint it
+  used was retired and answered 404, so the control had quietly stopped working.
+
+- Strawpoll links written as `/polls/<id>` embed the poll they point at, and
+  RedGifs share links get an expando. The RedGifs handler also stopped calling an
+  API that was retired, which cost one failing request per expanded link.
+
+- The minimap's stripes are a large enough target to click reliably. They were
+  14 pixels wide, and only looked compliant because a blanket rule was inflating
+  every button on the page, which was also what stripped their color.
 
 - Tenor links expand. The host matched only `tenor.co`, which has redirected to
   `tenor.com` for years, and it never declared the origin it called, so the
@@ -207,21 +218,21 @@ All notable changes to RES-Slim will be documented in this file.
 - Added coverage for silencing media on a filtered post, and for the SoundCloud
   URL shapes that should and should not expand.
 
-- Added an accessibility sweep of the settings page in all eleven themes. The
+- Added an accessibility sweep of the settings page in every theme it has. The
   existing one ran on whichever theme was active, which is the default, so a
   theme-specific violation was invisible to it.
 
-- Added a contract for the colours that have to differ between a light and a dark
+- Added a contract for the colors that have to differ between a light and a dark
   settings console. Every one of the defects above was a literal at the call
   site, which no token-level contrast check can see, so it asserts that such a
-  colour is a token and that the light theme redefines each one.
+  color is a token and that the light theme redefines each one.
 
 - Added browser coverage for the three theme defects above, each measured from
   computed style in a real page: the ink contrast on the light palette, a nested
   comment box on a dark one, and a minimap stripe against a native button. All
   three were confirmed to fail against the previous stylesheets.
 
-- Added a contract that derives the light palettes from their declared colour
+- Added a contract that derives the light palettes from their declared color
   scheme and fails if one is left in the dark-text block.
 
 - The permission drift check now also reads code to manifest. It only checked

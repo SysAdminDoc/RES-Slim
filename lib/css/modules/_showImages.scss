@@ -588,7 +588,7 @@ img {
 // none of the `--rsm-th-*` tokens.
 .commentarea .res-expando-box div.usertext-body .md {
 	background-color: var(--rsm-th-bg, #fafafa);
-	border: 1px solid var(--rsm-th-border, #369);
+	border: 1px solid var(--rsm-th-control-border, #369);
 	border-radius: var(--rsm-radius-md);
 	padding: 5px 10px;
 

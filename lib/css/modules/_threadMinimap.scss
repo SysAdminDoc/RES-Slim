@@ -27,14 +27,32 @@
 
 .rsm-thread-minimap-stripe {
 	position: absolute;
-	right: 1px;
-	left: 1px;
+	left: 50%;
+	transform: translateX(-50%);
+	box-sizing: border-box;
+
+	// WCAG 2.5.8 measures the control's own box, so a transparent overlay does not
+	// count: the button itself has to be 24px. The rail is 16px wide on purpose -
+	// it is a scrollbar-sized overview, not a control strip - so the button is
+	// widened to 24px and the visible bar is painted into its content box instead.
+	// Padding plus `background-clip` means the drawn stripe is still 14px and
+	// nothing about the appearance moves.
+
+	// This had been passing by accident. Two blanket `button` rules, nightMode's
+	// and the refined layout's, restyled every button on the page including these,
+	// and their `min-height: 34px` cleared the hit test while replacing the
+	// stripe's colour and turning the minimap into a column of identical grey
+	// slabs. Excluding this extension's own controls from those rules fixed the
+	// appearance and showed that the target size had never been the stripe's own
+	// doing.
+	width: 24px;
+	padding: 0 5px;
+	background: var(--minimap-stripe-color, #ff7a18);
+	background-clip: content-box;
 	min-height: 2px;
 	border: 0;
 	border-radius: var(--rsm-radius-xs);
-	background: var(--minimap-stripe-color, #ff7a18);
 	cursor: pointer;
-	padding: 0;
 	opacity: 0.6;
 	transition: opacity 120ms ease;
 

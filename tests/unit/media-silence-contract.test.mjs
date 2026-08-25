@@ -118,6 +118,17 @@ test('all three hide paths route through the helper', () => {
 		'lib/modules/filterRules.js',
 		'lib/modules/scopedFilters.js',
 		'lib/modules/subredditBlacklist.js',
+		// The same defect, found by grepping for the pattern rather than by
+		// waiting for someone to report each one: ignoring a user, the engagement
+		// bait filter, repost dedupe, bulk hide, the promoted-post remover (the
+		// most likely thing on the page to be autoplaying), and collapsing a
+		// comment subtree.
+		'lib/modules/userTagger.js',
+		'lib/modules/engagementBaitFilter.js',
+		'lib/modules/repostDedupe.js',
+		'lib/modules/hideAll.js',
+		'lib/modules/removePromoted.js',
+		'lib/modules/hideChildComments.js',
 	]) {
 		const source = codeOnly(readRepoFile(file));
 		assert.match(source, /hideAndSilence\(/, `${file} does not silence what it hides`);

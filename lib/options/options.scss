@@ -1242,7 +1242,8 @@ li {
 	height: 16px;
 	margin-left: 2px;
 	border-radius: var(--options-radius-xs);
-	background: #fff;
+	// Off state: the track is --options-field, which is #fff on the light theme.
+	background: var(--options-knob);
 	transform: translateY(1px);
 	transition: margin-left 0.18s ease, background-color 0.18s ease;
 }
@@ -3771,7 +3772,8 @@ html[res-options]:root {
 		width: 20px;
 		height: 20px;
 		border-radius: 50%;
-		background: #fff;
+		// Off state, same reasoning as .moduleRowToggleThumb above.
+		background: var(--options-knob);
 		transition: transform 120ms ease;
 	}
 
@@ -3782,6 +3784,8 @@ html[res-options]:root {
 
 	#RESAllOptions:checked::before {
 		transform: translateX(20px);
+		// On the accent fill, which is dark in every theme.
+		background: #fff;
 	}
 
 	.utilityPanel--build {

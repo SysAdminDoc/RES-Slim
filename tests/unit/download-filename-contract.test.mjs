@@ -71,10 +71,51 @@ test('reserved and control characters are removed', () => {
 	assert.equal(stemFromTitle(`tab${String.fromCharCode(9)}here`), 'tabhere');
 });
 
-test('a very long title is capped below the filesystem limit', () => {
-	const name = downloadFilename('x'.repeat(400), 'https://i.redd.it/a.png');
-	assert.ok(name.length <= 200, `expected a capped name, got ${name.length} characters`);
-	assert.ok(name.endsWith('.png'));
+test('a very long title is capped in bytes, not characters', () => {
+	// The cap has to be a byte budget: 255 bytes is the filesystem ceiling and a
+	// Japanese or Cyrillic character is two or three of them, so a 180-character
+	// count let a 500-byte name through. The first version of this test measured
+	// `'x'.repeat(400)` and asserted a character count, which is exactly the
+	// wrong unit and could not see it.
+	const bytes = value => new TextEncoder().encode(value).length;
+	const JA = String.fromCodePoint(0x65e5);
+	const CY = String.fromCodePoint(0x043f);
+
+	for (const title of ['x'.repeat(400), JA.repeat(400), CY.repeat(400), JA.repeat(100) + 'a'.repeat(200)]) {
+		const name = downloadFilename(title, 'https://i.redd.it/a.png');
+		assert.ok(bytes(name) <= 200, `expected a byte-capped name, got ${bytes(name)} bytes`);
+		assert.ok(name.endsWith('.png'));
+	}
+
+	// And the URL fallback, which had no cap at all.
+	const longPath = `https://i.redd.it/${'y'.repeat(500)}.png`;
+	assert.ok(bytes(basenameFor(longPath)) <= 220, 'the URL fallback must be capped too');
+});
+
+test('a truncated name never ends inside a character', () => {
+	// `String.prototype.slice` is UTF-16 code-unit based, so cutting a title of
+	// astral characters at a fixed index can leave half a surrogate pair.
+	const astral = String.fromCodePoint(0x20000).repeat(200);
+	const stem = stemFromTitle(astral);
+	if (stem) {
+		const lone = new RegExp(`[${String.fromCharCode(0xD800)}-${String.fromCharCode(0xDBFF)}](?![${String.fromCharCode(0xDC00)}-${String.fromCharCode(0xDFFF)}])`, 'u');
+		assert.equal(lone.test(stem), false, 'a lone surrogate survived the truncation');
+	}
+});
+
+test('a reserved Windows device name is not produced', () => {
+	// `CON`, `NUL`, `COM1` and friends are refused with or without an extension.
+	// Chrome sanitizes what it is handed, but the URL fallback builds a name from
+	// a path and nothing else guarded it.
+	for (const reserved of ['CON', 'nul', 'Com1', 'LPT9', 'prn', 'aux']) {
+		const fromTitle = downloadFilename(reserved, 'https://i.redd.it/a.png');
+		assert.notEqual(fromTitle.replace(/\.png$/, '').toLowerCase(), reserved.toLowerCase(),
+			`${reserved} survived as a filename`);
+		const fromUrl = basenameFor(`https://i.redd.it/${reserved}`);
+		assert.notEqual(fromUrl.toLowerCase(), reserved.toLowerCase(), `${reserved} survived from the URL`);
+	}
+	// An ordinary name that merely starts with those letters is untouched.
+	assert.equal(downloadFilename('console log', 'https://i.redd.it/a.png'), 'console log.png');
 });
 
 test('leading and trailing dots and spaces are trimmed', () => {

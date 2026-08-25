@@ -39,6 +39,40 @@ test('the allowlist accepts what real media actually uses', () => {
 	assert.ok(safe('data:image/png;base64,iVBORw0KGgo='));
 });
 
+test('the blank document a real host returns is accepted', () => {
+	// `googlemaps` returns `about:blank` deliberately when a share link carries a
+	// place name instead of coordinates, which is the common shape. Rejecting it
+	// broke a live host rather than a hostile one, and the throw escaped
+	// `Expando.expand` after the box had been revealed. Exactly this string, not
+	// the scheme.
+	assert.ok(safe('about:blank'));
+	assert.equal(safe('about:srcdoc'), false);
+	assert.equal(safe('about:config'), false);
+	assert.equal(safe('about:blank#x'), false, 'only the bare blank document');
+	assert.doesNotThrow(() => assertSafeMediaUrls({ type: 'IFRAME', embed: 'about:blank' }, PAGE));
+});
+
+test('every media descriptor a shipped host can return passes the guard', () => {
+	// The first version of this file only ever tested URLs it made up, which is
+	// why it could not see that a real host was being rejected. These are the
+	// shapes taken verbatim from the handlers in lib/modules/hosts.
+	const fromRealHosts = [
+		{ type: 'IFRAME', embed: 'about:blank', muted: true },
+		{ type: 'IFRAME', embed: 'https://redgifs.com/ifr/x?autoplay=0', embedAutoplay: 'https://redgifs.com/ifr/x' },
+		{ type: 'IFRAME', embed: 'https://strawpoll.com/embed/abc123' },
+		{ type: 'IFRAME', embed: 'https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fa%2Fb' },
+		{ type: 'IMAGE', src: 'https://i.redd.it/a.jpg' },
+		{ type: 'IMAGE', src: '//i.imgur.com/a.jpg' },
+		{ type: 'TEXT', src: '<p>wikipedia body</p>' },
+		{ type: 'VIDEO', sources: [{ source: 'https://v.redd.it/a/DASH_720.mp4', type: 'video/mp4' }], fallback: 'https://media.giphy.com/media/x/giphy.gif' },
+		{ type: 'AUDIO', sources: [{ file: 'https://example.invalid/a.mp3', type: 'audio/mpeg' }] },
+		{ type: 'GENERIC_EXPANDO' },
+	];
+	for (const media of fromRealHosts) {
+		assert.doesNotThrow(() => assertSafeMediaUrls(media, PAGE), `a real host's ${media.type} was rejected`);
+	}
+});
+
 test('the allowlist rejects every scheme that can run code', () => {
 	assert.equal(safe(SCRIPT_URL), false);
 	assert.equal(safe(SCRIPT_URL.toUpperCase()), false, 'the scheme is case-insensitive');

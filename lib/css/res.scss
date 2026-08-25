@@ -581,9 +581,17 @@ dialog#alert_message {
 			content: 'Error: ' attr(error);
 			display: block;
 			// Bare `red` is 4.00:1 on white, under AA, and this is an error message -
-			// the one string on the page that has to be legible. The ink token is
-			// checked against both grounds by inline-chip-contrast-contract.
-			color: var(--rsm-ink-danger);
+			// the one string on the page that has to be legible.
+
+			// Two tokens, because this builder renders in two places with different
+			// palettes: on the reddit page, and inside the settings console, which
+			// loads res.css and carries `res-nightmode` on <html> regardless of which
+			// of its own nine themes is active. Reaching for the page ink alone put
+			// light pink on the light console at 1.6:1 - worse than the `red` it
+			// replaced. `--options-danger` exists only in the console and is defined
+			// per console theme; off the console it is absent and the page ink is
+			// used.
+			color: var(--options-danger, var(--rsm-ink-danger));
 		}
 	}
 }
@@ -626,10 +634,11 @@ dialog#alert_message {
 
 	&:empty::before {
 		// `grey` measured 3.95:1 on white and 3.83:1 on the night-mode panel, so
-		// this empty-state prompt failed AA on both grounds it can appear on.
-		border: medium dashed var(--rsm-chip-line);
+		// this empty-state prompt failed AA on both grounds it can appear on. The
+		// console token comes first for the same reason as the error text above.
+		border: medium dashed var(--options-border, var(--rsm-chip-line));
 		border-radius: 4px;
-		color: var(--rsm-ink-muted);
+		color: var(--options-text-muted, var(--rsm-ink-muted));
 		content: 'nothing here yet. add something!';
 		padding: 5px 10px;
 		text-align: center;

@@ -144,19 +144,26 @@
 // the most common configuration there is: `--rsm-ink` #e9f0f8 on #fff is 1.06:1,
 // and it reaches the inline chips in fifteen module stylesheets.
 
-// The nightMode arm needs the same guard, and it is the one that actually
-// bites: nightMode is on by default, its class goes on `<body>`, and
-// `html.res-pageTheme body { background-color: var(--rsm-th-bg) }` at (0,1,2)
-// beats nightMode's own (0,1,1) page background. So with the theme on and the
-// default palette the page is painted white by pageTheme while nightMode is
-// still handing out dark-page ink. Negating the ancestor from the body selector
-// is what ties the two together.
+// The nightMode arm needs a guard too, and getting it right took measuring
+// rather than reading, because which of the two paints the surface behind a chip
+// depends on a *layout* toggle.
 
-// Excluding the light palettes by name rather than testing the scheme, because
+// `refinedLayout` is on by default, and its rule
+// `html.res-pageTheme.res-pageTheme--refined .comment` is (0,3,1) with
+// `!important`, which outranks nightMode's (0,3,0) `!important`. Turn the
+// refined layout off and nightMode wins instead. So with the light Classic
+// palette and nightMode both on, the same chip sits on white with refined on and
+// on `#161616` with it off - measured at 17.4:1 and 1.04:1. One static gate
+// cannot serve both unless it keys on the same thing the ground does.
+
+// Hence the ancestor test: nightMode keeps the dark inks except where the
+// refined layout is repainting the surface underneath them.
+
+// Light palettes are excluded by name rather than by testing the scheme, because
 // no selector can read a custom property's value. `page-theme-ink-contract`
 // derives the light list from `--rsm-th-scheme: light` in `_pageTheme.scss` and
 // fails if a new one is added without being named here.
-html:not(.res-pageTheme--classic) body.res-nightmode,
+html:not(.res-pageTheme--refined) body.res-nightmode,
 html.res-pageTheme:not(.res-pageTheme--classic) {
 	--rsm-ink: #e9f0f8;
 	--rsm-ink-muted: #b3c1d1;
