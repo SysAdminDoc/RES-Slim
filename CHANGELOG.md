@@ -6,6 +6,28 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Security
 
+- Removed a sixth inherited third-party API key. `hosts/tenor.js` shipped a live
+  Tenor key as a query parameter in this public repository. It survived the sweep
+  that removed the other five because every shape the credential check knew was
+  fitted to how those five were written, and none of them matches a bare `key`
+  property inside a request. The key is now the reader's own, direct
+  `media.tenor.com` files still expand without one, and the check has a shape for
+  opaque tokens in any credential-ish property.
+
+- The settings console no longer receives the Reddit modhash addressed to any
+  origin. It was sent with a `'*'` target on every load of the console frame, and
+  that listener is attached once but fires on every navigation of the frame.
+
+- The wikipedia expando encodes the article name before putting it in a MediaWiki
+  query. A path segment containing an ampersand could append parameters of its
+  own to a call the API resolves last-wins.
+
+- The wikipedia expando strips the title's markup with an inert parser instead of
+  assigning it to a detached element. A detached node still has an owner
+  document, so an event handler in the response would run. The same defect was
+  fixed in the comment preview's wiki table of contents; this was the last caller
+  with it.
+
 - Media URLs returned by a site module are now checked against a scheme
   allowlist before anything is rendered. Only http, https, blob and inline
   images are accepted. Several handlers pass a URL straight out of a third-party
@@ -30,6 +52,13 @@ All notable changes to RES-Slim will be documented in this file.
   while the untouched v1 store remains available as the migration backup.
 
 ### Fixed
+
+- Tenor links expand. The host matched only `tenor.co`, which has redirected to
+  `tenor.com` for years, and it never declared the origin it called, so the
+  request was refused before it was made.
+
+- Wikipedia articles whose title contains a plus sign, such as C++, load. The
+  unencoded name reached MediaWiki as a space.
 
 - Duplicate posts are removed from infinite scroll again. The check accepted a
   fullname only when it was exactly nine characters, which was true while
@@ -66,6 +95,14 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- The permission drift check now also reads code to manifest. It only checked
+  that every declared origin was used, so a site module could ask for an origin
+  the manifest never listed, which is what tenor did.
+
+- Added executed coverage for the wikipedia handler: the encoded article name,
+  a path that tries to append its own API parameters, and a title whose markup is
+  stripped without touching the page document.
 
 - Added executable coverage for duplicate-post removal across the historical
   five-character ids, today's seven-character ids, and a subtree spliced inside

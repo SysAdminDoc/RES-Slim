@@ -1703,6 +1703,12 @@
     "showImagesForceReplaceNativeExpandoDesc": {
         "message": "Always replace Reddit's player."
     },
+    "showImagesTenorApiKeyTitle": {
+        "message": "Tenor API key"
+    },
+    "showImagesTenorApiKeyDesc": {
+        "message": "Your own Tenor API key. Tenor page links stay unexpanded until one is set: resolving a link to its GIF needs Tenor's API, and RES-Slim will not ship a key it does not own. Direct media.tenor.com files expand without a key. Register at https://developers.google.com/tenor/guides/quickstart to get one."
+    },
     "showImagesTumblrApiKeyTitle": {
         "message": "Tumblr API key"
     },

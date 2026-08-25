@@ -63,6 +63,7 @@ const OPTIONAL_HOST_PERMISSIONS = [
 	'https://backend.deviantart.com/oembed',
 	'https://api.gyazo.com/api/oembed',
 	'https://api.tumblr.com/v2/blog/*/posts',
+	'https://api.tenor.co/v1/gifs*',
 	'https://xkcd.com/*/info.0.json',
 	'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*',
 	'https://*.redd.it/*',

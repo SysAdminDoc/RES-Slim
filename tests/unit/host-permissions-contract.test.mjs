@@ -66,6 +66,50 @@ function matchableFragment(pattern) {
 	return upToWildcard.replace(/\/$/, '');
 }
 
+// The reverse direction, which was missing.
+//
+// The three checks below all read manifest -> code: every declared origin must
+// be used. Nothing read code -> manifest, so a site module could declare a
+// `permissions` entry the manifest never lists, and `generateSiteModuleLock`
+// would then ask the browser for an origin that is not in
+// `optional_host_permissions` - a request the browser refuses outright.
+//
+// `hosts/tenor.js` shipped in exactly that state: it called
+// `api.tenor.co/v1/gifs` with no `permissions` field at all and no manifest
+// entry, so its expando could never have worked. Every one of its ten siblings
+// that calls an API declares one, which is what made the omission invisible.
+function declaredHostPermissions() {
+	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
+	const declared = new Map();
+	for (const name of fs.readdirSync(hostsDir)) {
+		if (!name.endsWith('.js')) continue;
+		const source = fs.readFileSync(path.join(hostsDir, name), 'utf8');
+		const block = /permissions:\s*(\[[^\]]*\]|[A-Za-z_$][\w$]*[^,\n]*)/.exec(source);
+		if (!block) continue;
+		// Only literal arrays can be compared statically. mastodon builds its list
+		// from KNOWN_INSTANCES, and 'the mastodon handler is the sixth unbounded
+		// destination' below already covers it.
+		if (!block[1].startsWith('[')) continue;
+		const origins = [...block[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+		if (origins.length) declared.set(`lib/modules/hosts/${name}`, origins);
+	}
+	return declared;
+}
+
+test('every origin a site module declares is one the manifest can grant', () => {
+	const declared = declaredHostPermissions();
+	assert.ok(declared.size >= 8, `expected most API hosts to declare permissions, found ${declared.size}`);
+
+	const missing = [];
+	for (const [file, origins] of declared) {
+		for (const origin of origins) {
+			if (!chromeOptionalOrigins.includes(origin)) missing.push(`${file} -> ${origin} (chrome)`);
+			if (!firefoxOptionalOrigins.includes(origin)) missing.push(`${file} -> ${origin} (firefox)`);
+		}
+	}
+	assert.deepEqual(missing, [], `site modules ask for origins the manifest never declares:\n  ${missing.join('\n  ')}`);
+});
+
 test('every optional host permission is reachable from code', () => {
 	assert.ok(chromeOptionalOrigins.length > 0, 'the manifest must declare optional origins, or this test checks nothing');
 

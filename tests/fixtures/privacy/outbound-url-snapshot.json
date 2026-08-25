@@ -535,7 +535,11 @@
     },
     {
       "file": "lib/modules/hosts/tenor.js",
-      "url": "https://www.tenor.co/favicon.ico"
+      "url": "https://api.tenor.co/v1/gifs*"
+    },
+    {
+      "file": "lib/modules/hosts/tenor.js",
+      "url": "https://tenor.com/favicon.ico"
     },
     {
       "file": "lib/modules/hosts/threads.js",
@@ -623,11 +627,11 @@
     },
     {
       "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=sections&page=${article}&origin=*"
+      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=sections&page=${page}&origin=*"
     },
     {
       "file": "lib/modules/hosts/wikipedia.js",
-      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=text|displaytitle&section=${sectionId}&page=${article}&origin=*"
+      "url": "https://${language}.wikipedia.org/w/api.php?action=parse&format=json&prop=text|displaytitle&section=${sectionId}&page=${page}&origin=*"
     },
     {
       "file": "lib/modules/hosts/wikipedia.js",
