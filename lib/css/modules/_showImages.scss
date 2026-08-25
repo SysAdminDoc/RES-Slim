@@ -579,9 +579,16 @@ img {
 }
 
 // style expando text content in comments
+
+// `#fafafa` here outranked `html.res-pageTheme .md`'s background at (0,4,1) to
+// (0,1,2), but that rule's `color: var(--rsm-th-txt) !important` still won the
+// text - so on any of the ten dark palettes with nightMode off this box painted
+// pale theme text on near-white. The literal keeps its value as a fallback for a
+// page with no theme; the nightMode branch below stays because nightMode defines
+// none of the `--rsm-th-*` tokens.
 .commentarea .res-expando-box div.usertext-body .md {
-	background-color: #fafafa;
-	border: 1px solid #369;
+	background-color: var(--rsm-th-bg, #fafafa);
+	border: 1px solid var(--rsm-th-border, #369);
 	border-radius: var(--rsm-radius-md);
 	padding: 5px 10px;
 
@@ -672,7 +679,9 @@ body:not(.res-showImages-displayImageCaptions) {
 			width: 45%;
 			max-width: 300px;
 			border: none;
-			background: #eee;
+			// Same as the expando body above: a literal that survives on an
+			// unthemed page and follows the palette when there is one.
+			background: var(--rsm-th-bg-raise, #eee);
 			margin: 8px;
 
 			&:first-of-type {

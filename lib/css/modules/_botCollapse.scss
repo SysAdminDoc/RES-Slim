@@ -39,20 +39,19 @@
 	padding: 0 6px;
 	min-height: 14px;
 	font: 11px/14px var(--rsm-font);
-	color: #1d4ed8;
-	background: rgb(59 130 246 / 14%);
-	border: 1px solid rgb(59 130 246 / 35%);
+	// These three were literals, and the two the label depended on were the exact
+	// values `--rsm-ink-info` already carries for each ground - written twice, and
+	// the dark spelling gated on a bare `html.res-pageTheme`, which is also on the
+	// root for the light Classic palette. The token flips on its own, and the
+	// tint percentages come with it, so the second rule is gone rather than
+	// re-gated. This is the same recipe every other inline chip uses.
+	color: var(--rsm-ink-info);
+	background: color-mix(in srgb, var(--rsm-ink-info) var(--rsm-tint), transparent);
+	border: 1px solid color-mix(in srgb, var(--rsm-ink-info) var(--rsm-tint-line), transparent);
 	border-radius: var(--rsm-radius-xs);
 	transition: background var(--rsm-motion-fast) var(--rsm-ease);
 
 	&:hover {
-		background: rgb(59 130 246 / 28%);
+		background: color-mix(in srgb, var(--rsm-ink-info) calc(var(--rsm-tint) * 2), transparent);
 	}
-}
-
-// The reveal chip is injected into the comment body, so it inherits whatever
-// the page theme sets. Give it a readable label on both.
-body.res-nightmode .rsm-botCollapse-reveal,
-html.res-pageTheme .rsm-botCollapse-reveal {
-	color: #93c5fd;
 }

@@ -53,7 +53,12 @@ function blockFor(selector) {
 }
 
 const rootBlock = blockFor(':root');
-const darkBlock = blockFor("body\\.res-nightmode,\\s*\\nhtml\\.res-pageTheme");
+// The dark block's selector now excludes the light palettes by name, because a
+// bare `html.res-pageTheme` also matched Classic Reddit's white page. This file
+// only needs the block's *values*, so it matches up to the brace rather than
+// restating the exclusion list - `page-theme-ink-contract` is what checks that
+// the list is right, derived from `--rsm-th-scheme` rather than hardcoded.
+const darkBlock = blockFor("body\\.res-nightmode,\\s*\\nhtml\\.res-pageTheme[^{]*");
 
 const GROUNDS = [
 	// A default old.reddit page is white; the ink tokens in :root serve it.

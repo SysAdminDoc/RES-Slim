@@ -3,14 +3,31 @@
 		border-radius: 4px !important;
 	}
 
+	// Every colour here used to be a literal authored for a white page, and
+	// `commentBoxes` is on by default. `_nightMode.scss` overrode them, so the
+	// legacy dark skin was covered - but `pageTheme`'s ten dark palettes were not,
+	// and `_pageTheme.scss` sets `.comment { color: var(--rsm-th-txt) !important }`
+	// at the same time. The result on a dark palette with nightMode off was a
+	// checkerboard of dark top-level comments and white nested ones, all with pale
+	// text on them: gruvbox came out at about 1.3:1.
+
+	// The `--rsm-th-*` tokens exist only when the theme is on, so each one carries
+	// the original literal as its fallback. Plain reddit renders exactly as before,
+	// nightMode's higher-specificity rules still win, and the ten dark palettes get
+	// their own surfaces. `raise` and `elev` rather than one colour, because the
+	// alternating stripe is the depth cue and Classic would otherwise flatten to
+	// all-white.
 	.comment {
 		margin: 0 8px 8px 10px !important;
-		border: 1px solid #e6e6e6 !important;
+		border: 1px solid var(--rsm-th-border, #e6e6e6) !important;
 		padding: 5px 8px 5px 5px !important;
 		overflow: hidden;
 
 		&.spam {
-			background-image: linear-gradient(hsl(0, 70%, 80%), hsl(0, 70%, 80%));
+			background-image: linear-gradient(
+				color-mix(in srgb, var(--rsm-ink-danger) 30%, transparent),
+				color-mix(in srgb, var(--rsm-ink-danger) 30%, transparent)
+			);
 		}
 
 		.comment {
@@ -23,7 +40,7 @@
 	}
 
 	&.res-continuity .comment div.child {
-		border-left: 1px dotted #555 !important;
+		border-left: 1px dotted var(--rsm-th-control-border, #555) !important;
 	}
 
 	.comment .comment,
@@ -31,14 +48,14 @@
 	.comment .comment .comment .comment .comment .comment,
 	.comment .comment .comment .comment .comment .comment .comment .comment,
 	.comment .comment .comment .comment .comment .comment .comment .comment .comment .comment {
-		background-color: #f7f7f8 !important;
+		background-color: var(--rsm-th-bg-raise, #f7f7f8) !important;
 	}
 
 	.comment .comment .comment,
 	.comment .comment .comment .comment .comment,
 	.comment .comment .comment .comment .comment .comment .comment,
 	.comment .comment .comment .comment .comment .comment .comment .comment .comment {
-		background-color: #fff !important;
+		background-color: var(--rsm-th-bg-elev, #fff) !important;
 	}
 
 	body > .content {
@@ -46,6 +63,6 @@
 	}
 
 	&.res-commentHoverBorder .content .comment:hover {
-		border-color: #9ae !important;
+		border-color: var(--rsm-th-accent, #9ae) !important;
 	}
 }

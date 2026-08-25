@@ -1434,10 +1434,12 @@ test('an enabled pageTheme palette paints its own background', async t => {
 	});
 
 	// From the service worker: the page's main world has no `chrome.storage`.
-	await worker.evaluate(() => new Promise(resolve => chrome.storage.local.set({
-		'RES.modulePrefs': { pageTheme: true },
-		'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, accent: { value: '#8a5cff' } },
-	}, resolve)));
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { pageTheme: true },
+			'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, accent: { value: '#8a5cff' } },
+		}, resolve);
+	}));
 
 	await page.goto('https://old.reddit.com/r/codex/comments/1th66mb/x/', { waitUntil: 'domcontentloaded' });
 	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--gruvbox'), null, { timeout: 30000 });
@@ -1454,6 +1456,200 @@ test('an enabled pageTheme palette paints its own background', async t => {
 	assert.equal(painted.token, '#282828', 'the gruvbox palette block must be in res.css');
 	assert.equal(painted.body, 'rgb(40, 40, 40)', 'the body must actually be painted #282828, not the anti-FOUC OLED black');
 	assert.equal(painted.antiFoucStyle, false, 'the early style has done its job once a real palette is applied');
+});
+
+// Three cascade bugs that only a browser can see, all in the same place: what a
+// palette class actually resolves to on the elements RES-Slim injects.
+//
+//   1. `_tokens.scss` gated the dark `--rsm-ink-*` values on a bare
+//      `html.res-pageTheme`, which is on the root for every palette including the
+//      shipped default, Classic Reddit, whose page is white. Every inline chip in
+//      fifteen stylesheets came out near-white on white.
+//   2. `_commentStyle.scss` painted nested comment boxes `#fff` with
+//      `!important`, while `_pageTheme.scss` set `.comment { color:
+//      var(--rsm-th-txt) !important }`. On a dark palette that is pale text on
+//      white, and `commentBoxes` is on by default.
+//   3. The refined layout restyled every `<button>` on the page and excluded only
+//      the settings console, so at (0,1,3) it beat the thread minimap's stripes -
+//      `<button>` elements whose entire information channel is their background
+//      colour.
+//
+// Each is invisible to the SCSS: both rules are present and correct in source,
+// and only the cascade decides.
+function contrastRatio(a, b) {
+	const parse = value => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+	const channel = c => {
+		const s = c / 255;
+		return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+	};
+	const luminance = rgb => 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
+	const [l1, l2] = [luminance(parse(a)), luminance(parse(b))];
+	return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+async function servePalette(page, capture, html = null) {
+	const body = html || servableCapture(capture);
+	await page.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+}
+
+test('the light palette keeps dark inline ink, so injected chips stay readable', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, FRONT_CAPTURE);
+
+	// Classic is the shipped default. Setting it explicitly so the test states
+	// what it is measuring rather than depending on the default staying put.
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { pageTheme: true },
+			'RESoptions.pageTheme': { theme: { value: 'classic' } },
+		}, resolve);
+	}));
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--classic'), null, { timeout: 30000 });
+	await page.waitForTimeout(400);
+
+	const measured = await page.evaluate(() => {
+		const probe = document.createElement('span');
+		probe.className = 'rsm-e2e-ink-probe';
+		probe.textContent = 'probe';
+		probe.style.color = 'var(--rsm-ink)';
+		document.body.append(probe);
+		const style = getComputedStyle(probe);
+		const result = {
+			ink: style.color,
+			page: getComputedStyle(document.body).backgroundColor,
+			themeBg: getComputedStyle(document.documentElement).getPropertyValue('--rsm-th-bg').trim(),
+		};
+		probe.remove();
+		return result;
+	});
+
+	assert.equal(measured.themeBg, '#fff', 'classic must still be the white palette');
+	const ratio = contrastRatio(measured.ink, measured.page);
+	assert.ok(ratio >= 4.5, `--rsm-ink ${measured.ink} on ${measured.page} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+});
+
+test('a dark palette paints nested comment boxes dark, not white', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, CAPTURE);
+
+	// Two settings this test cannot leave at their defaults, and both were found
+	// by writing the test and watching it pass against the broken stylesheet.
+	//
+	// nightMode is on by default and `_nightMode.scss` carries its own dark
+	// override for these boxes, so with it on the defect never appears. And the
+	// refined layout's `html.res-pageTheme.res-pageTheme--refined .comment` rule is
+	// (0,3,1), which outranks `_commentStyle`'s (0,3,0) and repaints every comment
+	// itself - so the literals only reach the page when refined is off. That is
+	// the configuration a user gets by picking a dark palette and turning the
+	// layout rebuild off, which is a supported combination and was unreadable.
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { pageTheme: true, commentStyle: true, nightMode: false },
+			'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, refinedLayout: { value: false } },
+		}, resolve);
+	}));
+
+	await page.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--gruvbox'), null, { timeout: 30000 });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-commentBoxes'), null, { timeout: 30000 });
+	await page.waitForTimeout(400);
+
+	const measured = await page.evaluate(() => {
+		const nested = document.querySelector('.comment .comment');
+		const deeper = document.querySelector('.comment .comment .comment');
+		const read = element => {
+			if (!element) return null;
+			const style = getComputedStyle(element);
+			return { background: style.backgroundColor, color: style.color };
+		};
+		return { nested: read(nested), deeper: read(deeper) };
+	});
+
+	assert.ok(measured.nested, 'the thread fixture must have a nested comment');
+	for (const [name, box] of Object.entries(measured)) {
+		if (!box) continue;
+		assert.notEqual(box.background, 'rgb(255, 255, 255)', `${name} comment box is still painted white`);
+		const ratio = contrastRatio(box.color, box.background);
+		assert.ok(ratio >= 4.5, `${name}: ${box.color} on ${box.background} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+	}
+});
+
+test('the refined layout leaves RES-Slim\'s own buttons alone', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, CAPTURE);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { pageTheme: true, threadMinimap: true },
+			'RESoptions.pageTheme': { theme: { value: 'gruvbox' }, refinedLayout: { value: true } },
+		}, resolve);
+	}));
+
+	await page.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
+	await page.waitForSelector('.rsm-thread-minimap-stripe', { timeout: 30000, state: 'attached' });
+	await page.waitForTimeout(400);
+
+	const measured = await page.evaluate(() => {
+		const toRgb = value => {
+			const probe = document.createElement('span');
+			probe.style.color = value;
+			document.body.append(probe);
+			const resolved = getComputedStyle(probe).color;
+			probe.remove();
+			return resolved;
+		};
+		const stripe = document.querySelector('.rsm-thread-minimap-stripe');
+		const style = getComputedStyle(stripe);
+		// A button reddit's own markup put on the page, to prove the blanket rules
+		// still do their job rather than having been switched off wholesale.
+		// Not `closest('[class*="rsm-"]')`: layoutTweaks and roleHighlights put
+		// rsm-prefixed classes on <body>, so that matches every element on the
+		// page. The stylesheet excludes by the element's own class or id, plus an
+		// rsm- id ancestor, and this mirrors it.
+		const native = [...document.querySelectorAll('.usertext-buttons button, .commentarea button')]
+			.find(button => !/(^|\s)rsm-/.test(button.className) && !button.closest('[id^="rsm-"]'));
+		return {
+			stripeBackground: style.backgroundColor,
+			stripeWanted: toRgb(style.getPropertyValue('--minimap-stripe-color').trim()),
+			stripeMinHeight: style.minHeight,
+			stripePadding: style.padding,
+			nativeBackground: native ? getComputedStyle(native).backgroundColor : null,
+			nativeClass: native ? native.className : null,
+		};
+	});
+
+	// The stripe keeps its own geometry and, more importantly, paints the colour
+	// the module computed for it rather than a button fill.
+	assert.notEqual(measured.stripeMinHeight, '34px', 'the blanket button rule reached the minimap stripe');
+	assert.equal(measured.stripePadding, '0px', 'the stripe must keep its own zero padding');
+	assert.equal(measured.stripeBackground, measured.stripeWanted,
+		'the stripe is not painted with its own --minimap-stripe-color');
+
+	// And a native button is still restyled. Comparing to the stripe rather than
+	// to a fixed value: what matters is that the two are no longer the same, which
+	// is exactly what was wrong.
+	assert.ok(measured.nativeBackground, 'the fixture must contain a native reddit button');
+	assert.notEqual(measured.nativeBackground, measured.stripeBackground,
+		`a native button (${measured.nativeClass}) and a minimap stripe are painted identically`);
 });
 
 test('the default old Reddit theme is refined, readable, and reversible', async t => {

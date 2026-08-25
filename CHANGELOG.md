@@ -53,6 +53,26 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Injected chips are readable again with the theme on and the default Classic
+  palette. The dark text tokens were gated on a class that every palette carries,
+  including the white one, so badges, status text and inline buttons across
+  fifteen stylesheets rendered near-white on white. The night-mode skin needed
+  the same guard, because its class sits on the body while the palette paints the
+  page underneath it.
+
+- The thread minimap draws its colours again. Two blanket rules restyled every
+  button on the page and excluded only the settings console, and a minimap stripe
+  is a button whose colour is the whole point. The same rules were flattening the
+  storage dashboard's purge button and the user tagger's save and clear buttons
+  to plain grey, so a destructive action looked like any other.
+
+- Comment boxes follow the palette. With a dark palette and night mode off, the
+  nested boxes were painted white with pale text on them, which made a thread
+  unreadable. The expando text box in comments had the same problem.
+
+- The "show bot comment" link keeps its contrast in every theme. It carried two
+  hardcoded blues, one of which was applied on the light palette.
+
 - Tenor links expand. The host matched only `tenor.co`, which has redirected to
   `tenor.com` for years, and it never declared the origin it called, so the
   request was refused before it was made.
@@ -95,6 +115,14 @@ All notable changes to RES-Slim will be documented in this file.
   failures still stop immediately, so a real service outage cannot pass.
 
 ### Tests
+
+- Added browser coverage for the three theme defects above, each measured from
+  computed style in a real page: the ink contrast on the light palette, a nested
+  comment box on a dark one, and a minimap stripe against a native button. All
+  three were confirmed to fail against the previous stylesheets.
+
+- Added a contract that derives the light palettes from their declared colour
+  scheme and fails if one is left in the dark-text block.
 
 - The permission drift check now also reads code to manifest. It only checked
   that every declared origin was used, so a site module could ask for an origin

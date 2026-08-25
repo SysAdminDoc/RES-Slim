@@ -2551,10 +2551,31 @@ html.res-pageTheme--refined:not(:has(shreddit-app)) textarea {
 	resize: vertical;
 }
 
-html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *)),
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *)) {
+// This restyles every native control on the page, and RES-Slim's own controls
+// are on that page too. The only exclusion was the settings console, so at
+// (0,1,3) this beat every single-class module rule: the thread minimap's stripes
+// are <button> elements whose entire information channel is the background
+// colour the module computes for each one, and they were repainted flat grey
+// and given a 34px floor inside a 16px rail. The storage dashboard's purge button
+// and the user tagger's clear button lost their destructive red, and the tagger's
+// save button lost its primary fill, so all three read as ordinary buttons. Their
+// two-class hover rules still won, which is why they showed grey at rest and the
+// right colour under the cursor.
+
+// `[class*='rsm-']` and `[id^='rsm-']` are the same hooks `_tokens.scss` already
+// uses to claim this extension's own elements, and the descendant forms cover a
+// control nested inside one of its panels.
+// The descendant form of the class hook is deliberately absent. layoutTweaks
+// and roleHighlights put rsm-prefixed classes on <body> itself
+// (rsm-layout-hide-awards, rsm-role-op), so [class*='rsm-'] * matches every
+// element on the page and would switch this rule off entirely. The id form is
+// safe - only RES-Slim's own panels carry an rsm- id - and every injected
+// control carries its own rsm- class, which is the same convention the focus
+// ring in _tokens.scss relies on.
+html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)) {
 	min-height: 34px;
 	padding: 6px 12px;
 	background: var(--rsm-th-bg-raise);
@@ -2566,10 +2587,10 @@ html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:whe
 	font-weight: 650;
 }
 
-html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *)):hover,
-html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *)):hover {
+html.res-pageTheme--refined:not(:has(shreddit-app)) button:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='button']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='submit']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)):hover,
+html.res-pageTheme--refined:not(:has(shreddit-app)) input[type='reset']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)):hover {
 	background: color-mix(in srgb, var(--rsm-th-accent) 15%, var(--rsm-th-bg-raise));
 	border-color: color-mix(in srgb, var(--rsm-th-accent) 50%, var(--rsm-th-border));
 }

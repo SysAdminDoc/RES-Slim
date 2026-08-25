@@ -242,18 +242,21 @@ test("night mode's blanket button rule cannot reach into the settings console", 
 	// the category tabs all rendered as grey outset UA buttons because of it.
 	// The exclusion lives in :where() so Reddit's own buttons keep their
 	// specificity and their look.
+	// The exclusion list has since grown - RES-Slim's own injected controls were
+	// being repainted by this rule too, most visibly the thread minimap's stripes,
+	// whose entire information channel is their background colour. So this matches
+	// the shape rather than one exact spelling of the list: pinning the literal
+	// meant a correct widening of the exclusion read as a regression.
 	const nightMode = read('lib/css/modules/_nightMode.scss');
-	const rule = nightMode.slice(
-		nightMode.indexOf("button:not(:where(#RESConsoleContainer *))"),
-		nightMode.indexOf('background-color: hsl(0, 0%, 30%);') + 40,
-	);
+	const start = nightMode.indexOf('button:not(:where(#RESConsoleContainer *');
+	assert.notEqual(start, -1, 'the night-mode button rule should still exist');
+	const rule = nightMode.slice(start, nightMode.indexOf('background-color: hsl(0, 0%, 30%);', start) + 40);
 
-	assert.ok(rule, 'the night-mode button rule should still exist');
 	for (const selector of ['button', "input[type='button']", "input[type='submit']", "input[type='reset']"]) {
-		assert.ok(
-			rule.includes(`${selector}:not(:where(#RESConsoleContainer *))`),
-			`${selector} must exclude the settings console`,
+		const excluded = new RegExp(
+			`${selector.replace(/[[\]']/g, m => `\\${m}`)}:not\\(:where\\([^)]*#RESConsoleContainer \\*`,
 		);
+		assert.match(rule, excluded, `${selector} must exclude the settings console`);
 	}
 	// Bare `:not(#RESConsoleContainer *)` would add an ID to the selector and
 	// make the rule stronger on Reddit, which is the opposite of the intent.

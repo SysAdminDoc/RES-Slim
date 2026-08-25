@@ -441,10 +441,25 @@ $title-link-visited-color: hsl(0, 0%, 65%);
 	// swatches, Export/Import and category tabs as grey outset UA buttons.
 	// The exclusion sits in :where() so it costs no specificity and Reddit's
 	// buttons keep behaving exactly as before.
-	button:not(:where(#RESConsoleContainer *)),
-	input[type='button']:not(:where(#RESConsoleContainer *)),
-	input[type='submit']:not(:where(#RESConsoleContainer *)),
-	input[type='reset']:not(:where(#RESConsoleContainer *)) {
+
+	// The console was not the only thing this reached. RES-Slim's own injected
+	// controls are on reddit's page, and at (0,1,1) this beat their single-class
+	// rules too: the thread minimap's stripes are <button> elements whose whole
+	// information channel is their background colour, and every one of them came
+	// out hsl(0, 0%, 30%) grey. nightMode is on by default, so that was the
+	// default rendering. The refined-layout rule in _pageTheme.scss had the same
+	// omission.
+	// The descendant form of the class hook is deliberately absent. layoutTweaks
+	// and roleHighlights put rsm-prefixed classes on <body> itself
+	// (rsm-layout-hide-awards, rsm-role-op), so [class*='rsm-'] * matches every
+	// element on the page and would switch this rule off entirely. The id form is
+	// safe - only RES-Slim's own panels carry an rsm- id - and every injected
+	// control carries its own rsm- class, which is the same convention the focus
+	// ring in _tokens.scss relies on.
+	button:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+	input[type='button']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+	input[type='submit']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)),
+	input[type='reset']:not(:where(#RESConsoleContainer *, [class*='rsm-'], [id^='rsm-'], [id^='rsm-'] *)) {
 		color: #fff;
 		border: 1px outset hsl(0, 0%, 50%);
 		background-color: hsl(0, 0%, 30%);
