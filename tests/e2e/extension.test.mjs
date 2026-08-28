@@ -337,12 +337,12 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		post.setAttribute('post-type', 'image');
 		post.innerHTML = '<a slot="title" href="/r/example/comments/lateshadow/late/">A post that hydrates late</a>';
 		document.querySelector('shreddit-feed').append(post);
-		await new Promise(resolve => setTimeout(resolve, 120));
+		await new Promise(resolve => { setTimeout(resolve, 120); });
 		const beforeRoot = !!post.shadowRoot;
 
 		post.attachShadow({ mode: 'open' });
 		post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
-		await new Promise(resolve => setTimeout(resolve, 1500));
+		await new Promise(resolve => { setTimeout(resolve, 1500); });
 
 		return {
 			beforeRoot,
