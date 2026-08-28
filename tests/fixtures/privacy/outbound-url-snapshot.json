@@ -886,6 +886,10 @@
       "url": "https://www.reddit.com/"
     },
     {
+      "file": "lib/utils/oldRedditRedirect.js",
+      "url": "https://www.reddit.com/"
+    },
+    {
       "file": "lib/utils/outboundCleanser.js",
       "url": "https://old.reddit.com/"
     },

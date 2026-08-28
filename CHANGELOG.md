@@ -2,6 +2,26 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Switching to current Reddit with the header's `www` toggle did not stick. The
+  toggle escaped the opt-in redirect with a query parameter on the URL it
+  navigated to, and that escapes exactly one request. Current Reddit is a
+  single-page app, so the first in-page navigation drops the parameter; reddit's
+  own redirects drop it too, and its bot challenge replaces the query outright.
+  The next real request - a reload, a link opened from elsewhere, the challenge
+  bouncing back - matched the redirect rule again and threw the tab to old
+  Reddit, which now wants a login. Measured: click `www`, open a post, reload,
+  and you are on `old.reddit.com` with a URL current Reddit built.
+
+  The escape is now a property of the tab rather than of a URL. A session-scoped
+  request rule lists the tabs that asked to stay on current Reddit, and the page
+  re-asserts it on every document, so a reload or an external link keeps the
+  renderer you chose. Landing back on old Reddit releases it, and closing the tab
+  releases it, so nothing outlives the browsing it belongs to.
+
 ## v0.52.1, 2026-08-28
 
 ### Fixed

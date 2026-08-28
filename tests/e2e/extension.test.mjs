@@ -2318,6 +2318,87 @@ test('the packaged ruleset blocks Reddit ad and measurement requests', async t =
 	assert.match(request.failure()?.errorText || '', /ERR_BLOCKED_BY_CLIENT/, 'Chromium should attribute the failure to the extension ruleset');
 });
 
+test('the host toggle keeps the tab on current Reddit until it goes back', async t => {
+	// The escape used to be a query parameter and nothing else, so it covered
+	// exactly the one request the toggle made. Current Reddit is a single-page app:
+	// the first in-page navigation drops the parameter, and the next real request -
+	// a reload, a link from elsewhere, reddit's own challenge rewriting the query -
+	// matched the redirect again and threw the tab back to old Reddit, which now
+	// wants a login. Clicking `www` postponed the redirect by one page rather than
+	// switching renderers.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const optionsPage = await context.newPage();
+	await optionsPage.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await optionsPage.evaluate(() => new Promise((resolve, reject) => {
+		chrome.storage.local.set({ 'RESoptions.oldRedditRedirect': { autoRedirect: { value: true } } }, () => {
+			if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
+			else resolve();
+		});
+	}));
+	await optionsPage.waitForFunction(async () => {
+		const rules = await chrome.declarativeNetRequest.getDynamicRules();
+		return rules.some(rule => rule.id === 900003);
+	}, undefined, { timeout: 10000 });
+
+	// No xmlns on the modern document, which is what `appType()` reads to tell the
+	// two renderers apart.
+	const modern = '<!doctype html><html><head><title>Modern</title></head><body><shreddit-app pagetype="community" routename="subreddit"></shreddit-app><main id="modern-target">modern</main></body></html>';
+	const classic = '<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><head><title>Classic</title></head><body><main id="classic-target">classic</main></body></html>';
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		const request = route.request();
+		const url = request.url();
+		if (request.resourceType() !== 'document') return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+		if (url.startsWith('https://old.reddit.com/')) return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: classic });
+		return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: modern });
+	});
+
+	const escapedTabs = () => optionsPage.evaluate(async () => {
+		const rules = await chrome.declarativeNetRequest.getSessionRules();
+		const rule = rules.find(r => r.id === 900004);
+		return rule ? rule.condition.tabIds.length : 0;
+	});
+
+	// The handover: what the toggle's www link navigates to.
+	await page.goto('https://www.reddit.com/r/codex/?res_slim_redirect=off', { waitUntil: 'domcontentloaded', timeout: 30000 });
+	await page.waitForSelector('#modern-target', { timeout: 10000 });
+	await optionsPage.waitForFunction(async () => {
+		const rules = await chrome.declarativeNetRequest.getSessionRules();
+		return rules.some(rule => rule.id === 900004 && rule.condition.tabIds.length > 0);
+	}, undefined, { timeout: 10000 });
+
+	// A later request in the same tab, carrying nothing of the handover. This is
+	// the reload, and it is where the old escape ran out.
+	await page.goto('https://www.reddit.com/r/codex/comments/abc/a_post/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+	await page.waitForTimeout(500);
+	assert.equal(
+		new URL(page.url()).hostname,
+		'www.reddit.com',
+		'a tab that asked for current Reddit must stay there without the escape parameter',
+	);
+
+	// Going back to old Reddit ends it, so the escape is not a one-way door.
+	await page.goto('https://old.reddit.com/r/codex/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+	await page.waitForSelector('#classic-target', { timeout: 10000 });
+	await optionsPage.waitForFunction(async () => {
+		const rules = await chrome.declarativeNetRequest.getSessionRules();
+		return !rules.some(rule => rule.id === 900004 && rule.condition.tabIds.length > 0);
+	}, undefined, { timeout: 10000 });
+	assert.equal(await escapedTabs(), 0, 'landing on old Reddit must release the tab escape');
+
+	// And with the escape released, an ordinary www request is redirected again.
+	await page.goto('https://www.reddit.com/r/codex/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+	await page.waitForSelector('#classic-target', { timeout: 10000 });
+	assert.equal(new URL(page.url()).hostname, 'old.reddit.com', 'the redirect must resume once the tab is no longer escaped');
+
+	await optionsPage.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({ 'RESoptions.oldRedditRedirect': { autoRedirect: { value: false } } }, resolve);
+	}));
+});
+
 test('the opt-in Old Reddit redirect runs before modern document bytes load', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

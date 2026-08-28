@@ -47,7 +47,7 @@ test('redirect policy preserves route state and excludes sensitive hosts and pat
 	}
 });
 
-test('host toggle creates a one-page www escape without polluting old or sh links', () => {
+test('host toggle hands the tab over with an escape parameter, without polluting old or sh links', () => {
 	const source = 'https://old.reddit.com/r/codex/?sort=top#details';
 	assert.equal(
 		redirect.hostToggleUrl(source, 'www.reddit.com', true),
@@ -57,6 +57,46 @@ test('host toggle creates a one-page www escape without polluting old or sh link
 		redirect.hostToggleUrl('https://www.reddit.com/r/codex/?res_slim_redirect=off', 'old.reddit.com', true),
 		'https://old.reddit.com/r/codex/',
 	);
+});
+
+test('the escape parameter is a handover, not the escape itself', () => {
+	// The parameter survives exactly one request. Current Reddit is a single-page
+	// app, so the first in-page navigation drops it, and reddit's own redirects -
+	// the bot challenge rewrites the query entirely - drop it too. Whatever reads
+	// it has to convert it into something with a longer life, which is why this is
+	// exported rather than being an inline check inside `shouldRedirectToOld`.
+	assert.equal(redirect.hasRedirectEscapeParam('https://www.reddit.com/r/codex/?res_slim_redirect=off'), true);
+	assert.equal(redirect.hasRedirectEscapeParam('https://www.reddit.com/r/codex/'), false);
+	assert.equal(redirect.hasRedirectEscapeParam('https://www.reddit.com/r/codex/?res_slim_redirect=on'), false);
+	assert.equal(redirect.hasRedirectEscapeParam('not a url'), false);
+
+	// The shape reddit's challenge leaves behind: same page, parameter gone.
+	assert.equal(redirect.hasRedirectEscapeParam('https://www.reddit.com/r/codex/?solution=abc&js_challenge=1'), false);
+	assert.equal(redirect.shouldRedirectToOld('https://www.reddit.com/r/codex/?solution=abc&js_challenge=1'), true);
+});
+
+test('the host escape is scoped to tabs and outranks the redirect rule', () => {
+	const rule = redirect.buildHostEscapeRule([7, 12]);
+	assert.equal(rule.id, redirect.HOST_ESCAPE_RULE_ID);
+	assert.equal(rule.action.type, 'allow');
+	assert.deepEqual(rule.condition.resourceTypes, ['main_frame']);
+	assert.equal(rule.condition.urlFilter, '|https://www.reddit.com/');
+	assert.deepEqual(rule.condition.tabIds, [7, 12]);
+
+	// Above every rule in the persistent set, or a tab that asked to stay would be
+	// redirected anyway.
+	const highest = Math.max(...redirect.buildOldRedditRedirectRules().map(r => r.priority));
+	assert.ok(rule.priority > highest, `escape priority ${rule.priority} must beat ${highest}`);
+
+	// The id must not collide with the persistent rules, which are written and
+	// removed by id in a separate call.
+	assert.ok(!redirect.OLD_REDDIT_DYNAMIC_RULE_IDS.includes(redirect.HOST_ESCAPE_RULE_ID));
+
+	// Copied, not aliased: the caller holds a Set it keeps mutating.
+	const tabs = [3];
+	const built = redirect.buildHostEscapeRule(tabs);
+	tabs.push(4);
+	assert.deepEqual(built.condition.tabIds, [3]);
 });
 
 test('dynamic DNR rules are opt-in, main-frame-only, and replace only the host', () => {
