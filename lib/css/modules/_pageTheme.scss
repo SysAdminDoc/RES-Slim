@@ -849,7 +849,7 @@ html.res-pageTheme.res-pageTheme--refined community-highlight-carousel {
 // above the first post and one at each streamed batch boundary. Each was measured
 // at exactly the `min-height` below, which is what gave them away. A banner
 // carrying only a text message is still a real error state and still painted.
-html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden]):not(:empty),
+html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden], :empty),
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-loader:has(> :not(script)),
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-partial:not([src]) {
 	display: block;
