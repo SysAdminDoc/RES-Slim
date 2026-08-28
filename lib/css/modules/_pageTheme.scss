@@ -698,7 +698,14 @@ html.res-pageTheme.res-pageTheme--refined #main-content > h1 {
 	font: normal 18px/24px verdana, arial, helvetica, sans-serif;
 }
 
-html.res-pageTheme.res-pageTheme--refined #subgrid-container > :where(shreddit-subreddit-header, [slot='masthead'], .rsm-community-masthead) {
+// `.masthead` is where the community banner actually lives now. Reddit moved
+// `shreddit-subreddit-header` out of this position and into the right rail's
+// community card, leaving a plain `<div class="masthead">` as the direct child
+// here, so this rule stopped matching anything at the top of a subreddit and the
+// banner kept its full 188px height instead of becoming a 38px strip. The old
+// names stay: the header element is still the direct child on the surfaces that
+// have not been rebuilt.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > :where(shreddit-subreddit-header, .masthead, [slot='masthead'], .rsm-community-masthead) {
 	box-sizing: border-box;
 	min-height: 38px;
 	margin: 0 0 5px !important;
@@ -709,6 +716,40 @@ html.res-pageTheme.res-pageTheme--refined #subgrid-container > :where(shreddit-s
 	border-radius: 0 !important;
 	box-shadow: none !important;
 	color: var(--rsm-th-txt-strong) !important;
+}
+
+// Compacting the container is not enough on the rebuilt masthead: its height is
+// a 128px `.community-banner` hero plus an 88px name row that is pulled up over
+// it with a negative offset. Measured at 202px with only the container rule
+// applied - 14px *taller* than untouched, because padding and a border were
+// added to something that never shrank. Old Reddit has no hero image and no
+// community avatar in this position, so the image goes and the name row is put
+// back in normal flow.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead :where(.community-banner, [class*='community-banner']) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section {
+	position: static !important;
+	top: auto !important;
+	min-height: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	align-items: center !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section :where(h1, h2, span, a) {
+	color: var(--rsm-th-txt-strong) !important;
+	font: bold 14px/20px verdana, arial, helvetica, sans-serif !important;
+}
+
+// The 88px community icon is what is left holding the strip open, and old
+// Reddit's subreddit bar has no icon in it at all. It is the first block of the
+// name row and the only one carrying no text, but neither of those is a selector,
+// so this is positional: if reddit moves it the rule stops matching and the strip
+// is merely tall again, which is where it started.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section > div > div > div:first-child {
+	display: none !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined #subgrid-container > .main-container {
@@ -801,8 +842,15 @@ html.res-pageTheme.res-pageTheme--refined community-highlight-carousel {
 	color: var(--rsm-th-txt) !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden]),
-html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-loader,
+// `:not(:empty)` on the banner and `:has(> :not(script))` on the loader, because
+// reddit ships both of them on a healthy feed with nothing to say: the banner
+// with no content at all, the loader holding a single `<script>`. Painting them
+// unconditionally put three empty bordered 38px boxes into every listing - one
+// above the first post and one at each streamed batch boundary. Each was measured
+// at exactly the `min-height` below, which is what gave them away. A banner
+// carrying only a text message is still a real error state and still painted.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden]):not(:empty),
+html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-loader:has(> :not(script)),
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-partial:not([src]) {
 	display: block;
 	box-sizing: border-box;
@@ -817,7 +865,9 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-partial:not(
 	font: normal 11px/18px verdana, arial, helvetica, sans-serif;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-feed > hr,
+// Descendant for the feed, for the batch reason above: reddit's own row
+// separators inside a `<faceplate-batch>` kept their native colour.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed hr,
 html.res-pageTheme.res-pageTheme--refined #main-content > hr {
 	height: 1px !important;
 	margin: 0 !important;
@@ -825,7 +875,10 @@ html.res-pageTheme.res-pageTheme--refined #main-content > hr {
 	border: 0 !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-feed > article {
+// Descendant, not child: reddit streams everything past the first server-rendered
+// batch inside `<faceplate-batch>` wrappers, so `shreddit-feed > article` reached
+// three rows out of fifty-two and the rest of the feed lost its separators.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed article {
 	margin: 0 !important;
 	border: 0 !important;
 	border-bottom: 1px solid var(--rsm-th-border) !important;
@@ -879,6 +932,23 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='cre
 	color: var(--rsm-th-muted) !important;
 	font: normal 10px/14px verdana, arial, helvetica, sans-serif !important;
 	white-space: nowrap;
+}
+
+// Old Reddit's tagline is text on one line. Reddit's credit bar is a 24px flex
+// row built around an author avatar, and the rule above gives it a 14px box with
+// `overflow: hidden` - so the bottom of every author name and timestamp in the
+// feed was sliced off. Measured: bar 14px, contents 24px. The avatar goes, and
+// what is left is held to the line the bar actually has.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] :where([class*='snoovatar'], [class*='avatar'], img, faceplate-img) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] * {
+	min-height: 0 !important;
+	height: auto !important;
+	max-height: 14px !important;
+	font-size: 10px !important;
+	line-height: 14px !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='post-media-container'],
@@ -1219,7 +1289,13 @@ html.res-pageTheme--refined #main-content {
 	min-width: 0;
 }
 
-html.res-pageTheme--refined shreddit-feed > article:last-child {
+// The batch wrapper means the last row is no longer the feed's last child. CSS
+// cannot name "the last article across all wrappers", so both shapes are covered:
+// the final direct child on a feed reddit has not batched, and the final article
+// of a batch that is itself last. A feed ending in a loading sentinel keeps the
+// separator under its last row, which is the same cosmetic it had before.
+html.res-pageTheme--refined shreddit-feed > article:last-child,
+html.res-pageTheme--refined shreddit-feed > :last-child article:last-of-type {
 	border-bottom: 0;
 }
 

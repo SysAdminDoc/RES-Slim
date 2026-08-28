@@ -2,6 +2,44 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- The classic layout reached only part of current Reddit's feed. Reddit's
+  server-rendered posts, the first screenful of every subreddit, sit in the
+  document before they have a shadow root, and the vote rail is a stylesheet
+  injected into that root. The wait for the root was built on
+  `customElements.whenDefined` and `customElements.upgrade`, and a Chrome content
+  script's isolated world has `customElements === null` - `typeof` still answers
+  `'object'`, so the guard read it as a real registry and returned. Measured on a
+  live subreddit: no retry ever ran, and the top three posts kept Reddit's own
+  action bar while the fifty streamed in below them got the old-Reddit rail. There
+  is no event for a shadow root attaching, so the wait is now one shared bounded
+  poll across every host that needs it, with a deadline each so a host that never
+  hydrates cannot keep it running.
+- The community banner stayed at full height on a subreddit. Reddit moved
+  `shreddit-subreddit-header` into the right rail's community card and left a
+  plain `div.masthead` in its place, so the rule that turns the masthead into a
+  compact strip stopped matching. It was measured at 202px with the theme on,
+  which is 14px taller than with the theme off, because padding and a border were
+  being added to something that never shrank. The hero image and the oversized
+  community icon are gone and the strip is 64px.
+- Feed rows past the first batch lost their separators, and the last row kept one
+  it should not have. Reddit now streams everything after the server-rendered
+  posts inside `faceplate-batch` wrappers, so `shreddit-feed > article` reached
+  three rows out of fifty-two. Reddit's own row separators inside those wrappers
+  kept their native colour for the same reason.
+- Three empty bordered boxes appeared in every listing. Reddit ships a
+  `shreddit-feed-error-banner` with nothing in it on a healthy feed and a
+  `faceplate-loader` holding a single `<script>` at each batch boundary; both were
+  being painted as 38px status strips. A banner carrying a real message is still
+  painted, and so is a loader that has rendered something.
+- Every author name and timestamp in the feed was sliced off at the bottom. The
+  credit bar is given old Reddit's 14px tagline line with `overflow: hidden`, but
+  Reddit builds it as a 24px flex row around an author avatar. Old Reddit's
+  tagline is text, so the avatar goes and what is left fits the line.
+
 ## v0.52.0, 2026-08-25
 
 ### Security

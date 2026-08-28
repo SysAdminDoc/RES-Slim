@@ -271,6 +271,34 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	});
 	assert.deepEqual(visibleError, { display: 'block', height: 38 }, 'the feed error state should be compact and deliberate');
 
+	// Reddit ships this banner on a healthy feed with nothing in it, and a
+	// `<faceplate-loader>` holding only a `<script>` at each streamed batch
+	// boundary. Painting either one put an empty bordered 38px box into the
+	// listing. Neither may take up space with nothing to show.
+	const emptyChrome = await page.evaluate(() => {
+		const feed = document.querySelector('shreddit-feed');
+		const banner = document.querySelector('shreddit-feed-error-banner');
+		const original = banner.innerHTML;
+		banner.hidden = false;
+		banner.innerHTML = '';
+		const emptyBanner = Math.round(banner.getBoundingClientRect().height);
+		banner.innerHTML = original;
+		banner.hidden = true;
+
+		const loader = document.createElement('faceplate-loader');
+		loader.appendChild(document.createElement('script'));
+		feed.appendChild(loader);
+		const scriptOnlyLoader = Math.round(loader.getBoundingClientRect().height);
+		loader.appendChild(document.createElement('div'));
+		const populatedLoader = Math.round(loader.getBoundingClientRect().height);
+		loader.remove();
+
+		return { emptyBanner, scriptOnlyLoader, populatedLoader };
+	});
+	assert.equal(emptyChrome.emptyBanner, 0, 'an empty feed error banner must not paint a box');
+	assert.equal(emptyChrome.scriptOnlyLoader, 0, 'a script-only feed loader must not paint a box');
+	assert.equal(emptyChrome.populatedLoader, 38, 'a loader with rendered content is still a status strip');
+
 	const dir = saveScreenshotDir();
 	await dismissVisualNotifications(page);
 	await page.screenshot({ path: path.join(dir, 'shreddit-listing.png'), fullPage: false });
@@ -291,6 +319,39 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		return { changes, compat: post.hasAttribute('data-res-shreddit-compat'), fullname: post.getAttribute('data-fullname') };
 	});
 	assert.deepEqual(urlChanges, { changes: 1, compat: true, fullname: 't3_dynamic1' });
+
+	// The classic vote rail lives in a stylesheet injected into each post's shadow
+	// root, and reddit's server-rendered posts are in the document before they have
+	// one. The wait for that root used `customElements.whenDefined` and
+	// `customElements.upgrade`, neither of which exists here: a chrome content
+	// script's isolated world has `customElements === null`, so the whole retry
+	// path returned immediately and a post seen before it hydrated never got the
+	// sheet. On live reddit that was the first screenful of every subreddit.
+	//
+	// A post appended with no shadow root, given one only after a delay longer than
+	// any single retry, is that case. Without the wait it never gets the sheet.
+	const lateShadow = await page.evaluate(async () => {
+		const post = document.createElement('shreddit-post');
+		post.id = 't3_lateshadow';
+		post.setAttribute('author', 'late-user');
+		post.setAttribute('post-type', 'image');
+		post.innerHTML = '<a slot="title" href="/r/example/comments/lateshadow/late/">A post that hydrates late</a>';
+		document.querySelector('shreddit-feed').append(post);
+		await new Promise(resolve => setTimeout(resolve, 120));
+		const beforeRoot = !!post.shadowRoot;
+
+		post.attachShadow({ mode: 'open' });
+		post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+		await new Promise(resolve => setTimeout(resolve, 1500));
+
+		return {
+			beforeRoot,
+			sheet: !!post.shadowRoot.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			part: post.shadowRoot.querySelector('.action-row')?.getAttribute('part') || null,
+		};
+	});
+	assert.deepEqual(lateShadow, { beforeRoot: false, sheet: true, part: 'rsm-action-row' }, 'a post that grows its shadow root after being seen must still get the classic sheet and its parts');
+
 	assert.deepEqual(pageErrors, [], 'current Reddit listing must initialise without uncaught errors');
 });
 
