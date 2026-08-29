@@ -4,6 +4,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- `yarn publish:release`, the half the release helper deliberately stopped
+  before. It runs every gate and the Firefox audit, refuses a dirty tree, the
+  wrong remote, a lightweight tag, a tag that does not name the commit being
+  published, a tagged tree whose version or CHANGELOG does not match, or a
+  missing artifact. Then it pushes, hashes both ZIPs, renames them after the
+  tag, uploads them with a `SHA256SUMS` file, and reads the release back off
+  GitHub to confirm the assets arrived at the sizes it built. Re-running an
+  already-published version completes it rather than making a second one.
+
 ### Fixed
 
 - Two contrast failures on the light Classic palette, found by putting current

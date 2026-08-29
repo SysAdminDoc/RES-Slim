@@ -8,6 +8,10 @@ The goal is that the two renderers look and behave like one product. Reddit has 
 
 Only the features actually used are kept. Upstream self-promotion, sponsorship, announcements, and cloud-backup code have been removed.
 
+## Releases
+
+Every release is built and published from one machine. `yarn release <version>` writes the version into `package.json`, the README badge and the CHANGELOG heading, then commits and tags. `yarn publish:release` does the rest: it runs every gate plus the Firefox audit, refuses a dirty tree or a tag that does not name the commit being published, pushes, builds both ZIPs, computes their SHA-256 digests, creates the GitHub release, and reads the result back off GitHub to check the assets arrived at the sizes it built. Digests ship beside the ZIPs as a `SHA256SUMS` asset.
+
 ## What's kept
 
 **Comment tweaks**: hideChildComments, commentNavigator, commentPreview, commentTools, commentQuickCollapse, commentSortBy, commentStyle, commentDepth, commentHidePersistor, saveComments, hover, showParent, readComments, newCommentCount, spoilerTags, noParticipation, sourceSnudown.

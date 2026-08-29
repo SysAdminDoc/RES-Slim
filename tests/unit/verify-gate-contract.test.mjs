@@ -40,6 +40,10 @@ const NON_GATE_SCRIPTS = new Set([
 	// Writes a version, a commit and a tag. Deliberately operator-run: a gate
 	// must be safe to run on every push, and this is not.
 	'release',
+	// Pushes, uploads, and creates a GitHub release. More operator-run than
+	// `release`: it needs a `gh` login and a network, it makes changes nobody can
+	// take back, and it runs the whole `verify` chain itself as its first step.
+	'publish:release',
 	// Rewrites the two shipped manifests from `manifest.config.js`, so it is a
 	// writer like `lint:baseline`, not a check. Its `--check` twin is here rather
 	// than in the gate list because `manifest-generation-contract` asserts the
