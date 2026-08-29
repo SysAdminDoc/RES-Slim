@@ -101,6 +101,59 @@ test('default rulesJson hides posts whose titles begin with "I built"', () => {
 	assert.equal(evaluateRules(rules, facts({ kind: 'comment', title: undefined, body: 'I built one of these too' })).length, 0);
 });
 
+// --- one compilation per rule, not one per rule per post ---------------------
+//
+// `ruleMatches` called `compileRegex` inside the per-Thing evaluation, so
+// `isLikelyCatastrophicRegex` and `new RegExp` ran for every rule against every
+// post. The shipped default rule set contains an enabled regex rule, so that was
+// the default path for everyone.
+
+test('a regex rule is compiled when the rules are parsed, not when a post is judged', () => {
+	const rules = parseRulesFromJson(JSON.stringify([
+		{ id: 'r', field: 'keyword', op: 'regex', value: '^I\\s+built\\b', action: 'hide' },
+	]));
+	assert.equal(rules.length, 1);
+	assert.ok(rules[0].compiled instanceof RegExp, 'the pattern has to be compiled up front');
+	assert.equal(rules[0].compiled.flags.includes('i'), true, 'and keep the case-insensitive flag it always had');
+
+	// Evaluating must reuse it rather than building another.
+	const first = rules[0].compiled;
+	evaluateRules(rules, { kind: 'post', title: 'I built a thing' });
+	evaluateRules(rules, { kind: 'post', title: 'something else' });
+	assert.equal(rules[0].compiled, first, 'evaluation must not replace the compiled pattern');
+});
+
+test('only a regex rule carries a compiled pattern', () => {
+	const rules = parseRulesFromJson(JSON.stringify([
+		{ id: 'a', field: 'user', op: 'equals', value: 'someone', action: 'hide' },
+		{ id: 'b', field: 'keyword', op: 'contains', value: 'thing', action: 'dim' },
+	]));
+	assert.equal(rules[0].compiled, undefined);
+	assert.equal(rules[1].compiled, undefined);
+});
+
+test('a pattern that is rejected is rejected once, and matches nothing', () => {
+	// Malformed, and one shaped like a catastrophic backtracker. Both have to be
+	// refused at parse time and behave as a rule that matches nothing — never as
+	// a throw during evaluation, which would take the whole filter pass down.
+	const rules = parseRulesFromJson(JSON.stringify([
+		{ id: 'broken', field: 'keyword', op: 'regex', value: '([a-z]+)+$', action: 'hide' },
+		{ id: 'malformed', field: 'keyword', op: 'regex', value: '(unclosed', action: 'hide' },
+	]));
+	assert.equal(rules[0].compiled, null, 'a catastrophic pattern must be rejected at parse time');
+	assert.equal(rules[1].compiled, null, 'a malformed pattern must be rejected at parse time');
+
+	assert.deepEqual(evaluateRules(rules, { kind: 'post', title: 'aaaaaaaaaaaaaaaaaaaaaaaaa!' }), [],
+		'a rejected pattern matches nothing rather than throwing');
+});
+
+test('a rule built by hand still works, so a caller that skips the parser is not broken', () => {
+	// `compiled` is absent rather than null on such a rule, and absent means "work
+	// it out", where null means "already rejected".
+	const byHand = [{ id: 'x', enabled: true, field: 'keyword', op: 'regex', value: 'built', action: 'hide' }];
+	assert.deepEqual(evaluateRules(byHand, { kind: 'post', title: 'I built a thing' }).map(r => r.id), ['x']);
+});
+
 test('filterRules module is registered and uses the utility helpers', () => {
 	const index = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
 	assert.match(index, /import \{ module as filterRules \} from '\.\/filterRules';/);

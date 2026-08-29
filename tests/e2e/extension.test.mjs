@@ -2591,6 +2591,76 @@ test('a current Reddit route change is noticed once, and does not duplicate what
 	await page.close();
 });
 
+test('a live score tick does not re-run the whole preparation for a post', async t => {
+	// Reddit ticks a post's live score as an attribute, and the observer watches
+	// `score` among others. Routing that through the full pass redid eight to ten
+	// attribute copies, five class toggles, six to nine `querySelector` calls and
+	// the shadow-part exposure, per post, per tick — hundreds of times while a
+	// feed hydrates.
+	//
+	// The full pass is observable: it is the only thing that adds `thing link` and
+	// exposes the `rsm-` shadow parts. Taking those away and changing the score is
+	// how to tell which half ran.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+
+	const measured = await page.evaluate(async () => {
+		const post = document.querySelector('shreddit-post');
+		const settle = () => new Promise(resolve => { setTimeout(resolve, 400); });
+
+		// Everything the full pass does, undone.
+		post.classList.remove('thing', 'link');
+		const partsBefore = post.shadowRoot ? post.shadowRoot.querySelectorAll('[part*="rsm-"]').length : 0;
+		if (post.shadowRoot) for (const el of post.shadowRoot.querySelectorAll('[part*="rsm-"]')) el.removeAttribute('part');
+
+		// A score tick, which is the attribute path.
+		post.setAttribute('score', String(Number(post.getAttribute('score') || 0) + 1));
+		await settle();
+
+		const afterTick = {
+			mirroredScore: post.getAttribute('data-score'),
+			fullPassRan: post.classList.contains('thing'),
+			parts: post.shadowRoot ? post.shadowRoot.querySelectorAll('[part*="rsm-"]').length : 0,
+		};
+
+		// And a thing that has never been prepared still gets the full pass, even
+		// when the first thing that happens to it is an attribute change.
+		const fresh = document.createElement('shreddit-post');
+		fresh.id = 't3_fresh1';
+		fresh.setAttribute('author', 'someone');
+		document.querySelector('shreddit-feed').append(fresh);
+		await settle();
+		fresh.setAttribute('score', '5');
+		await settle();
+
+		return {
+			partsBefore,
+			afterTick,
+			fresh: {
+				compat: fresh.hasAttribute('data-res-shreddit-compat'),
+				prepared: fresh.classList.contains('thing'),
+				mirroredScore: fresh.getAttribute('data-score'),
+			},
+		};
+	});
+
+	assert.ok(measured.partsBefore > 0, 'the shadow parts have to have been there, or removing them proves nothing');
+	assert.equal(measured.afterTick.mirroredScore !== null, true, 'the cheap half still has to mirror the new score');
+	assert.equal(measured.afterTick.fullPassRan, false, 'a score tick must not re-run the full preparation');
+	assert.equal(measured.afterTick.parts, 0, 'and must not re-expose the shadow parts');
+
+	assert.equal(measured.fresh.compat, true, 'a thing that arrives still gets the full pass');
+	assert.equal(measured.fresh.prepared, true);
+	assert.equal(measured.fresh.mirroredScore, '5', 'and its later attribute changes are still mirrored');
+
+	await page.close();
+});
+
 test('two tabs cannot shred the same account at once', async t => {
 	// The guard this replaces was a tab-local boolean, which by construction could
 	// never see the tab that matters. Nothing in a page can arbitrate this: old

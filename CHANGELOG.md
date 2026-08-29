@@ -4,6 +4,23 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- A filter rule's regular expression is compiled once when the rules are parsed
+  rather than once per rule per post. The catastrophic-pattern check and
+  `new RegExp` ran inside the per-post evaluation, and the shipped default rule
+  set contains an enabled regex rule, so that was everyone's default path: about
+  two thousand compilations across a thousand-post scroll for a pattern that
+  never changed. A malformed or catastrophic pattern is still refused, now at
+  parse time, and still matches nothing rather than throwing mid-filter.
+- A live score tick on current Reddit no longer re-runs a post's whole
+  preparation. Reddit updates the score as an attribute, and the observer routed
+  that through the full pass — eight to ten attribute copies, five class toggles,
+  up to nine selector queries and the shadow-part exposure, per post, per tick,
+  hundreds of times while a feed hydrates. The attribute path now does only the
+  mirroring it needs. A post that has never been prepared still gets the full
+  pass even if an attribute change is the first thing to reach it.
+
 ### Added
 
 - `yarn publish:release`, the half the release helper deliberately stopped
