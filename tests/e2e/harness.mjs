@@ -87,6 +87,11 @@ export async function launchWithExtension({ timeout = 30000, viewport = { width:
 		// network stack and is unaffected, which is exactly the line being drawn:
 		// intercepted is fine, outbound is not.
 		'--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1',
+		// Hiding a post has to stop what it was playing, and proving that needs
+		// something actually playing. Chromium blocks `play()` without a user
+		// gesture even for muted media, so a fixture cannot start audio at all
+		// without this. Nothing in the suite depends on autoplay being blocked.
+		'--autoplay-policy=no-user-gesture-required',
 	];
 
 	if (HEADED) {

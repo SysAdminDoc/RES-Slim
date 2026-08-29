@@ -2399,6 +2399,121 @@ test('the host toggle keeps the tab on current Reddit until it goes back', async
 	}));
 });
 
+test('hiding a filtered post stops what it was playing, and the softer actions do not', async t => {
+	// `display: none` takes a post out of the layout and does nothing to its
+	// audio, so a filtered post kept playing with nothing on screen to pause it.
+	// This drives real playback in a real browser: "the pause call is written"
+	// and "the sound stops" are different claims, and only one of them is the bug.
+	//
+	// The ordering matters and is why the rows are built detached and appended
+	// after they are confirmed playing. Served in the document, the filter reaches
+	// the hidden one before its media pipeline ever starts, and it reads as paused
+	// because it never played — which would pass for the wrong reason.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { filterRules: true },
+			'RESoptions.filterRules': {
+				rulesJson: {
+					value: JSON.stringify([
+						{ id: 'r-hide', field: 'keyword', op: 'contains', value: 'HIDEME', action: 'hide', enabled: true },
+						{ id: 'r-dim', field: 'keyword', op: 'contains', value: 'DIMME', action: 'dim', enabled: true },
+						{ id: 'r-badge', field: 'keyword', op: 'contains', value: 'BADGEME', action: 'badge', enabled: true },
+					]),
+				},
+			},
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => route.fulfill({
+		status: 200,
+		contentType: 'text/html; charset=utf-8',
+		body: servableCapture(),
+	}));
+	await page.goto('https://old.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+
+	const state = await page.evaluate(async () => {
+		// A short silent WAV built in the page, so nothing is fetched and the
+		// harness's blackholed DNS is never in the way.
+		const samples = 8000;
+		const bytes = new Uint8Array(44 + samples);
+		const view = new DataView(bytes.buffer);
+		const ascii = (offset, text) => { Array.from(text).forEach((ch, i) => view.setUint8(offset + i, ch.charCodeAt(0))); };
+		ascii(0, 'RIFF'); view.setUint32(4, 36 + samples, true); ascii(8, 'WAVEfmt ');
+		view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+		view.setUint32(24, 8000, true); view.setUint32(28, 8000, true);
+		view.setUint16(32, 1, true); view.setUint16(34, 8, true);
+		ascii(36, 'data'); view.setUint32(40, samples, true); bytes.fill(128, 44);
+		let binary = '';
+		for (const b of bytes) binary += String.fromCharCode(b);
+		const src = `data:audio/wav;base64,${btoa(binary)}`;
+
+		const listing = document.querySelector('.sitetable.linklisting');
+		if (!listing) throw new Error('the capture has no listing to file posts into');
+
+		const made = [['t3_hide9', 'HIDEME'], ['t3_dim9', 'DIMME'], ['t3_badge9', 'BADGEME']].map(([id, word]) => {
+			const thing = document.createElement('div');
+			thing.className = 'thing link';
+			thing.setAttribute('data-fullname', id);
+			thing.setAttribute('data-type', 'link');
+			thing.innerHTML =
+				'<div class="entry unvoted">' +
+				`<p class="title"><a class="title" href="/r/example/comments/${id}/x/">a post about ${word} things</a></p>` +
+				'<p class="tagline"><a class="author" href="/user/someone">someone</a></p>' +
+				'</div>';
+			const audio = document.createElement('audio');
+			audio.loop = true;
+			audio.muted = true;
+			audio.src = src;
+			thing.append(audio);
+			return { id, thing, audio };
+		});
+
+		// Playing first, while still detached, so nothing can hide them before the
+		// media pipeline has started.
+		await Promise.all(made.map(({ audio }) => new Promise((resolve, reject) => {
+			audio.addEventListener('playing', resolve, { once: true });
+			audio.play().catch(reject);
+			setTimeout(() => reject(new Error('the fixture audio never started')), 10000);
+		})));
+		const startedPlaying = made.every(({ audio }) => !audio.paused);
+
+		// Now let the Thing watcher see them, which is what runs the filter.
+		for (const { thing } of made) listing.append(thing);
+		await new Promise(resolve => { setTimeout(resolve, 3000); });
+
+		const read = ({ thing, audio }) => ({
+			display: getComputedStyle(thing).display,
+			opacity: getComputedStyle(thing).opacity,
+			paused: audio.paused,
+			currentTime: audio.currentTime,
+			badge: !!thing.querySelector('.rsm-filter-badge'),
+		});
+		return { startedPlaying, hidden: read(made[0]), dimmed: read(made[1]), badged: read(made[2]) };
+	});
+
+	assert.equal(state.startedPlaying, true, 'all three fixtures have to be playing for any of this to mean anything');
+	assert.ok(state.hidden.currentTime > 0, 'the hidden post must have got past the start line before it was filtered');
+
+	assert.equal(state.hidden.display, 'none', 'the hide rule must still hide the post');
+	assert.equal(state.hidden.paused, true, 'a hidden post must not keep playing');
+
+	// The softer actions are not a hide, and must not behave like one.
+	assert.notEqual(state.dimmed.display, 'none', 'dim is not hide');
+	assert.equal(state.dimmed.opacity, '0.45');
+	assert.equal(state.dimmed.paused, false, 'dimming a post must not silence it');
+
+	assert.notEqual(state.badged.display, 'none', 'badge is not hide');
+	assert.equal(state.badged.badge, true, 'the badge action must still add its badge');
+	assert.equal(state.badged.paused, false, 'badging a post must not silence it');
+
+	await page.close();
+});
+
 test('two tabs cannot shred the same account at once', async t => {
 	// The guard this replaces was a tab-local boolean, which by construction could
 	// never see the tab that matters. Nothing in a page can arbitrate this: old

@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Hiding a post left an expando's embedded player running. Pausing a `<video>`
+  reaches the media the page owns, and nothing else: an expando this extension
+  opened holds its own player, which knows the pause command its host
+  understands. Hiding now collapses those through the same lifecycle a manual
+  collapse uses, so unhiding rebuilds them. A third-party frame nobody declared a
+  pause command for is deliberately left alone — the only generic way to stop one
+  is to drop or reload it, and a filter hides a post you may unhide a moment
+  later.
+
 - Old Reddit's endless scroll could show the same post twice, and drew a "page
   loaded" separator over nothing when a whole page was overlap. Reddit's `after`
   cursor overlaps by design, and a post that moves up the listing between two
