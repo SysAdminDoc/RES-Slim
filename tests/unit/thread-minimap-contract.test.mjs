@@ -35,7 +35,14 @@ test('threadMinimap paints one stripe per .thing.comment and jumps on click', ()
 test('threadMinimap supports a scroll-tracking viewport rectangle', () => {
 	const source = read('lib/modules/threadMinimap.js');
 	assert.match(source, /function updateViewport\(\)/);
-	assert.match(source, /window\.addEventListener\('scroll', updateViewport/);
+	// Frame-throttled since the reflow pass: a scroll fires far more often than
+	// the display refreshes, and the handler only moves one element. The listener
+	// is the throttle, not the update itself.
+	assert.match(source, /window\.addEventListener\('scroll', frameThrottledViewport/);
+	assert.match(source, /requestAnimationFrame\(/);
+	// And it reads a cached document height rather than measuring one per event,
+	// for a value that cannot change during a scroll.
+	assert.match(source, /const docHeight = cachedDocHeight;/);
 });
 
 test('threadMinimap CSS partial is imported from res.scss', () => {

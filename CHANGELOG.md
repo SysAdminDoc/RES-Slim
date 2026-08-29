@@ -34,6 +34,16 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The thread minimap forced a layout per comment, every time it rebuilt. It read
+  each comment's rectangle and appended that comment's stripe in the same loop,
+  so every read had to flush the previous write — and the whole rail is rebuilt
+  200ms after any mutation anywhere in the comment area, which includes every
+  class this extension toggles on any comment. Rectangles are now read in one
+  pass, the stripes are built off-document and attached once, a single delegated
+  listener on the rail replaces one per stripe, and the scroll handler is
+  frame-throttled against a cached document height instead of measuring one on
+  every event.
+
 - Six defects in the route-aware lifecycle, found by an adversarial review of
   the change that introduced it. A route change between `DOMContentLoaded` and
   `load` ran `afterLoad` for every eligible module and then `load` ran them all

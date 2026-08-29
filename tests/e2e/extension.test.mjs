@@ -2729,6 +2729,78 @@ test('a route change during load does not run a page stage twice for the same mo
 	await page.close();
 });
 
+test('the thread minimap attaches its stripes in one batch, not one at a time', async t => {
+	// `render()` read `getBoundingClientRect()` and appended a stripe in the same
+	// loop, so each read forced a synchronous reflow against the previous append.
+	// The whole rail is rebuilt 200ms after any mutation anywhere in the comment
+	// area — every filter toggle, every "load more comments" batch — so on a large
+	// thread that is thousands of forced reflows, repeatedly.
+	//
+	// The read side cannot be watched from here: the content script has its own
+	// `Element.prototype`, so patching the page's does not see its calls. The
+	// batching can be. A stripe-at-a-time render produces one childList record
+	// per stripe; a fragment produces one record carrying all of them, which is
+	// the same thing the interleaving cost was made of.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({ 'RES.modulePrefs': { threadMinimap: true } }, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => route.fulfill({
+		status: 200,
+		contentType: 'text/html; charset=utf-8',
+		body: servableCapture(),
+	}));
+	await page.goto('https://old.reddit.com/r/example/comments/fixture1/x/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForSelector('.rsm-thread-minimap-rail', { timeout: 30000 });
+
+	const observed = await page.evaluate(async () => {
+		const area = document.querySelector('.commentarea');
+		const rail = document.querySelector('.rsm-thread-minimap-rail');
+
+		// Sixty comments, so one record per stripe would be unmistakable.
+		const bulk = document.createDocumentFragment();
+		for (const i of Array.from({ length: 60 }, (_, n) => n)) {
+			const c = document.createElement('div');
+			c.className = 'thing comment rsm-bulk';
+			c.dataset.fullname = `t1_bulk${i}`;
+			c.style.height = '40px';
+			c.innerHTML = '<div class="entry"><p class="tagline"><span class="score unvoted">1 point</span></p></div>';
+			bulk.append(c);
+		}
+		area.append(bulk);
+		await new Promise(resolve => { setTimeout(resolve, 800); });
+
+		// Record exactly one rebuild.
+		const batches = [];
+		const observer = new MutationObserver(records => {
+			for (const record of records) {
+				if (record.addedNodes.length) batches.push(record.addedNodes.length);
+			}
+		});
+		observer.observe(rail, { childList: true });
+
+		area.append(Object.assign(document.createElement('span'), { className: 'rsm-poke' }));
+		await new Promise(resolve => { setTimeout(resolve, 900); });
+		observer.disconnect();
+
+		return { batches, stripes: rail.children.length };
+	});
+
+	assert.ok(observed.stripes >= 60, `expected a stripe per comment, saw ${observed.stripes}`);
+
+	// One record carrying every stripe, rather than sixty records of one.
+	assert.equal(observed.batches.length, 1, `the stripes must be attached in one batch, saw ${observed.batches.length} insertions`);
+	assert.ok(observed.batches[0] >= 60,
+		`the single batch must carry every stripe, it carried ${observed.batches[0]} of ${observed.stripes}`);
+
+	await page.close();
+});
+
 test('two tabs cannot shred the same account at once', async t => {
 	// The guard this replaces was a tab-local boolean, which by construction could
 	// never see the tab that matters. Nothing in a page can arbitrate this: old
