@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- An `i.redd.it` expando now loads the original image instead of reddit's signed
+  preview. The preview is re-encoded to webp, so an expando showed a lossy copy
+  at whatever size reddit felt like serving, and saving it wrote webp bytes into
+  a file named `.png` because the signed URL's path still ends in `.png`. Images
+  past 24 megapixels keep showing the preview, which is what was capping the
+  bytes an expando pulls inline, but the save control is pointed at the original
+  either way. A crosspost reads all of this from the parent post, the same one
+  its preview already came from.
 - A filter rule's regular expression is compiled once when the rules are parsed
   rather than once per rule per post. The catastrophic-pattern check and
   `new RegExp` ran inside the per-post evaluation, and the shipped default rule

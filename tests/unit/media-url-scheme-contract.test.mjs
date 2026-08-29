@@ -97,10 +97,17 @@ test('an image host cannot smuggle a scheme through src or href', () => {
 		() => assertSafeMediaUrls({ type: 'IMAGE', src: 'https://i.redd.it/a.jpg', href: SCRIPT_URL }, PAGE),
 		/unsupported URL scheme/,
 	);
+	// Nor through the field that only the save control reads. It is the one a
+	// reader never sees before clicking it, which makes it the easiest to forget.
+	assert.throws(
+		() => assertSafeMediaUrls({ type: 'IMAGE', src: 'https://i.redd.it/a.jpg', downloadSrc: SCRIPT_URL }, PAGE),
+		/unsupported URL scheme/,
+	);
 	assert.doesNotThrow(() => assertSafeMediaUrls({
 		type: 'IMAGE',
 		src: 'https://i.redd.it/a.jpg',
 		href: 'https://i.redd.it/a.jpg',
+		downloadSrc: 'https://i.redd.it/a.jpg',
 	}, PAGE));
 });
 
@@ -145,7 +152,7 @@ test('a gallery is checked piece by piece', () => {
 test('every URL-bearing field of every media type is collected', () => {
 	// A field this misses is a field the guard silently skips, which is how a
 	// checker like this stops being one.
-	assert.deepEqual(mediaUrls({ type: 'IMAGE', src: 'a', href: 'b' }), ['a', 'b']);
+	assert.deepEqual(mediaUrls({ type: 'IMAGE', src: 'a', href: 'b', downloadSrc: 'c' }), ['a', 'b', 'c']);
 	assert.deepEqual(
 		mediaUrls({
 			type: 'VIDEO',
