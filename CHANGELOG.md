@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Old Reddit's endless scroll could show the same post twice, and drew a "page
+  loaded" separator over nothing when a whole page was overlap. Reddit's `after`
+  cursor overlaps by design, and a post that moves up the listing between two
+  fetches is served twice. The repeat was removed after being fetched, parsed,
+  inserted and registered, which is the wrong layer to rely on alone. The append
+  loop now compares against the fullnames already on the page and skips what it
+  has, keeps rows that carry no usable id rather than guessing, and emits a
+  separator only for a page that actually added something.
+
 - The optional-permission prompt could not work on Firefox. It opened in an
   extension popup window, and Firefox refuses `permissions.request()` from one
   (Mozilla Bug 1957822), so the window appeared and then could not do the single
