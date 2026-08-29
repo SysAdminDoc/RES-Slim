@@ -236,10 +236,22 @@ async function main() {
 		// The native permission panel itself is browser chrome. BiDi drives content,
 		// not chrome, so the grant click is not automatable from here — the tab is
 		// the part that was wrong and the part this can prove.
+		//
+		// Both spellings of the flag: `active: true` only becomes `active:!0` once
+		// esbuild minifies, and `build.js` minifies for production only — so
+		// matching the minified form alone failed on exactly the development build
+		// the missing-build message above tells you to make.
+		//
+		// What this proves is that the Firefox bundle carries the tab path at all.
+		// It cannot prove the popup path is gone: esbuild leaves the losing branch
+		// in place as unreachable code rather than deleting it, so the string
+		// `type: "popup"` is still in a production bundle. Which branch actually
+		// runs is proven by `permission-prompt-surface-contract`, which executes
+		// the module against a fake `chrome` under each build target.
 		const background = fs.readFileSync(path.join(buildDir, 'background.entry.js'), 'utf8');
-		const opensATab = /tabs\.create/.test(background) && /active:\s*!0/.test(background);
-		record('the permission prompt opens a normal tab, not the popup window Firefox refuses', opensATab,
-			opensATab ? 'tabs.create({ active: true }) is the surviving branch' : 'the built background has no active-tab prompt path');
+		const opensATab = /tabs\.create/.test(background) && /active:\s*(?:true|!0)/.test(background);
+		record('the permission prompt carries the normal-tab path Firefox needs', opensATab,
+			opensATab ? 'tabs.create with an active flag is in the built background' : 'the built background has no active-tab prompt path');
 	} finally {
 		await browser.close();
 		server.close();

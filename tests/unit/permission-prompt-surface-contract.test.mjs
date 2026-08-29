@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
+import { codeOnly, loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 // Firefox rejects `permissions.request()` when the calling document is in an
 // extension popup window (Mozilla Bug 1957822, still open; upstream RES issue
@@ -194,13 +194,28 @@ test('the prompt page awaits the request and reports the resolved answer', () =>
 	// denied. Both are silent — the prompt closes and the caller believes it.
 	const source = readRepoFile('lib/environment/background/permissions/prompt.entry.js');
 
-	assert.match(source, /const granted = await chrome\.permissions\.request\(/, 'the request has to be awaited before it is read');
+	// Callback first, promise second. Chrome MV3 returns a promise; Firefox's
+	// `chrome` namespace is the callback-style alias, so awaiting its return value
+	// yields `undefined`, `Boolean(undefined)` is false, and every grant is
+	// reported to the opener as a denial — silently, on the browser this whole
+	// change was made for.
+	assert.match(source, /chrome\.permissions\.request\(\{ permissions, origins \}, result =>/, 'a callback has to be passed, or Firefox never answers');
+	assert.match(source, /typeof returned\.then === 'function'/, 'and a promise return has to be honoured, or Chrome never answers');
+	assert.match(source, /const granted = await requestPermissions\(\);/, 'the request has to be awaited before it is read');
+	// Against code, not prose: the comment explaining this failure names the very
+	// call it forbids, so the unstripped source contains it either way.
+	assert.match(source, /await chrome\.permissions\.request\(/, 'the comment naming the trap must be there for the stripper to have something to remove');
+	assert.ok(
+		!/await chrome\.permissions\.request\(/.test(codeOnly(source)),
+		'awaiting the raw call assumes a promise Firefox does not return',
+	);
 	assert.match(source, /finishPrompt\(Boolean\(granted\)\)/, 'the resolved answer is what the opener is told, coerced once');
 	assert.ok(
 		!/finishPrompt\(chrome\.permissions\.request\(/.test(source),
 		'a Promise handed to finishPrompt is truthy, which grants everything',
 	);
 	// The request must carry both halves. Sending one and reading the other is
-	// how a prompt asks for nothing and reports success.
-	assert.match(source, /chrome\.permissions\.request\(\{ permissions, origins \}\)/);
+	// how a prompt asks for nothing and reports success. Matched without pinning
+	// what follows the object, since the call also takes a callback.
+	assert.match(source, /chrome\.permissions\.request\(\{ permissions, origins \}/);
 });

@@ -7,6 +7,7 @@ installDom();
 
 const cs = await loadFlowModule('lib/utils/commentShredder.js', 'comment-shredder');
 const { summariseOutcome } = cs;
+const { SHRED_LEASE_HEARTBEAT_MS } = await loadFlowModule('lib/utils/shredLease.js', 'shred-lease-heartbeat', { deps: ['lib/utils/userTags.js'] });
 const mod = readRepoFile('lib/modules/commentShredder.js');
 
 const DAY = 86400000;
@@ -345,6 +346,18 @@ function grantingLease() {
 	};
 }
 
+// Grants once, then reports the account lost on every renew. The run is expected
+// to notice and stop itself.
+function losingLease() {
+	const calls = [];
+	return {
+		calls,
+		acquire() { calls.push('acquire'); return Promise.resolve({ ok: true, token: 'token-1' }); },
+		renew(state) { calls.push(`renew:${state}`); return Promise.resolve(false); },
+		release() { calls.push('release'); return Promise.resolve(); },
+	};
+}
+
 function refusingLease(owner = { sameTab: false, state: 'running', runningForMs: 65000 }) {
 	const calls = [];
 	return {
@@ -520,6 +533,77 @@ test('a failed run hands the account back', async () => {
 	await settle();
 	assert.ok(lease.calls.includes('release'), 'a crashed run must not hold the account until the TTL expires');
 
+	ui.host.remove();
+});
+
+test('losing the account mid-run stops the run rather than deleting alongside another tab', async () => {
+	// The failure this guards against is two tabs issuing edit and delete requests
+	// for one account at the same time. A run that loses its lease and carries on
+	// is that state, and the run that noticed is the only thing that can end it.
+	let handed = null;
+	const lease = losingLease();
+	const ui = panelInNotification(3, controls => { handed = controls; }, lease);
+	await ui.start();
+	assert.ok(handed);
+	assert.equal(handed.shouldStop(), false, 'nothing has gone wrong yet');
+
+	// One heartbeat.
+	await new Promise(resolve => { setTimeout(resolve, SHRED_LEASE_HEARTBEAT_MS + 50); });
+
+	assert.ok(lease.calls.some(c => c.startsWith('renew')), 'the run has to be renewing at all');
+	assert.equal(handed.shouldStop(), true, 'a lost account must stop the loop the same way the Stop button does');
+
+	// And the outcome says why, rather than reporting a stop the user did not ask for.
+	handed.finish('Overwrote 1, deleted 1.');
+	await settle();
+	assert.match(ui.status.textContent, /another tab took over/i);
+
+	ui.host.remove();
+});
+
+test('typing in the confirmation box during the lease check cannot start a second run', async () => {
+	// The button is re-enabled on every `input` event. During the await for the
+	// background's answer that let a second click through, and its refusal — which
+	// lands after the first run has begun — overwrote the live progress line and
+	// handed the button back mid-run.
+	let handed = 0;
+	let controls = null;
+	let resolveAcquire = null;
+	const slowLease = {
+		calls: [],
+		acquire() {
+			slowLease.calls.push('acquire');
+			return new Promise(resolve => { resolveAcquire = resolve; });
+		},
+		renew() { return Promise.resolve(true); },
+		release() { return Promise.resolve(); },
+	};
+
+	const ui = panelInNotification(3, c => { handed += 1; controls = c; }, slowLease);
+	ui.confirm.value = 'DELETE';
+	ui.confirm.dispatchEvent(new Event('input', { bubbles: true }));
+	ui.go.click();
+	await settle();
+
+	assert.equal(ui.go.disabled, true, 'the button must stay disabled while the answer is outstanding');
+	// The event that used to re-enable it.
+	ui.confirm.dispatchEvent(new Event('input', { bubbles: true }));
+	assert.equal(ui.go.disabled, true, 'typing must not re-arm a start that is already in flight');
+
+	ui.go.click();
+	await settle();
+	assert.deepEqual(slowLease.calls, ['acquire'], 'a second click must not ask for the account again');
+
+	resolveAcquire({ ok: true, token: 'token-1' });
+	await settle();
+	assert.equal(handed, 1, 'exactly one run may be handed the controls');
+	assert.equal(ui.go.disabled, true, 'the button stays disabled for the duration of the run');
+	assert.match(ui.status.textContent, /0 of 3/, 'the live progress line must survive');
+
+	// Ends the run, which clears the heartbeat. A live interval outlives the test
+	// and holds the whole file open with no subtest to point at.
+	controls.finish('done');
+	await settle();
 	ui.host.remove();
 });
 

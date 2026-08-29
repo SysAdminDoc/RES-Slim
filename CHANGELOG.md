@@ -6,6 +6,18 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- A shred run that lost its account kept deleting. The heartbeat renewed the
+  lease and threw the answer away, so a run whose lease had gone — to a service
+  worker restart, or to timer throttling in a background tab outrunning the
+  expiry — carried on issuing edits and deletes while another tab held the
+  account. That is the exact overlap the lease exists to prevent. A heartbeat
+  that cannot hold the account now re-asserts once, and stops the run between
+  comments if the account really has been taken, saying so in the outcome.
+- Typing in a shred panel's confirmation box while it was asking the background
+  whether another run was going re-enabled the Shred button. The second click's
+  refusal landed after the first run had started and overwrote its live progress
+  line with "another run is already going", then handed the button back mid-run.
+
 - Hiding a post left an expando's embedded player running. Pausing a `<video>`
   reaches the media the page owns, and nothing else: an expando this extension
   opened holds its own player, which knows the pause command its host
