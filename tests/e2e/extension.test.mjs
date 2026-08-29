@@ -2421,6 +2421,7 @@ test('hiding a filtered post stops what it was playing, and the softer actions d
 						{ id: 'r-hide', field: 'keyword', op: 'contains', value: 'HIDEME', action: 'hide', enabled: true },
 						{ id: 'r-dim', field: 'keyword', op: 'contains', value: 'DIMME', action: 'dim', enabled: true },
 						{ id: 'r-badge', field: 'keyword', op: 'contains', value: 'BADGEME', action: 'badge', enabled: true },
+						{ id: 'r-collapse', field: 'keyword', op: 'contains', value: 'COLLAPSEME', action: 'collapse', enabled: true },
 					]),
 				},
 			},
@@ -2455,7 +2456,7 @@ test('hiding a filtered post stops what it was playing, and the softer actions d
 		const listing = document.querySelector('.sitetable.linklisting');
 		if (!listing) throw new Error('the capture has no listing to file posts into');
 
-		const made = [['t3_hide9', 'HIDEME'], ['t3_dim9', 'DIMME'], ['t3_badge9', 'BADGEME']].map(([id, word]) => {
+		const made = [['t3_hide9', 'HIDEME'], ['t3_dim9', 'DIMME'], ['t3_badge9', 'BADGEME'], ['t3_collapse9', 'COLLAPSEME']].map(([id, word]) => {
 			const thing = document.createElement('div');
 			thing.className = 'thing link';
 			thing.setAttribute('data-fullname', id);
@@ -2493,7 +2494,7 @@ test('hiding a filtered post stops what it was playing, and the softer actions d
 			currentTime: audio.currentTime,
 			badge: !!thing.querySelector('.rsm-filter-badge'),
 		});
-		return { startedPlaying, hidden: read(made[0]), dimmed: read(made[1]), badged: read(made[2]) };
+		return { startedPlaying, hidden: read(made[0]), dimmed: read(made[1]), badged: read(made[2]), collapsed: read(made[3]) };
 	});
 
 	assert.equal(state.startedPlaying, true, 'all three fixtures have to be playing for any of this to mean anything');
@@ -2510,6 +2511,13 @@ test('hiding a filtered post stops what it was playing, and the softer actions d
 	assert.notEqual(state.badged.display, 'none', 'badge is not hide');
 	assert.equal(state.badged.badge, true, 'the badge action must still add its badge');
 	assert.equal(state.badged.paused, false, 'badging a post must not silence it');
+
+	// `collapse` has no native affordance for a post on old Reddit, so the module
+	// treats it as dim rather than dropping the rule silently. Either way it is
+	// not a hide.
+	assert.notEqual(state.collapsed.display, 'none', 'collapse is not hide');
+	assert.equal(state.collapsed.opacity, '0.45');
+	assert.equal(state.collapsed.paused, false, 'collapsing a post must not silence it');
 
 	await page.close();
 });
@@ -4211,7 +4219,11 @@ const SHREDDIT_A11Y_MODULES = Object.fromEntries([
 
 function shredditInjectedRoots(page) {
 	return page.evaluate(() => {
-		const SURFACE = '[id^="rsm-"], [class*="rsm-"]';
+		// Both prefixes this extension injects under. `res-slim-` is the older one
+		// and still names live controls — the absolute-timestamp span among them —
+		// so a sweep of only `rsm-` misses them unless some other module happens to
+		// pull them into scope.
+		const SURFACE = '[id^="rsm-"], [class*="rsm-"], [id^="res-slim-"], [class*="res-slim-"]';
 		// `<html>` carries rsm-root and the theme classes, and `<body>` carries the
 		// module body classes, so both match SURFACE and would scope axe to the
 		// whole reddit page — the opposite of what this is for.

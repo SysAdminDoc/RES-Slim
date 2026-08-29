@@ -17,6 +17,24 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Hiding a post could destroy an embed instead of quietening it. Routing the
+  hide path through the expando collapse lifecycle inherited that lifecycle's
+  fallback: four of the thirty-five iframe hosts declare a pause command, and for
+  the other thirty-one — CodePen, JSFiddle, Pastebin, the poll hosts, Twitch —
+  collapse removes the frame. That is right when the reader asked for it and
+  re-expanding rebuilds; it is wrong for a filter, which takes an in-progress
+  edit or a filled-in poll with it and gives nothing back. Hiding now asks for a
+  collapse that keeps content, so a frame with no pause command is left exactly
+  where it was.
+- A back/forward-cache restore left old Reddit without its per-post work. The
+  page signal was aborted on any `pagehide`, including one that only puts the
+  page into the cache — and the document comes back with that signal still
+  aborted, so the two waits that register a post's visible tasks failed before
+  observing anything. Nothing appended after a restore got an expando, a filter,
+  or a vote colour. Only a real teardown aborts now, and both waits swallow their
+  own cancellation rather than raising an unhandled rejection per pending post on
+  every navigation away.
+
 - Two contrast failures on the light Classic palette, found by putting current
   Reddit's injected controls under an automated WCAG sweep for the first time.
   Absolute timestamps were faded with `opacity: 0.75`, which took reddit's own

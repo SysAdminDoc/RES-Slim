@@ -295,14 +295,31 @@ test('waitForEvent removes every listener it installed, not just the winner', as
 	assert.deepEqual([...installed.entries()].sort(), [['error', 0], ['load', 0]]);
 });
 
-test('waitForEvent can be bounded and aborted like every other waiter', async () => {
-	const el = element();
-	await assert.rejects(dom.waitForEventWith(el, ['click'], { timeout: 20 }), /Timed out/);
+test('waitForEvent can be bounded and aborted, and lets go of its listeners either way', async () => {
+	// Asserting only that the promise rejects would leave a dropped `disconnect()`
+	// on the timeout and abort paths invisible, which is the same shape as the
+	// leak this whole change is about.
+	const counted = () => {
+		const el = element();
+		const live = new Map();
+		const add = el.addEventListener.bind(el);
+		const remove = el.removeEventListener.bind(el);
+		el.addEventListener = (type, fn, opts) => { live.set(type, (live.get(type) || 0) + 1); add(type, fn, opts); };
+		el.removeEventListener = (type, fn, opts) => { live.set(type, (live.get(type) || 0) - 1); remove(type, fn, opts); };
+		return { el, live };
+	};
 
+	const timedOut = counted();
+	await assert.rejects(dom.waitForEventWith(timedOut.el, ['click', 'keydown'], { timeout: 20 }), /Timed out/);
+	assert.deepEqual([...timedOut.live.values()], [0, 0], 'a timed-out wait must remove every listener it installed');
+
+	const aborted = counted();
 	const controller = new AbortController();
-	const waiting = dom.waitForEventWith(el, ['click'], { signal: controller.signal, timeout: Infinity });
+	const waiting = dom.waitForEventWith(aborted.el, ['click', 'keydown'], { signal: controller.signal, timeout: Infinity });
+	assert.deepEqual([...aborted.live.values()], [1, 1]);
 	controller.abort();
 	await assert.rejects(waiting, e => dom.isAbortError(e));
+	assert.deepEqual([...aborted.live.values()], [0, 0], 'an aborted wait must remove every listener it installed');
 });
 
 test('core installs the page signal the open-ended waiters hang off', () => {
@@ -312,6 +329,19 @@ test('core installs the page signal the open-ended waiters hang off', () => {
 	const init = readRepoFile('lib/core/init.js');
 	assert.match(init, /setPageSignal\(pageSignal\)/, 'the signal has to actually be installed');
 	assert.match(init, /pagehide/, 'and aborted when the document goes away');
+	// A `pagehide` into the back/forward cache is not the document going away.
+	// Aborting there leaves the signal aborted after the restore, and `waitWith`
+	// rejects immediately on an already-aborted signal — so the two waits in
+	// `watchers.js` would fail before observing anything, and nothing appended
+	// after a restore would run its visible tasks.
+	assert.match(init, /event\.persisted/, 'a bfcache pagehide must not abort the page signal');
+
+	// Both waits are awaited inside watcher callbacks whose return value is
+	// discarded, so an abort that propagates becomes an unhandled rejection — one
+	// per pending waiter on every navigation away.
+	const watcherSource = readRepoFile('lib/utils/watchers.js');
+	assert.equal((watcherSource.match(/if \(!isAbortError\(e\)\) throw e;/g) || []).length, 2,
+		'both page-signal waits must swallow their own abort and rethrow anything else');
 
 	// By line, not by a balanced-paren regex: the selector these are called with
 	// contains its own parentheses, and a non-greedy match stops inside it.
