@@ -54,15 +54,43 @@ test('the page type is authoritative before anything decides which modules belon
 	assert.match(init, /\.then\(\(\) => \{\}, \(\) => \{\}\)/);
 });
 
-test('both page stages derive from the same gate, or the watcher scan overtakes them', () => {
-	// `initD2xWatcher` defers its first scan by exactly one microtask because the
-	// contentStart and go handlers register their Thing watchers in that same
-	// turn. Gating only one of them puts it a turn later than the scan, and every
-	// module registering a `watchForThings` in `contentStart` misses every post
-	// present at load. Measured: the absolute timestamps stopped appearing.
-	assert.match(init, /const pageReady: Promise<\*> = Promise\.all\(\[beforeLoad, PagePhases\.contentStart\]\)\s*\n\s*\.then\(authoritativePageType\);/);
-	assert.match(init, /export const contentStart: Promise<\*> = pageReady/);
-	assert.match(init, /export const go: Promise<\*> = pageReady/);
+test('the gate sits above beforeLoad, which is the stage that needed it most', () => {
+	// `hideChildComments` and `readComments` have `beforeLoad` as their only stage
+	// and are both comments-scoped, so gating only `contentStart` left them judged
+	// against the path guess: on a `/r/x/s/<id>` share link they ran zero times
+	// rather than once, which is the case this change is named after.
+	assert.match(init, /const pageReady: Promise<\*> = Promise\.all\(\[loadI18n, loadOptions\]\)\s*\n\s*\.then\(authoritativePageType\);/);
+	assert.match(init, /export const beforeLoad: Promise<void> = pageReady/);
+
+	// And `contentStart` and `go` keep the prerequisites they always had, so
+	// their relative order is untouched. Gating one and not the other put
+	// `contentStart` a turn later than `initD2xWatcher`'s first scan, and every
+	// module registering a Thing watcher there missed every post present at load.
+	const prereq = /Promise\.all\(\[beforeLoad, PagePhases\.contentStart\]\)/g;
+	assert.equal((init.match(prereq) || []).length, 2, 'contentStart and go must share their prerequisites');
+});
+
+test('a stage a route change can offer again cannot also be run twice by the ordinary path', () => {
+	// Recording what ran was not enough on its own: `afterLoad` sits behind
+	// `window load`, seconds after `go` on reddit, so a route change in that gap
+	// ran it for every eligible module and then `load` ran all of them again.
+	// Measured with a held-open `load`: five modules ran their `afterLoad` twice,
+	// which is two IntersectionObservers and a second scroll listener from
+	// `showImages` alone.
+	assert.match(modules, /const ROUTE_SCOPED_STAGES = new Set\(\['beforeLoad', 'contentStart', 'go', 'afterLoad'\]\)/);
+	assert.match(modules, /!alreadyRan\(stage, module\.moduleID\)/, 'the ordinary path has to refuse a second run too');
+	// `always` is re-run on option changes by design and must not be caught by it.
+	assert.ok(!/ROUTE_SCOPED_STAGES = new Set\(\[[^\]]*'always'/.test(modules));
+});
+
+test('work a route change starts is bound to that route, not to the page', () => {
+	// `getRouteSignal` existed and nothing passed it, so the scope was aborted on
+	// every navigation with no subscribers — structurally present, behaviourally a
+	// no-op. A module that became eligible at one route kept its watchers running
+	// at the next, where it was no longer eligible.
+	const runner = modules.slice(modules.indexOf('export async function _runNewlyEligibleStage'));
+	assert.match(runner, /await fn\(routeController\.signal\)/, 'the route stages have to be handed the route signal');
+	assert.ok(!/await fn\(lifecycleController\.signal\)/.test(runner), 'the page-length signal outlives the route');
 });
 
 test('a route change aborts the previous route scope and starts a new one', () => {
@@ -86,14 +114,33 @@ test('only modules that have newly become eligible get a second page stage', () 
 	// every module as new.
 	assert.match(modules, /stagesRun\.add\(`\$\{stage\}\|\$\{module\.moduleID\}`\)/);
 
-	for (const stage of ['contentStart', 'go', 'afterLoad']) {
-		assert.match(init, new RegExp(`_runNewlyEligibleStage\\('${stage}'\\)`), `${stage} is page-scoped and has to be offered again`);
+	// Named in the loop the route handler walks, rather than as four calls.
+	for (const stage of ['beforeLoad', 'contentStart', 'go', 'afterLoad']) {
+		assert.match(init, new RegExp(`'${stage}'`), `${stage} is page-scoped and has to be offered again`);
 	}
-	// `always` and `beforeLoad` are not page-scoped and must not be re-run here:
-	// `always` is re-run on option changes by a different path entirely.
+	// `always` is re-run on option changes by a different path entirely and must
+	// not be offered here. `beforeLoad` is offered, because two comments-scoped
+	// modules have it as their only stage and would otherwise never run on a page
+	// they only became eligible for after a navigation.
 	const routeBlock = init.slice(init.indexOf('document.addEventListener(\'reddit.urlChanged\''));
-	assert.ok(!/_runNewlyEligibleStage\('always'\)/.test(routeBlock));
-	assert.ok(!/_runNewlyEligibleStage\('beforeLoad'\)/.test(routeBlock));
+	assert.ok(!/'always'/.test(routeBlock));
+
+	// In order. The ordinary lifecycle guarantees a module's `beforeLoad` finishes
+	// before its `contentStart` starts, and dispatching them together inverts that
+	// for any module owning more than one.
+	assert.match(routeBlock, /for \(const stage of \['beforeLoad', 'contentStart', 'go', 'afterLoad'\]\)/);
+	assert.match(routeBlock, /await _runNewlyEligibleStage\(stage\)/);
+});
+
+test('the full preparation runs when slots arrive, not on every child mutation', () => {
+	// Reddit streams children into an existing post throughout hydration, on a
+	// vote and on an expando change. Re-decorating for a node that brings no slot
+	// re-runs nine selectors and the shadow-part exposure for nothing; a node that
+	// brings one genuinely needs it, because that is the title, credit bar and
+	// flair appearing.
+	assert.match(watcher, /const broughtSlots = root\.matches\('\[slot\]'\) \|\| !!root\.querySelector\('\[slot\]'\);/);
+	assert.match(watcher, /if \(broughtSlots\) prepareShredditThing\(owner\);/);
+	assert.match(watcher, /else refreshShredditThing\(owner\);/);
 });
 
 test('the memoized page type is cleared before the new route is judged', () => {

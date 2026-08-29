@@ -2661,6 +2661,74 @@ test('a live score tick does not re-run the whole preparation for a post', async
 	await page.close();
 });
 
+test('a route change during load does not run a page stage twice for the same module', async t => {
+	// `afterLoad` sits behind `window load`, which on reddit is seconds after
+	// `go`. A route change in that gap ran it for every eligible module, and then
+	// `load` ran all of them again — two IntersectionObservers and a second scroll
+	// listener from `showImages` alone, a second subscription fetch from
+	// `newCommentCount`, and the install greeting twice.
+	//
+	// The measurement is the module timing buffer, which records one entry per
+	// module per stage and is present in a development build.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+
+	// `load` is held open by a document subrequest that never settles, so the
+	// route change lands in the window between `go` and `afterLoad`.
+	let releaseSlowResource;
+	const slowResource = new Promise(resolve => { releaseSlowResource = resolve; });
+	await page.route('**/*', async route => {
+		const url = route.request().url();
+		if (url.includes('rsm-slow-resource')) {
+			await slowResource;
+			return route.fulfill({ status: 200, contentType: 'image/gif', body: '' });
+		}
+		if (route.request().resourceType() === 'document') {
+			return route.fulfill({
+				status: 200,
+				contentType: 'text/html; charset=utf-8',
+				body: staticFixture(SHREDDIT_LISTING)
+					.replace('</body>', '<img src="https://www.reddit.com/rsm-slow-resource.gif" alt=""></body>'),
+			});
+		}
+		return fulfillShredditRequest(route, SHREDDIT_LISTING);
+	});
+
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+
+	// A route change while `load` is still outstanding.
+	await page.evaluate(() => { history.pushState({}, '', '/r/example/comments/fixture1/x/'); });
+	await page.waitForTimeout(1500);
+
+	releaseSlowResource();
+	await page.waitForLoadState('load');
+	await page.waitForTimeout(2500);
+
+	const duplicated = await page.evaluate(() => {
+		const counts = new Map();
+		for (const entry of performance.getEntriesByType('measure')) {
+			// `moduleID (stage)` and `moduleID (stage, route)` are the two spellings.
+			const match = /^(\S+) \((\w+)/.exec(entry.name);
+			if (!match) continue;
+			const key = `${match[1]}|${match[2]}`;
+			counts.set(key, (counts.get(key) || 0) + 1);
+		}
+		return {
+			total: counts.size,
+			repeated: [...counts.entries()].filter(([, n]) => n > 1).map(([key, n]) => `${key} x${n}`),
+		};
+	});
+
+	assert.ok(duplicated.total > 10, `expected module timings to measure against, saw ${duplicated.total}`);
+	assert.deepEqual(duplicated.repeated, [],
+		`a module ran the same page stage more than once: ${duplicated.repeated.join(', ')}`);
+
+	await page.close();
+});
+
 test('two tabs cannot shred the same account at once', async t => {
 	// The guard this replaces was a tab-local boolean, which by construction could
 	// never see the tab that matters. Nothing in a page can arbitrate this: old

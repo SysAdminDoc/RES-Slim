@@ -34,6 +34,20 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Six defects in the route-aware lifecycle, found by an adversarial review of
+  the change that introduced it. A route change between `DOMContentLoaded` and
+  `load` ran `afterLoad` for every eligible module and then `load` ran them all
+  again — measured as two IntersectionObservers and a second scroll listener from
+  the media expander alone. The stage gate did not cover `beforeLoad`, which is
+  the only stage two comments-scoped modules have, so on the delayed-page-type
+  case the change was named for they still ran zero times rather than once. The
+  route scope was aborted on every navigation with nothing subscribed to it,
+  because the stages it started were handed the page-length signal instead. The
+  four stages a route change offers were dispatched together rather than in
+  order. And the full per-post preparation still ran on every child mutation,
+  which reddit produces throughout hydration — it now runs when slotted content
+  actually arrives.
+
 - Old Reddit's endless scroll could stall on a page of pure overlap. Skipping
   every repeated row means such a page changes the DOM by nothing at all, and the
   only thing that asks for another page is an `IntersectionObserver`, which fires
