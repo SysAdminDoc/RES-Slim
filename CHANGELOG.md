@@ -17,6 +17,27 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Current Reddit navigates without ever unloading, and the module lifecycle did
+  not know it. A `pushState` that changed no DOM was invisible — which is the
+  normal case, because reddit swaps the URL before rendering the new view — so
+  only the back button and an incidental mutation were ever noticed. The
+  Navigation API's `navigatesuccess` is now the primary signal, with the observer
+  and `popstate` behind it, and every source runs through one dedupe keyed on the
+  URL plus what reddit says the page is.
+
+  Two consequences follow. A page stage now runs for modules that have only just
+  become eligible, so a module whose `include` finally matches gets its turn
+  instead of sitting the session out; modules that already ran are not run again,
+  which would have duplicated every observer and control they made. And there is
+  a route-length scope beside the page-length one, so work started for the
+  listing you left can be cancelled instead of running against a page that no
+  longer exists.
+
+  Page-scoped stages also wait for reddit's own answer about what the page is
+  before deciding who belongs on it. `/r/x/s/<id>` share links are post pages
+  that match no path pattern, so the fallback called them listings and every
+  comments-scoped module sat them out permanently.
+
 - Hiding a post could destroy an embed instead of quietening it. Routing the
   hide path through the expando collapse lifecycle inherited that lifecycle's
   fallback: four of the thirty-five iframe hosts declare a pause command, and for

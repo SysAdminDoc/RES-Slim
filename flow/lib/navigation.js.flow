@@ -1,0 +1,28 @@
+// Flow 0.84 predates the Navigation API entirely, so `navigation` reads as an
+// unresolved name rather than as a missing method.
+//
+// `navigatesuccess` is the only signal that reports a `pushState` or a
+// `replaceState` without something else changing in the DOM, which is exactly
+// what current Reddit does on a route change: it swaps the URL before the new
+// view renders. Chrome 102 and Edge 102; Firefox does not ship it, which is why
+// every use of it in this repo is guarded and the MutationObserver and
+// `popstate` paths stay in place as the fallback.
+//
+// Verified firing in a content script's isolated world before being relied on.
+// That is not a given here — this extension has already been caught assuming an
+// API was present when `customElements` turned out to be null in the same
+// context, which silently disabled a whole retry path.
+//
+// Sixth libdef in here, same pattern as `intl`, `abort`, `customElements` and
+// `crypto`: the libs directory is where a browser-support decision belongs,
+// because there it is checked once. A cast at the call site asserts the same
+// thing and checks nothing.
+//
+// Deliberately partial. Only the members this repo uses are declared.
+
+declare interface RsmNavigation {
+	addEventListener(type: string, listener: (event: Event) => mixed, options?: any): void;
+	removeEventListener(type: string, listener: (event: Event) => mixed, options?: any): void;
+}
+
+declare var navigation: RsmNavigation | void;

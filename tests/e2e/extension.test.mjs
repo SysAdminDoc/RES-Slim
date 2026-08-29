@@ -2522,6 +2522,75 @@ test('hiding a filtered post stops what it was playing, and the softer actions d
 	await page.close();
 });
 
+test('a current Reddit route change is noticed once, and does not duplicate what is on the page', async t => {
+	// Current Reddit navigates without unloading. A `pushState` that changes no
+	// DOM was invisible to the old detection, which only looked from inside a
+	// MutationObserver and on `popstate` — and reddit swaps the URL before
+	// rendering the new view, so that is the normal case rather than an edge one.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelectorAll('.res-slim-abs-ts').length >= 2, null, { timeout: 30000 });
+
+	const walk = await page.evaluate(async () => {
+		const events = [];
+		document.addEventListener('reddit.urlChanged', () => events.push(location.pathname));
+
+		const timestamps = () => document.querySelectorAll('.res-slim-abs-ts').length;
+		const before = timestamps();
+
+		const settle = () => new Promise(resolve => { setTimeout(resolve, 600); });
+
+		// A pushState that touches nothing else. The old detection could not see
+		// this at all.
+		history.pushState({}, '', '/r/example/comments/fixture1/x/');
+		await settle();
+		const afterPush = events.length;
+
+		// The same URL again is not a new route.
+		history.replaceState({}, '', '/r/example/comments/fixture1/x/');
+		await settle();
+		const afterSameUrl = events.length;
+
+		// A different one is.
+		history.replaceState({}, '', '/user/someone/');
+		await settle();
+		const afterProfile = events.length;
+
+		// And back.
+		history.back();
+		await settle();
+		await settle();
+
+		return {
+			events,
+			afterPush,
+			afterSameUrl,
+			afterProfile,
+			timestampsBefore: before,
+			timestampsAfter: timestamps(),
+			posts: document.querySelectorAll('shreddit-post').length,
+		};
+	});
+
+	assert.ok(walk.afterPush >= 1, 'a pushState with no DOM mutation has to be noticed');
+	assert.equal(walk.afterSameUrl, walk.afterPush, 'replacing a URL with itself is not a new route');
+	assert.ok(walk.afterProfile > walk.afterSameUrl, 'a different route has to be noticed');
+	assert.ok(walk.events.length <= 4, `one event per navigation, saw ${walk.events.length}: ${walk.events.join(', ')}`);
+
+	// The point of the route scope is that walking between pages does not leave
+	// two of everything behind. The absolute timestamps are the cheapest thing to
+	// count: one per post, injected by a module that runs on a page stage.
+	assert.equal(walk.timestampsAfter, walk.timestampsBefore,
+		'walking listing to comments to profile and back duplicated the injected controls');
+
+	await page.close();
+});
+
 test('two tabs cannot shred the same account at once', async t => {
 	// The guard this replaces was a tab-local boolean, which by construction could
 	// never see the tab that matters. Nothing in a page can arbitrate this: old
