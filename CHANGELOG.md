@@ -2,6 +2,25 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Two tabs could shred the same account at once. The guard was a boolean scoped
+  to one tab, which by construction could never see the tab that matters, and
+  the module's own header already described what happens when two runs overlap:
+  they share reddit's per-account write limiter, and the second tries to delete
+  comments the first already deleted, turning a normal outcome into a page of
+  failures reported as untouched. Nothing on the page could arbitrate it either,
+  because old Reddit and current Reddit are different origins.
+
+  A run now takes a lease on the account, held by the extension background,
+  which is the only context both renderers share. It is keyed by the normalized
+  username, renewed while the run goes, released when the run ends, and expires
+  on its own if the tab that held it dies. A second tab is refused, told where
+  the other run is and how long it has been going, and can retry when that run
+  finishes.
+
 ## v0.52.2, 2026-08-28
 
 ### Fixed

@@ -2399,6 +2399,69 @@ test('the host toggle keeps the tab on current Reddit until it goes back', async
 	}));
 });
 
+test('two tabs cannot shred the same account at once', async t => {
+	// The guard this replaces was a tab-local boolean, which by construction could
+	// never see the tab that matters. Nothing in a page can arbitrate this: old
+	// Reddit and current Reddit are different origins, so their lock managers,
+	// storage events and broadcast channels never meet. The background is the only
+	// shared context, and this drives it from two real tabs through the real
+	// message channel.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const openTab = async () => {
+		const page = await context.newPage();
+		await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+		return page;
+	};
+
+	const ask = (page, request) => page.evaluate(data => new Promise(resolve => {
+		chrome.runtime.sendMessage({ type: 'shredLease', data }, response => resolve(response && response.data));
+	}), request);
+
+	const first = await openTab();
+	const second = await openTab();
+
+	// Each tab runs the module's own gate: it only performs the destructive work
+	// if the account is granted to it. The count of sequences that ran is the
+	// thing the acceptance is about.
+	const run = async (page, account) => {
+		const grant = await ask(page, { operation: 'acquire', account, state: 'running' });
+		if (!grant || !grant.ok) return { ran: false, grant };
+		return { ran: true, grant };
+	};
+
+	const a = await run(first, 'SysAdminDoc');
+	const b = await run(second, 'sysadmindoc');
+
+	assert.equal(a.ran, true, 'the first tab must get the account');
+	assert.equal(b.ran, false, 'the second must not start a second destructive sequence');
+	assert.equal([a, b].filter(r => r.ran).length, 1, 'exactly one run may hold an account');
+	assert.equal(b.grant.owner.sameTab, false, 'the refused tab must be told the run is elsewhere');
+	assert.equal(b.grant.owner.state, 'running');
+	assert.equal(b.grant.token, undefined, 'the token never leaves the background');
+
+	// A different account is unrelated work and must not be blocked by it.
+	const other = await run(second, 'someone-else');
+	assert.equal(other.ran, true, 'one account\'s run must not lock every other account');
+	await ask(second, { operation: 'release', account: 'someone-else', token: other.grant.token });
+
+	// Handing it back is what lets the next run start, rather than waiting out the
+	// expiry.
+	await ask(first, { operation: 'release', account: 'SysAdminDoc', token: a.grant.token });
+	const after = await run(second, 'sysadmindoc');
+	assert.equal(after.ran, true, 'a released account must be available again');
+
+	// And a closed tab does not strand the account it was holding.
+	await second.close();
+	const third = await openTab();
+	const afterClose = await run(third, 'sysadmindoc');
+	assert.equal(afterClose.ran, true, 'closing a tab mid-run must free its account');
+
+	await first.close();
+	await third.close();
+});
+
 test('the opt-in Old Reddit redirect runs before modern document bytes load', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

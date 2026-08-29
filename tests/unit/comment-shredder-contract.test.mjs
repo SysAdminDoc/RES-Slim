@@ -332,9 +332,39 @@ test('a stopped run and a completed run do not read the same', () => {
 	assert.ok(!/not attempted/.test(summariseOutcome({ ...counts, stopped: true, remaining: 0 })));
 });
 
-test('the panel shows a live count and a working Stop button', () => {
+
+// The panel now takes a lease, because a tab-local boolean cannot see the tab
+// that matters. These stand in for the background authority.
+function grantingLease() {
+	const calls = [];
+	return {
+		calls,
+		acquire() { calls.push('acquire'); return Promise.resolve({ ok: true, token: 'token-1' }); },
+		renew(state) { calls.push(`renew:${state}`); return Promise.resolve(true); },
+		release() { calls.push('release'); return Promise.resolve(); },
+	};
+}
+
+function refusingLease(owner = { sameTab: false, state: 'running', runningForMs: 65000 }) {
+	const calls = [];
+	return {
+		calls,
+		acquire() { calls.push('acquire'); return Promise.resolve({ ok: false, owner }); },
+		renew() { calls.push('renew'); return Promise.resolve(false); },
+		release() { calls.push('release'); return Promise.resolve(); },
+	};
+}
+
+// Starting is asynchronous now: the panel asks the background whether anyone
+// else is running before it hands over the controls.
+function settle() {
+	return new Promise(resolve => { setTimeout(resolve, 0); });
+}
+
+test('the panel shows a live count and a working Stop button', async () => {
 	let captured = null;
-	const panel = Shredder.confirmPanel(3, c => { captured = c; });
+	const lease = grantingLease();
+	const panel = Shredder.confirmPanel(3, c => { captured = c; }, lease);
 	document.body.append(panel);
 
 	const input = panel.querySelector('input[type="text"]');
@@ -355,7 +385,9 @@ test('the panel shows a live count and a working Stop button', () => {
 	assert.equal(shred.disabled, false);
 
 	shred.click();
+	await settle();
 	assert.ok(captured, 'confirming must hand the run its controls');
+	assert.deepEqual(lease.calls, ['acquire'], 'the run must take the account lease before it starts');
 	assert.equal(stop.hidden, false, 'Stop must appear for the duration of the run');
 
 	const status = panel.querySelector('[role="status"]');
@@ -370,6 +402,8 @@ test('the panel shows a live count and a working Stop button', () => {
 	assert.equal(captured.shouldStop(), true, 'pressing Stop must be what the loop reads');
 
 	captured.finish('Stopped. Overwrote 2, deleted 2.');
+	await settle();
+	assert.ok(lease.calls.includes('release'), 'a finished run must hand the account back rather than wait out the TTL');
 	assert.equal(stop.hidden, true, 'Stop must not linger after the run ends');
 	assert.match(status.textContent, /Stopped\./, 'the outcome belongs in the panel the user is looking at');
 
@@ -385,10 +419,10 @@ test('the panel shows a live count and a working Stop button', () => {
 // panel keeps deleting with no way to stop it and nothing reporting how far it
 // has got.
 
-function panelInNotification(count, onConfirm) {
+function panelInNotification(count, onConfirm, lease = grantingLease()) {
 	const host = document.createElement('div');
 	host.className = 'RESNotification';
-	const panel = Shredder.confirmPanel(count, onConfirm);
+	const panel = Shredder.confirmPanel(count, onConfirm, lease);
 	host.append(panel);
 	document.body.append(host);
 
@@ -398,14 +432,16 @@ function panelInNotification(count, onConfirm) {
 	return {
 		host,
 		panel,
+		lease,
 		resets,
 		go: panel.querySelector('button'),
 		status: panel.querySelector('p[role="status"]'),
 		confirm: panel.querySelector('input[type="text"]'),
-		start() {
+		async start() {
 			this.confirm.value = 'DELETE';
 			this.confirm.dispatchEvent(new Event('input', { bubbles: true }));
 			this.go.click();
+			await settle();
 		},
 	};
 }
@@ -413,7 +449,7 @@ function panelInNotification(count, onConfirm) {
 test('a running shred keeps its own panel from closing underneath it', async () => {
 	let captured;
 	const ui = panelInNotification(3, controls => { captured = controls; });
-	ui.start();
+	await ui.start();
 	assert.ok(captured, 'confirming should hand back the run controls');
 
 	assert.deepEqual(ui.resets, [], 'nothing to keep alive before the first comment');
@@ -431,7 +467,7 @@ test('a running shred keeps its own panel from closing underneath it', async () 
 test('a run that throws reports it rather than stranding the panel on "Shredding"', async () => {
 	let captured;
 	const ui = panelInNotification(2, controls => { captured = controls; });
-	ui.start();
+	await ui.start();
 
 	assert.equal(ui.go.textContent, 'Shredding…');
 	captured.fail('network went away');
@@ -450,25 +486,64 @@ test('the call site actually routes a thrown run into that failure path', () => 
 	assert.match(mod, /controls\.fail\(String\(\(e && e\.message\) \|\| e\)\)/);
 });
 
+
+test('a run refused by another tab is reported and stays retryable', async () => {
+	// The case the tab-local boolean could never see: a second tab, or the other
+	// renderer, already deleting for this account.
+	let handed = null;
+	const lease = refusingLease({ sameTab: false, state: 'running', runningForMs: 65000 });
+	const ui = panelInNotification(3, controls => { handed = controls; }, lease);
+	await ui.start();
+
+	assert.equal(handed, null, 'a refused run must never be handed the controls');
+	assert.match(ui.status.textContent, /another tab/, 'the user has to be told where the other run is');
+	assert.match(ui.status.textContent, /1m 5s/, 'and how long it has been going, so waiting is an informed choice');
+	assert.equal(ui.go.disabled, false, 'a refusal is temporary, so the button has to stay usable');
+	assert.deepEqual(lease.calls, ['acquire'], 'a refused run must not renew or release a lease it never held');
+
+	// The confirmation still gates the retry rather than being spent by it.
+	ui.confirm.value = 'no';
+	ui.confirm.dispatchEvent(new Event('input', { bubbles: true }));
+	assert.equal(ui.go.disabled, true);
+
+	ui.host.remove();
+});
+
+test('a failed run hands the account back', async () => {
+	let handed = null;
+	const lease = grantingLease();
+	const ui = panelInNotification(3, controls => { handed = controls; }, lease);
+	await ui.start();
+	assert.ok(handed);
+
+	handed.fail('network died');
+	await settle();
+	assert.ok(lease.calls.includes('release'), 'a crashed run must not hold the account until the TTL expires');
+
+	ui.host.remove();
+});
+
 test('a second shred cannot start while one is still running', async () => {
 	let first;
 	const one = panelInNotification(3, controls => { first = controls; });
-	one.start();
+	await one.start();
 	assert.ok(first);
 
 	// A fresh panel, as the link builds on every use.
 	let second = null;
 	const two = panelInNotification(3, controls => { second = controls; });
-	two.start();
+	await two.start();
 
 	assert.equal(second, null, 'the second run must not be handed controls');
 	assert.match(two.status.textContent, /already going in this tab/);
+	assert.deepEqual(two.lease.calls, [], 'the tab-local guard must answer without troubling the background');
 
 	// And it becomes possible again once the first finishes.
 	first.finish('Overwrote 3, deleted 3.');
+	await settle();
 	let third = null;
 	const three = panelInNotification(1, controls => { third = controls; });
-	three.start();
+	await three.start();
 	assert.ok(third, 'a run must be startable again after the previous one ends');
 	third.finish('done');
 

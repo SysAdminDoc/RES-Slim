@@ -1,0 +1,24 @@
+// Flow 0.84 has no `crypto` global at all in the set of libs this project
+// vendors, so `crypto.randomUUID()` reads as an unresolved name rather than as a
+// missing method.
+//
+// `randomUUID` is Chrome 92 and Firefox 95, both well inside this project's
+// floor (`browserslist` in package.json), and it is available in a service
+// worker, which is the only place this repo calls it: `shredLease` mints the
+// token that identifies the holder of a comment-shredding run.
+//
+// Fifth libdef in here, same pattern as `intl`, `abort` and `customElements`:
+// the libs directory is where a browser-support decision belongs, because there
+// it is checked once. A cast at the call site asserts the same thing and checks
+// nothing.
+//
+// Deliberately partial. Only the members this repo uses are declared, so a new
+// call to something Flow has never heard of stays an error worth reading rather
+// than being waved through by an over-broad `any`.
+
+declare interface RsmCrypto {
+	randomUUID(): string;
+	getRandomValues<T: $TypedArray>(typedArray: T): T;
+}
+
+declare var crypto: RsmCrypto;
