@@ -34,6 +34,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Old Reddit's endless scroll could stall on a page of pure overlap. Skipping
+  every repeated row means such a page changes the DOM by nothing at all, and the
+  only thing that asks for another page is an `IntersectionObserver`, which fires
+  on transitions — so with the sentinel already in view and the geometry
+  unchanged, no further callback ever arrived. A page that adds nothing now
+  fetches the next one itself, bounded at three in a row so a listing that has
+  genuinely run out is not walked to reddit's pagination ceiling.
+
 - Current Reddit navigates without ever unloading, and the module lifecycle did
   not know it. A `pushState` that changed no DOM was invisible — which is the
   normal case, because reddit swaps the URL before rendering the new view — so

@@ -32,6 +32,17 @@ function fullnamesOnPage() {
 	return Array.from(listing().querySelectorAll('.thing')).map(t => t.getAttribute('data-fullname'));
 }
 
+// The empty-page chain is scheduled with `setTimeout(..., 0)`, so a test has to
+// let those turns run. Generous enough for three of them.
+function settleChain() {
+	return new Promise(resolve => { setTimeout(resolve, 120); });
+}
+
+let servedCount = 0;
+function served() {
+	return servedCount;
+}
+
 function dividers() {
 	return listing().querySelectorAll('.res-slim-infinite-divider').length;
 }
@@ -55,7 +66,9 @@ function startListing(existing, pages) {
 	// obvious `text()`, and a partial stand-in returns an empty body through a
 	// path that then reports success.
 	const served = [...pages];
+	servedCount = 0;
 	globalThis.__fetchHook = () => {
+		servedCount += 1;
 		const next = served.shift();
 		if (!next) return Promise.reject(new Error('the module asked for more pages than the test serves'));
 		return Promise.resolve(new Response(next, { status: 200, headers: { 'content-type': 'text/html' } }));
@@ -118,6 +131,47 @@ test('a page that adds nothing emits no divider', async () => {
 	await loadNextPage();
 	assert.equal(dividers(), 1, 'a page that added nothing must not draw a separator over empty space');
 	assert.deepEqual(fullnamesOnPage(), ['t3_p1', 't3_p2', 't3_p3']);
+});
+
+// --- a page that adds nothing has to keep the scroll alive --------------------
+//
+// Skipping every overlapping row means a page of pure overlap changes the DOM
+// by nothing at all. The only thing that asks for another page is the sentinel
+// observer, and an `IntersectionObserver` fires on intersection *transitions* —
+// with the sentinel already inside the 800px root margin and the geometry
+// unchanged, no further callback arrives. The scroll would simply stop, with
+// `stopped` false and `nextUrl` advanced, until the reader scrolled it out and
+// back.
+
+test('a page of pure overlap fetches the next one without waiting for a scroll', async () => {
+	startListing([row('t3_p1')], [
+		page([row('t3_p1')], 'https://old.reddit.com/?count=50&after=t3_p1'),
+		page([row('t3_p1')], 'https://old.reddit.com/?count=75&after=t3_p1'),
+		page([row('t3_p2')], 'https://old.reddit.com/?count=100&after=t3_p2'),
+	]);
+
+	// One call from the sentinel. The two empty pages have to be walked through
+	// on their own for the third to arrive.
+	await loadNextPage();
+	await settleChain();
+
+	assert.deepEqual(fullnamesOnPage(), ['t3_p1', 't3_p2'], 'the next real post has to arrive without a second scroll');
+	assert.equal(dividers(), 1, 'and only the page that added something draws a separator');
+});
+
+test('a run of empty pages is bounded rather than walking to the pagination ceiling', async () => {
+	// Reddit paginates to a thousand items. A listing that has genuinely run out
+	// of new posts must not be walked end to end as fast as the rate limiter
+	// allows.
+	const overlap = () => page([row('t3_p1')], 'https://old.reddit.com/?count=x&after=t3_p1');
+	startListing([row('t3_p1')], [overlap(), overlap(), overlap(), overlap(), overlap(), overlap()]);
+
+	await loadNextPage();
+	await settleChain();
+
+	// The first load plus the bounded chain, and no further.
+	assert.ok(served() <= 4, `expected the chain to stop, ${served()} pages were fetched`);
+	assert.deepEqual(fullnamesOnPage(), ['t3_p1']);
 });
 
 test('rows with no usable fullname are kept, not dropped as duplicates', async () => {
