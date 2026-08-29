@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Three DOM waits could never end, and a multi-event wait left its losing
+  listener attached. `waitForSelectorMatch` was the expensive one: its only
+  caller runs for every link post, waiting for an expando the reader may never
+  open, so an attribute observer and a pending async frame accumulated per post
+  across an infinite scroll. All three now take the same timeout and abort
+  contract the other waiters use, and core hands them a signal tied to the page's
+  lifetime. `waitForEvent` runs one race and removes every listener it installed
+  when any of them wins.
+
 - A shred run that lost its account kept deleting. The heartbeat renewed the
   lease and threw the answer away, so a run whose lease had gone — to a service
   worker restart, or to timer throttling in a background tab outrunning the

@@ -172,6 +172,157 @@ test('the observer tracking sees the waiters at all', async () => {
 	}
 });
 
+// --- the three that were not bounded at all -----------------------------------
+//
+// `waitForAttach`, `waitForDetach` and `waitForSelectorMatch` each built their
+// own promise with a `disconnect()` on the success path only, and took a
+// `cancel` promise that could only ever resolve. `waitForSelectorMatch` is the
+// one that cost something every day: its only caller runs per link post, and a
+// post nobody expands never matches, so an attribute observer stayed attached
+// and an async frame stayed pending for every one of them.
+
+function element(tag = 'div') {
+	const el = document.createElement(tag);
+	document.body.append(el);
+	return el;
+}
+
+test('waitForSelectorMatch resolves, and lets go of its observer when it does', async () => {
+	const tracking = trackObservers();
+	try {
+		const el = element();
+		el.className = 'expando-uninitialized';
+		const waiting = dom.waitForSelectorMatch(el, ':not(.expando-uninitialized)', { timeout: Infinity });
+		assert.equal(tracking.live.size, 1, 'it has to be observing something to be waiting');
+
+		el.className = '';
+		await waiting;
+		assert.equal(tracking.live.size, 0, 'a resolved wait must not keep observing');
+	} finally {
+		tracking.restore();
+	}
+});
+
+test('waitForSelectorMatch is released by its signal, which is the whole point', async () => {
+	// Unbounded by design: the reader may expand the post in an hour, or never.
+	// Without a signal that is one observer and one pending frame per link post,
+	// for the life of the page, accumulating across an infinite scroll.
+	const tracking = trackObservers();
+	try {
+		const el = element();
+		el.className = 'expando-uninitialized';
+		const controller = new AbortController();
+		const waiting = dom.waitForSelectorMatch(el, ':not(.expando-uninitialized)', { signal: controller.signal, timeout: Infinity });
+		assert.equal(tracking.live.size, 1);
+
+		controller.abort();
+		await assert.rejects(waiting, e => dom.isAbortError(e));
+		assert.equal(tracking.live.size, 0, 'an aborted wait must disconnect');
+	} finally {
+		tracking.restore();
+	}
+});
+
+test('waitForSelectorMatch answers immediately without observing anything', async () => {
+	const tracking = trackObservers();
+	try {
+		const el = element();
+		await dom.waitForSelectorMatch(el, 'div');
+		assert.equal(tracking.live.size, 0, 'an element that already matches needs no observer');
+	} finally {
+		tracking.restore();
+	}
+});
+
+test('waitForAttach and waitForDetach disconnect on success, timeout and abort', async () => {
+	const tracking = trackObservers();
+	try {
+		const parent = element();
+		const child = document.createElement('span');
+
+		const attaching = dom.waitForAttach(parent, child, { timeout: Infinity });
+		assert.equal(tracking.live.size, 1);
+		parent.append(child);
+		await attaching;
+		assert.equal(tracking.live.size, 0, 'a resolved attach must disconnect');
+
+		// Detach resolves when the element leaves the document.
+		const detaching = dom.waitForDetach(child);
+		assert.equal(tracking.live.size, 1);
+		child.remove();
+		await detaching;
+		assert.equal(tracking.live.size, 0, 'a resolved detach must disconnect');
+
+		// A bounded attach that never happens rejects and disconnects.
+		const orphan = document.createElement('span');
+		await assert.rejects(dom.waitForAttach(parent, orphan, { timeout: 20 }), /Timed out/);
+		assert.equal(tracking.live.size, 0, 'a timed-out attach must disconnect');
+
+		// And an abort releases the unbounded detach.
+		const staying = element();
+		const controller = new AbortController();
+		const never = dom.waitForDetach(staying, { signal: controller.signal });
+		assert.equal(tracking.live.size, 1);
+		controller.abort();
+		await assert.rejects(never, e => dom.isAbortError(e));
+		assert.equal(tracking.live.size, 0, 'an aborted detach must disconnect');
+	} finally {
+		tracking.restore();
+	}
+});
+
+test('waitForEvent removes every listener it installed, not just the winner', async () => {
+	// One promise per event, each removing only its own listener, left the losing
+	// listener attached for as long as the element lived. `mediaTypes.js` alone
+	// has three multi-event waits.
+	const el = element();
+	const installed = new Map();
+	const realAdd = el.addEventListener.bind(el);
+	const realRemove = el.removeEventListener.bind(el);
+	el.addEventListener = (type, fn, opts) => { installed.set(type, (installed.get(type) || 0) + 1); realAdd(type, fn, opts); };
+	el.removeEventListener = (type, fn, opts) => { installed.set(type, (installed.get(type) || 0) - 1); realRemove(type, fn, opts); };
+
+	const waiting = dom.waitForEvent(el, 'load', 'error');
+	assert.deepEqual([...installed.entries()].sort(), [['error', 1], ['load', 1]], 'both events have to be listened for');
+
+	el.dispatchEvent(new window.Event('load'));
+	const settled = await waiting;
+	assert.equal(settled.type, 'load', 'the first event to arrive is the answer');
+	assert.deepEqual([...installed.entries()].sort(), [['error', 0], ['load', 0]], 'the losing listener must come off too');
+
+	// A second event after the race is over cannot settle it again or re-fire.
+	el.dispatchEvent(new window.Event('error'));
+	assert.deepEqual([...installed.entries()].sort(), [['error', 0], ['load', 0]]);
+});
+
+test('waitForEvent can be bounded and aborted like every other waiter', async () => {
+	const el = element();
+	await assert.rejects(dom.waitForEventWith(el, ['click'], { timeout: 20 }), /Timed out/);
+
+	const controller = new AbortController();
+	const waiting = dom.waitForEventWith(el, ['click'], { signal: controller.signal, timeout: Infinity });
+	controller.abort();
+	await assert.rejects(waiting, e => dom.isAbortError(e));
+});
+
+test('core installs the page signal the open-ended waiters hang off', () => {
+	// `lib/utils/` may not import `lib/core/`, so the signal arrives the same way
+	// the timeout reporter does. A waiter that asks for it before core starts gets
+	// null, which is the unbounded behaviour it had anyway.
+	const init = readRepoFile('lib/core/init.js');
+	assert.match(init, /setPageSignal\(pageSignal\)/, 'the signal has to actually be installed');
+	assert.match(init, /pagehide/, 'and aborted when the document goes away');
+
+	// By line, not by a balanced-paren regex: the selector these are called with
+	// contains its own parentheses, and a non-greedy match stops inside it.
+	const watchers = readRepoFile('lib/utils/watchers.js').split(/\r?\n/);
+	for (const call of ['waitForSelectorMatch(', 'waitForAttach(']) {
+		const line = watchers.find(l => l.includes(`await ${call}`));
+		assert.ok(line, `${call} should still be awaited from the watcher`);
+		assert.match(line, /signal: getPageSignal\(\)/, `${call} holds an observer per thing and must carry the page signal`);
+	}
+});
+
 test('the reporter is wired up, or none of this reaches the error log', () => {
 	// The default reporter does nothing, which is precisely the shape of the four
 	// unread mechanisms already found in this codebase. `lib/utils/` may not
