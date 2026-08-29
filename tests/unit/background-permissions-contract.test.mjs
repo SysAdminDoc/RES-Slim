@@ -11,8 +11,12 @@ test('background permission prompt resolver cannot hang on malformed result URLs
 
 	assert.match(source, /const requestPermissions = apiToPromise/);
 	assert.match(source, /const createWindow = apiToPromise/);
-	assert.match(source, /const width = 640/);
-	assert.match(source, /const height = 560/);
+	// The dimensions moved into named constants when the prompt grew a second
+	// surface for Firefox. Pinned by name rather than by the old inline spelling,
+	// and the values themselves are now checked by an executing test in
+	// `permission-prompt-surface-contract`, which measures where the window lands.
+	assert.match(source, /const PROMPT_WIDTH = 640/);
+	assert.match(source, /const PROMPT_HEIGHT = 560/);
 	assert.match(source, /if \(typeof id !== 'number'\) return false/);
 	assert.match(source, /function finish\(result, closeTab = false\)/);
 	assert.match(source, /JSON\.parse\(updatedUrl\.searchParams\.get\('result'\) \|\| 'false'\)/);

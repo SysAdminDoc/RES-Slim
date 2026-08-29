@@ -227,6 +227,19 @@ async function main() {
 		const wantsFileAccess = JSON.stringify(manifest).includes('file://');
 		record('Firefox 153: file:// access is not something this build needs', !wantsFileAccess,
 			wantsFileAccess ? 'the manifest asks for file:// somewhere' : 'no file:// match in the manifest');
+
+		// Mozilla Bug 1957822: Firefox refuses `permissions.request()` when the
+		// calling document is in an extension popup window, which is the topology
+		// the prompt used on every browser. The fix is a build-time branch, so what
+		// matters here is which half survived into the add-on Firefox is running.
+		//
+		// The native permission panel itself is browser chrome. BiDi drives content,
+		// not chrome, so the grant click is not automatable from here — the tab is
+		// the part that was wrong and the part this can prove.
+		const background = fs.readFileSync(path.join(buildDir, 'background.entry.js'), 'utf8');
+		const opensATab = /tabs\.create/.test(background) && /active:\s*!0/.test(background);
+		record('the permission prompt opens a normal tab, not the popup window Firefox refuses', opensATab,
+			opensATab ? 'tabs.create({ active: true }) is the surviving branch' : 'the built background has no active-tab prompt path');
 	} finally {
 		await browser.close();
 		server.close();

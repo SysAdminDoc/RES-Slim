@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The optional-permission prompt could not work on Firefox. It opened in an
+  extension popup window, and Firefox refuses `permissions.request()` from one
+  (Mozilla Bug 1957822), so the window appeared and then could not do the single
+  thing it existed for. Firefox now gets a normal tab, which is a context the
+  browser is willing to raise its own permission panel from; Chrome keeps the
+  centred popup window, which works there.
+
 - Two tabs could shred the same account at once. The guard was a boolean scoped
   to one tab, which by construction could never see the tab that matters, and
   the module's own header already described what happens when two runs overlap:
