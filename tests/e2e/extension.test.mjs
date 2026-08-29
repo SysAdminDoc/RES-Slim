@@ -4187,6 +4187,91 @@ test('the controls injected into old Reddit have no accessibility violations', a
 		`accessibility violations in injected UI:\n  ${describeViolations(results.violations)}`);
 });
 
+// Current Reddit had geometry and focus checks and no automated WCAG scan, so
+// the renderer that changes weekly was the one nobody swept. Scoped the same way
+// the old-Reddit sweep is: reddit's own markup fails plenty this fork did not
+// write, and `include` narrows axe to the surfaces RES-Slim injects.
+//
+// Both palettes, because half of what axe measures here is contrast, and the
+// classic palette is light while OLED is dark — a sweep of one says nothing
+// about the other. Both fixtures, because the comment controls only exist on a
+// thread and the feed limiter only exists on a listing.
+const SHREDDIT_A11Y_MODULES = Object.fromEntries([
+	'infiniteScroll',
+	'userTagger',
+	'filterRules',
+	'threadMinimap',
+	'commentNavigator',
+	'voteEnhancements',
+	'absoluteTimestamps',
+	'authorContextBadge',
+	'roleHighlights',
+	'layoutTweaks',
+].map(id => [id, true]));
+
+function shredditInjectedRoots(page) {
+	return page.evaluate(() => {
+		const SURFACE = '[id^="rsm-"], [class*="rsm-"]';
+		// `<html>` carries rsm-root and the theme classes, and `<body>` carries the
+		// module body classes, so both match SURFACE and would scope axe to the
+		// whole reddit page — the opposite of what this is for.
+		const skip = new Set([document.documentElement, document.body]);
+		const candidates = [...document.querySelectorAll(SURFACE)].filter(el => !skip.has(el));
+		const seen = new Set();
+		for (const el of candidates) {
+			const container = el.parentElement && el.parentElement.closest(SURFACE);
+			if (container && !skip.has(container)) continue;
+			const cls = el.className.toString().trim().split(/\s+/).find(c => c.startsWith('rsm-'));
+			if (el.id) seen.add(`#${el.id}`);
+			else if (cls) seen.add(`.${cls}`);
+		}
+		return [...seen];
+	});
+}
+
+for (const palette of ['classic', 'oled']) {
+	for (const surface of ['listing', 'thread']) {
+		test(`the controls injected into current Reddit have no accessibility violations (${surface}, ${palette})`, async t => {
+			const { context, worker, dispose } = await launchWithExtension();
+			t.after(dispose);
+
+			await worker.evaluate(([mods, theme]) => new Promise(resolve => {
+				chrome.storage.local.set({
+					'RES.modulePrefs': mods,
+					'RESoptions.pageTheme': { theme: { value: theme } },
+					// A limit low enough that the fixture's posts trip it, so the
+					// limiter's own control is on the page to be swept.
+					'RESoptions.infiniteScroll': { limitCurrentReddit: { value: true }, currentRedditLimit: { value: '1' } },
+					'RESoptions.filterRules': {
+						rulesJson: { value: JSON.stringify([{ id: 'a11y-badge', field: 'keyword', op: 'contains', value: 'e', action: 'badge', enabled: true }]) },
+					},
+				}, resolve);
+			}), [SHREDDIT_A11Y_MODULES, palette]);
+
+			const page = await context.newPage();
+			const document = surface === 'listing' ? SHREDDIT_LISTING : SHREDDIT_THREAD;
+			await page.route('**/*', route => fulfillShredditRequest(route, document));
+			await page.goto(`https://www.reddit.com/r/example/${surface === 'thread' ? 'comments/fixture1/x/' : ''}`, { waitUntil: 'domcontentloaded' });
+			await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+			// The injected controls arrive after the adapter has prepared the posts.
+			await page.waitForFunction(() => document.querySelectorAll('[id^="rsm-"], [class*="rsm-"]').length > 2, null, { timeout: 30000 });
+
+			const roots = await shredditInjectedRoots(page);
+			assert.ok(roots.length >= 2, `expected injected surfaces to scope to, found ${roots.length}: ${roots.join(', ')}`);
+
+			let builder = new AxeBuilder({ page }).withTags(WCAG_TAGS);
+			for (const root of roots) builder = builder.include(root);
+			const results = await builder.analyze();
+
+			assert.ok(results.passes.length > 0, 'axe found no passing checks, so it inspected nothing');
+			assert.deepEqual(results.violations.map(v => v.id), [],
+				`accessibility violations in current Reddit injected UI (${surface}, ${palette}):\n  ${describeViolations(results.violations)}`);
+
+			await page.close();
+		});
+	}
+}
+
 // The defaults turn roughly sixty modules on, six of which have no visible
 // control at all, so "put it back how it was" was not something a user could
 // actually do. Driven end to end because the interesting half is the reload:

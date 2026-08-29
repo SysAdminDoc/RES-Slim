@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Two contrast failures on the light Classic palette, found by putting current
+  Reddit's injected controls under an automated WCAG sweep for the first time.
+  Absolute timestamps were faded with `opacity: 0.75`, which took reddit's own
+  tagline grey down to 3.16:1; they now use the managed muted ink, which is
+  contrast-checked and flips with the palette where an opacity multiplier cannot.
+  And the palette's muted grey was reddit's `#666`, which clears AA on white but
+  not on the surfaces this theme tints with the accent — the submitter chip
+  measured 4.09:1. It is a little darker now and clears both.
+
 - Three DOM waits could never end, and a multi-event wait left its losing
   listener attached. `waitForSelectorMatch` was the expensive one: its only
   caller runs for every link post, waiting for an expando the reader may never

@@ -45,7 +45,13 @@ html.res-pageTheme--classic {
 	--rsm-th-txt: #292f34;
 	--rsm-th-txt-strong: #000;
 	--rsm-th-link: #00f;
-	--rsm-th-muted: #666;
+	// #666 was reddit own tagline grey, and it clears AA on white at 5.74:1 - but
+	// not on the surfaces this theme tints with the accent. The submitter chip is
+	// an 18% accent wash, which composites to about #e0d6ea under the default
+	// purple, and #666 on that measured 4.09:1. Darkened until it clears 4.5:1 on
+	// the tinted ground as well as the plain one; it is still visibly muted
+	// against --rsm-th-txt.
+	--rsm-th-muted: #595959;
 	--rsm-th-border: #d6d6d6;
 	--rsm-th-control-border: #888;
 	--rsm-th-shadow: rgb(0, 0, 0, 0.12);
