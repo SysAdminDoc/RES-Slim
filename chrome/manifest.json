@@ -101,7 +101,12 @@
 		"https://www.threads.net/*",
 		"https://web.archive.org/*",
 		"https://rimgo.reallyaweso.me/*",
-		"https://rmgur.com/*"
+		"https://rmgur.com/*",
+		"https://aar.li/api.php*",
+		"https://vidble.com/album/*",
+		"https://api.imgur.com/3/*",
+		"https://api.onedrive.com/v1.0/shares/*",
+		"https://api.photobucket.com/v2/media/fromurl*"
 	],
 	"web_accessible_resources": [
 		{

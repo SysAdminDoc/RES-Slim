@@ -95,6 +95,10 @@
     },
     {
       "file": "lib/modules/hosts/aarli.js",
+      "url": "https://aar.li/api.php*"
+    },
+    {
+      "file": "lib/modules/hosts/aarli.js",
       "url": "https://aar.li/favicon.ico"
     },
     {
@@ -343,6 +347,10 @@
     },
     {
       "file": "lib/modules/hosts/imgur.js",
+      "url": "https://api.imgur.com/3/*"
+    },
+    {
+      "file": "lib/modules/hosts/imgur.js",
       "url": "https://i.imgur.com/"
     },
     {
@@ -391,6 +399,10 @@
     },
     {
       "file": "lib/modules/hosts/onedrive.js",
+      "url": "https://api.onedrive.com/v1.0/shares/*"
+    },
+    {
+      "file": "lib/modules/hosts/onedrive.js",
       "url": "https://api.onedrive.com/v1.0/shares/${encodedUrl}/root?expand=children"
     },
     {
@@ -408,6 +420,10 @@
     {
       "file": "lib/modules/hosts/photobucket.js",
       "url": "https://api.photobucket.com/v2/media/fromurl"
+    },
+    {
+      "file": "lib/modules/hosts/photobucket.js",
+      "url": "https://api.photobucket.com/v2/media/fromurl*"
     },
     {
       "file": "lib/modules/hosts/photobucket.js",
@@ -596,6 +612,10 @@
     {
       "file": "lib/modules/hosts/vidble.js",
       "url": "https://vidble.com/${hash}_med.jpg"
+    },
+    {
+      "file": "lib/modules/hosts/vidble.js",
+      "url": "https://vidble.com/album/*"
     },
     {
       "file": "lib/modules/hosts/vidble.js",

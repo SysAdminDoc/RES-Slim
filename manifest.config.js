@@ -74,6 +74,17 @@ const OPTIONAL_HOST_PERMISSIONS = [
 	'https://web.archive.org/*',
 	'https://rimgo.reallyaweso.me/*',
 	'https://rmgur.com/*',
+	// Added 2026-09-02 after probing every host that calls `ajax` without
+	// declaring an origin. These five answer with no
+	// `Access-Control-Allow-Origin`, or could not be made to answer at all
+	// without credentials; the rest of that set (derpibooru, github, streamable,
+	// wikipedia) send `*` and need nothing. Each host file records its own
+	// measurement.
+	'https://aar.li/api.php*',
+	'https://vidble.com/album/*',
+	'https://api.imgur.com/3/*',
+	'https://api.onedrive.com/v1.0/shares/*',
+	'https://api.photobucket.com/v2/media/fromurl*',
 ];
 
 // Reachable from a reddit page. `trackingSabotage.entry.js` is here because MV3

@@ -270,3 +270,30 @@ test('the two localhost-only options are rejected at runtime if they are not loc
 	assert.equal(isLocalhostUrl('http://evil.example/'), false);
 	assert.equal(isLocalhostUrl('http://127.0.0.1.evil.example/'), false, 'a suffix attack must not read as localhost');
 });
+
+test('a host that calls an API either declares its origin or says why it does not need to', () => {
+	// The permission contract checks both directions, but only for origins a host
+	// declares. Eleven hosts called `ajax` with no `permissions` field at all,
+	// which is not automatically broken - an API answering with a permissive
+	// `Access-Control-Allow-Origin` works from the extension without one - but
+	// nobody had checked which. `api.tenor.co` sends no such header, which is how
+	// its expando turned out to have never worked.
+	//
+	// So every one of them now carries either a declared origin or a `// cors:`
+	// note recording what was measured and when. The note is the point: the next
+	// audit reads it instead of probing eleven APIs again.
+	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
+	const undocumented = [];
+	for (const file of fs.readdirSync(hostsDir).filter(name => name.endsWith('.js') && name !== 'index.js')) {
+		const source = fs.readFileSync(path.join(hostsDir, file), 'utf8');
+		if (!/\bajax\s*\(/.test(source)) continue;
+		if (/^\tpermissions:/m.test(source)) continue;
+		if (/^\t\/\/ cors:/m.test(source)) continue;
+		undocumented.push(file);
+	}
+	assert.deepEqual(undocumented, [], [
+		'these hosts fetch an API without declaring an origin and without recording why they do not need one.',
+		'Probe it with an `Origin: https://www.reddit.com` header: if the response carries no',
+		'`Access-Control-Allow-Origin`, declare the origin; if it does, write a `// cors:` note saying so.',
+	].join('\n  '));
+});

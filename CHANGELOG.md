@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Five media hosts ask for the permission their API actually needs: AAR Library,
+  vidble, Imgur, OneDrive and Photobucket call an API that does not allow a
+  cross-origin request, and were relying on one they had never declared. The
+  permission is still optional and still requested only when you use the host.
 - Fenced code blocks follow the page. On the Classic palette a code block was a
   dark panel inside a white comment, with syntax colours picked for a dark
   background reading under 3:1 on it. Classic gets a light block with dark
