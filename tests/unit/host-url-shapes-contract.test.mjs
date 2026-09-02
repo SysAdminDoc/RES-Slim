@@ -121,3 +121,33 @@ test('soundcloud leaves the site\'s own pages and a bare profile alone', () => {
 		assert.equal(Boolean(soundcloud.detect(new URL(href))), false, `${href} should be left alone`);
 	}
 });
+
+// A third inherited pattern with the same shape of defect. The id class was
+// `[a-zA-z0-9]` - lowercase z - and `A-z` spans the six ASCII characters between
+// Z and a, so `[`, `\`, `]`, `^`, `_` and a backtick all passed as part of a
+// Spotify id and built an embed URI that cannot play. The username was `\w+`,
+// which is the opposite mistake: real accounts carry dots and hyphens that it
+// refused.
+const spotify = await host('lib/modules/hosts/spotify.js', 'spotify-url-shapes');
+
+test('every spotify URL shape embeds what the link points at', () => {
+	assert.equal(embedFor(spotify, 'https://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6').embed,
+		'https://embed.spotify.com/?uri=spotify:track:6rqhFgbbKwnb9MLmUQDhG6');
+	assert.equal(embedFor(spotify, 'https://play.spotify.com/album/1DFixLWuPkv3KT3TnV35m3').embed,
+		'https://embed.spotify.com/?uri=spotify:album:1DFixLWuPkv3KT3TnV35m3');
+	// The username segment: a dot and a hyphen are both valid and were refused.
+	assert.equal(embedFor(spotify, 'https://open.spotify.com/user/some.user-99/playlist/37i9dQZF1DX').embed,
+		'https://embed.spotify.com/?uri=spotify:user:some.user-99:playlist:37i9dQZF1DX');
+});
+
+test('spotify refuses an id that is not one', () => {
+	for (const href of [
+		'https://open.spotify.com/track/6rqhFgb[bKwnb',
+		'https://open.spotify.com/track/6rqhFgb_bKwnb',
+		'https://open.spotify.com/track/6rqhFgb`bKwnb',
+		'https://open.spotify.com/track/',
+		'https://open.spotify.com/',
+	]) {
+		assert.equal(Boolean(spotify.detect(new URL(href))), false, `${href} should be left alone`);
+	}
+});

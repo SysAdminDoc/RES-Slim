@@ -23,6 +23,12 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Hover cards get their fade speed back in the settings. The option was hidden
+  with a note calling it broken, while every card read it for both the close
+  timer and the fade itself, and the sibling module exposed the same control.
+- Spotify links with an underscore, a bracket or a backtick in the id no longer
+  build an embed that cannot play, and a username with a dot or a hyphen in it
+  expands like any other.
 - RES's own notifications, dialogs, hover cards, macro menu and comment
   navigator follow the page palette. They only ever followed night mode, so a
   reader on a dark palette with night mode switched off got a white notification
