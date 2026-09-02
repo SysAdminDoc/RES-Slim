@@ -69,13 +69,18 @@ if (dirty.length) fail(`working tree has uncommitted changes:\n  ${dirty.join('\
 const remote = git('remote', 'get-url', 'origin');
 if (!/SysAdminDoc\/RES-Slim(\.git)?$/.test(remote)) fail(`origin is ${remote}, which is not this project's repository`);
 
-const localTag = git('rev-parse', `${tag}^{commit}`);
-if (!localTag) fail(`no local tag ${tag}; run \`yarn release ${version}\` first`);
+// Do not use Git's usual caret-based annotated-tag peel expression here. Node's
+// Windows shell passes the caret through cmd.exe, which consumes it as an escape
+// and asks Git for an invalid revision instead.
+const localTagResult = run(`git rev-list -n 1 ${tag}`, { allowFailure: true });
+const localTag = localTagResult.out;
+if (localTagResult.code !== 0 || !localTag) fail(`no local tag ${tag}; run \`yarn release ${version}\` first`);
 const head = git('rev-parse', 'HEAD');
 if (localTag !== head) fail(`${tag} points at ${localTag.slice(0, 9)} but HEAD is ${head.slice(0, 9)}; publish the commit the tag names`);
 
 const annotated = run(`git cat-file -t ${tag}`, { allowFailure: true }).out;
 if (annotated !== 'tag') fail(`${tag} is a lightweight tag; \`yarn release\` makes an annotated one`);
+const localTagObject = git('rev-parse', tag);
 
 // The committed tree, not the working copy: every drift contract in this repo
 // reads from disk, so "right on disk, never staged" is a gap none of them close.
@@ -150,8 +155,10 @@ console.log('publish: pushing the release commit and tag');
 run('git push', { capture: false });
 run(`git push origin refs/tags/${tag}`, { capture: false });
 
-const remoteTag = git('ls-remote', 'origin', `refs/tags/${tag}^{}`).split(/\s+/)[0];
-if (remoteTag !== head) fail(`origin's ${tag} points at ${remoteTag || 'nothing'}, not ${head.slice(0, 9)}`);
+// Compare the annotated tag object itself. This verifies the remote tag and its
+// metadata without another caret-based peel expression on Windows.
+const remoteTagObject = git('ls-remote', 'origin', `refs/tags/${tag}`).split(/\s+/)[0];
+if (remoteTagObject !== localTagObject) fail(`origin's ${tag} object is ${remoteTagObject || 'missing'}, not the verified local tag`);
 
 // --- the release --------------------------------------------------------------
 

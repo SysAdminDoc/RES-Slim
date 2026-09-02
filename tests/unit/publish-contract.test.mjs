@@ -87,6 +87,12 @@ test('the result is read back off GitHub rather than assumed', () => {
 	assert.match(source, /ls-remote/, 'the remote tag has to be confirmed, not assumed from a push exit code');
 });
 
+test('annotated tag checks survive Windows command parsing', () => {
+	assert.doesNotMatch(source, /\^\{(?:commit)?\}/, 'cmd.exe consumes the caret before Git can peel the tag');
+	assert.match(source, /git rev-list -n 1 \$\{tag\}/, 'the local tag still has to resolve to the release commit');
+	assert.match(source, /remoteTagObject !== localTagObject/, 'the remote must carry the exact annotated tag object');
+});
+
 test('re-running an already published version is safe rather than a second release', () => {
 	assert.match(source, /already exists, uploading any missing assets/);
 	assert.match(source, /--clobber/, 'a partial upload has to be completable');
