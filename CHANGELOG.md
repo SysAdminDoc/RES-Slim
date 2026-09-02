@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- A post whose title has not arrived yet no longer throws. Reddit streams the
+  post element before its title, and asking such a post for its link handed the
+  media scanner nothing to scan, which failed on every one of them in a release
+  build. Found by driving a release build in Firefox, which nothing had done.
 - The small stylesheets RES-Slim puts inside Reddit's own components are parsed
   once and shared, instead of being written into every post and comment on the
   page. On a hundred-post feed that is two stylesheet objects rather than two

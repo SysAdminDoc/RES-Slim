@@ -60,6 +60,45 @@ const FIXTURE = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'mhtml'
 		return `<html${attrs}class="${kept}"`;
 	});
 
+// The same two current-Reddit fixtures the Chromium suite drives. Firefox was
+// running one renderer and one page: the theme, the Shreddit adapter and the ad
+// remover all shipped on the MV2 target with nothing having exercised them
+// there, and this add-on's whole claim is that the two renderers behave alike.
+const SHREDDIT_LISTING = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'listing.html'), 'utf8');
+const SHREDDIT_THREAD = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html'), 'utf8');
+
+function bodyFor(url) {
+	if (url.includes('old.reddit.com')) return FIXTURE;
+	if (url.includes('/comments/')) return SHREDDIT_THREAD;
+	return SHREDDIT_LISTING;
+}
+
+// Every uncaught error from every page in the run. One of these is a defect
+// wherever it happens, and a run that reports checks while the console is full
+// of them is not an audit.
+const pageErrors = [];
+function watchForErrors(page, where) {
+	// The stack, not just the message: on a production build the message alone is
+	// a minified identifier and says nothing about where it came from.
+	page.on('pageerror', error => pageErrors.push(`${where}: ${String(error.stack || error).split('\n').slice(0, 3).join(' << ')}`));
+}
+
+// Both renderers are served from one interception rule, so a page can navigate
+// between them the way a reader does.
+async function interceptReddit(page) {
+	await page.setRequestInterception(true);
+	page.on('request', request => {
+		const url = request.url();
+		if (/reddit\.com/.test(url) && !/\.(?:js|css|png|jpe?g|gif|svg|woff2?|json|mp4)(?:$|\?)/i.test(url)) {
+			return request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: bodyFor(url) });
+		}
+		if (/^https?:\/\//.test(url) && !url.startsWith('http://127.0.0.1')) {
+			return request.respond({ status: 200, contentType: 'text/plain', body: '' });
+		}
+		return request.continue();
+	});
+}
+
 async function main() {
 	const executablePath = findFirefox();
 	if (!executablePath) {
@@ -122,21 +161,12 @@ async function main() {
 		// at all, and nothing on this machine had ever run it on Firefox. This is
 		// the audit's first question.
 		const fixturePage = await browser.newPage();
+		watchForErrors(fixturePage, 'old reddit');
 		try {
-			await fixturePage.setRequestInterception(true);
 			// Matched by URL rather than by resource type: `resourceType()` throws
 			// `UnsupportedOperation` on the BiDi transport, so the Chromium habit of
 			// filtering on it does not carry over.
-			fixturePage.on('request', request => {
-				const url = request.url();
-				if (url.includes('old.reddit.com') && !/\.(?:js|css|png|jpe?g|gif|svg|woff2?|json)(?:$|\?)/i.test(url)) {
-					return request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: FIXTURE });
-				}
-				if (/^https?:\/\//.test(url) && !url.startsWith('http://127.0.0.1')) {
-					return request.respond({ status: 200, contentType: 'text/plain', body: '' });
-				}
-				return request.continue();
-			});
+			await interceptReddit(fixturePage);
 			record('request interception is available over BiDi', true);
 		} catch (e) {
 			record('request interception is available over BiDi', false, e.message.split('\n')[0]);
@@ -252,6 +282,127 @@ async function main() {
 		const opensATab = /tabs\.create/.test(background) && /active:\s*(?:true|!0)/.test(background);
 		record('the permission prompt carries the normal-tab path Firefox needs', opensATab,
 			opensATab ? 'tabs.create with an active flag is in the built background' : 'the built background has no active-tab prompt path');
+
+		// --- old Reddit: is the page actually themed? -------------------------
+		//
+		// The check above proves the content script ran. This one proves it did
+		// something: a palette class on `<html>`, the classic white ground, and the
+		// classic blue on a listing title. Reading the computed values rather than
+		// the class, because a class with no stylesheet behind it is exactly the
+		// failure a Firefox-only bundling problem would produce.
+		try {
+			const theme = await fixturePage.evaluate(() => {
+				const title = document.querySelector('#siteTable .thing.link .title a, #siteTable .thing.link a.title');
+				return {
+					classes: document.documentElement.className,
+					background: getComputedStyle(document.body).backgroundColor,
+					titleColour: title ? getComputedStyle(title).color : null,
+				};
+			});
+			const themed = /res-pageTheme--classic/.test(theme.classes) && theme.background === 'rgb(255, 255, 255)';
+			record('the page theme paints old Reddit on Firefox', themed,
+				themed ? `body ${theme.background}, title ${theme.titleColour}` : `classes ${theme.classes.slice(0, 60)}, body ${theme.background}`);
+		} catch (e) {
+			record('the page theme paints old Reddit on Firefox', false, e.message.split('\n')[0]);
+		}
+
+		// --- current Reddit: the adapter, a streamed post, the ad remover ------
+		//
+		// Everything below this line had never run on Firefox at all. The Shreddit
+		// adapter is the half of this add-on that has to work as reddit's own
+		// renderer changes, and it was shipping on MV2 with only Chromium behind it.
+		const shredditPage = await browser.newPage();
+		watchForErrors(shredditPage, 'current reddit');
+		try {
+			await interceptReddit(shredditPage);
+			await shredditPage.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+			await shredditPage.waitForSelector('shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+
+			const listing = await shredditPage.evaluate(async () => {
+				const delivered = root => Boolean(root && (
+					root.querySelector('style[data-res-shreddit-shadow-style="classic"]') ||
+					(root.adoptedStyleSheets || []).length
+				));
+
+				// A post that arrives after the first paint, which is how reddit
+				// actually fills a feed.
+				const streamed = document.createElement('shreddit-post');
+				streamed.id = 't3_firefox_streamed';
+				streamed.setAttribute('author', 'alice');
+				streamed.setAttribute('subreddit-name', 'example');
+				streamed.setAttribute('post-type', 'link');
+				streamed.setAttribute('score', '5');
+				streamed.setAttribute('comment-count', '2');
+				streamed.setAttribute('permalink', '/r/example/comments/streamed/x/');
+				document.querySelector('shreddit-feed').append(streamed);
+				await new Promise(resolve => { setTimeout(resolve, 150); });
+				streamed.attachShadow({ mode: 'open' });
+				streamed.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+				await new Promise(resolve => { setTimeout(resolve, 2000); });
+
+				const ad = document.querySelector('shreddit-ad-post');
+				return {
+					themed: document.documentElement.className.includes('res-pageTheme--classic'),
+					prepared: document.querySelectorAll('shreddit-post[data-res-shreddit-compat]').length,
+					streamedPrepared: streamed.hasAttribute('data-res-shreddit-compat'),
+					streamedStyled: delivered(streamed.shadowRoot),
+					streamedPart: streamed.shadowRoot.querySelector('.action-row')?.getAttribute('part') || null,
+					adDisplay: ad ? getComputedStyle(ad).display : 'missing',
+				};
+			});
+
+			record('current Reddit gets the classic layout on Firefox', listing.themed && listing.prepared >= 3,
+				`${listing.prepared} posts adapted`);
+			const streamedOk = listing.streamedPrepared && listing.streamedStyled && listing.streamedPart === 'rsm-action-row';
+			record('a post that streams in after load is adapted and styled', streamedOk,
+				streamedOk ? 'compat attribute, shadow sheet and exposed parts' : `prepared=${listing.streamedPrepared} styled=${listing.streamedStyled} part=${listing.streamedPart}`);
+			record('promoted posts are removed on current Reddit', listing.adDisplay === 'none',
+				`shreddit-ad-post display: ${listing.adDisplay}`);
+		} catch (e) {
+			record('current Reddit gets the classic layout on Firefox', false, e.message.split('\n')[0]);
+		}
+
+		// --- a comments control, on the renderer that owns it ------------------
+		try {
+			await shredditPage.goto('https://www.reddit.com/r/example/comments/thread01/x/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+			await shredditPage.waitForSelector('shreddit-comment[data-res-shreddit-compat]', { timeout: 30000 });
+
+			const thread = await shredditPage.evaluate(() => {
+				const comment = document.querySelector('shreddit-comment[depth="0"]');
+				const summary = comment?.querySelector(':scope > details > summary');
+				const details = comment?.querySelector(':scope > details');
+				// Read before clicking: the marker is the collapse state, so asking
+				// afterwards asks a different question and always answers "[+]".
+				const marker = summary ? getComputedStyle(summary, '::before').content : null;
+				if (summary) summary.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+				return {
+					comments: document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length,
+					marker,
+					collapsedAfterClick: details ? !details.hasAttribute('open') : null,
+				};
+			});
+
+			const collapseWorks = thread.comments >= 4 && thread.marker === '"[-]"' && thread.collapsedAfterClick === true;
+			record('a comments control works on current Reddit', collapseWorks,
+				collapseWorks ? `${thread.comments} comments, [-] marker, collapse on click` : `comments=${thread.comments} marker=${thread.marker} collapsed=${thread.collapsedAfterClick}`);
+		} catch (e) {
+			record('a comments control works on current Reddit', false, e.message.split('\n')[0]);
+		}
+
+		// Not reachable from here, and said so rather than left unmentioned.
+		// Importing a selector override needs the settings console's own page, and
+		// BiDi refuses to navigate to a `moz-extension://` URL: measured
+		// 2026-09-02, "Navigation to moz-extension://…/options.html is not allowed
+		// in this context". The console can be opened from a reddit page as an
+		// iframe - the boot check above does exactly that - but a cross-origin
+		// extension frame is not exposed to `page.frames()` over BiDi either, so
+		// there is nothing to drive. `selector-override-contract` and the Chromium
+		// suite cover the import and its use.
+		record('selector override import/use is not automatable over BiDi', true,
+			'moz-extension:// navigation is refused; covered in the Chromium suite instead');
+
+		record('no page reported an uncaught error', pageErrors.length === 0,
+			pageErrors.length ? pageErrors.slice(0, 3).join(' | ') : 'both renderers ran clean');
 	} finally {
 		await browser.close();
 		server.close();
