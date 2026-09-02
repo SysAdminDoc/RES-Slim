@@ -1,6 +1,6 @@
 {
 	"note": "Per-rule eslint error counts. Regenerate with `node scripts/lint-baseline.mjs --update` and commit the change.",
-	"total": 493,
+	"total": 491,
 	"rules": {
 		"array-bracket-spacing": 1,
 		"ava/no-conditional-assertion": 1,
@@ -17,7 +17,7 @@
 		"import/extensions": 1,
 		"import/no-nodejs-modules": 1,
 		"indent": 1,
-		"no-await-in-loop": 33,
+		"no-await-in-loop": 32,
 		"no-constant-binary-expression": 1,
 		"no-control-regex": 2,
 		"no-eq-null": 22,
@@ -44,7 +44,7 @@
 		"preserve-caught-error": 4,
 		"quote-props": 3,
 		"quotes": 69,
-		"require-await": 47,
+		"require-await": 46,
 		"semi": 11,
 		"template-curly-spacing": 2,
 		"vendored/no-useless-assign": 3

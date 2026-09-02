@@ -16,15 +16,47 @@ const {
 	normalizeSavedUsername,
 	normalizeSavedTags,
 	partitionSavedRecords,
-	SAVED_CONTENT_LEGACY_STORE_NAME,
 	SAVED_CONTENT_SCHEMA_VERSION,
-	SAVED_CONTENT_STORE_NAME,
 	UNASSIGNED_SAVED_ACCOUNT,
+	loadSavedRecords,
+	mergeSavedRecordsIntoStore,
+	purgeSavedRecords,
+	updateSavedRecordTags,
 } = await loadFlowModule('lib/utils/savedBackup.js', 'saved-backup', {
+	deps: ['lib/utils/featureStores.js'],
 	stubs: {
 		'../environment': 'export const canPersistFeatureData = () => true;',
+		// A working store, keyed the way the real one is. A stub that swallowed
+		// writes would make every assertion below vacuous.
+		'../environment/foreground/featureDb': `
+			const rows = new Map();
+			const key = record => JSON.stringify([record.username, record.fullname]);
+			export function readRecords(store, index, value) {
+				const all = [...rows.values()];
+				return Promise.resolve(index === 'username' ? all.filter(r => r.username === value) : all);
+			}
+			export function writeRecords(store, put = [], remove = []) {
+				for (const k of remove) rows.delete(JSON.stringify(k));
+				for (const record of put) rows.set(key(record), record);
+				return Promise.resolve();
+			}
+		`,
 	},
 });
+
+const SAVED_FIXTURE = {
+	kind: 't3',
+	fullname: 't3_fixture',
+	id: 'fixture',
+	subreddit: 'test',
+	author: 'someone',
+	permalink: '/r/test/comments/fixture/',
+	createdUtc: 10,
+	body: '',
+	title: 'A saved post',
+	url: 'https://example.com/',
+	score: 1,
+};
 
 test('parseSavedPage extracts t1 and t3 items, falling back to selftext for posts', () => {
 	const page = parseSavedPage({
@@ -195,16 +227,45 @@ test('savedBackup module is registered and uses the helpers', () => {
 	}
 });
 
-test('schema v2 uses an account/fullname key and copies v1 rows to unassigned', () => {
-	const helper = fs.readFileSync(path.join(repoRoot, 'lib/utils/savedBackup.js'), 'utf8');
+test('the account key and the v1 recovery path survived the move to the extension database', () => {
+	// The upgrade used to live in an `onupgradeneeded` handler inside this
+	// helper. It is now a one-time copy out of reddit.com's storage, so the
+	// facts it depended on are asserted where they moved to.
+	const stores = fs.readFileSync(path.join(repoRoot, 'lib/utils/featureStores.js'), 'utf8');
 	assert.equal(SAVED_CONTENT_SCHEMA_VERSION, 2);
-	assert.equal(SAVED_CONTENT_STORE_NAME, 'accountItems');
-	assert.equal(SAVED_CONTENT_LEGACY_STORE_NAME, 'items');
-	assert.match(helper, /createObjectStore\(SAVED_CONTENT_STORE_NAME, \{ keyPath: \['username', 'fullname'\] \}\)/);
-	assert.match(helper, /transaction\.objectStore\(SAVED_CONTENT_LEGACY_STORE_NAME\)\.openCursor\(\)/);
-	assert.match(helper, /username: UNASSIGNED_SAVED_ACCOUNT/);
+	assert.match(stores, /keyPath: \['username', 'fullname'\]/);
+	assert.match(stores, /storeName: 'accountItems', altStoreName: 'items'/);
+	assert.match(stores, /legacyDefaults: \{ username: UNASSIGNED_SAVED_ACCOUNT \}/);
+	assert.match(stores, /accountScoped: true/);
+
+	const migration = fs.readFileSync(path.join(repoRoot, 'lib/environment/foreground/featureDbMigration.js'), 'utf8');
+	assert.match(migration, /altStoreName/);
+	assert.match(migration, /legacyDefaults/);
+
 	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib/utils/storageDashboard.js'), 'utf8');
-	assert.doesNotMatch(dashboard, /name: 'Saved Content'/, 'the generic dashboard must not offer a cross-account purge');
+	assert.match(dashboard, /purgeable: available && !descriptor\.accountScoped/, 'the generic dashboard must not offer a cross-account purge');
+});
+
+test('every stored operation is scoped to one account', async () => {
+	const alice = [{ ...SAVED_FIXTURE, fullname: 't3_alice' }];
+	const bob = [{ ...SAVED_FIXTURE, fullname: 't3_bob' }];
+	await mergeSavedRecordsIntoStore('alice', alice, 100);
+	await mergeSavedRecordsIntoStore('bob', bob, 100);
+
+	assert.deepEqual((await loadSavedRecords('alice')).map(r => r.fullname), ['t3_alice']);
+	assert.deepEqual((await loadSavedRecords('bob')).map(r => r.fullname), ['t3_bob']);
+
+	// One account's tag never lands on the other's copy of the same item.
+	await mergeSavedRecordsIntoStore('bob', alice, 100);
+	await updateSavedRecordTags('bob', 't3_alice', ['bob-only']);
+	assert.deepEqual((await loadSavedRecords('alice'))[0].tags, []);
+	assert.deepEqual((await loadSavedRecords('bob')).find(r => r.fullname === 't3_alice').tags, ['bob-only']);
+
+	// And purging one account leaves the other's records where they were.
+	assert.equal(await purgeSavedRecords('alice'), 1);
+	assert.deepEqual(await loadSavedRecords('alice'), []);
+	assert.equal((await loadSavedRecords('bob')).length, 2);
+	await purgeSavedRecords('bob');
 });
 
 test('saved manager styles are shipped', () => {

@@ -1,35 +1,34 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-const tmpDir = path.join(import.meta.dirname, '.tmp-storage-dashboard');
-fs.mkdirSync(tmpDir, { recursive: true });
+// The helper reaches the extension-origin database over the background bridge,
+// so the bridge is the boundary to stand in for. Executing it is what makes the
+// count and purge assertions below mean anything: the previous version of this
+// file stripped types out of the source and only ever called `formatCount`.
+const bridge = `
+export const calls = [];
+export const counts = { voteHistory: 3, mediaManifest: 0, savedContent: 7, subredditEmotes: 250 };
+export function countRecords(store) { calls.push(['count', store]); return Promise.resolve(counts[store]); }
+export function clearRecords(store) { calls.push(['clear', store]); counts[store] = 0; return Promise.resolve(1); }
+`;
 
-const helperSrc = read('lib/utils/storageDashboard.js');
-const stripped = helperSrc
-	.replace(/\/\* @flow \*\//, '')
-	.replace(/export type \w+ = \{\|[\s\S]*?\|\};/g, '')
-	.replace(/: StoreInfo\[\]/g, '')
-	.replace(/: StoreInfo/g, '')
-	.replace(/: string/g, '')
-	.replace(/: number/g, '')
-	.replace(/: \?number/g, '')
-	.replace(/: Array<\{\|[^|]+\|\}>/g, '')
-	.replace(/: Promise<StoreInfo\[\]>/g, '')
-	.replace(/: Promise<void>/g, '')
-	.replace(/: Promise<number>/g, '');
-const helperPath = path.join(tmpDir, 'storageDashboard.mjs');
-fs.writeFileSync(helperPath, stripped);
-const modUrl = pathToFileURL(helperPath).href;
+const load = () => loadFlowModule('lib/utils/storageDashboard.js', 'storage-dashboard', {
+	deps: ['lib/utils/featureStores.js'],
+	stubs: {
+		'../environment/foreground/featureDb': bridge,
+		'../environment': 'export const canPersistFeatureData = () => true;',
+	},
+});
 
 test('formatCount renders count and cap percentage', async () => {
-	const mod = await import(modUrl);
-	const result = mod.formatCount({ name: 'Test', dbName: 'db', storeName: 's', schemaVersion: 1, count: 500, cap: 1000 });
+	const mod = await load();
+	const result = mod.formatCount({ id: 'voteHistory', name: 'Test', count: 500, cap: 1000, available: true });
 	assert.ok(result.includes('Test'));
 	assert.ok(result.includes('500'));
 	assert.ok(result.includes('1,000'));
@@ -37,16 +36,52 @@ test('formatCount renders count and cap percentage', async () => {
 });
 
 test('formatCount handles null cap', async () => {
-	const mod = await import(modUrl);
-	const result = mod.formatCount({ name: 'Test', dbName: 'db', storeName: 's', schemaVersion: 1, count: 42, cap: null });
+	const mod = await load();
+	const result = mod.formatCount({ id: 'savedContent', name: 'Test', count: 42, cap: null, available: true });
 	assert.ok(result.includes('42'));
 	assert.ok(!result.includes('%'));
 });
 
-test('KNOWN_STORES includes voteHistory and mediaManifest', async () => {
-	const src = read('lib/utils/storageDashboard.js');
+test('every local data set is counted, and purging one clears that store alone', async () => {
+	const mod = await load();
+	const infos = await mod.getStoreInfos();
+	assert.deepEqual(infos.map(info => info.id), ['voteHistory', 'mediaManifest', 'savedContent', 'subredditEmotes']);
+	assert.deepEqual(infos.map(info => info.count), [3, 0, 7, 250]);
+	// A set with no records still gets a row: "nothing here" is an answer, and
+	// the dashboard is where you go to find out.
+	assert.equal(infos.find(info => info.id === 'mediaManifest').name, 'Media history');
+
+	await mod.clearStore(infos.find(info => info.id === 'voteHistory'));
+	const after = await mod.getStoreInfos();
+	assert.equal(after.find(info => info.id === 'voteHistory').count, 0);
+	assert.equal(after.find(info => info.id === 'savedContent').count, 7);
+});
+
+test('a store that cannot be read reports zero rather than failing the whole dashboard', async () => {
+	const mod = await loadFlowModule('lib/utils/storageDashboard.js', 'storage-dashboard-error', {
+		deps: ['lib/utils/featureStores.js'],
+		stubs: {
+			'../environment': 'export const canPersistFeatureData = () => true;',
+			'../environment/foreground/featureDb': `
+				export function countRecords(store) {
+					if (store === 'savedContent') return Promise.reject(new Error('store unavailable'));
+					return Promise.resolve(1);
+				}
+				export function clearRecords() { return Promise.resolve(0); }
+			`,
+		},
+	});
+	const infos = await mod.getStoreInfos();
+	assert.equal(infos.length, 4);
+	assert.equal(infos.find(info => info.id === 'savedContent').count, 0);
+});
+
+test('the legacy database names stay recorded so an upgrade can still find the data', () => {
+	const src = read('lib/utils/featureStores.js');
 	assert.ok(src.includes('rsm-voteHistory'));
 	assert.ok(src.includes('rsm-mediaManifest'));
+	assert.ok(src.includes('rsm-savedContent'));
+	assert.ok(src.includes('rsm-subredditEmotes'));
 });
 
 test('storageDashboard module is registered in the module index', () => {

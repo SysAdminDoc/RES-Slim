@@ -1188,6 +1188,10 @@ test('saved content stays isolated across an Alice to Bob to Alice account switc
 		createdUtc: 1, body: 'legacy ownership unknown', title: '', url: '', score: 0,
 		tags: ['legacy-tag'], savedAt: 1, lastSeenAt: 1,
 	};
+	// A profile that had saved content before the sets moved into the extension's
+	// own database. Planting it in reddit.com's storage and then clearing the
+	// migration marker reproduces that state: the copy runs on the next page
+	// load, which is the only context that can see the old database.
 	await page.evaluate(record => new Promise((resolve, reject) => {
 		const request = indexedDB.open('rsm-savedContent', 1);
 		request.onupgradeneeded = () => request.result.createObjectStore('items', { keyPath: 'fullname' });
@@ -1200,6 +1204,11 @@ test('saved content stays isolated across an Alice to Bob to Alice account switc
 		};
 		request.onerror = () => reject(request.error);
 	}), legacyRecord);
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.remove('RESmodules.featureData.migrated', resolve);
+	}));
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#rsm-savedBackup-trigger', { timeout: 30000 });
 
 	const openManager = async () => {
 		await page.locator('#rsm-savedBackup-trigger').click();
@@ -1224,27 +1233,37 @@ test('saved content stays isolated across an Alice to Bob to Alice account switc
 		assert.ok(downloadPath, 'saved-content export should produce a JSON file');
 		return JSON.parse(fs.readFileSync(downloadPath, 'utf8'));
 	};
-	const readDatabase = () => page.evaluate(() => new Promise((resolve, reject) => {
-		const request = indexedDB.open('rsm-savedContent', 2);
-		request.onsuccess = () => {
-			const db = request.result;
-			const stores = [...db.objectStoreNames];
-			const transaction = db.transaction(['items', 'accountItems'], 'readonly');
-			const legacy = transaction.objectStore('items').getAll();
-			const accounts = transaction.objectStore('accountItems').getAll();
-			transaction.oncomplete = () => {
-				db.close();
-				resolve({ stores, legacy: legacy.result, accounts: accounts.result });
+	// Two origins now: the untouched recovery copy is still reddit.com's, and the
+	// records the manager actually reads are the extension's.
+	const readDatabase = async () => {
+		const legacy = await page.evaluate(() => new Promise((resolve, reject) => {
+			const request = indexedDB.open('rsm-savedContent');
+			request.onsuccess = () => {
+				const db = request.result;
+				const stores = [...db.objectStoreNames];
+				const get = db.transaction('items', 'readonly').objectStore('items').getAll();
+				get.onsuccess = () => { db.close(); resolve({ stores, records: get.result }); };
+				get.onerror = () => { db.close(); reject(get.error); };
 			};
-			transaction.onerror = () => { db.close(); reject(transaction.error); };
-		};
-		request.onerror = () => reject(request.error);
-	}));
+			request.onerror = () => reject(request.error);
+		}));
+		const accounts = await worker.evaluate(() => new Promise((resolve, reject) => {
+			const request = indexedDB.open('rsm-featureData');
+			request.onsuccess = () => {
+				const db = request.result;
+				const get = db.transaction('savedContent', 'readonly').objectStore('savedContent').getAll();
+				get.onsuccess = () => { db.close(); resolve(get.result || []); };
+				get.onerror = () => { db.close(); reject(get.error); };
+			};
+			request.onerror = () => reject(request.error);
+		}));
+		return { stores: legacy.stores, legacy: legacy.records, accounts };
+	};
 
 	await openManager();
 	assert.doesNotMatch(await page.locator('#rsm-savedBackup-panel').innerText(), /legacy ownership unknown/);
 	const migrated = await readDatabase();
-	assert.deepEqual(migrated.stores, ['accountItems', 'items']);
+	assert.deepEqual(migrated.stores, ['items'], 'the old database is left exactly as it was');
 	assert.equal(migrated.legacy[0].fullname, 't1_legacy', 'the untouched v1 store is the recovery copy');
 	assert.deepEqual(
 		migrated.accounts.map(record => [record.username, record.fullname]),
@@ -5515,20 +5534,9 @@ test('subreddit emoji render as accessible inline media and reuse the local cach
 	await page.waitForSelector('#thing_t1_comment000001 img.rsm-subredditEmote', { timeout: 30000 });
 	await page.waitForFunction(() => document.querySelector('.rsm-subredditEmote')?.naturalWidth > 0, null, { timeout: 30000 });
 
-	const state = await page.evaluate(async () => {
+	const state = await page.evaluate(() => {
 		const paragraph = document.querySelector('#thing_t1_comment000001 .usertext-body p');
 		const image = paragraph?.querySelector('img.rsm-subredditEmote');
-		const record = await new Promise((resolve, reject) => {
-			const request = indexedDB.open('rsm-subredditEmotes', 1);
-			request.onsuccess = () => {
-				const db = request.result;
-				const transaction = db.transaction('maps', 'readonly');
-				const get = transaction.objectStore('maps').get('fixture');
-				get.onsuccess = () => { db.close(); resolve(get.result); };
-				get.onerror = () => { db.close(); reject(get.error); };
-			};
-			request.onerror = () => reject(request.error);
-		});
 		return {
 			alt: image?.alt,
 			title: image?.title,
@@ -5536,13 +5544,25 @@ test('subreddit emoji render as accessible inline media and reuse the local cach
 			height: image?.getBoundingClientRect().height,
 			fontSize: paragraph ? parseFloat(getComputedStyle(paragraph).fontSize) : 0,
 			text: paragraph?.textContent,
-			cache: record ? {
-				subreddit: record.subreddit,
-				emotes: Object.keys(record.emotes),
-				threads: Object.keys(record.threads),
-			} : null,
 		};
 	});
+	// The cache is in the extension's own database now, not reddit.com's, so it
+	// is read from the service worker — the same origin the settings page uses.
+	const record = await worker.evaluate(() => new Promise((resolve, reject) => {
+		const request = indexedDB.open('rsm-featureData');
+		request.onsuccess = () => {
+			const db = request.result;
+			const get = db.transaction('subredditEmotes', 'readonly').objectStore('subredditEmotes').get('fixture');
+			get.onsuccess = () => { db.close(); resolve(get.result || null); };
+			get.onerror = () => { db.close(); reject(get.error); };
+		};
+		request.onerror = () => reject(request.error);
+	}));
+	state.cache = record ? {
+		subreddit: record.subreddit,
+		emotes: Object.keys(record.emotes),
+		threads: Object.keys(record.threads),
+	} : null;
 	assert.equal(state.alt, ':9678:');
 	assert.equal(state.title, ':9678:');
 	assert.ok(state.naturalWidth > 0, 'the Reddit-hosted emoji asset must decode');
@@ -5564,5 +5584,5 @@ test('subreddit emoji render as accessible inline media and reuse the local cach
 
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('#thing_t1_comment000001 img.rsm-subredditEmote', { timeout: 30000 });
-	assert.equal(metadataRequests, 1, 'a fresh thread map should be served from IndexedDB');
+	assert.equal(metadataRequests, 1, 'a fresh thread map should be served from the extension database');
 });

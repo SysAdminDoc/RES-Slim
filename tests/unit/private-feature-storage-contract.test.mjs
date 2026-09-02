@@ -97,26 +97,40 @@ test('every module-owned storage wrapper declares a registered feature policy', 
 	assert.match(maintenance, /Storage\.wrapFeature\(\s*'storageMaintenance'/);
 });
 
-test('every direct feature IndexedDB owner checks the shared policy before opening', () => {
+test('no feature owner opens IndexedDB itself, and the one that does guards every store', () => {
+	// The data sets moved out of reddit.com's storage and into the extension's,
+	// so the only context that may open a database is the background page. A
+	// module or helper that opens one again is opening the wrong origin's, and
+	// the settings page loses sight of whatever it writes there.
 	const roots = [path.join(repoRoot, 'lib', 'modules'), path.join(repoRoot, 'lib', 'utils')];
 	const owners = roots.flatMap(javascriptFiles)
-		.filter(file => path.basename(file) !== 'storageDashboard.js')
 		.map(file => ({ file, code: codeOnly(fs.readFileSync(file, 'utf8')) }))
 		.filter(({ code }) => code.includes('indexedDB.open'));
+	assert.deepEqual(owners.map(({ file }) => repoRelative(file)).sort(), []);
 
-	assert.deepEqual(
-		owners.map(({ file }) => repoRelative(file)).sort(),
-		[
-			'lib/modules/mediaArchiveManifest.js',
-			'lib/modules/voteHistory.js',
-			'lib/utils/savedBackup.js',
-			'lib/utils/subredditEmoteStore.js',
-		],
-	);
-	for (const { file, code } of owners) {
-		const guard = /canPersistFeatureData\(\s*'([^']+)'/.exec(code);
-		assert.ok(guard, `${repoRelative(file)} opens IndexedDB without the shared policy guard`);
-		assert.ok(Object.hasOwn(PrivateStorage.FEATURE_DATA_STORE_POLICIES, guard[1]));
+	// The comment stripper has to have run for that to mean anything: several of
+	// these files describe IndexedDB in their headers.
+	assert.ok(readRepoFile('lib/utils/featureStores.js').includes('`indexedDB`'));
+	assert.ok(!codeOnly(readRepoFile('lib/utils/featureStores.js')).includes('`indexedDB`'));
+
+	// Every caller of the bridge still consults the private-context policy. The
+	// bridge itself deliberately does not: the saved-content manager has an
+	// in-tab fallback that a blanket guard would pre-empt.
+	const callers = roots.flatMap(javascriptFiles)
+		.map(file => ({ file, code: codeOnly(fs.readFileSync(file, 'utf8')) }))
+		.filter(({ code }) => /from '[^']*foreground\/featureDb'/.test(code));
+	assert.ok(callers.length >= 4, 'the local data sets all read through the bridge');
+	for (const { file, code } of callers) {
+		assert.ok(
+			code.includes('canPersistFeatureData('),
+			`${repoRelative(file)} uses the feature database without the shared policy guard`,
+		);
+		// Where the store is named literally, it has to be a registered one. The
+		// dashboard reads the id off the descriptor instead, because it covers
+		// every set rather than one.
+		for (const [, id] of code.matchAll(/canPersistFeatureData\(\s*'([^']+)'/g)) {
+			assert.ok(Object.hasOwn(PrivateStorage.FEATURE_DATA_STORE_POLICIES, id), `${id} has no registered policy`);
+		}
 	}
 });
 
@@ -143,26 +157,43 @@ test('policy-aware chrome storage wrappers suppress every private mutation', asy
 	await store.clear();
 });
 
-test('private saved-content and emoji operations never open IndexedDB', async () => {
-	let opens = 0;
-	globalThis.indexedDB = { open() { opens += 1; throw new Error('IndexedDB must stay closed'); } };
+// Counting bridge messages, not IndexedDB opens. Once the databases moved into
+// the extension's origin nothing in a content script opened one at all, so
+// asserting on `indexedDB.open` passed no matter what these functions did — the
+// exact shape of a test that has quietly stopped testing. Each half below
+// therefore carries a positive control: the same call outside a private window
+// must reach the store.
+function recordBridgeMessages() {
+	const sent = [];
+	globalThis.__runtimeMessageResponder = message => {
+		if (!String(message.type).startsWith('featureDb-')) return undefined;
+		sent.push(message.type);
+		return message.type === 'featureDb-count' || message.type === 'featureDb-clear' ? 0 : [];
+	};
+	return sent;
+}
+
+const SAVED_ITEM = {
+	fullname: 't3_private',
+	kind: 't3',
+	id: 'private',
+	subreddit: 'test',
+	author: 'alice',
+	permalink: '/r/test/comments/private',
+	createdUtc: 1,
+	body: '',
+	title: 'Private',
+	url: '',
+	score: 1,
+};
+
+test('private saved-content and emoji operations never reach the store', async () => {
+	const sent = recordBridgeMessages();
 	globalThis.chrome.extension.inIncognitoContext = true;
 
 	const Saved = await loadModule('lib/utils/savedBackup.js', 'private-saved-content');
 	assert.deepEqual(await Saved.loadSavedRecords('alice'), []);
-	const ephemeral = await Saved.mergeSavedRecordsIntoStore('alice', [{
-		fullname: 't3_private',
-		kind: 't3',
-		id: 'private',
-		subreddit: 'test',
-		author: 'alice',
-		permalink: '/r/test/comments/private',
-		createdUtc: 1,
-		body: '',
-		title: 'Private',
-		url: '',
-		score: 1,
-	}], 10);
+	const ephemeral = await Saved.mergeSavedRecordsIntoStore('alice', [SAVED_ITEM], 10);
 	assert.equal(ephemeral.length, 1);
 	assert.equal(await Saved.updateSavedRecordTags('alice', 't3_private', ['private']), null);
 	assert.equal(await Saved.purgeSavedRecords('alice'), 0);
@@ -170,17 +201,22 @@ test('private saved-content and emoji operations never open IndexedDB', async ()
 	const Emotes = await loadModule('lib/utils/subredditEmoteStore.js', 'private-subreddit-emotes');
 	assert.equal(await Emotes.readEmoteCache('test'), null);
 	await Emotes.writeEmoteCache({ subreddit: 'test', fetchedAt: 1, emotes: {}, threads: {} }, 1000);
-	assert.equal(opens, 0);
+	assert.deepEqual(sent, []);
+
+	// Positive control: the same calls outside a private window do reach it.
 	globalThis.chrome.extension.inIncognitoContext = false;
+	await Saved.loadSavedRecords('alice');
+	await Emotes.readEmoteCache('test');
+	assert.deepEqual(sent, ['featureDb-read', 'featureDb-get']);
+	globalThis.__runtimeMessageResponder = undefined;
 });
 
-test('private vote and media writers stop before IndexedDB is opened', async () => {
-	let opens = 0;
-	globalThis.indexedDB = { open() { opens += 1; throw new Error('IndexedDB must stay closed'); } };
+test('private vote and media writers stop before the store', async () => {
+	const sent = recordBridgeMessages();
 	globalThis.chrome.extension.inIncognitoContext = true;
 
 	const Vote = await loadModule('lib/modules/voteHistory.js', 'private-vote-history');
-	await Vote._internal.putRecord({
+	const voteRecord = {
 		id: '1',
 		fullname: 't3_private',
 		kind: 't3',
@@ -191,9 +227,10 @@ test('private vote and media writers stop before IndexedDB is opened', async () 
 		snippet: '',
 		scoreAtTime: 1,
 		timestamp: 1,
-	});
+	};
+	await Vote._internal.putRecord(voteRecord);
 	const Media = await loadModule('lib/modules/mediaArchiveManifest.js', 'private-media-manifest');
-	await Media._internal.putEntry({
+	const mediaEntry = {
 		id: '1',
 		url: 'https://example.com/private.jpg',
 		filename: 'private.jpg',
@@ -204,8 +241,13 @@ test('private vote and media writers stop before IndexedDB is opened', async () 
 		mime: '',
 		bytes: 0,
 		timestamp: 1,
-	});
+	};
+	await Media._internal.putEntry(mediaEntry);
+	assert.deepEqual(sent, []);
 
-	assert.equal(opens, 0);
 	globalThis.chrome.extension.inIncognitoContext = false;
+	await Vote._internal.putRecord(voteRecord);
+	await Media._internal.putEntry(mediaEntry);
+	assert.deepEqual(sent, ['featureDb-write', 'featureDb-write']);
+	globalThis.__runtimeMessageResponder = undefined;
 });

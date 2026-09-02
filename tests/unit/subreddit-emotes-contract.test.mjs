@@ -110,6 +110,7 @@ test('cache records merge maps and expire per thread', () => {
 test('the opt-in old Reddit module uses bounded signed-in JSON and dashboard-accounted storage', () => {
 	const index = fs.readFileSync(path.join(repoRoot, 'lib', 'modules', 'index.js'), 'utf8');
 	const moduleSource = fs.readFileSync(path.join(repoRoot, 'lib', 'modules', 'subredditEmotes.js'), 'utf8');
+	const stores = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'featureStores.js'), 'utf8');
 	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'storageDashboard.js'), 'utf8');
 	const styles = fs.readFileSync(path.join(repoRoot, 'lib', 'css', 'modules', '_subredditEmotes.scss'), 'utf8');
 	assert.match(index, /import \{ module as subredditEmotes \} from '\.\/subredditEmotes';/);
@@ -119,6 +120,8 @@ test('the opt-in old Reddit module uses bounded signed-in JSON and dashboard-acc
 	assert.match(moduleSource, /fetchRedditJson\(/);
 	assert.match(moduleSource, /raw_json=1&limit=500&depth=10/);
 	assert.match(moduleSource, /watchForThings\(\['comment'\]/);
-	assert.match(dashboard, /Subreddit Emoji.+rsm-subredditEmotes.+maps.+cap: 250/);
+	// The store descriptor moved to the registry; the dashboard reads the cap.
+	assert.match(stores, /id: 'subredditEmotes'[\s\S]*?dbName: 'rsm-subredditEmotes', storeName: 'maps'/);
+	assert.match(dashboard, /subredditEmotes: 250/);
 	assert.match(styles, /height: 1em/);
 });

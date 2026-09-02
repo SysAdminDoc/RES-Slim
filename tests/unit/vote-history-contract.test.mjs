@@ -98,7 +98,10 @@ test('voteHistory module is registered and uses the helpers', () => {
 
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/voteHistory.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/voteHistory'/);
-	assert.match(mod, /indexedDB\.open\(/);
+	// See the media manifest contract: the log is in the extension's database.
+	assert.match(mod, /from '\.\.\/environment\/foreground\/featureDb'/);
+	assert.match(mod, /writeRecords\('voteHistory'/);
+	assert.doesNotMatch(mod, /indexedDB\.open\(/);
 	assert.match(mod, /watchForThings\(\['post', 'comment'\]/);
 	for (const opt of ['recordVotes', 'maxRecords', 'snippetLength']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);

@@ -4,6 +4,21 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- The local data sets moved out of reddit.com's storage and into the extension's
+  own. Vote history, the media manifest, saved content and the subreddit emoji
+  cache were written by content scripts, which meant they lived in Reddit's
+  IndexedDB and nothing outside a Reddit tab could read them. They are now one
+  database owned by the extension, reached over the background bridge. Your
+  existing records are copied across on the first Reddit page you open after
+  updating, and the old database is left in place rather than deleted. Purging
+  saved content stays per account: it is keyed by the account that saved each
+  item, so the storage dashboard points at the saved-content manager instead of
+  offering one button that would wipe every account on the machine. Counts and
+  purges are refused in a private window, which shares extension storage with
+  the normal one.
+
 ### Added
 
 - A **Match system** choice in the settings console theme picker, and it is what

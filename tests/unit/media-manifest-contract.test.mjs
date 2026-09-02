@@ -84,7 +84,11 @@ test('mediaArchiveManifest module is registered and uses the helpers', () => {
 
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/mediaArchiveManifest.js'), 'utf8');
 	assert.match(mod, /from '\.\.\/utils\/mediaManifest'/);
-	assert.match(mod, /indexedDB\.open\(/);
+	// The manifest lives in the extension's own database now, reached over the
+	// background bridge; a content script's own `indexedDB` is reddit.com's.
+	assert.match(mod, /from '\.\.\/environment\/foreground\/featureDb'/);
+	assert.match(mod, /writeRecords\('mediaManifest'/);
+	assert.doesNotMatch(mod, /indexedDB\.open\(/);
 	assert.match(mod, /isDownloadAnchor\(/);
 	for (const opt of ['maxEntries', 'trackHrefDownloads']) {
 		assert.ok(mod.includes(opt), `expected option ${opt}`);
