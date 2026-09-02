@@ -242,3 +242,44 @@ test('no colour channel is out of range', () => {
 	}
 	assert.deepEqual(offenders, [], offenders.join('\n  '));
 });
+
+// A fenced code block shipped one fixed dark panel. That is right on the ten
+// dark palettes and wrong on the one with a white page - a dark slab inside a
+// white comment, where old reddit's own code blocks follow the page - and every
+// syntax colour in it was chosen for a dark ground: measured on a light block,
+// the string green reads 1.85:1, the number orange 2.26 and the keyword purple
+// 2.70.
+function codeTokens(id) {
+	const source = id === 'base' ?
+		/html\.res-pageTheme \{([\s\S]*?)\n\}/.exec(scss) :
+		new RegExp(`html\\.res-pageTheme--${id} \\{([\\s\\S]*?)\\n\\}`).exec(scss);
+	assert.ok(source, `no block for ${id}`);
+	const tokens = {};
+	for (const [, name, value] of source[1].matchAll(/--(rsm-code-[a-z-]+):\s*([^;]+);/g)) tokens[name] = value.trim();
+	return tokens;
+}
+
+for (const [id, ground] of [['base', '#0b0f14'], ['classic', '#fff']]) {
+	test(`${id}: a fenced code block reads on the surface it is painted on`, () => {
+		const tokens = codeTokens(id);
+		const required = ['rsm-code-bg', 'rsm-code-border', 'rsm-code-fg', 'rsm-code-muted', 'rsm-code-comment', 'rsm-code-string', 'rsm-code-number', 'rsm-code-keyword'];
+		for (const name of required) assert.ok(tokens[name], `${id} does not define --${name}`);
+
+		// The block itself may be translucent, so the page behind it decides what
+		// the text actually lands on.
+		const block = over(color(tokens['rsm-code-bg']), hex(ground));
+		for (const name of ['rsm-code-fg', 'rsm-code-comment', 'rsm-code-string', 'rsm-code-number', 'rsm-code-keyword', 'rsm-code-muted']) {
+			const ratio = contrast(over(color(tokens[name]), block), block);
+			assert.ok(ratio >= 4.5, `${id}: --${name} on the code block = ${ratio.toFixed(2)}:1 (needs >= 4.5)`);
+		}
+	});
+}
+
+test('the code block reads its colours from the palette, with the no-theme values as fallbacks', () => {
+	// The fallbacks are the case where pageTheme is off: no palette, reddit's own
+	// light page, and a dark panel is still right there.
+	const fenced = fs.readFileSync(path.join(repoRoot, 'lib/css/modules/_fencedCodeBlocks.scss'), 'utf8');
+	for (const name of ['bg', 'border', 'fg', 'muted', 'comment', 'string', 'number', 'keyword']) {
+		assert.match(fenced, new RegExp(`var\\(--rsm-code-${name},`), `the code block does not follow --rsm-code-${name}`);
+	}
+});

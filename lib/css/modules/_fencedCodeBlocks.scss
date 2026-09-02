@@ -1,12 +1,17 @@
+// The literals here are the no-theme case: with `pageTheme` off there is no
+// palette to follow, and reddit's own page is light, so a dark panel is still
+// the right call for a code block. Under a palette every one of them is a token
+// (`_pageTheme.scss`), which is what lets Classic paint a light block with dark
+// syntax colours instead of a dark slab inside a white comment.
 pre.rsm-fenced {
 	position: relative;
 	margin: 6px 0;
 	padding: 10px 12px;
 	overflow: auto;
-	border: 1px solid rgb(255, 255, 255, 0.12);
+	border: 1px solid var(--rsm-code-border, rgb(255, 255, 255, 0.12));
 	border-radius: 6px;
-	background: rgb(20, 20, 24, 0.92);
-	color: #dcdce0;
+	background: var(--rsm-code-bg, rgb(20, 20, 24, 0.92));
+	color: var(--rsm-code-fg, #dcdce0);
 	font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 	font-size: 12px;
 	line-height: 1.5;
@@ -28,14 +33,14 @@ pre.rsm-fenced {
 	font-size: 10px;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: rgb(255, 255, 255, 0.4);
+	color: var(--rsm-code-muted, rgb(255, 255, 255, 0.62));
 	user-select: none;
 }
 
 .rsm-tok-comment {
-	color: #6a737d;
+	color: var(--rsm-code-comment, #8b949e);
 	font-style: italic;
 }
-.rsm-tok-string { color: #98c379; }
-.rsm-tok-number { color: #d19a66; }
-.rsm-tok-keyword { color: #c678dd; }
+.rsm-tok-string { color: var(--rsm-code-string, #98c379); }
+.rsm-tok-number { color: var(--rsm-code-number, #d19a66); }
+.rsm-tok-keyword { color: var(--rsm-code-keyword, #c678dd); }

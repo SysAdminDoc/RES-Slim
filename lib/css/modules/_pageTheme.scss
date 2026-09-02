@@ -54,6 +54,24 @@ html.res-pageTheme {
 	--rsm-vote-ink: #c6c6c6;
 	--rsm-vote-ink-up: #ff8b60;
 	--rsm-vote-ink-down: #9494ff;
+
+	// A fenced code block. It shipped one fixed dark panel, which is right on ten
+	// of the eleven palettes and wrong on the one with a white page: a dark slab
+	// inside a white comment, where old reddit's own code blocks follow the page.
+	// Carried as tokens for the same reason as the vote colours above - Classic
+	// restates the set below, and nothing else has to change.
+	--rsm-code-bg: rgb(20, 20, 24, 0.92);
+	--rsm-code-border: rgb(255, 255, 255, 0.12);
+	--rsm-code-fg: #dcdce0;
+	// 0.4 composited to 3.83:1 on the block. The language label is 10px uppercase,
+	// which is small text however decorative it looks.
+	--rsm-code-muted: rgb(255, 255, 255, 0.62);
+	// #6a737d was the inherited value and reads 3.83:1 on this block - the one
+	// colour in the set that never cleared AA even on the ground it was chosen for.
+	--rsm-code-comment: #8b949e;
+	--rsm-code-string: #98c379;
+	--rsm-code-number: #d19a66;
+	--rsm-code-keyword: #c678dd;
 }
 
 // ---- Palettes -------------------------------------------------------------
@@ -93,6 +111,18 @@ html.res-pageTheme--classic {
 	--rsm-vote-ink: #6f6f6f;
 	--rsm-vote-ink-up: #c04100;
 	--rsm-vote-ink-down: #5050c8;
+
+	// On #f6f8fa: 14.8 for the code, 5.6 for the label and the comments, 6.3, 6.1
+	// and 6.1 for strings, numbers and keywords. The dark set reads 1.9 to 2.7 on
+	// a light block.
+	--rsm-code-bg: #f6f8fa;
+	--rsm-code-border: #d0d7de;
+	--rsm-code-fg: #1f2328;
+	--rsm-code-muted: #5a6570;
+	--rsm-code-comment: #5a6570;
+	--rsm-code-string: #186a2e;
+	--rsm-code-number: #8b5000;
+	--rsm-code-keyword: #6f42c1;
 }
 
 html.res-pageTheme--oled {

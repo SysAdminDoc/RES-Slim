@@ -23,6 +23,11 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Fenced code blocks follow the page. On the Classic palette a code block was a
+  dark panel inside a white comment, with syntax colours picked for a dark
+  background reading under 3:1 on it. Classic gets a light block with dark
+  syntax colours; the ten dark palettes keep the look they had, with the comment
+  grey and the language label raised to where they can be read.
 - `yarn install` says so when the Node or Yarn version cannot build this repo,
   instead of letting the failure surface later as an error from inside a build
   tool. The versions it wants are in the README.
