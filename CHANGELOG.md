@@ -42,6 +42,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Release files now stay in a system temporary directory while Git's push hooks
+  repeat the build. The hooks clear `dist`, which previously removed the staged
+  ZIPs, checksum file, and release notes after the tag reached GitHub but before
+  the release could be created.
+
 - The thread minimap forced a layout per comment, every time it rebuilt. It read
   each comment's rectangle and appended that comment's stripe in the same loop,
   so every read had to flush the previous write — and the whole rail is rebuilt

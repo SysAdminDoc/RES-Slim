@@ -19,6 +19,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
@@ -134,9 +135,12 @@ for (const artifact of artifacts) {
 
 // Renamed rather than uploaded as `chrome.zip`: two releases' assets are
 // otherwise indistinguishable once downloaded.
-const staging = path.join(repoRoot, 'dist', 'publish');
-fs.rmSync(staging, { recursive: true, force: true });
-fs.mkdirSync(staging, { recursive: true });
+// Both pushes run the pre-push hook, and that hook runs `yarn verify`. Its build
+// removes `dist`, so release files staged anywhere under that directory vanish
+// before GitHub can receive them. Keep the verified copies in the system temp
+// directory until the release has been uploaded and read back.
+const staging = fs.mkdtempSync(path.join(os.tmpdir(), 'res-slim-publish-'));
+process.once('exit', () => fs.rmSync(staging, { recursive: true, force: true }));
 const digestLines = [];
 for (const artifact of artifacts) {
 	artifact.upload = path.join(staging, artifact.name);

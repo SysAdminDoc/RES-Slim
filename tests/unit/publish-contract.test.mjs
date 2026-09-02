@@ -74,6 +74,8 @@ test('the artifacts are hashed, renamed, and their digests shipped', () => {
 	assert.match(source, /SHA256SUMS\.txt/, 'the digests have to be published beside what they describe');
 	assert.match(source, /fs\.statSync\(artifact\.source\)\.size/, 'artifact size checks must not quote Windows paths through a child shell');
 	assert.doesNotMatch(source, /node -e .*readFileSync/, 'cmd.exe breaks nested quotes around absolute Windows paths');
+	assert.match(source, /mkdtempSync\(path\.join\(os\.tmpdir\(\), 'res-slim-publish-'\)\)/, 'pre-push verification removes dist before GitHub receives staged files');
+	assert.doesNotMatch(source, /const staging = path\.join\(repoRoot, 'dist'/, 'release staging must survive the pre-push build');
 	// `dist/zip` is produced by `yarn build`, whose `prebuild` rimrafs `dist` —
 	// so the artifacts are from this run. Stated in the script, because a stale
 	// artifact is the one failure that looks exactly like success.
