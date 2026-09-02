@@ -23,6 +23,14 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Stickied posts show a green title again. The rule that painted it lost the
+  cascade to the Classic layout layer, so under the refined layout, which is on
+  by default, a stickied post was an ordinary blue link with a slightly
+  different border. The green is a palette token now, dark enough to read on
+  Classic's white rows and light enough on the ten dark palettes.
+- The collapsed right sidebar no longer fades its own contents to half opacity
+  in its peek state, and three video overlay rules that asked for a colour
+  channel of 256 now ask for 255.
 - Hover cards get their fade speed back in the settings. The option was hidden
   with a note calling it broken, while every card read it for both the close
   timer and the fade itself, and the sibling module exposed the same control.

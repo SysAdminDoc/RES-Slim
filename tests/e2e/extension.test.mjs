@@ -1785,6 +1785,72 @@ test('inline ink is readable on whatever surface ends up behind it', async t => 
 	assert.deepEqual(failures, [], `inline ink below AA:\n  ${failures.join('\n  ')}`);
 });
 
+test('a stickied post keeps a green title, on the palette that has to read it', async t => {
+	// Old Reddit paints a stickied title green so it is not just another blue
+	// link. The theme's replacement was `html.res-pageTheme--refined .thing.stickied
+	// .title` at (0,4,1), and the Classic fidelity layer's title rule is (1,4,1),
+	// so under the refined layout - on by default - the green never applied and
+	// the row was distinguishable only by its border. The literal it carried,
+	// #8bd5a5, would have read 1.73:1 on Classic's white row if it ever had.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, FRONT_CAPTURE);
+
+	const failures = [];
+	/* eslint-disable no-await-in-loop */
+	for (const theme of ['classic', 'gruvbox']) {
+		await worker.evaluate(value => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { pageTheme: true, nightMode: false },
+				'RESoptions.pageTheme': { theme: { value }, refinedLayout: { value: true } },
+			}, resolve);
+		}), theme);
+		await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(
+			value => document.documentElement.classList.contains(`res-pageTheme--${value}`),
+			theme,
+			{ timeout: 30000 },
+		);
+
+		const measured = await page.evaluate(() => {
+			const rows = document.querySelectorAll('#siteTable > .thing.link');
+			const sticky = rows[0];
+			const ordinary = rows[1];
+			sticky.classList.add('stickied');
+			const title = sticky.querySelector('.title a, a.title, .title');
+			const read = element => getComputedStyle(element);
+			const ground = element => {
+				const ancestors = [];
+				for (let node = element; node; node = node.parentElement) ancestors.push(node); // eslint-disable-line no-restricted-syntax
+				const opaque = value => {
+					const parts = (String(value).match(/[\d.]+/g) || []).map(Number);
+					return parts.length < 4 || parts[3] > 0.95;
+				};
+				const painted = ancestors
+					.map(node => getComputedStyle(node).backgroundColor)
+					.find(background => background !== 'rgba(0, 0, 0, 0)' && opaque(background));
+				return painted || 'rgb(255, 255, 255)';
+			};
+			const state = {
+				sticky: read(title).color,
+				ordinary: read(ordinary.querySelector('.title a, a.title, .title')).color,
+				ground: ground(title),
+			};
+			sticky.classList.remove('stickied');
+			return state;
+		});
+
+		if (measured.sticky === measured.ordinary) failures.push(`${theme}: a stickied title is the ordinary link colour`);
+		const ratio = contrastRatio(measured.sticky, measured.ground);
+		if (ratio < 4.5) failures.push(`${theme}: ${measured.sticky} on ${measured.ground} = ${ratio.toFixed(2)}:1`);
+	}
+	/* eslint-enable no-await-in-loop */
+
+	assert.deepEqual(failures, [], `stickied titles:\n  ${failures.join('\n  ')}`);
+});
+
 // The palettes paint reddit. Until now nothing repainted this extension's own
 // widgets: only `.res-nightmode` did, so a reader on a dark palette with night
 // mode switched off - which the palette descriptions invite, they are dark skins

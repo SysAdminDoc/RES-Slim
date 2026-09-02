@@ -210,3 +210,35 @@ test('Classic Reddit is light and every alternative palette remains dark', () =>
 		else assert.ok(bg < 0.2, `${id} has a background luminance of ${bg.toFixed(3)} — that is not a dark theme`);
 	}
 });
+
+test('no palette rule dims content with an opacity multiplier', () => {
+	// An opacity composites the text, the border and the icons inside a box
+	// toward whatever is behind it, and no palette can correct for that: the
+	// collapsed sidebar's peek state faded its own content by half on all eleven.
+	// The `#header-img` rule is the exception and stays: it is a subreddit's
+	// decorative banner image, not content this stylesheet has to keep readable.
+	const offenders = [];
+	for (const [index, line] of scss.split('\n').entries()) {
+		if (!/^\topacity:/.test(line)) continue;
+		const before = scss.split('\n').slice(Math.max(0, index - 12), index).join('\n');
+		if (/#header-img/.test(before)) continue;
+		offenders.push(`${index + 1}: ${line.trim()}`);
+	}
+	assert.deepEqual(offenders, [], `opacity on a themed surface:\n  ${offenders.join('\n  ')}`);
+});
+
+test('no colour channel is out of range', () => {
+	// `rgb(256, 256, 256, 0.95)` clamps to white in every browser, so three video
+	// overlay rules worked by accident and no linter had an opinion. A channel
+	// past 255 is a typo that happens to render.
+	const files = ['lib/css/modules/_pageTheme.scss', 'lib/css/modules/_showImages.scss', 'lib/css/res.scss'];
+	const offenders = [];
+	for (const file of files) {
+		const text = fs.readFileSync(path.join(repoRoot, file), 'utf8');
+		for (const [, channels] of text.matchAll(/rgba?\(([^)]*)\)/g)) {
+			const numbers = channels.split(/[\s,/]+/).filter(Boolean).slice(0, 3).map(Number);
+			if (numbers.some(value => Number.isFinite(value) && value > 255)) offenders.push(`${file}: rgb(${channels})`);
+		}
+	}
+	assert.deepEqual(offenders, [], offenders.join('\n  '));
+});
