@@ -1,0 +1,39 @@
+// Flow 0.84's `CSSStyleSheet` predates constructable stylesheets: it has the
+// CSSOM members and no constructor, no `replaceSync`, and no
+// `adoptedStyleSheets` on a shadow root.
+//
+// `new CSSStyleSheet()` and `replaceSync` are Chrome 73 and Firefox 101, and the
+// Firefox build declares a minimum of 130, so both are well inside this
+// project's floor. The checker not knowing about them is a fact about the
+// checker.
+//
+// What they are for here: `lib/utils/shreddit.js` used to write the same CSS
+// text into a `<style>` node in every prepared post and comment, so a feed
+// parsed the same few kilobytes dozens of times. One constructed sheet per style
+// key is parsed once and adopted by reference.
+//
+// Another libdef in here, same pattern as `intl`, `abort` and `crypto`: the libs
+// directory is where a browser-support decision belongs, because there it is
+// checked once. A cast at the call site asserts the same thing and checks
+// nothing.
+//
+// Deliberately partial: `replace()` (the async form) and `insertRule` on a
+// constructed sheet are not declared, because nothing here calls them. The code
+// that uses these still guards at runtime - a sheet belongs to the document it
+// was constructed in, so a cross-realm root cannot adopt it, and that is a
+// question about the page rather than about the engine.
+
+declare class CSSStyleSheet {
+	constructor(options?: {| media?: string, disabled?: boolean |}): void;
+	replaceSync(text: string): void;
+	cssRules: CSSRuleList;
+	disabled: boolean;
+	href: string | null;
+	media: any;
+	ownerNode: Node | null;
+	parentStyleSheet: CSSStyleSheet | null;
+	title: string | null;
+	type: string;
+	deleteRule(index: number): void;
+	insertRule(rule: string, index?: number): number;
+}

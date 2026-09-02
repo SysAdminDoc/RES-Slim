@@ -127,7 +127,9 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const joinHost = document.querySelector('shreddit-join-button');
 		const joinControl = joinHost?.shadowRoot?.querySelector('button, a');
 		const actionRow = first?.shadowRoot?.querySelector('.action-row, .shreddit-post-container');
-		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]');
+		// Delivered either way: adopted as a constructed stylesheet where the
+		// engine and the realm allow it, and as a <style> node where they do not.
+		const shadowStyle = ((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="classic"]') || (root.adoptedStyleSheets || []).length > 0))(first?.shadowRoot));
 		const logoSvg = document.querySelector('#reddit-logo svg');
 		const share = first?.shadowRoot?.querySelector('shreddit-post-share-button');
 		const actionIcons = [
@@ -407,13 +409,84 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 
 		return {
 			beforeRoot,
-			sheet: !!post.shadowRoot.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			sheet: Boolean(((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="classic"]') || (root.adoptedStyleSheets || []).length > 0))(post.shadowRoot))),
 			part: post.shadowRoot.querySelector('.action-row')?.getAttribute('part') || null,
 		};
 	});
 	assert.deepEqual(lateShadow, { beforeRoot: false, sheet: true, part: 'rsm-action-row' }, 'a post that grows its shadow root after being seen must still get the classic sheet and its parts');
 
 	assert.deepEqual(pageErrors, [], 'current Reddit listing must initialise without uncaught errors');
+});
+
+test('one stylesheet object per key, adopted by every root that needs it', async t => {
+	// The same CSS text used to be written into a `<style>` node in every
+	// prepared post and comment, so a feed parsed the same few kilobytes once per
+	// row. A constructed sheet is parsed once and adopted by reference.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+	await page.waitForFunction(
+		() => (document.querySelector('#t3_fixture1')?.shadowRoot?.adoptedStyleSheets || []).length > 0,
+		null, { timeout: 30000 },
+	);
+
+	// Clone the fixture's posts until there are a hundred of them, which is the
+	// scale the old behaviour was wasteful at.
+	const measured = await page.evaluate(async () => {
+		const feed = document.querySelector('shreddit-feed');
+		// `cloneNode` does not clone a shadow root - the fixture's is declarative
+		// and is parsed once - so each clone gets one the way a streamed post does.
+		const clones = Array.from({ length: 96 }, (unused, i) => {
+			const post = document.createElement('shreddit-post');
+			post.id = `t3_clone${i}`;
+			post.setAttribute('author', 'alice');
+			post.setAttribute('subreddit-name', 'example');
+			post.setAttribute('post-type', 'link');
+			post.setAttribute('score', '7');
+			post.setAttribute('comment-count', '3');
+			post.setAttribute('permalink', `/r/example/comments/clone${i}/x/`);
+			feed.append(post);
+			return post;
+		});
+		await new Promise(resolve => { setTimeout(resolve, 150); });
+		for (const post of clones) {
+			post.attachShadow({ mode: 'open' });
+			post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+		}
+		await new Promise(resolve => { setTimeout(resolve, 2500); });
+
+		const posts = [...document.querySelectorAll('shreddit-post')].filter(post => post.shadowRoot);
+		const sheets = new Set();
+		let nodes = 0;
+		let roots = 0;
+		for (const post of posts) {
+			const shadow = post.shadowRoot;
+			if (!(shadow.adoptedStyleSheets || []).length) continue;
+			roots += 1;
+			for (const sheet of shadow.adoptedStyleSheets) sheets.add(sheet);
+			nodes += shadow.querySelectorAll('style[data-res-shreddit-shadow-style]').length;
+		}
+		const first = posts[0].shadowRoot.querySelector('[data-action-bar-action="upvote"]');
+		const last = posts[posts.length - 1].shadowRoot.querySelector('[data-action-bar-action="upvote"]');
+		return {
+			roots,
+			distinctSheets: sheets.size,
+			nodes,
+			firstArrow: first ? getComputedStyle(first, '::before').backgroundColor : null,
+			lastArrow: last ? getComputedStyle(last, '::before').backgroundColor : null,
+		};
+	});
+
+	assert.ok(measured.roots >= 90, `expected the clones to be prepared, saw ${measured.roots} adopting roots`);
+	// Two sheets match `shreddit-post`: the geometry and the old-Reddit glyphs.
+	assert.equal(measured.distinctSheets, 2, 'a root should adopt the shared object, not a copy of it');
+	assert.equal(measured.nodes, 0, 'a root that adopted the sheet must not also carry a style node with the same rules');
+	assert.equal(measured.firstArrow, measured.lastArrow, 'every root has to end up painted the same');
+	assert.equal(measured.firstArrow, 'rgb(111, 111, 111)', 'and painted by the classic sheet rather than by nothing');
 });
 
 test('current Reddit keeps the classic shell usable at responsive and 200 percent zoom widths', async t => {
@@ -431,7 +504,7 @@ test('current Reddit keeps the classic shell usable at responsive and 200 percen
 		await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
 		await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 		await page.waitForFunction(
-			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			() => ((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="classic"]') || (root.adoptedStyleSheets || []).length > 0))(document.querySelector('#t3_fixture1')?.shadowRoot)),
 			null, { timeout: 30000 });
 		await dismissVisualNotifications(page);
 		await page.locator('reddit-header-large input').focus();
@@ -5048,7 +5121,7 @@ test('hiding scores works on both renderers, from one option set', async t => {
 	await shreddit.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
 	await shreddit.waitForSelector('shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 	await shreddit.waitForFunction(
-		() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="karma-hide"]'),
+		() => ((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="karma-hide"]') || (root.adoptedStyleSheets || []).length > 0))(document.querySelector('#t3_fixture1')?.shadowRoot)),
 		null, { timeout: 30000 });
 
 	const current = await shreddit.evaluate(() => {
@@ -5063,8 +5136,9 @@ test('hiding scores works on both renderers, from one option set', async t => {
 			commentsVisibility: getComputedStyle(comments).visibility,
 			// The classic sheet has to still be there: a second registered sheet
 			// must not have replaced the first.
-			classicStillInstalled: !!shadow.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
-			sheetCount: shadow.querySelectorAll('style[data-res-shreddit-shadow-style]').length,
+			// One entry per owner, whichever way it was delivered.
+			classicStillInstalled: Boolean(((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="classic"]') || (root.adoptedStyleSheets || []).length > 0))(shadow))),
+			sheetCount: shadow.querySelectorAll('style[data-res-shreddit-shadow-style]').length + (shadow.adoptedStyleSheets || []).length,
 		};
 	});
 	await shreddit.close();
@@ -5137,7 +5211,7 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 		await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
 		// The shadow stylesheet can land one frame after upgrade.
 		await page.waitForFunction(
-			() => document.querySelector('#t3_fixture1')?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]'),
+			() => ((root => root && (root.querySelector('style[data-res-shreddit-shadow-style="classic"]') || (root.adoptedStyleSheets || []).length > 0))(document.querySelector('#t3_fixture1')?.shadowRoot)),
 			null, { timeout: 30000 });
 
 		const state = await page.evaluate(() => {
@@ -5162,7 +5236,12 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 				colorScheme: getComputedStyle(document.documentElement).colorScheme,
 				voteColour: getComputedStyle(upvote).color,
 				titleFont: getComputedStyle(post.querySelector('[slot="title"]')).fontFamily,
-				shadowRuleCount: shadow.querySelector('style[data-res-shreddit-shadow-style="classic"]').textContent.length,
+				// Rules rather than characters of CSS text: the sheets are adopted
+				// now, so there is no text node to measure, and a rule count is the
+				// same question asked of either delivery path.
+				shadowRuleCount: [...(shadow.adoptedStyleSheets || [])].reduce((total, sheet) => total + sheet.cssRules.length, 0) +
+					[...shadow.querySelectorAll('style[data-res-shreddit-shadow-style]')]
+						.reduce((total, node) => total + (node.sheet ? node.sheet.cssRules.length : 0), 0),
 			};
 		});
 		await dismissVisualNotifications(page);
@@ -5185,8 +5264,12 @@ test('the classic layout reaches current Reddit on every palette, and the palett
 	}
 	assert.equal(light.titleFont, dark.titleFont, 'both palettes use the classic type stack');
 	assert.ok(light.headerHeight > 0 && light.postHeight > 0, 'the fixture rendered nothing to measure');
-	assert.ok(light.shadowRuleCount > 100 && dark.shadowRuleCount === light.shadowRuleCount,
-		'the shadow stylesheet must be installed identically under both palettes');
+	// Was "> 100 characters of CSS text" while the sheets were style nodes. The
+	// two classic sheets carry 32 rules between them; 20 is a floor that catches
+	// "nothing was installed" without pinning the number of rules they happen to
+	// have this week.
+	assert.ok(light.shadowRuleCount > 20 && dark.shadowRuleCount === light.shadowRuleCount,
+		`the shadow stylesheet must be installed identically under both palettes, saw ${light.shadowRuleCount} and ${dark.shadowRuleCount}`);
 
 	// The vote rail is genuinely inside the post box rather than left at Reddit's
 	// own position - this is the assertion the classic-only gate used to fail.

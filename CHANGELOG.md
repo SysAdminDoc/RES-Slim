@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- The small stylesheets RES-Slim puts inside Reddit's own components are parsed
+  once and shared, instead of being written into every post and comment on the
+  page. On a hundred-post feed that is two stylesheet objects rather than two
+  hundred style elements.
 - The stylesheets use Sass's module system instead of the deprecated `@import`,
   so a production build no longer prints 62 deprecation warnings. The compiled
   CSS is byte-for-byte what it was.
