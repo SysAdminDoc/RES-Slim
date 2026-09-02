@@ -14,3 +14,25 @@
 	text-transform: uppercase;
 	vertical-align: middle;
 }
+
+// The preview outline. Drawn on a thing the rules in the settings editor would
+// match, so it has to be visible without being one of the actions: nothing here
+// hides, dims, collapses, or reorders anything.
+[data-rsm-filter-preview] {
+	position: relative;
+	outline: 2px dashed var(--rsm-ink-warning);
+	outline-offset: -2px;
+}
+
+[data-rsm-filter-preview]::after {
+	content: 'would match';
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 1px 6px;
+	background: var(--rsm-ink-warning);
+	color: var(--rsm-surface-sunken);
+	font-size: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+}

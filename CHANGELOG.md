@@ -30,6 +30,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- **Filter schema v2.** A rule's condition can now be a group: `all`, `any` and
+  `not`, nested up to five deep, over the same fields and operators as before.
+  One flat test could not say "this flair, but only in this subreddit", even
+  though the module was already collecting every fact needed to answer it. Your
+  existing rules are read as they always were and keep working; exporting them
+  writes the new envelope, and a rule that started life flat still reads as flat.
+  A rule that cannot be parsed is now dropped and the reason shown, instead of
+  being kept as a rule that can never fire. And with the settings open from a
+  Reddit tab, the editor will count what the rules in the box would match on the
+  page behind it and outline them, without saving or hiding anything.
+
 - A **Data** tab in the settings console. It lists saved content, user tags, the
   vote log and the media manifest, with a search box, a live count, an export of
   whatever is on screen, and a purge of the same. Saved content gets an account

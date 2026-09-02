@@ -4747,6 +4747,93 @@ function describeViolations(violations) {
 		`${v.id} (${v.impact}) — ${node.target.join(' ')}\n      ${(node.failureSummary || v.help).replace(/\n/g, '\n      ')}`)).join('\n  ');
 }
 
+test('the filter editor counts and outlines what its rules would match, without applying them', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = servableCapture(FRONT_CAPTURE);
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const seed = await context.newPage();
+	await seed.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await seed.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.modulePrefs', stored => {
+			const prefs = { ...(stored['RES.modulePrefs'] || {}), filterRules: true };
+			chrome.storage.local.set({ 'RES.modulePrefs': prefs }, resolve);
+		});
+	}));
+	await seed.close();
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.goto('https://old.reddit.com/#res:settings/filterRules', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForSelector('#console-container', { timeout: 30000 });
+
+	const console_ = page.frameLocator('#console-container');
+	await console_.locator('#filterRules-rulesJson').waitFor({ state: 'visible', timeout: 30000 });
+
+	// A subreddit every post in the capture is in, so the count is the whole
+	// page, and a compound rule that narrows it to nothing - which is the thing
+	// a flat rule could not say.
+	const authors = await page.evaluate(() => [...document.querySelectorAll('#siteTable .thing.link')]
+		.map(thing => thing.getAttribute('data-author')).filter(Boolean));
+	assert.ok(authors.length > 1, 'the capture needs several posts to tell a count from a coincidence');
+	const [firstAuthor] = authors;
+	const expected = authors.filter(author => author === firstAuthor).length;
+
+	const rules = JSON.stringify({
+		schemaVersion: 2,
+		rules: [{
+			id: 'one-author',
+			action: 'hide',
+			target: 'post',
+			condition: { all: [{ field: 'user', op: 'equals', value: firstAuthor }] },
+		}],
+	});
+	await console_.locator('#filterRules-rulesJson').fill(rules);
+
+	await console_.locator('#filterRules-previewActions button', { hasText: 'Count matches' }).click();
+	await console_.locator('.rsm-filterRules-preview-status').waitFor({ state: 'visible', timeout: 30000 });
+	const counted = await console_.locator('.rsm-filterRules-preview-status').innerText();
+	assert.match(counted, new RegExp(`one-author: ${expected}\\b`), `expected ${expected} matches, got: ${counted}`);
+
+	// Counting alone changes nothing on the page.
+	assert.equal(await page.locator('[data-rsm-filter-preview]').count(), 0);
+	assert.equal(await page.locator('#siteTable .thing.link[style*="display: none"]').count(), 0);
+
+	await console_.locator('#filterRules-previewActions button', { hasText: 'Show matches' }).click();
+	await page.waitForFunction(count => document.querySelectorAll('[data-rsm-filter-preview]').length === count, expected, { timeout: 30000 });
+
+	// An outline is not an action: nothing is hidden, dimmed, or collapsed, and
+	// the saved rules are untouched.
+	const applied = await page.evaluate(() => ({
+		hidden: [...document.querySelectorAll('[data-rsm-filter-preview]')].filter(el => el.offsetParent === null).length,
+		dimmed: [...document.querySelectorAll('[data-rsm-filter-preview]')].filter(el => el.style.opacity).length,
+		hits: document.querySelectorAll('[data-rsm-filter-hit]').length,
+	}));
+	assert.deepEqual(applied, { hidden: 0, dimmed: 0, hits: 0 });
+
+	await console_.locator('#filterRules-previewActions button', { hasText: 'Hide matches' }).click();
+	await page.waitForFunction(() => document.querySelectorAll('[data-rsm-filter-preview]').length === 0, null, { timeout: 30000 });
+
+	// A rule the parser refuses is reported in the editor rather than sent.
+	await console_.locator('#filterRules-rulesJson').fill(JSON.stringify([{ id: 'bad', action: 'hide', condition: { all: [] } }]));
+	await console_.locator('#filterRules-previewActions button', { hasText: 'Count matches' }).click();
+	await console_.locator('.rsm-filterRules-preview-status[data-state="error"]').waitFor({ state: 'visible', timeout: 30000 });
+	assert.match(await console_.locator('.rsm-filterRules-preview-status').innerText(), /needs a non-empty list/);
+
+	assert.deepEqual(pageErrors, []);
+});
+
 test('the old Reddit data links open the workspace instead of panels of their own', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

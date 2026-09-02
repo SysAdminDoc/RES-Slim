@@ -36,6 +36,38 @@ purge work only on the account named in the panel. Upgrading from schema v1 keep
 the original store as a recovery copy and moves records with unknown ownership
 into an unassigned partition instead of attaching them to the active account.
 
+**Filter rules**: The filter builder reads a JSON array of rules, or an envelope
+of the form `{ "schemaVersion": 2, "rules": [...] }`. A rule has an `id`, an
+`action` (`hide`, `dim`, `collapse` or `badge`), an optional `target` (`post`,
+`comment` or `both`), and a `condition`. A condition is either one test:
+
+```json
+{ "field": "flair", "op": "equals", "value": "OC" }
+```
+
+or a group of them, nested up to five deep and 64 tests wide:
+
+```json
+{ "all": [
+  { "field": "subreddit", "op": "equals", "value": "pics" },
+  { "any": [
+    { "field": "flair", "op": "equals", "value": "OC" },
+    { "field": "flair", "op": "equals", "value": "Original" }
+  ] },
+  { "not": { "field": "user", "op": "equals", "value": "alice" } }
+] }
+```
+
+Fields are `user`, `subreddit`, `domain`, `keyword`, `flair`, `score` and
+`commentCount`; operators are `equals`, `contains`, `regex`, `lt` and `gt`. The
+old flat form, with `field`, `op` and `value` on the rule itself, is read as a
+one-test condition and means exactly what it used to. A rule that cannot be read
+is dropped and the reason is shown, rather than kept as a rule that never fires;
+a pattern that looks like it backtracks catastrophically is one of those
+reasons. Open the settings from a Reddit tab and the editor will count what the
+rules in the box would match on the page behind it, and outline them, without
+saving anything or hiding anything.
+
 **Private-window storage**: Every module-owned data store declares whether it can
 write from a private context. Visited posts, user tags, vote history, media
 history, saved content, and subreddit emoji metadata are blocked by default.

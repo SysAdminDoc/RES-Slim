@@ -184,7 +184,6 @@ const DELIBERATELY_UNREFERENCED = new Map([
 	['--rsm-success-line', 'status family: base/text/soft/line, and every other line token is used'],
 	['--rsm-warning-line', 'status family, as above'],
 	['--rsm-info-soft', 'status family: every other soft token is used'],
-	['--rsm-surface-sunken', 'surface family: surface / raised / sunken / panel'],
 	['--rsm-scrim', 'the shared overlay scrim; overlayViewer paints its own ::backdrop now'],
 	['--prompt-border-strong', 'pairs with --prompt-border, which is used five times'],
 	['--prompt-warning', 'status trio in the permission prompt: success / warning / danger'],

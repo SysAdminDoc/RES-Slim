@@ -13,7 +13,7 @@ const stripped = flowRemoveTypes(source, { all: true }).toString();
 const modulePath = path.join(tmpDir, 'filter.mjs');
 fs.writeFileSync(modulePath, stripped);
 
-const { ruleMatches, evaluateRules, parseRulesFromJson, isLikelyCatastrophicRegex } = await import(pathToFileURL(modulePath).href);
+const { ruleMatches, evaluateRules, parseRulesFromJson, parseFilterRules, serializeFilterRules, conditionMatches, isLikelyCatastrophicRegex, MAX_CONDITION_DEPTH, MAX_CONDITION_NODES, FILTER_SCHEMA_VERSION } = await import(pathToFileURL(modulePath).href);
 
 const rule = (over = {}) => ({ id: 'r', enabled: true, field: 'user', op: 'equals', value: 'spammer', action: 'hide', target: 'both', ...over });
 const facts = (over = {}) => ({ kind: 'post', user: 'alice', subreddit: 'pics', domain: 'i.imgur.com', title: 'hello world', flair: '', score: 5, commentCount: 12, ...over });
@@ -132,18 +132,25 @@ test('only a regex rule carries a compiled pattern', () => {
 	assert.equal(rules[1].compiled, undefined);
 });
 
-test('a pattern that is rejected is rejected once, and matches nothing', () => {
-	// Malformed, and one shaped like a catastrophic backtracker. Both have to be
-	// refused at parse time and behave as a rule that matches nothing — never as
-	// a throw during evaluation, which would take the whole filter pass down.
-	const rules = parseRulesFromJson(JSON.stringify([
+test('a rejected pattern takes its rule out of the set and says why', () => {
+	// Malformed, and one shaped like a catastrophic backtracker. Both are refused
+	// at parse time — never as a throw during evaluation, which would take the
+	// whole filter pass down with it.
+	//
+	// This used to keep the rule with a null pattern, which matched nothing. That
+	// was safe and invisible: in a list of rules, one that can never fire looks
+	// exactly like one that works. Now it is dropped and named, because the
+	// editor has somewhere to put the reason.
+	const parsed = parseFilterRules(JSON.stringify([
 		{ id: 'broken', field: 'keyword', op: 'regex', value: '([a-z]+)+$', action: 'hide' },
 		{ id: 'malformed', field: 'keyword', op: 'regex', value: '(unclosed', action: 'hide' },
+		{ id: 'fine', field: 'user', op: 'equals', value: 'alice', action: 'hide' },
 	]));
-	assert.equal(rules[0].compiled, null, 'a catastrophic pattern must be rejected at parse time');
-	assert.equal(rules[1].compiled, null, 'a malformed pattern must be rejected at parse time');
+	assert.deepEqual(parsed.rules.map(r => r.id), ['fine'], 'one bad rule must not take the set with it');
+	assert.equal(parsed.errors.length, 2);
+	for (const message of parsed.errors) assert.match(message, /rejected as unsafe or invalid/);
 
-	assert.deepEqual(evaluateRules(rules, { kind: 'post', title: 'aaaaaaaaaaaaaaaaaaaaaaaaa!' }), [],
+	assert.deepEqual(evaluateRules(parsed.rules, { kind: 'post', title: 'aaaaaaaaaaaaaaaaaaaaaaaaa!' }), [],
 		'a rejected pattern matches nothing rather than throwing');
 });
 
@@ -154,12 +161,188 @@ test('a rule built by hand still works, so a caller that skips the parser is not
 	assert.deepEqual(evaluateRules(byHand, { kind: 'post', title: 'I built a thing' }).map(r => r.id), ['x']);
 });
 
+// --- schema v2 --------------------------------------------------------------
+//
+// One flat condition per rule could not say "this flair, but only in this
+// subreddit". Every fact needed was already collected; there was nowhere to
+// write the sentence.
+
+const post = over => facts({ kind: 'post', ...over });
+
+test('nested all/any/not groups read the facts they are given', () => {
+	const condition = {
+		all: [
+			{ field: 'subreddit', op: 'equals', value: 'pics' },
+			{ any: [
+				{ field: 'flair', op: 'equals', value: 'OC' },
+				{ field: 'flair', op: 'equals', value: 'Original' },
+			] },
+			{ not: { field: 'user', op: 'equals', value: 'alice' } },
+		],
+	};
+	const { rules, errors } = parseFilterRules(JSON.stringify([{ id: 'oc', action: 'hide', condition }]));
+	assert.deepEqual(errors, []);
+	const [rule] = rules;
+
+	// The whole point: the same flair in another subreddit is left alone.
+	assert.equal(ruleMatches(rule, post({ subreddit: 'pics', flair: 'OC', user: 'bob' })), true);
+	assert.equal(ruleMatches(rule, post({ subreddit: 'aww', flair: 'OC', user: 'bob' })), false);
+	assert.equal(ruleMatches(rule, post({ subreddit: 'pics', flair: 'Meta', user: 'bob' })), false);
+	// And `not` still excludes.
+	assert.equal(ruleMatches(rule, post({ subreddit: 'pics', flair: 'OC', user: 'alice' })), false);
+});
+
+test('a group is evaluated, not merely accepted', () => {
+	// `any` is a real disjunction and `all` a real conjunction, against the same
+	// facts, so a parser that collapsed either to its first child would show up.
+	const anyOf = { any: [{ field: 'score', op: 'lt', value: '0' }, { field: 'user', op: 'equals', value: 'alice' }] };
+	const allOf = { all: [{ field: 'score', op: 'lt', value: '0' }, { field: 'user', op: 'equals', value: 'alice' }] };
+	const given = post({ user: 'alice', score: 5 });
+	assert.equal(conditionMatches(anyOf, given), true);
+	assert.equal(conditionMatches(allOf, given), false);
+	assert.equal(conditionMatches({ not: anyOf }, given), false);
+	assert.equal(conditionMatches({ not: allOf }, given), true);
+});
+
+test('the target still gates a compound rule, on both renderers\u2019 facts', () => {
+	const { rules: [rule] } = parseFilterRules(JSON.stringify([{
+		id: 'comments-only',
+		action: 'collapse',
+		target: 'comment',
+		condition: { all: [{ field: 'subreddit', op: 'equals', value: 'pics' }, { field: 'score', op: 'lt', value: '0' }] },
+	}]));
+	assert.equal(ruleMatches(rule, { kind: 'comment', subreddit: 'pics', score: -3 }), true);
+	assert.equal(ruleMatches(rule, { kind: 'post', subreddit: 'pics', score: -3 }), false);
+});
+
+test('a tree deeper or wider than the limits is refused whole, with a reason', () => {
+	let deep = { field: 'user', op: 'equals', value: 'alice' };
+	Array.from({ length: MAX_CONDITION_DEPTH + 1 }).forEach(() => { deep = { all: [deep] }; });
+	const tooDeep = parseFilterRules(JSON.stringify([{ id: 'deep', action: 'hide', condition: deep }]));
+	assert.deepEqual(tooDeep.rules, []);
+	assert.match(tooDeep.errors[0], /nested more than 5 deep/);
+
+	const wide = { any: Array.from({ length: MAX_CONDITION_NODES + 1 }, (_, i) => ({ field: 'user', op: 'equals', value: `u${i}` })) };
+	const tooWide = parseFilterRules(JSON.stringify([{ id: 'wide', action: 'hide', condition: wide }]));
+	assert.deepEqual(tooWide.rules, []);
+	assert.match(tooWide.errors[0], /more than 64 conditions/);
+
+	// A tree that sits inside both limits is accepted, so the limits are limits
+	// and not a blanket refusal.
+	let deepEnough = { field: 'user', op: 'equals', value: 'alice' };
+	Array.from({ length: MAX_CONDITION_DEPTH - 1 }).forEach(() => { deepEnough = { all: [deepEnough] }; });
+	const ok = parseFilterRules(JSON.stringify([{ id: 'ok', action: 'hide', condition: deepEnough }]));
+	assert.deepEqual(ok.errors, []);
+	assert.equal(ruleMatches(ok.rules[0], post({ user: 'alice' })), true);
+});
+
+test('an empty or malformed group is refused rather than quietly always-matching', () => {
+	// An empty `all` is vacuously true, which as a hide rule would take the whole
+	// page down.
+	for (const [label, condition] of [
+		['empty all', { all: [] }],
+		['empty any', { any: [] }],
+		['not a condition', { all: ['nope'] }],
+		['unknown field', { field: 'karma', op: 'equals', value: '1' }],
+		['unknown op', { field: 'user', op: 'startsWith', value: 'a' }],
+	]) {
+		const parsed = parseFilterRules(JSON.stringify([{ id: label, action: 'hide', condition }]));
+		assert.deepEqual(parsed.rules, [], `${label} must not produce a rule`);
+		assert.equal(parsed.errors.length, 1, `${label} must say why`);
+	}
+
+	const badAction = parseFilterRules(JSON.stringify([{ id: 'x', action: 'destroy', condition: { field: 'user', op: 'equals', value: 'a' } }]));
+	assert.deepEqual(badAction.rules, []);
+	assert.match(badAction.errors[0], /is not an action/);
+});
+
+test('a catastrophic pattern is refused wherever it is nested', () => {
+	const parsed = parseFilterRules(JSON.stringify([{
+		id: 'nested-redos',
+		action: 'hide',
+		condition: { any: [
+			{ field: 'user', op: 'equals', value: 'alice' },
+			{ all: [{ field: 'keyword', op: 'regex', value: '([a-z]+)+$' }] },
+		] },
+	}]));
+	assert.deepEqual(parsed.rules, [], 'a rule is not half-applied around a rejected branch');
+	assert.match(parsed.errors[0], /rejected as unsafe or invalid/);
+});
+
+test('every valid v1 rule migrates without a change of meaning, and exports as v2', () => {
+	const v1 = [
+		{ id: 'a', field: 'user', op: 'equals', value: 'spammer', action: 'hide', target: 'both' },
+		{ id: 'b', enabled: false, field: 'score', op: 'lt', value: '0', action: 'dim' },
+		{ id: 'c', field: 'keyword', op: 'regex', value: '^I\\s+built\\b', action: 'hide', target: 'post' },
+	];
+	const parsed = parseFilterRules(JSON.stringify(v1));
+	assert.deepEqual(parsed.errors, []);
+	assert.equal(parsed.schemaVersion, FILTER_SCHEMA_VERSION);
+
+	// Same verdict as the flat rule gave, on old-Reddit and current-Reddit facts
+	// alike — the facts are the same objects either renderer produces.
+	const cases = [
+		post({ user: 'spammer' }),
+		post({ user: 'bob', score: -4 }),
+		post({ user: 'bob', title: 'I built a thing' }),
+		{ kind: 'comment', user: 'spammer', subreddit: 'pics', score: 3 },
+		{ kind: 'comment', user: 'bob', subreddit: 'pics', body: 'I built a thing', score: 3 },
+	];
+	for (const given of cases) {
+		assert.deepEqual(
+			evaluateRules(parsed.rules, given).map(r => r.id),
+			evaluateRules(v1.map(r => ({ ...r, enabled: r.enabled !== false })), given).map(r => r.id),
+			`v1 and v2 must agree on ${JSON.stringify(given)}`,
+		);
+	}
+
+	// A v1 rule keeps its flat triple readable, so a caller holding the object
+	// does not have to know it grew a condition.
+	assert.equal(parsed.rules[0].field, 'user');
+	assert.equal(parsed.rules[0].op, 'equals');
+
+	// Exported as the envelope, and the export round-trips to the same verdicts.
+	const exported = serializeFilterRules(parsed.rules);
+	const envelope = JSON.parse(exported);
+	assert.equal(envelope.schemaVersion, FILTER_SCHEMA_VERSION);
+	assert.deepEqual(envelope.rules.map(r => r.id), ['a', 'b', 'c']);
+	assert.deepEqual(envelope.rules[0].condition, { field: 'user', op: 'equals', value: 'spammer' });
+	assert.equal(envelope.rules[1].enabled, false);
+
+	const reparsed = parseFilterRules(exported);
+	assert.deepEqual(reparsed.errors, []);
+	for (const given of cases) {
+		assert.deepEqual(
+			evaluateRules(reparsed.rules, given).map(r => r.id),
+			evaluateRules(parsed.rules, given).map(r => r.id),
+			'a round trip through the export must not change a verdict',
+		);
+	}
+	// And a second trip is byte-identical, so the export is a fixed point.
+	assert.equal(serializeFilterRules(reparsed.rules), exported);
+});
+
+test('a schema version this build does not read is refused whole', () => {
+	const parsed = parseFilterRules(JSON.stringify({ schemaVersion: 99, rules: [] }));
+	assert.deepEqual(parsed.rules, []);
+	assert.match(parsed.errors[0], /declare schema 99/);
+
+	// The envelope may also declare 1: a v1 array wrapped in an envelope is still
+	// a set of v1 rules, and reads as one.
+	const wrappedV1 = parseFilterRules(JSON.stringify({
+		schemaVersion: 1,
+		rules: [{ id: 'a', field: 'user', op: 'equals', value: 'alice', action: 'hide' }],
+	}));
+	assert.deepEqual(wrappedV1.errors, []);
+	assert.equal(ruleMatches(wrappedV1.rules[0], post({ user: 'alice' })), true);
+});
+
 test('filterRules module is registered and uses the utility helpers', () => {
 	const index = fs.readFileSync(path.join(repoRoot, 'lib/modules/index.js'), 'utf8');
 	assert.match(index, /import \{ module as filterRules \} from '\.\/filterRules';/);
 	assert.match(index, /^\s*filterRules,/m);
 	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/filterRules.js'), 'utf8');
-	assert.match(mod, /import \{ evaluateRules, parseRulesFromJson \} from '\.\.\/utils\/filterRules'/);
+	assert.match(mod, /import \{ evaluateRules, parseFilterRules \} from '\.\.\/utils\/filterRules'/);
 	assert.match(mod, /watchForThings\(\['post'\]/);
 	assert.match(mod, /watchForThings\(\['comment'\]/);
 	for (const action of ['hide', 'dim', 'collapse', 'badge']) {
