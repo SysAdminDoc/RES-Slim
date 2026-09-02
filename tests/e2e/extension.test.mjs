@@ -1785,6 +1785,90 @@ test('inline ink is readable on whatever surface ends up behind it', async t => 
 	assert.deepEqual(failures, [], `inline ink below AA:\n  ${failures.join('\n  ')}`);
 });
 
+// The palettes paint reddit. Until now nothing repainted this extension's own
+// widgets: only `.res-nightmode` did, so a reader on a dark palette with night
+// mode switched off - which the palette descriptions invite, they are dark skins
+// in their own right - got a white notification card, a white dialog with #666
+// text and a white comment navigator over an #282828 page.
+//
+// Probes rather than the real toast: the claim is about which stylesheet paints
+// these surfaces, and a notification's own lifecycle would decide whether one is
+// on screen when the measurement happens.
+test('RES chrome follows the page palette, not only night mode', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, CAPTURE);
+
+	const failures = [];
+	/* eslint-disable no-await-in-loop */
+	for (const theme of ['gruvbox', 'oled']) {
+		await worker.evaluate(value => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { pageTheme: true, nightMode: false },
+				'RESoptions.pageTheme': { theme: { value }, refinedLayout: { value: true } },
+			}, resolve);
+		}), theme);
+		await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(
+			value => document.documentElement.classList.contains(`res-pageTheme--${value}`),
+			theme,
+			{ timeout: 30000 },
+		);
+		await page.waitForTimeout(400);
+
+		const measured = await page.evaluate(() => {
+			const host = document.createElement('div');
+			host.innerHTML = `
+				<div class="RESNotification">
+					<div class="RESNotificationHeader">Header</div>
+					<div class="RESNotificationContent">Body</div>
+					<div class="RESNotificationFooter">Footer</div>
+				</div>
+				<div class="RESDialogSmall"><h3>Dialog</h3><div class="RESDialogContents">Contents</div></div>
+				<div id="REScommentNavBox"><span class="commentNavFieldLabel">Label</span></div>
+				<div class="RESMacroDropdown"><ul><li><a href="#">Macro</a></li></ul></div>`;
+			document.body.append(host);
+			const read = selector => {
+				const element = host.querySelector(selector);
+				const styles = getComputedStyle(element);
+				return { background: styles.backgroundColor, color: styles.color };
+			};
+			const state = {
+				page: getComputedStyle(document.body).backgroundColor,
+				surfaces: {
+					toast: read('.RESNotification'),
+					toastFooter: read('.RESNotificationFooter'),
+					dialog: read('.RESDialogSmall'),
+					navigator: read('#REScommentNavBox'),
+					navigatorLabel: read('.commentNavFieldLabel'),
+					macro: read('.RESMacroDropdown'),
+					macroItem: read('.RESMacroDropdown li a'),
+				},
+			};
+			host.remove();
+			return state;
+		});
+
+		// Nested probes inherit the card's ground rather than declaring one, so
+		// each says which surface is actually behind it.
+		const grounds = { toastFooter: 'toast', navigatorLabel: 'navigator', macroItem: 'macro' };
+		for (const [what, surface] of Object.entries(measured.surfaces)) {
+			let ground = surface.background;
+			if (ground === 'rgba(0, 0, 0, 0)') ground = measured.surfaces[grounds[what]].background;
+			if (relativeLuminance(ground) >= 0.35) {
+				failures.push(`${theme} ${what}: ${ground} is not a surface from a dark palette`);
+			}
+			const ratio = contrastRatio(surface.color, ground);
+			if (ratio < 4.5) failures.push(`${theme} ${what}: ${surface.color} on ${ground} = ${ratio.toFixed(2)}:1`);
+		}
+	}
+	/* eslint-enable no-await-in-loop */
+
+	assert.deepEqual(failures, [], `RES chrome under a dark palette with night mode off:\n  ${failures.join('\n  ')}`);
+});
+
 test('the light palette keeps dark inline ink, so injected chips stay readable', async t => {
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);

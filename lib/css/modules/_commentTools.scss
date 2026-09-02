@@ -193,3 +193,18 @@ span.RESCharCounter {
 		color: red;
 	}
 }
+
+html.res-pageTheme .RESMacroDropdown {
+	border-color: var(--rsm-th-border);
+	background-color: var(--rsm-th-bg-elev);
+
+	li a {
+		border-bottom-color: var(--rsm-th-border);
+		color: var(--rsm-th-txt);
+
+		&:hover {
+			background-color: var(--rsm-th-bg-raise);
+			color: var(--rsm-th-txt-strong);
+		}
+	}
+}

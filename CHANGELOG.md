@@ -23,6 +23,12 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- RES's own notifications, dialogs, hover cards, macro menu and comment
+  navigator follow the page palette. They only ever followed night mode, so a
+  reader on a dark palette with night mode switched off got a white notification
+  card and a white dialog with grey text over a dark page. The comment
+  navigator also stops dimming itself with an opacity multiplier, which took its
+  own labels down to about 2:1 with it; it recedes by its border and shadow now.
 - The vote column on current Reddit is readable on the Classic palette. It
   copied old Reddit's exact colours, and old Reddit never met AA: on a white row
   the grey score measured 1.71:1, the upvoted orange 2.30 and the downvoted

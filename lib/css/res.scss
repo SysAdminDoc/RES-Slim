@@ -970,3 +970,44 @@ body.res-dashboard {
 .pushRight {
 	margin-left: auto;
 }
+
+// ---- RES's own chrome under a page palette ---------------------------------
+// The eleven palettes paint reddit; until now nothing repainted this
+// extension's own dialogs and buttons, so only `.res-nightmode` ever moved them
+// off white. A reader on a dark palette with night mode off got a white dialog
+// with #666 text over an #282828 page. One class deeper than the night block, so
+// the palette wins where both apply - the same order the page ground already
+// follows under the refined layout.
+html.res-pageTheme {
+	.RESDialogSmall {
+		border-color: var(--rsm-th-border);
+		background-color: var(--rsm-th-bg-elev);
+		color: var(--rsm-th-txt);
+
+		> h3 {
+			border-bottom-color: var(--rsm-th-border);
+			background-color: var(--rsm-th-bg-raise);
+			color: var(--rsm-th-txt-strong);
+		}
+	}
+
+	.RESCloseButton::after {
+		border-color: var(--rsm-th-control-border);
+		background-color: var(--rsm-th-bg-raise);
+		color: var(--rsm-th-muted);
+	}
+
+	.RESCloseButton:hover::after {
+		border-color: var(--rsm-th-control-border);
+		background-color: var(--rsm-th-bg-elev);
+		color: var(--rsm-th-txt-strong);
+	}
+
+	.RESButton {
+		border-color: var(--rsm-th-control-border);
+		background-color: var(--rsm-th-bg-raise);
+		color: var(--rsm-th-txt);
+
+		&:hover { background-color: var(--rsm-th-bg-elev); }
+	}
+}

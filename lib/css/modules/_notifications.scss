@@ -255,6 +255,45 @@
 	}
 }
 
+// A palette is a page-wide choice, and until now it painted reddit and left this
+// extension's own surfaces alone: only `.res-nightmode` above ever repainted
+// them. So a reader on Gruvbox with night mode off - which the palette
+// descriptions invite, they are dark skins in their own right - got a white
+// notification card over an #282828 page. Scoped one class deeper than the night
+// block so the palette wins when both are on, which is what the page ground
+// already does under the refined layout.
+html.res-pageTheme {
+	#RESNotifications { color: var(--rsm-th-txt); }
+
+	.RESNotification {
+		border-color: var(--rsm-th-border);
+		background: var(--rsm-th-bg-elev);
+		box-shadow: 0 16px 42px var(--rsm-th-shadow);
+		color: var(--rsm-th-txt);
+	}
+
+	.RESNotification a { color: var(--rsm-th-link); }
+
+	.RESNotificationHeader {
+		border-bottom-color: var(--rsm-th-border);
+		background: var(--rsm-th-bg-raise);
+		color: var(--rsm-th-txt-strong);
+	}
+
+	.RESNotificationContent {
+		border-color: var(--rsm-th-border);
+		background: var(--rsm-th-bg-elev);
+		color: var(--rsm-th-txt);
+
+		h2 { color: var(--rsm-th-txt-strong); }
+	}
+
+	.RESNotificationFooter {
+		background: var(--rsm-th-bg-raise);
+		color: var(--rsm-th-muted);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.RESNotification {
 		transition: none;

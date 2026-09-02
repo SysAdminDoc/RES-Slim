@@ -7,13 +7,16 @@
 	border-radius: 10px;
 	background: rgb(255 255 255 / 92%);
 	box-shadow: 0 10px 28px rgb(15 23 42 / 14%);
-	opacity: 0.52;
 	user-select: none;
-	transition: opacity 0.2s ease, box-shadow 0.2s ease;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
+	// The idle state was `opacity: 0.52`, which multiplies everything inside the
+	// box toward the page: the 10px uppercase field labels landed around 2.2:1,
+	// and no palette can correct for an opacity. The box recedes by its own
+	// border and shadow now, and what it says stays readable.
 	&:focus-within,
 	&:hover {
-		opacity: 1;
+		border-color: rgb(148 163 184 / 60%);
 		box-shadow: 0 14px 34px rgb(15 23 42 / 18%);
 	}
 
@@ -114,4 +117,31 @@
 	#commentNavPostCount {
 		color: #aab4c0;
 	}
+}
+
+html.res-pageTheme {
+	#REScommentNavBox {
+		border-color: var(--rsm-th-border);
+		background: var(--rsm-th-bg-elev);
+		box-shadow: 0 10px 28px var(--rsm-th-shadow);
+		color: var(--rsm-th-txt);
+	}
+
+	#REScommentNavBox select {
+		border-color: var(--rsm-th-control-border);
+		background: var(--rsm-th-bg-raise);
+		color: var(--rsm-th-txt);
+	}
+
+	.commentNavFieldLabel,
+	.commentNavSkipRead {
+		color: var(--rsm-th-muted);
+	}
+
+	#commentNavUp,
+	#commentNavDown {
+		color: var(--rsm-th-link);
+	}
+
+	#commentNavPostCount { color: var(--rsm-th-txt); }
 }
