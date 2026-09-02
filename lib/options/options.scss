@@ -862,6 +862,186 @@ li {
 	font-size: 13px;
 }
 
+/* The local-data workspace shares the same column as the module workspace and
+   the console preferences: exactly one of the three is ever visible. */
+#RESDataWorkspace {
+	display: grid;
+	grid-row: 1;
+	grid-column: 2;
+	grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
+	gap: 12px;
+	min-width: 0;
+	min-height: 0;
+	padding: 20px 22px 24px;
+	background: var(--options-panel);
+
+	&[hidden] { display: none; }
+}
+
+.dataWorkspaceHeader {
+	max-width: 72ch;
+}
+
+.dataWorkspaceTitle {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+}
+
+.dataWorkspaceSummary {
+	margin: 4px 0 0;
+	color: var(--options-text-muted);
+	font-size: 13px;
+}
+
+.dataWorkspaceControls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: end;
+}
+
+.dataWorkspaceField {
+	display: grid;
+	gap: 4px;
+	min-width: 0;
+	color: var(--options-text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.dataWorkspaceField--grow {
+	flex: 1 1 220px;
+}
+
+.dataWorkspaceSelect,
+.dataWorkspaceSearch {
+	min-height: 34px;
+	padding: 0 10px;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-sm);
+	background: var(--options-panel-alt);
+	color: var(--options-text);
+	font-size: 13px;
+	font-weight: 400;
+}
+
+.dataWorkspaceActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+}
+
+.dataWorkspaceCount {
+	margin-right: auto;
+	color: var(--options-text-muted);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.settingsIoButton--danger[data-armed] {
+	border-color: var(--options-danger);
+	background: rgb(248 81 73 / 14%);
+	color: var(--options-danger-text);
+}
+
+.dataWorkspaceStatus {
+	margin: 0;
+	min-height: 1.2em;
+	color: var(--options-text-muted);
+	font-size: 12px;
+
+	&[data-tone='error'] { color: var(--options-danger-text); }
+	&[data-tone='success'] { color: var(--options-success-text); }
+}
+
+.dataWorkspaceRows {
+	display: grid;
+	align-content: start;
+	gap: 2px;
+	margin: 0;
+	padding: 0;
+	min-height: 0;
+	overflow: auto;
+	overscroll-behavior: contain;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-md);
+	background: var(--options-panel-alt);
+	list-style: none;
+	scrollbar-color: var(--options-border-strong) transparent;
+}
+
+.dataWorkspaceRow {
+	display: grid;
+	gap: 2px;
+	padding: 8px 12px;
+	border-bottom: 1px solid var(--options-border);
+
+	&:last-child { border-bottom: 0; }
+}
+
+.dataWorkspaceRowTitle {
+	overflow-wrap: anywhere;
+	font-size: 13px;
+}
+
+.dataWorkspaceRowMeta {
+	color: var(--options-text-muted);
+	font-size: 11px;
+}
+
+.dataWorkspaceMore,
+.dataWorkspaceEmpty {
+	margin: 0;
+	color: var(--options-text-muted);
+	font-size: 12px;
+
+	&[hidden] { display: none; }
+}
+
+.dataWorkspaceImport {
+	display: grid;
+	gap: 8px;
+	padding: 14px 16px;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-md);
+	background: var(--options-panel-alt);
+
+	&[hidden] { display: none; }
+}
+
+.dataWorkspaceImportTitle {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.dataWorkspaceImportHelp {
+	margin: 0;
+	max-width: 72ch;
+	color: var(--options-text-muted);
+	font-size: 12px;
+}
+
+.dataWorkspaceImportPayload {
+	width: 100%;
+	padding: 8px 10px;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-sm);
+	background: var(--options-panel);
+	color: var(--options-text);
+	font-family: ui-monospace, sfmono-regular, consolas, monospace;
+	font-size: 12px;
+	resize: vertical;
+}
+
+.dataWorkspaceImportActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
 .consolePrefsGrid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

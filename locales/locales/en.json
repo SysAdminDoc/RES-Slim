@@ -1822,5 +1822,110 @@
     },
     "blueskyExpandoUnavailable": {
         "message": "This Bluesky post could not be embedded. It may require signing in on Bluesky."
+    },
+    "dataWorkspaceTab": {
+        "message": "Data"
+    },
+    "dataWorkspaceTabTitle": {
+        "message": "Browse, export and purge the data this extension keeps on this device"
+    },
+    "dataWorkspaceTitle": {
+        "message": "Local data"
+    },
+    "dataWorkspaceSummary": {
+        "message": "Everything RES-Slim stores about you lives on this device and is readable here, with or without Reddit. Nothing on this page is sent anywhere."
+    },
+    "dataWorkspaceSetLabel": {
+        "message": "Data set"
+    },
+    "dataWorkspaceAccountLabel": {
+        "message": "Account"
+    },
+    "dataWorkspaceAllAccounts": {
+        "message": "All accounts"
+    },
+    "dataWorkspaceSearchLabel": {
+        "message": "Search"
+    },
+    "dataWorkspaceSearchPlaceholder": {
+        "message": "Filter these records"
+    },
+    "dataWorkspaceCount": {
+        "message": "$1 records"
+    },
+    "dataWorkspaceCountFiltered": {
+        "message": "$1 of $2 records"
+    },
+    "dataWorkspaceMore": {
+        "message": "$1 more not shown. Narrow the search to see them."
+    },
+    "dataWorkspaceEmpty": {
+        "message": "Nothing stored here yet."
+    },
+    "dataWorkspaceReading": {
+        "message": "Reading $1…"
+    },
+    "dataWorkspaceReadFailed": {
+        "message": "Could not read $1."
+    },
+    "dataWorkspaceExport": {
+        "message": "Export shown"
+    },
+    "dataWorkspaceExported": {
+        "message": "Exported $1 records."
+    },
+    "dataWorkspacePurge": {
+        "message": "Purge shown"
+    },
+    "dataWorkspacePurgeConfirm": {
+        "message": "Confirm purge of $1"
+    },
+    "dataWorkspacePurged": {
+        "message": "Purged $1 records from $2. Undo is available until you purge again."
+    },
+    "dataWorkspacePurgeFailed": {
+        "message": "Could not purge $1. Nothing was removed."
+    },
+    "dataWorkspaceUndo": {
+        "message": "Undo purge of $1"
+    },
+    "dataWorkspaceRestored": {
+        "message": "Restored $1 records to $2."
+    },
+    "dataWorkspaceRestoreFailed": {
+        "message": "Could not restore $1. The restore point is still there."
+    },
+    "dataWorkspaceImportTitle": {
+        "message": "Import saved content"
+    },
+    "dataWorkspaceImportHelp": {
+        "message": "Paste a file exported from this page. Preview it first: the import runs only on the payload you previewed, and the records it replaces are kept as a restore point."
+    },
+    "dataWorkspaceImportLabel": {
+        "message": "Saved-content export to import"
+    },
+    "dataWorkspaceImportPreviewAction": {
+        "message": "Preview import"
+    },
+    "dataWorkspaceImportCommitAction": {
+        "message": "Import previewed records"
+    },
+    "dataWorkspaceImportPreview": {
+        "message": "$1 valid, $2 invalid, $3 new, $4 replacing an existing record. Import to commit them."
+    },
+    "dataWorkspaceImportNeedsPreview": {
+        "message": "Preview the payload before importing it."
+    },
+    "dataWorkspaceImportChanged": {
+        "message": "The payload changed after the preview. Preview it again."
+    },
+    "dataWorkspaceImportFailed": {
+        "message": "The import failed. Nothing was written."
+    },
+    "dataWorkspaceImportPartial": {
+        "message": "Only $1 of $2 records were written. The payload is still here to try again."
+    },
+    "dataWorkspaceImported": {
+        "message": "Imported $1 records for u/$2."
     }
 }

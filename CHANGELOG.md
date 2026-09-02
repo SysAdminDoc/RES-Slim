@@ -21,6 +21,16 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- A **Data** tab in the settings console. It lists saved content, user tags, the
+  vote log and the media manifest, with a search box, a live count, an export of
+  whatever is on screen, and a purge of the same. Saved content gets an account
+  picker, because it is keyed by the account that saved each item. A purge keeps
+  a restore point, so there is an Undo button next to it rather than a
+  confirmation dialog in front of it, and the restore point outlives a reload.
+  Saved content can also be imported: paste an export, preview what it would
+  change, and only the previewed payload is written, with the records it
+  replaces kept as the restore point. None of it needs Reddit to be reachable.
+
 - A **Match system** choice in the settings console theme picker, and it is what
   a fresh install opens on. The console had nine themes, defaulted to OLED, and
   read `prefers-color-scheme` nowhere, so somebody on a light desktop opened a

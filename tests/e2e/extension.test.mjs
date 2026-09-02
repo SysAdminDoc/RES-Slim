@@ -4738,6 +4738,180 @@ function describeViolations(violations) {
 		`${v.id} (${v.impact}) — ${node.target.join(' ')}\n      ${(node.failureSummary || v.help).replace(/\n/g, '\n      ')}`)).join('\n  ');
 }
 
+test('the local data workspace browses, searches, exports and purges without Reddit', async t => {
+	// No routes, no Reddit page, no network: the whole point of this workspace is
+	// that the data it shows lives in the extension's own storage.
+	const { context, extensionId, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise((resolve, reject) => {
+		const request = indexedDB.open('rsm-featureData', 1);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			const saved = db.createObjectStore('savedContent', { keyPath: ['username', 'fullname'] });
+			saved.createIndex('username', 'username');
+			saved.createIndex('usernameCreatedUtc', ['username', 'createdUtc']);
+			const votes = db.createObjectStore('voteHistory', { keyPath: 'id' });
+			votes.createIndex('timestamp', 'timestamp');
+			votes.createIndex('subreddit', 'subreddit');
+			votes.createIndex('author', 'author');
+			const media = db.createObjectStore('mediaManifest', { keyPath: 'id' });
+			media.createIndex('timestamp', 'timestamp');
+			media.createIndex('source', 'source');
+			media.createIndex('subreddit', 'subreddit');
+			const emotes = db.createObjectStore('subredditEmotes', { keyPath: 'subreddit' });
+			emotes.createIndex('fetchedAt', 'fetchedAt');
+		};
+		request.onsuccess = () => {
+			const db = request.result;
+			const transaction = db.transaction(['savedContent', 'voteHistory'], 'readwrite');
+			const saved = transaction.objectStore('savedContent');
+			const base = {
+				kind: 't3',
+				id: 'x',
+				subreddit: 'fixture',
+				author: 'someone',
+				permalink: '/r/fixture/comments/x/',
+				createdUtc: 10,
+				body: '',
+				url: '',
+				score: 1,
+				tags: [],
+				savedAt: 1,
+				lastSeenAt: 1,
+			};
+			saved.put({ ...base, username: 'alice', fullname: 't3_alpha', title: 'Alice keeps a kettle' });
+			saved.put({ ...base, username: 'alice', fullname: 't3_beta', title: 'Alice keeps a lamp' });
+			saved.put({ ...base, username: 'bob', fullname: 't3_gamma', title: 'Bob keeps a kettle' });
+			transaction.objectStore('voteHistory').put({
+				id: 'v1',
+				fullname: 't3_alpha',
+				kind: 't3',
+				direction: 'up',
+				subreddit: 'fixture',
+				author: 'someone',
+				permalink: '/r/fixture/comments/x/',
+				snippet: 'A vote on a kettle',
+				scoreAtTime: 3,
+				timestamp: 1700000000000,
+			});
+			transaction.oncomplete = () => { db.close(); resolve(); };
+			transaction.onerror = () => { db.close(); reject(transaction.error); };
+		};
+		request.onerror = () => reject(request.error);
+	}));
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RESmodules.userTagger.tags': { carol: { tag: 'reliable', color: '#5b8def', ignore: false } },
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.goto(extensionUrl(extensionId, 'options.html#res:settings/data'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESDataWorkspace:not([hidden])', { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelectorAll('#RESDataWorkspaceRows .dataWorkspaceRow').length === 3, null, { timeout: 30000 });
+
+	assert.equal(await page.locator('#RESDataWorkspaceCount').innerText(), '3 records');
+	assert.match(await page.locator('#RESDataWorkspaceRows').innerText(), /Alice keeps a kettle/);
+
+	// Saved content is account data, so the account picker is what scopes it.
+	await page.locator('#RESDataWorkspaceAccount').selectOption('alice');
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 2);
+	assert.doesNotMatch(await page.locator('#RESDataWorkspaceRows').innerText(), /Bob keeps/);
+
+	await page.locator('#RESDataWorkspaceSearch').fill('lamp');
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 1);
+	assert.equal(await page.locator('#RESDataWorkspaceCount').innerText(), '1 of 3 records');
+
+	const downloadStarted = page.waitForEvent('download');
+	await page.locator('#RESDataWorkspaceExport').click();
+	const exported = JSON.parse(fs.readFileSync(await (await downloadStarted).path(), 'utf8'));
+	assert.equal(exported.schemaVersion, 2);
+	assert.equal(exported.username, 'alice');
+	assert.deepEqual(exported.items.map(item => item.fullname), ['t3_beta']);
+
+	// Purging what is on screen removes exactly that, and the undo puts it back.
+	await page.locator('#RESDataWorkspacePurge').click();
+	assert.match(await page.locator('#RESDataWorkspacePurge').innerText(), /Confirm purge of 1/);
+	await page.locator('#RESDataWorkspacePurge').click();
+	await page.waitForFunction(() => /Purged 1 records/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+	await page.locator('#RESDataWorkspaceSearch').fill('');
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 1);
+
+	await page.locator('#RESDataWorkspaceUndo').click();
+	await page.waitForFunction(() => /Restored 1 records/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 2);
+
+	// The other sets read from their own stores, tags included - and those live
+	// in extension storage, not the database.
+	await page.locator('#RESDataWorkspaceSet').selectOption('userTags');
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 1);
+	assert.match(await page.locator('#RESDataWorkspaceRows').innerText(), /carol[\s\S]*reliable/);
+	assert.ok(await page.locator('#RESDataWorkspaceAccount').isHidden(), 'tags are not account data');
+
+	await page.locator('#RESDataWorkspaceSet').selectOption('voteHistory');
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 1);
+	assert.match(await page.locator('#RESDataWorkspaceRows').innerText(), /A vote on a kettle/);
+
+	await page.locator('#RESDataWorkspaceSet').selectOption('mediaManifest');
+	await page.waitForSelector('#RESDataWorkspaceEmpty:not([hidden])', { timeout: 30000 });
+
+	// The import panel belongs to saved content and nothing else.
+	assert.ok(await page.locator('#RESDataWorkspaceImport').isHidden());
+	await page.locator('#RESDataWorkspaceSet').selectOption('savedContent');
+	await page.waitForSelector('#RESDataWorkspaceImport:not([hidden])', { timeout: 30000 });
+
+	const payload = JSON.stringify({
+		schemaVersion: 2,
+		username: 'alice',
+		exportedAt: 1,
+		count: 1,
+		items: [{
+			username: 'alice',
+			kind: 't3',
+			fullname: 't3_delta',
+			id: 'delta',
+			subreddit: 'fixture',
+			author: 'someone',
+			permalink: '/r/fixture/comments/delta/',
+			createdUtc: 20,
+			body: '',
+			title: 'An imported record',
+			url: '',
+			score: 1,
+			tags: ['imported'],
+			savedAt: 1,
+			lastSeenAt: 1,
+		}],
+	});
+	await page.locator('#RESDataWorkspaceImportPayload').fill(payload);
+	// Importing without previewing first is refused.
+	await page.locator('#RESDataWorkspaceImportCommit').click();
+	await page.waitForFunction(() => /Preview the payload/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+	await page.locator('#RESDataWorkspaceImportPreview').click();
+	await page.waitForFunction(() => /1 valid, 0 invalid, 1 new/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+	await page.locator('#RESDataWorkspaceImportCommit').click();
+	await page.waitForFunction(() => /Imported 1 records/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+	await page.waitForFunction(() => document.querySelectorAll('.dataWorkspaceRow').length === 3);
+	assert.match(await page.locator('#RESDataWorkspaceRows').innerText(), /An imported record/);
+
+	// An export that declares a schema this build does not read is refused whole.
+	await page.locator('#RESDataWorkspaceImportPayload').fill(JSON.stringify({ schemaVersion: 99, username: 'alice', items: [] }));
+	await page.locator('#RESDataWorkspaceImportPreview').click();
+	await page.waitForFunction(() => /declares schema 99/.test(document.querySelector('#RESDataWorkspaceStatus')?.textContent || ''));
+
+	const results = await new AxeBuilder({ page }).include('#RESDataWorkspace').withTags(WCAG_TAGS).analyze();
+	assert.ok(results.passes.length > 0, 'axe found no passing checks, so it inspected nothing');
+	assert.deepEqual(results.violations.map(v => v.id), [],
+		`accessibility violations in the data workspace:\n  ${describeViolations(results.violations)}`);
+	assert.deepEqual(pageErrors, []);
+
+	const dir = saveScreenshotDir();
+	await page.screenshot({ path: path.join(dir, 'data-workspace.png'), fullPage: false, animations: 'disabled' });
+});
+
 test('the options page has no accessibility violations', async t => {
 	// The whole page is ours here, so nothing needs scoping: every node axe finds
 	// is markup this repo wrote.
