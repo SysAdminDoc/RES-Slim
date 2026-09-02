@@ -171,23 +171,7 @@
     },
     {
       "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=0"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=17"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=898402"
-    },
-    {
-      "file": "lib/modules/hosts/derpibooru.js",
-      "url": "https://derpibooru.org/api/v2/images/show.json?ids=975313"
+      "url": "https://derpibooru.org/api/v1/json/images/${encodeURIComponent(id"
     },
     {
       "file": "lib/modules/hosts/derpibooru.js",

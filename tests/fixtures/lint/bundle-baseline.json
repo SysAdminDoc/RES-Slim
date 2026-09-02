@@ -1,6 +1,6 @@
 {
 	"chrome": {
-		"foreground.entry.js": 694517,
+		"foreground.entry.js": 694500,
 		"snudown.entry.js": 61985,
 		"options.entry.js": 389762,
 		"background.entry.js": 98106,
@@ -11,7 +11,7 @@
 		"jszip.min.js": 97630
 	},
 	"firefox": {
-		"foreground.entry.js": 694640,
+		"foreground.entry.js": 694623,
 		"snudown.entry.js": 61985,
 		"options.entry.js": 389762,
 		"background.entry.js": 98228,
