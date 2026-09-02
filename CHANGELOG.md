@@ -2,7 +2,7 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
-## Unreleased
+## v0.53.1, 2026-09-02
 
 ### Changed
 
