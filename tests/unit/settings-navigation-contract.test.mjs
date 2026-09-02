@@ -80,3 +80,43 @@ test('makeUrlHashLink falls back to a readable label rather than emitting an emp
 
 	assert.notEqual(text, '', 'a link with no display text would be invisible and unclickable');
 });
+
+test('opening and closing the console leaves no listeners behind', () => {
+	// The fallback that reopens the console in a tab when the frame does not
+	// progress used to register its listener inside the iframe's `load` handler.
+	// That handler fires on every navigation *inside* the frame, so each one left
+	// another anonymous `message` listener on the page's window, holding its
+	// closure for the life of the document - and on current Reddit the document
+	// is the whole session.
+	const listeners = new Set();
+	const originalAdd = window.addEventListener.bind(window);
+	const originalRemove = window.removeEventListener.bind(window);
+	window.addEventListener = (type, handler, options) => {
+		if (type === 'message') listeners.add(handler);
+		return originalAdd(type, handler, options);
+	};
+	window.removeEventListener = (type, handler, options) => {
+		if (type === 'message') listeners.delete(handler);
+		return originalRemove(type, handler, options);
+	};
+
+	try {
+		for (const pass of [1, 2, 3]) {
+			SettingsNavigation.open('hover');
+			// Every navigation inside the frame runs the load handler again.
+			const frame = document.getElementById('console-container');
+			assert.ok(frame, `pass ${pass}: the console frame should be in the document while it is open`);
+			// jsdom's about:blank frame refuses a targeted postMessage, and the load
+			// handler does that first: without this the handler throws before
+			// reaching anything worth measuring, and the test passes for the wrong
+			// reason whatever the code does.
+			if (frame.contentWindow) frame.contentWindow.postMessage = () => {};
+			for (const load of [1, 2, 3]) frame.dispatchEvent(new window.Event('load', { detail: load }));
+			SettingsNavigation.close();
+		}
+		assert.deepEqual([...listeners], [], `${listeners.size} message listener(s) outlived the console`);
+	} finally {
+		window.addEventListener = originalAdd;
+		window.removeEventListener = originalRemove;
+	}
+});
