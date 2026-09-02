@@ -482,7 +482,7 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 
 	await page.goto('https://www.reddit.com/r/example/comments/thread01/current_reddit_thread/', { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('shreddit-comment[data-res-shreddit-compat]', { timeout: 30000 });
-	await page.waitForFunction(() => document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length === 2, null, { timeout: 30000 });
+	await page.waitForFunction(() => document.querySelectorAll('shreddit-comment[data-res-shreddit-compat]').length === 4, null, { timeout: 30000 });
 	await page.waitForFunction(() => {
 		const image = document.querySelector('shreddit-post[view-context="CommentsPage"] [slot="post-media-container"] img');
 		return image?.complete && image.naturalWidth > 0;
@@ -560,7 +560,7 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 	assert.ok(Math.abs(state.mediaImage.width / state.mediaImage.height - 440 / 280) < 0.02, 'opened media should preserve its intrinsic aspect ratio');
 	assert.ok(['upvote-outline', 'downvote-outline', 'comment-outline', 'share-outline'].every(name => state.actionIcons.some(icon => icon.name === name)), `thread action icon coverage is incomplete: ${state.actionIcons.map(icon => icon.name).join(', ')}`);
 	assert.ok(state.actionIcons.filter(icon => icon.name.endsWith('-outline')).every(icon => icon.display === 'block' && icon.width === 16 && icon.height === 16), 'thread action icons should remain visible');
-	assert.equal(state.commentCount, 2);
+	assert.equal(state.commentCount, 4);
 	assert.notEqual(state.topBackground, 'rgba(0, 0, 0, 0)');
 	assert.equal(state.topBorderWidth, '0px');
 	assert.equal(state.nestedBorderWidth, '1px');

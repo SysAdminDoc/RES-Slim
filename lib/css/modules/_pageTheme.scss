@@ -796,7 +796,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed {
 	box-shadow: none !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) {
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(.sort-toolbar, .comment-toolbar, div:has(> shreddit-sort-dropdown)),
+html.res-pageTheme.res-pageTheme--refined comment-body-header > div:has(> shreddit-comments-sort-dropdown) {
 	display: flex !important;
 	box-sizing: border-box;
 	min-height: 32px !important;
@@ -813,7 +814,8 @@ html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):h
 	font: bold 10px/16px verdana, arial, helvetica, sans-serif;
 }
 
-html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) :where(button, [role='button']) {
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(.sort-toolbar, .comment-toolbar, div:has(> shreddit-sort-dropdown)) :where(button, [role='button']),
+html.res-pageTheme.res-pageTheme--refined comment-body-header > div:has(> shreddit-comments-sort-dropdown) :where(button, [role='button']) {
 	min-height: 24px !important;
 	height: 24px !important;
 	padding: 2px 6px !important;
@@ -825,7 +827,8 @@ html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):h
 	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined #main-content > :where(div, section):has(shreddit-sort-dropdown) :where(button, [role='button']):hover {
+html.res-pageTheme.res-pageTheme--refined #main-content > :where(.sort-toolbar, .comment-toolbar, div:has(> shreddit-sort-dropdown)) :where(button, [role='button']):hover,
+html.res-pageTheme.res-pageTheme--refined comment-body-header > div:has(> shreddit-comments-sort-dropdown) :where(button, [role='button']):hover {
 	background: var(--rsm-th-bg-raise) !important;
 	border-color: var(--rsm-th-control-border) !important;
 }
@@ -1081,47 +1084,265 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment-composer button {
 	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
 }
 
+// Reddit replaced the standalone composer and toolbar with a body-header host.
+// Keep the old hosts above for partially rolled-out pages, and flatten the live
+// structure here without letting a descendant `:has()` turn the whole comment
+// tree into a toolbar.
+html.res-pageTheme.res-pageTheme--refined comment-body-header {
+	display: block !important;
+	box-sizing: border-box;
+	margin: 6px 0 4px !important;
+	padding: 5px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt) !important;
+	font: normal 10px/14px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined comment-body-header > faceplate-tracker,
+html.res-pageTheme.res-pageTheme--refined comment-body-header > faceplate-tracker > faceplate-textarea-input,
+html.res-pageTheme.res-pageTheme--refined comment-body-header comment-composer-host {
+	display: block !important;
+	box-sizing: border-box;
+	width: 100% !important;
+	min-height: 28px !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea-input::part(rsm-comment-composer-shell),
+html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea-input::part(rsm-comment-composer-container) {
+	display: block !important;
+	box-sizing: border-box !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea-input::part(rsm-comment-composer-boundary) {
+	display: block !important;
+	box-sizing: border-box !important;
+	width: 100% !important;
+	min-height: 28px !important;
+	padding: 3px 6px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea-input::part(rsm-comment-composer-input) {
+	min-height: 18px !important;
+	height: 18px !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	color: var(--rsm-th-txt) !important;
+	font: normal 11px/18px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined comment-body-header > div:has(> shreddit-comments-sort-dropdown) {
+	min-height: 28px !important;
+	margin: 4px 0 0 !important;
+	padding: 1px 0 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comments-sort-dropdown,
+html.res-pageTheme.res-pageTheme--refined pdp-comment-search-input {
+	display: inline-flex !important;
+	min-width: 0 !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	align-items: center !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comments-sort-dropdown::part(rsm-comment-toolbar),
+html.res-pageTheme.res-pageTheme--refined shreddit-comments-sort-dropdown::part(rsm-comment-toolbar-shell) {
+	display: flex !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	padding: 0 !important;
+	align-items: center !important;
+	background: transparent !important;
+	gap: 4px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comments-sort-dropdown > [slot='comment-sort'] {
+	display: inline-flex !important;
+	height: 24px !important;
+	align-items: center !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-sort-dropdown::part(rsm-comment-sort-button),
+html.res-pageTheme.res-pageTheme--refined pdp-comment-search-input::part(rsm-comment-search-button) {
+	box-sizing: border-box !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	padding: 2px 5px !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-sort-dropdown::part(rsm-comment-sort-button):hover,
+html.res-pageTheme.res-pageTheme--refined pdp-comment-search-input::part(rsm-comment-search-button):hover {
+	background: var(--rsm-th-bg-raise) !important;
+	border-color: var(--rsm-th-control-border) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-sort-dropdown::part(rsm-comment-sort-icon),
+html.res-pageTheme.res-pageTheme--refined pdp-comment-search-input::part(rsm-comment-search-icon) {
+	width: 12px !important;
+	height: 12px !important;
+	fill: currentcolor !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #sticky-comment-composer-wrapper {
+	display: none !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined #comment-tree {
+	display: block !important;
+	box-sizing: border-box;
+	margin: 0 !important;
+	padding: 0 !important;
 	background: var(--rsm-th-bg);
+}
+
+html.res-pageTheme.res-pageTheme--refined #comment-tree > section[aria-label='Comments'] {
+	display: flex !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	flex-direction: column !important;
+	gap: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #comment-tree > section[aria-label='Comments'] > h1 {
+	display: none !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment,
 html.res-pageTheme.res-pageTheme--refined shreddit-comment[depth='0'] {
 	position: relative;
 	display: block;
-	margin: 8px 0 0 24px !important;
-	padding: 6px 8px 6px 7px !important;
+	box-sizing: border-box;
+	margin: 5px 0 0 !important;
+	padding: 0 !important;
 	background: var(--rsm-th-bg) !important;
 	border: 0 !important;
-	border-left: 1px solid var(--rsm-th-border) !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment[depth='0'] {
-	margin-left: 0 !important;
 	border-left: 0 !important;
 }
 
+html.res-pageTheme.res-pageTheme--refined shreddit-comment:not([depth='0']) {
+	border-left: 1px solid var(--rsm-th-border) !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary {
-	position: absolute;
-	top: 7px;
-	left: 2px;
-	z-index: 1;
-	width: 12px;
-	min-height: 12px;
-	overflow: hidden;
+	position: relative !important;
+	top: auto !important;
+	left: auto !important;
+	z-index: auto;
+	display: grid !important;
+	box-sizing: border-box;
+	grid-template-columns: 18px minmax(0, 1fr) !important;
+	width: 100% !important;
+	min-width: 0 !important;
+	min-height: 14px !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: visible !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
 	color: var(--rsm-th-muted);
-	font-size: 0;
+	font: normal 10px/14px verdana, arial, helvetica, sans-serif !important;
+	list-style: none;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary::-webkit-details-marker {
+	display: none;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary::before {
+	content: '[+]';
+	display: block;
+	grid-column: 1;
+	width: 18px;
+	color: var(--rsm-th-muted);
+	font: normal 10px/14px verdana, arial, helvetica, sans-serif;
+	text-align: left;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details[open] > summary::before {
 	content: '[-]';
-	font: normal 9px/12px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary > :first-child {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary .uncollapse-icon {
+	display: none !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div {
-	padding-left: 17px;
+	position: relative !important;
+	display: grid !important;
+	grid-template-columns: 18px minmax(0, 1fr) !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div > :has(> [slot='comment']),
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div > :has(> [slot='actionRow']) {
+	display: block !important;
+	grid-column: 2 !important;
+	min-width: 0 !important;
+	width: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div > :where(.ssr-thread-line, .threadline-strip, .branchline),
+html.res-pageTheme.res-pageTheme--refined shreddit-comment :where(.comment-body-hl, .comment-action-row-hl, .summary-hl) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div > .collapse-container {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment #comment-children,
+html.res-pageTheme.res-pageTheme--refined shreddit-comment .fold-more {
+	display: block !important;
+	grid-column: 1 / -1 !important;
+	width: auto !important;
+	min-width: 0 !important;
+	margin: 0 0 0 18px !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment #comment-children > shreddit-comment,
+html.res-pageTheme.res-pageTheme--refined shreddit-comment .fold-more > shreddit-comment {
+	width: 100% !important;
+	min-width: 0 !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='commentAvatar'] {
@@ -1129,33 +1350,151 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='commentAvatar'
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='commentMeta'] {
+	position: static !important;
+	display: block !important;
+	grid-column: 2 !important;
 	min-height: 14px;
+	margin: 0 !important;
+	padding: 0 !important;
+	overflow: visible !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
 	color: var(--rsm-th-muted) !important;
 	font: normal 10px/14px verdana, arial, helvetica, sans-serif !important;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='comment'] {
-	max-width: none;
-	margin: 4px 0;
-	padding: 0;
+html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='commentMeta'] * {
+	min-height: 0 !important;
+	height: auto !important;
+	max-height: 14px !important;
+	margin-block: 0 !important;
+	padding-block: 0 !important;
 	background: transparent !important;
+	font-size: 10px !important;
+	line-height: 14px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='comment'] {
+	grid-column: 2 !important;
+	max-width: none;
+	margin: 2px 0 1px !important;
+	padding: 0;
+	overflow: visible !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
 	color: var(--rsm-th-txt) !important;
 	font: normal 14px/20px verdana, arial, helvetica, sans-serif;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
-	min-height: 15px;
+	display: flex !important;
+	min-height: 20px !important;
+	height: 20px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	align-items: center !important;
+	gap: 3px !important;
+	background: transparent !important;
+	border: 0 !important;
 	color: var(--rsm-th-muted) !important;
-	font: bold 10px/15px verdana, arial, helvetica, sans-serif;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed > details > summary::before {
-	content: '[+]';
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row {
+	display: inline-flex !important;
+	min-width: 0 !important;
+	min-height: 20px !important;
+	height: 20px !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	align-items: center !important;
+	color: var(--rsm-th-muted) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row :where(button, [role='button']),
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-comment-action-button),
+html.res-pageTheme.res-pageTheme--refined award-button::part(rsm-comment-action-button),
+html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-comment-action-button) {
+	box-sizing: border-box !important;
+	min-width: 0 !important;
+	min-height: 20px !important;
+	height: 20px !important;
+	margin: 0 !important;
+	padding: 2px 3px !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row :where(button, [role='button']):hover,
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-comment-action-button):hover,
+html.res-pageTheme.res-pageTheme--refined award-button::part(rsm-comment-action-button):hover,
+html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-comment-action-button):hover {
+	color: var(--rsm-th-link) !important;
+	text-decoration: underline !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row > faceplate-tracker button svg,
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row shreddit-comment-share-button button svg,
+html.res-pageTheme.res-pageTheme--refined award-button::part(rsm-award-icon) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-vote-group) {
+	display: inline-flex !important;
+	min-height: 20px !important;
+	height: 20px !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-vote-button) {
+	display: inline-flex !important;
+	box-sizing: border-box !important;
+	width: 20px !important;
+	height: 20px !important;
+	min-width: 20px !important;
+	min-height: 20px !important;
+	padding: 2px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-vote-score) {
+	min-width: 18px !important;
+	height: 14px !important;
+	padding: 0 !important;
+	color: var(--rsm-th-txt) !important;
+	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+	text-align: center !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-action-icon) {
+	width: 14px !important;
+	height: 14px !important;
+	fill: currentcolor !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-overflow-icon) {
+	display: block !important;
+	width: 12px !important;
+	height: 12px !important;
+	fill: currentcolor !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed {
-	min-height: 28px;
-	padding-block: 5px !important;
+	min-height: 14px;
+	margin-top: 5px !important;
 }
 
 @media (width <= 960px) {
@@ -2061,7 +2400,7 @@ html.res-pageTheme--refined .thing.link .flat-list {
 }
 
 html.res-pageTheme--refined .thing.link .flat-list li a,
-html.res-pageTheme--refined .comment .flat-list li a {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .flat-list li a {
 	display: inline-flex;
 	min-height: 26px;
 	padding: 0 3px;
@@ -2072,7 +2411,7 @@ html.res-pageTheme--refined .comment .flat-list li a {
 }
 
 html.res-pageTheme--refined .thing.link .flat-list li a:hover,
-html.res-pageTheme--refined .comment .flat-list li a:hover {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .flat-list li a:hover {
 	background: var(--rsm-th-bg-raise);
 	color: var(--rsm-th-txt-strong);
 }
@@ -2526,38 +2865,38 @@ html.res-pageTheme--refined .commentarea .comment > .child {
 	border-left: 0 !important;
 }
 
-html.res-pageTheme--refined .comment .tagline,
-html.res-pageTheme--refined .comment .tagline a,
-html.res-pageTheme--refined .comment .flat-list a {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .tagline,
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .tagline a,
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .flat-list a {
 	color: var(--rsm-th-muted);
 }
 
-html.res-pageTheme--refined .comment .tagline {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .tagline {
 	font-size: 11px;
 	line-height: 1.5;
 }
 
-html.res-pageTheme--refined .comment .entry {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .entry {
 	padding-right: 8px;
 }
 
-html.res-pageTheme--refined .comment .author {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .author {
 	color: var(--rsm-th-link);
 	font-weight: 700;
 }
 
-html.res-pageTheme--refined .comment .author.submitter {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .author.submitter {
 	padding: 2px 5px;
 	background: color-mix(in srgb, var(--rsm-th-accent) 18%, transparent);
 	border-radius: 4px;
 	color: var(--rsm-th-txt-strong);
 }
 
-html.res-pageTheme--refined .comment .score {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .score {
 	font-weight: 600;
 }
 
-html.res-pageTheme--refined .comment .md {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .md {
 	max-width: 86ch;
 	background: transparent !important;
 	font-size: 14px;
@@ -2576,29 +2915,29 @@ html.res-pageTheme--refined body.comments-page > .content > .sitetable > .thing.
 	line-height: 1.65;
 }
 
-html.res-pageTheme--refined .comment .md p {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .md p {
 	margin: 0.55em 0;
 }
 
-html.res-pageTheme--refined .comment .md blockquote {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .md blockquote {
 	margin-left: 0;
 	padding-left: 12px;
 	border-left: 2px solid color-mix(in srgb, var(--rsm-th-accent) 45%, var(--rsm-th-border));
 	color: var(--rsm-th-muted);
 }
 
-html.res-pageTheme--refined .comment .md pre,
-html.res-pageTheme--refined .comment .md :not(pre) > code {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .md pre,
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .md :not(pre) > code {
 	background: var(--rsm-th-bg-raise) !important;
 	border: 1px solid var(--rsm-th-border);
 	border-radius: 4px;
 }
 
-html.res-pageTheme--refined .comment .flat-list {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .flat-list {
 	margin-top: 5px;
 }
 
-html.res-pageTheme--refined .comment .expand {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .expand {
 	display: inline-flex;
 	min-width: 24px;
 	min-height: 24px;
@@ -2607,7 +2946,7 @@ html.res-pageTheme--refined .comment .expand {
 	border-radius: 4px;
 }
 
-html.res-pageTheme--refined .comment .expand:hover {
+html.res-pageTheme--refined:not(:has(shreddit-app)) .comment .expand:hover {
 	background: var(--rsm-th-bg-raise);
 	color: var(--rsm-th-txt-strong);
 }

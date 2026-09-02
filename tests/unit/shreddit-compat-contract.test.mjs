@@ -150,6 +150,36 @@ test('current Reddit comment scores are exposed without a per-comment stylesheet
 	comment.remove();
 });
 
+test('current Reddit discussion controls expose stable paint hooks', () => {
+	const comment = document.createElement('shreddit-comment');
+	const action = document.createElement('shreddit-comment-action-row');
+	action.attachShadow({ mode: 'open' }).innerHTML = `
+		<span class="rpl-vote-button-group">
+			<button upvote><svg icon-name="upvote"></svg></button>
+			<faceplate-number>9</faceplate-number>
+			<button downvote><svg icon-name="downvote"></svg></button>
+		</span>`;
+	const award = document.createElement('award-button');
+	award.attachShadow({ mode: 'open' }).innerHTML = '<button data-award-button><svg data-award-icon></svg></button>';
+	const composer = document.createElement('faceplate-textarea-input');
+	composer.attachShadow({ mode: 'open' }).innerHTML = `
+		<label><span class="input-boundary-box"><span class="input-container"><span class="text-area-wrapper"><textarea></textarea></span></span></span></label>`;
+	comment.append(action, award, composer);
+	document.body.append(comment);
+
+	Shreddit.prepareShredditThing(comment);
+
+	assert.match(action.shadowRoot.querySelector('[upvote]').getAttribute('part'), /\brsm-vote-button\b/);
+	assert.match(action.shadowRoot.querySelector('faceplate-number').getAttribute('part'), /\brsm-vote-score\b/);
+	assert.match(action.shadowRoot.querySelector('svg').getAttribute('part'), /\brsm-action-icon\b/);
+	assert.match(award.shadowRoot.querySelector('button').getAttribute('part'), /\brsm-comment-action-button\b/);
+	assert.match(award.shadowRoot.querySelector('svg').getAttribute('part'), /\brsm-award-icon\b/);
+	assert.match(composer.shadowRoot.querySelector('label').getAttribute('part'), /\brsm-comment-composer-shell\b/);
+	assert.match(composer.shadowRoot.querySelector('.input-boundary-box').getAttribute('part'), /\brsm-comment-composer-boundary\b/);
+	assert.match(composer.shadowRoot.querySelector('textarea').getAttribute('part'), /\brsm-comment-composer-input\b/);
+	comment.remove();
+});
+
 test('current Reddit comments retain native collapse state and semantic roles', () => {
 	Shreddit.prepareShredditTree(document);
 	const comment = document.querySelector('shreddit-comment');
@@ -167,6 +197,14 @@ test('current Reddit comments retain native collapse state and semantic roles', 
 	comment.querySelector('details').removeAttribute('open');
 	Shreddit.prepareShredditThing(comment);
 	assert.equal(comment.classList.contains('collapsed'), true);
+
+	comment.querySelector('details').setAttribute('open', '');
+	comment.setAttribute('collapsed', '');
+	Shreddit.prepareShredditThing(comment);
+	assert.equal(comment.classList.contains('collapsed'), true);
+	comment.setAttribute('collapsed', 'false');
+	Shreddit.prepareShredditThing(comment);
+	assert.equal(comment.classList.contains('collapsed'), false);
 });
 
 test('the current renderer participates in page types, watchers, theming, and both manifests', () => {
@@ -187,7 +225,8 @@ test('the current renderer participates in page types, watchers, theming, and bo
 	assert.match(theme, /module\.include = \['r2', 'd2x'\]/);
 	assert.match(scss, /html\.res-pageTheme:has\(shreddit-app\)/);
 	assert.match(scss, /reddit-header-large reddit-header-action-items > header/);
-	assert.match(scss, /#main-content > :where\(div, section\):has\(shreddit-sort-dropdown\)/);
+	assert.match(scss, /comment-body-header > div:has\(> shreddit-comments-sort-dropdown\)/);
+	assert.match(scss, /pdp-comment-search-input::part\(rsm-comment-search-button\)/);
 	assert.match(scss, /#left-sidebar-container/);
 	assert.match(scss, /shreddit-feed shreddit-post/);
 	assert.match(scss, /shreddit-comment\[depth='0'\]/);

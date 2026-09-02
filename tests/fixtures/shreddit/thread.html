@@ -16,17 +16,12 @@
 		#left-sidebar-container { min-height: 900px; padding: 18px; }
 		#subgrid-container { width: min(1120px, 100%); margin: 0 auto; padding: 20px; }
 		.main-container { display: grid; grid-template-columns: minmax(0, 756px) 316px; gap: 24px; }
-		shreddit-feed, shreddit-post, shreddit-comment { display: block; }
+		shreddit-feed, shreddit-post, shreddit-comment, shreddit-comment-tree, comment-body-header { display: block; }
 		shreddit-post { padding: 14px; }
 		[slot='credit-bar'], [slot='title'], [slot='text-body'], [slot='commentMeta'], [slot='comment'] { display: block; }
 		[slot='title'] { margin: 5px 0; font-size: 22px; }
 		[slot='post-media-container'] { display: block; width: 100%; margin-top: 10px; overflow: hidden; background: #111; }
 		[slot='post-media-container'] > img { display: block; width: 100%; height: auto; object-fit: contain; }
-		shreddit-comment-composer { display: block; margin: 12px 0; padding: 12px; }
-		shreddit-comment-composer textarea { display: block; width: 100%; min-height: 96px; }
-		.comment-toolbar { display: flex; min-height: 42px; padding: 6px; justify-content: space-between; }
-		shreddit-comment { margin: 10px 0 0 20px; padding: 8px; }
-		shreddit-comment[depth='0'] { margin-left: 0; }
 		.panel { margin-bottom: 12px; padding: 12px; border: 1px solid currentColor; }
 	</style>
 </head>
@@ -50,19 +45,55 @@
 							<div slot="post-media-container"><img src="https://preview.redd.it/media00000001.png" alt="RES promotional media fixture" width="440" height="280"></div>
 						</shreddit-post>
 					</article></shreddit-feed>
-					<shreddit-comment-composer><label for="fixture-comment">Join the discussion</label><textarea id="fixture-comment" placeholder="What are your thoughts?"></textarea><button type="button">Comment</button></shreddit-comment-composer>
-					<div class="comment-toolbar"><shreddit-sort-dropdown><button type="button">Best</button></shreddit-sort-dropdown><span>2 comments</span></div>
-					<section id="comment-tree">
-						<shreddit-comment thingid="t1_comment1" author="carol" score="18" depth="0" created="2026-08-19T12:30:00Z" permalink="/r/example/comments/thread01/comment/comment1/">
-							<details open><summary>collapse</summary><div>
-								<div slot="commentMeta"><a href="/user/carol/">carol</a> · <a href="/r/example/comments/thread01/comment/comment1/"><time datetime="2026-08-19T12:30:00Z">90m ago</time></a></div>
-								<div slot="comment">Top-level comments become compact discussion cards.</div><div slot="actionRow">reply · share</div>
-								<shreddit-comment thingid="t1_comment2" author="alice" score="6" depth="1" created="2026-08-19T13:00:00Z" permalink="/r/example/comments/thread01/comment/comment2/">
-									<details open><summary>collapse</summary><div><div slot="commentMeta"><a href="/user/alice/">alice</a> · <a href="/r/example/comments/thread01/comment/comment2/"><time datetime="2026-08-19T13:00:00Z">1h ago</time></a></div><shreddit-comment-author-modifier-icon op></shreddit-comment-author-modifier-icon><div slot="comment">Nested replies keep a visible depth guide.</div><div slot="actionRow">reply · share</div></div></details>
-								</shreddit-comment>
-							</div></details>
-						</shreddit-comment>
-					</section>
+					<shreddit-comment-tree-stats total-comments="4" sort="CONFIDENCE"></shreddit-comment-tree-stats>
+					<comment-body-header>
+						<faceplate-tracker class="flex items-center mt-sm w-full">
+							<faceplate-textarea-input appearance="bordered" placeholder="Join the conversation" size="collapsed" role="button" aria-label="Button to add a comment" tabindex="0">
+								<template shadowrootmode="open"><label><span class="input-boundary-box"><span class="input-container"><span class="label-text inner-label"></span><span class="text-area-wrapper"><textarea id="innerTextArea" placeholder="Join the conversation"></textarea></span></span></span></label></template>
+							</faceplate-textarea-input>
+						</faceplate-tracker>
+						<div class="flex gap-xs items-center w-full flex-wrap mt-sm">
+							<shreddit-comments-sort-dropdown>
+								<template shadowrootmode="open"><div><div class="outer-container"><div class="toolbar-container"><slot name="comment-sort"></slot><slot name="comment-search"></slot></div></div></div></template>
+								<div slot="comment-sort" class="pdp-comments-tree-sort-container"><span>Sort by: </span><shreddit-sort-dropdown button-aria-label="Sort by Best"><template shadowrootmode="open"><button id="comment-sort-button" type="button" aria-label="Sort by Best">Best <svg icon-name="caret-down" viewBox="0 0 20 20" width="16" height="16"><path d="M10 13.7 4.8 8.5h10.4z"></path></svg></button></template><div slot="selected-item">Best</div></shreddit-sort-dropdown></div>
+								<pdp-comment-search-input slot="comment-search"><template shadowrootmode="open"><div><button id="expand-pdp-comment-search-button" type="button" aria-expanded="false"><svg icon-name="search" viewBox="0 0 20 20" width="16" height="16"><path d="M9 2a7 7 0 105 11.9l4 4 1-1-4-4A7 7 0 009 2zm0 2a5 5 0 110 10A5 5 0 019 4z"></path></svg><span>Search Comments</span></button><form id="pdp-comment-search-form" hidden><input aria-label="Search Comments"><button id="cancel-pdp-comment-search-button" type="button">Cancel</button></form></div></template></pdp-comment-search-input>
+							</shreddit-comments-sort-dropdown>
+						</div>
+					</comment-body-header>
+					<div id="sticky-comment-composer-wrapper"><comment-composer-host>Sticky comment composer</comment-composer-host></div>
+					<shreddit-comment-tree id="comment-tree" post-id="t3_thread01" totalcomments="4" slot-config="light" ui="desktop">
+						<section class="flex flex-col px-md xs:px-0 gap-md relative" aria-label="Comments">
+							<h1 aria-label="Comments Section">Comments Section</h1>
+							<shreddit-comment-tree-ads><shreddit-comment-tree-ad>Sponsored</shreddit-comment-tree-ad></shreddit-comment-tree-ads>
+							<shreddit-comment thingid="t1_comment1" author="carol" score="18" depth="0" created="2026-08-19T12:30:00Z" permalink="/r/example/comments/thread01/comment/comment1/">
+								<details role="article" open aria-label="Comment from carol" tabindex="0">
+									<summary><div><div slot="commentAvatar"><span>avatar</span></div><svg class="uncollapse-icon" icon-name="add-circle" viewBox="0 0 20 20" width="16" height="16"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm1 8h3v2h-3v3H9v-3H6V9h3V6h2v3Z"></path></svg></div><div slot="commentMeta"><a href="/user/carol/">carol</a> · <a href="/r/example/comments/thread01/comment/comment1/"><time datetime="2026-08-19T12:30:00Z">90m ago</time></a></div><div class="threadline-strip" aria-hidden="true"></div></summary>
+									<div class="comment-main-grid">
+										<div class="ssr-thread-line"></div><div class="relative pointer-events-none"><div class="comment-body-hl"></div></div>
+										<div class="min-w-0 col-start-2"><div slot="comment">Top-level comments use the same compact rhythm as old Reddit.</div></div>
+										<div class="min-w-0 col-start-2 relative"><div class="comment-action-row-hl"></div><div slot="actionRow"><shreddit-comment-action-row slot="actionRow" score="18" comment-depth="0">
+											<template shadowrootmode="open"><div><div class="flex items-center max-h-2xl"><span class="rpl-vote-button-group"><button upvote aria-label="Upvote" aria-pressed="false"><svg icon-name="upvote" viewBox="0 0 20 20" width="16" height="16"><path d="M10 2 3 9h4v9h6V9h4z"></path></svg></button><faceplate-number>18</faceplate-number><button downvote aria-label="Downvote" aria-pressed="false"><svg icon-name="downvote" viewBox="0 0 20 20" width="16" height="16"><path d="m10 18 7-7h-4V2H7v9H3z"></path></svg></button></span><slot name="comment-reply"></slot><slot name="comment-award"></slot><slot name="comment-share"></slot><slot name="overflow"></slot></div></div></template>
+											<faceplate-tracker slot="comment-reply"><button type="button"><svg icon-name="comment" viewBox="0 0 20 20" width="16" height="16"><path d="M2 2h16v12H7l-5 4z"></path></svg><span>Reply</span></button></faceplate-tracker>
+											<award-button slot="comment-award"><template shadowrootmode="open"><button data-award-button type="button"><svg data-award-icon icon-name="award" viewBox="0 0 20 20" width="16" height="16"><path d="m10 1 3 6 6 1-4 5 1 6-6-3-6 3 1-6-4-5 6-1z"></path></svg><span>Award</span></button></template></award-button>
+											<shreddit-comment-share-button slot="comment-share"><template shadowrootmode="open"><slot name="ssr-share-button"></slot></template><span slot="ssr-share-button"><button type="button"><svg icon-name="share" viewBox="0 0 20 20" width="16" height="16"><path d="m12 3 6 7-6 7v-4c-5 0-8 2-10 5 1-7 4-11 10-11z"></path></svg><span>Share</span></button></span></shreddit-comment-share-button>
+											<shreddit-overflow-menu slot="overflow"><template shadowrootmode="open"><button class="open-menu-btn" aria-label="Open user actions"><svg icon-name="overflow-horizontal" viewBox="0 0 20 20" width="12" height="12"><path d="M4 8a2 2 0 110 4 2 2 0 010-4Zm6 0a2 2 0 110 4 2 2 0 010-4Zm6 0a2 2 0 110 4 2 2 0 010-4Z"></path></svg></button></template></shreddit-overflow-menu>
+										</shreddit-comment-action-row></div></div>
+										<svg class="collapse-container" icon-name="subtract-circle" viewBox="0 0 20 20" width="16" height="16"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm-4 8h8v2H6z"></path></svg>
+										<div id="comment-children" class="col-span-2 grid grid-cols-[32px_1fr]">
+											<shreddit-comment slot="children-t1_comment1-0" thingid="t1_comment2" author="alice" score="6" depth="1" created="2026-08-19T13:00:00Z" permalink="/r/example/comments/thread01/comment/comment2/">
+												<details role="article" open aria-label="Comment from alice" tabindex="0">
+													<summary><div><div slot="commentAvatar"><span>avatar</span></div><svg class="uncollapse-icon" icon-name="add-circle" viewBox="0 0 20 20" width="16" height="16"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm1 8h3v2h-3v3H9v-3H6V9h3V6h2v3Z"></path></svg></div><div slot="commentMeta"><a href="/user/alice/">alice</a> · <a href="/r/example/comments/thread01/comment/comment2/"><time datetime="2026-08-19T13:00:00Z">1h ago</time></a><shreddit-comment-author-modifier-icon op></shreddit-comment-author-modifier-icon></div><div class="threadline-strip" aria-hidden="true"></div></summary>
+													<div class="comment-main-grid"><div class="ssr-thread-line"></div><div></div><div class="col-start-2"><div slot="comment">Nested replies keep one narrow, consistent depth guide.</div></div><div class="col-start-2"><div slot="actionRow"><shreddit-comment-action-row slot="actionRow" score="6" comment-depth="1"><template shadowrootmode="open"><div><span class="rpl-vote-button-group"><button upvote aria-label="Upvote"><svg icon-name="upvote" viewBox="0 0 20 20"><path d="M10 2 3 9h4v9h6V9h4z"></path></svg></button><faceplate-number>6</faceplate-number><button downvote aria-label="Downvote"><svg icon-name="downvote" viewBox="0 0 20 20"><path d="m10 18 7-7h-4V2H7v9H3z"></path></svg></button></span><slot name="comment-reply"></slot><slot name="comment-share"></slot></div></template><faceplate-tracker slot="comment-reply"><button type="button">Reply</button></faceplate-tracker><shreddit-comment-share-button slot="comment-share"><template shadowrootmode="open"><slot name="ssr-share-button"></slot></template><button slot="ssr-share-button" type="button">Share</button></shreddit-comment-share-button></shreddit-comment-action-row></div></div><svg class="collapse-container" icon-name="subtract-circle" viewBox="0 0 20 20"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm-4 8h8v2H6z"></path></svg>
+														<div id="comment-children" class="col-span-2 grid grid-cols-[32px_1fr]"><shreddit-comment slot="children-t1_comment2-0" thingid="t1_comment3" author="dave" score="3" depth="2" created="2026-08-19T13:15:00Z" permalink="/r/example/comments/thread01/comment/comment3/"><details role="article" open aria-label="Comment from dave" tabindex="0"><summary><div><div slot="commentAvatar"></div><svg class="uncollapse-icon" icon-name="add-circle" viewBox="0 0 20 20"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm1 8h3v2h-3v3H9v-3H6V9h3V6h2v3Z"></path></svg></div><div slot="commentMeta"><a href="/user/dave/">dave</a> · <a href="/r/example/comments/thread01/comment/comment3/"><time datetime="2026-08-19T13:15:00Z">45m ago</time></a></div></summary><div class="comment-main-grid"><div class="ssr-thread-line"></div><div></div><div class="col-start-2"><div slot="comment">The third level remains readable without a giant horizontal jump.</div></div><div class="col-start-2"><div slot="actionRow"><shreddit-comment-action-row slot="actionRow" score="3"><template shadowrootmode="open"><span class="rpl-vote-button-group"><button upvote aria-label="Upvote"></button><faceplate-number>3</faceplate-number><button downvote aria-label="Downvote"></button></span><slot name="comment-reply"></slot></template><button slot="comment-reply" type="button">Reply</button></shreddit-comment-action-row></div></div><svg class="collapse-container" viewBox="0 0 20 20"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm-4 8h8v2H6z"></path></svg><div id="comment-children" class="col-span-2 grid grid-cols-[32px_1fr]"><shreddit-comment slot="children-t1_comment3-0" thingid="t1_comment4" author="erin" score="1" depth="3" created="2026-08-19T13:30:00Z" permalink="/r/example/comments/thread01/comment/comment4/"><details role="article" open aria-label="Comment from erin" tabindex="0"><summary><div><div slot="commentAvatar"></div><svg class="uncollapse-icon" viewBox="0 0 20 20"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm1 8h3v2h-3v3H9v-3H6V9h3V6h2v3Z"></path></svg></div><div slot="commentMeta"><a href="/user/erin/">erin</a> · <a href="/r/example/comments/thread01/comment/comment4/"><time datetime="2026-08-19T13:30:00Z">30m ago</time></a></div></summary><div class="comment-main-grid"><div></div><div></div><div class="col-start-2"><div slot="comment">A long deepest reply wraps inside the available column while preserving the same indentation step, instead of being squeezed into a narrow strip by several overlapping nesting systems.</div></div><div class="col-start-2"><div slot="actionRow"><shreddit-comment-action-row slot="actionRow" score="1"><template shadowrootmode="open"><span class="rpl-vote-button-group"><button upvote aria-label="Upvote"></button><faceplate-number>1</faceplate-number><button downvote aria-label="Downvote"></button></span><slot name="comment-reply"></slot></template><button slot="comment-reply" type="button">Reply</button></shreddit-comment-action-row></div></div><svg class="collapse-container" viewBox="0 0 20 20"><path d="M10 1a9 9 0 100 18 9 9 0 000-18Zm-4 8h8v2H6z"></path></svg></div></details></shreddit-comment></div></div></details></shreddit-comment></div>
+													</div>
+												</details>
+											</shreddit-comment>
+										</div>
+									</div>
+								</details>
+							</shreddit-comment>
+						</section>
+					</shreddit-comment-tree>
 				</main>
 				<aside id="right-sidebar-container"><section class="panel"><strong>About r/example</strong><p>Community information remains available.</p></section></aside>
 			</div>
