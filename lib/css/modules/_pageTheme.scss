@@ -2175,8 +2175,16 @@ html.res-pageTheme.res-pageTheme--refined.res-pageTheme--declutter #right-sideba
 // content in light-DOM slots. Mapping the tokens preserves native behaviour
 // inside its open shadow roots; the structural rules below then restore the
 // dense header/feed/sidebar hierarchy familiar from old Reddit.
+// Declared twice, on the root and on `.theme-rpl`. Reddit sets the whole RPL
+// token set again on that element - `div.grid-container.theme-rpl`, which wraps
+// the feed, the comment tree and the right rail - and a custom property resolves
+// from the nearest definition, so everything below that node read the light
+// values back and the root map reached nothing but the header. On Gruvbox that
+// painted the comment tree's branch lines white, and the right rail's community
+// title at about 2:1. Classic hid it because its values are white too.
 
-html.res-pageTheme:has(shreddit-app) {
+html.res-pageTheme:has(shreddit-app),
+html.res-pageTheme:has(shreddit-app) .theme-rpl {
 	--color-neutral-background: var(--rsm-th-bg);
 	--color-neutral-background-hover: var(--rsm-th-bg-raise);
 	--color-neutral-background-selected: var(--rsm-th-bg-raise);

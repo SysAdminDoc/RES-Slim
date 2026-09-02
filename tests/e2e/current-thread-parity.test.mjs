@@ -120,8 +120,22 @@ function readParityState(page) {
 		const search = document.querySelector('pdp-comment-search-input')?.shadowRoot?.querySelector('#expand-pdp-comment-search-button');
 		const commentsHeading = document.querySelector('#comment-tree > section[aria-label="Comments"] > h1');
 		const pluralAd = document.querySelector('shreddit-comment-tree-ads');
+		// Reddit declares its own RPL token set on `div.grid-container.theme-rpl`,
+		// below the root the palette remaps. Read the tokens where Reddit paints
+		// from them rather than at the root, and read one element Reddit paints
+		// that the theme has never restyled.
+		const grid = document.querySelector('.grid-container');
+		const gridStyles = getComputedStyle(grid);
+		const branchline = document.querySelector('.more-comments-partial .branchline');
 		return {
 			classes: document.documentElement.className,
+			tokens: {
+				palette: getComputedStyle(document.documentElement).getPropertyValue('--rsm-th-bg').trim(),
+				gridBackground: gridStyles.getPropertyValue('--color-neutral-background').trim(),
+				gridContent: gridStyles.getPropertyValue('--color-neutral-content').trim(),
+				paletteText: getComputedStyle(document.documentElement).getPropertyValue('--rsm-th-txt').trim(),
+				branchline: getComputedStyle(branchline).backgroundColor,
+			},
 			overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
 			bodyHeader: rect(document.querySelector('comment-body-header')),
 			composer: rect(composer),
@@ -137,8 +151,26 @@ function readParityState(page) {
 	});
 }
 
+function rgb(hex) {
+	const value = hex.replace('#', '');
+	const full = value.length === 3 ? [...value].map(c => c + c).join('') : value;
+	const [r, g, b] = [0, 2, 4].map(i => parseInt(full.slice(i, i + 2), 16));
+	return `rgb(${r}, ${g}, ${b})`;
+}
+
 function assertParity(state, viewport, theme) {
 	assert.match(state.classes, new RegExp(`\\bres-pageTheme--${theme}\\b`));
+	// The palette has to win where Reddit defines its tokens, not only at the
+	// root. It declares the whole RPL set again on `.theme-rpl`, so a map that
+	// only lands on `<html>` reaches the header and nothing below it: on Gruvbox
+	// that painted the branch lines beside every "more replies" fold white, and
+	// the right rail's community title at about 2:1.
+	assert.equal(state.tokens.gridBackground, state.tokens.palette,
+		`${theme} lost --color-neutral-background below .theme-rpl`);
+	assert.equal(state.tokens.gridContent, state.tokens.paletteText,
+		`${theme} lost --color-neutral-content below .theme-rpl`);
+	assert.equal(state.tokens.branchline, rgb(state.tokens.palette),
+		`${theme} paints a branch line that is not the page ground`);
 	assert.match(state.classes, /\bres-pageTheme--refined\b/);
 	assert.ok(state.overflow <= 1, `${theme} at ${viewport.width}px overflowed by ${state.overflow}px`);
 	assert.equal(state.commentsHeadingDisplay, 'none');

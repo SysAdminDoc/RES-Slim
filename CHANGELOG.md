@@ -23,6 +23,12 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Dark palettes leaked Reddit's white below the header on current Reddit. Reddit
+  declares its whole colour-token set a second time on the grid container that
+  wraps the feed, the comment tree and the right rail, so everything inside it
+  resolved the light values and the theme's remap reached only the header. On
+  Gruvbox that painted the branch lines beside every "more replies" fold white
+  and the right rail's community title at about 2:1; it now reads 10:1.
 - `yarn publish:release` counts an untracked file as uncommitted work. It
   filtered `??` lines out of `git status` before deciding, on the reasoning that
   an untracked file is not a change — but the build bundles whatever is on disk,
