@@ -121,6 +121,11 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 		const ad = document.querySelector('shreddit-ad-post');
 		const outbound = document.querySelector('#t3_fixture1 [slot="title"]');
 		const upvote = first?.shadowRoot?.querySelector('[data-action-bar-action="upvote"]');
+		// The score is the group's own child, not a button: the same element old
+		// Reddit paints grey when unvoted and orange or periwinkle when voted.
+		const voteScore = first?.shadowRoot?.querySelector('.rpl-vote-button-group > :where(span, faceplate-number):not(:has(button))');
+		const joinHost = document.querySelector('shreddit-join-button');
+		const joinControl = joinHost?.shadowRoot?.querySelector('button, a');
 		const actionRow = first?.shadowRoot?.querySelector('.action-row, .shreddit-post-container');
 		const shadowStyle = first?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="classic"]');
 		const logoSvg = document.querySelector('#reddit-logo svg');
@@ -201,6 +206,12 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 				clipPath: getComputedStyle(upvote, '::before').clipPath,
 				background: getComputedStyle(upvote, '::before').backgroundColor,
 			} : null,
+			voteScore: voteScore ? getComputedStyle(voteScore).color : null,
+			rowBackground: first ? getComputedStyle(first).backgroundColor : null,
+			joinPill: joinControl ? {
+				background: getComputedStyle(joinControl).backgroundColor,
+				color: getComputedStyle(joinControl).color,
+			} : null,
 			absoluteTimes: document.querySelectorAll('.res-slim-abs-ts').length,
 		};
 	});
@@ -271,7 +282,19 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.ok(state.actionIcons.every(icon => icon.display === 'none' || icon.width === 0), `native action SVGs must be hidden behind the classic glyphs: ${state.actionIcons.map(icon => `${icon.name}=${icon.display}/${icon.width}`).join(', ')}`);
 	assert.deepEqual([state.voteArrow.width, state.voteArrow.height], ['15px', '14px'], 'the vote button paints old Reddit\'s 15x14 arrow');
 	assert.match(state.voteArrow.clipPath, /^polygon\(/, 'the arrow is cut from the button\'s own box');
-	assert.equal(state.voteArrow.background, 'rgb(198, 198, 198)', 'an unvoted arrow is old Reddit\'s #c6c6c6');
+	// Old Reddit's own #c6c6c6 reads 1.71:1 on its white rows, so Classic - the
+	// one light palette - carries a readable equivalent while the ten dark
+	// palettes keep the literal. The score is text and held to 4.5; the arrow is
+	// a state indicator and held to 3.
+	assert.equal(state.voteArrow.background, 'rgb(111, 111, 111)', 'the Classic arrow is the readable grey, not old Reddit\'s #c6c6c6');
+	assert.ok(contrastRatio(state.voteArrow.background, state.rowBackground) >= 3,
+		`the vote arrow measured ${contrastRatio(state.voteArrow.background, state.rowBackground).toFixed(2)}:1 on the row`);
+	assert.ok(contrastRatio(state.voteScore, state.rowBackground) >= 4.5,
+		`the vote score measured ${contrastRatio(state.voteScore, state.rowBackground).toFixed(2)}:1 on the row`);
+	if (state.joinPill) {
+		assert.ok(contrastRatio(state.joinPill.color, state.joinPill.background) >= 4.5,
+			`the Join label measured ${contrastRatio(state.joinPill.color, state.joinPill.background).toFixed(2)}:1 on its pill`);
+	}
 	assert.equal(state.shareButton.height, 24, 'the share control keeps a 24px hit box behind its 16px line');
 	assert.ok(state.shareButton.width >= 20 && state.shareButton.width <= 45, `the native share control is the word alone, saw ${state.shareButton.width}px`);
 	assert.ok(state.absoluteTimes >= 2);
@@ -1562,14 +1585,18 @@ test('an enabled pageTheme palette paints its own background', async t => {
 //
 // Each is invisible to the SCSS: both rules are present and correct in source,
 // and only the cascade decides.
-function contrastRatio(a, b) {
-	const parse = value => (value.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+function relativeLuminance(value) {
+	const parse = colour => (colour.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
 	const channel = c => {
 		const s = c / 255;
 		return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
 	};
-	const luminance = rgb => 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
-	const [l1, l2] = [luminance(parse(a)), luminance(parse(b))];
+	const rgb = parse(value);
+	return 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
+}
+
+function contrastRatio(a, b) {
+	const [l1, l2] = [relativeLuminance(a), relativeLuminance(b)];
 	return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
 }
 

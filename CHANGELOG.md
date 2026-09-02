@@ -23,6 +23,13 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- The vote column on current Reddit is readable on the Classic palette. It
+  copied old Reddit's exact colours, and old Reddit never met AA: on a white row
+  the grey score measured 1.71:1, the upvoted orange 2.30 and the downvoted
+  periwinkle 2.65. Classic now carries readable equivalents of all three, and
+  the ten dark palettes keep the original literals, where they already read at
+  8:1 and better. The community Join pill was white on old Reddit's subscribe
+  blue at 3.02:1 and is now a darker blue at 5.25:1.
 - The settings console's Save button and toggle knobs were white on the accent
   colour, which is light in eight of the nine console themes: "Save 1 Change"
   measured 2.61:1 on the default theme and 1.86:1 on Forest. Both now take the

@@ -34,12 +34,21 @@ html.res-pageTheme {
 
 	// The header's bottom rule and the pale account box in its corner. Defined
 	// once so every palette has them; Classic restates both with old Reddit's
-	// own values below. (The vote arrow grey, the voted orange and periwinkle,
-	// and the subscribe blue are not tokens: they are painted inside shadow
-	// roots, which by contract carry no palette tokens, as old Reddit's fixed
-	// colours on every palette.)
+	// own values below.
 	--rsm-th-header-edge: var(--rsm-th-border);
 	--rsm-th-header-box: color-mix(in srgb, var(--rsm-th-header) 55%, var(--rsm-th-bg));
+
+	// Old Reddit's vote colours: the arrow grey and the two voted states. They
+	// are painted on a pseudo-element inside Reddit's shadow root, which `::part`
+	// cannot reach and which cannot see the palette's own `--rsm-th-` tokens by
+	// contract - so they are carried under their own prefix, defined here and
+	// inherited across the shadow boundary the way every custom property is.
+	// Values are old Reddit's literals, which read 8:1 and up on the ten dark
+	// palettes; Classic, the one with a white ground, restates all three below
+	// because #c6c6c6 measures 1.71:1 on it.
+	--rsm-vote-ink: #c6c6c6;
+	--rsm-vote-ink-up: #ff8b60;
+	--rsm-vote-ink-down: #9494ff;
 }
 
 // ---- Palettes -------------------------------------------------------------
@@ -68,6 +77,15 @@ html.res-pageTheme--classic {
 	--rsm-th-header-edge: #5f99cf;
 	--rsm-th-header-box: #eff7ff;
 	--rsm-th-scheme: light;
+
+	// Old Reddit never met AA and this palette copies it, so the vote column was
+	// the least readable thing on the page: the 13px bold score at 1.71:1 on a
+	// white row and 1.57 on a #f5f5f5 one, the orange at 2.30, the periwinkle at
+	// 2.65. These are the nearest readable equivalents - 5.02, 5.25 and 6.32 on
+	// white, and 4.61, 4.82 and 5.80 on the raised row.
+	--rsm-vote-ink: #6f6f6f;
+	--rsm-vote-ink-up: #c04100;
+	--rsm-vote-ink-down: #5050c8;
 }
 
 html.res-pageTheme--oled {

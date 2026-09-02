@@ -41,7 +41,11 @@
 	<div class="grid-container theme-rpl flex-nav-expanded">
 		<flex-left-nav-container id="left-sidebar-container"><nav><strong>Home</strong><p>Popular</p><p>Explore</p><p>Communities</p></nav></flex-left-nav-container>
 		<div id="subgrid-container">
-			<section class="rsm-community-masthead" slot="masthead"><strong>r/example</strong><span> A deterministic community</span></section>
+			<!-- The Join control is two shadow roots deep on live Reddit:
+			     `shreddit-subreddit-header-buttons` holds `shreddit-join-button`,
+			     which holds the real control. Mirrored so the pill the classic
+			     layout paints is measurable at all. -->
+			<section class="rsm-community-masthead" slot="masthead"><strong>r/example</strong><span> A deterministic community</span><shreddit-subreddit-header-buttons><template shadowrootmode="open"><slot></slot></template><shreddit-join-button><template shadowrootmode="open"><button type="button" class="join-btn"><span>Join</span></button></template></shreddit-join-button></shreddit-subreddit-header-buttons></section>
 			<div class="main-container fixed-sidebar">
 				<main id="main-content">
 					<div class="sort-toolbar"><shreddit-sort-dropdown><button type="button">Hot</button></shreddit-sort-dropdown><button type="button">Compact view</button></div>
