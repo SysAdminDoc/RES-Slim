@@ -70,7 +70,7 @@ test('every module owns a stylesheet or explicitly declares itself styleless', (
 		.map(filename => filename.slice(1, -5)));
 	const missingOwnership = moduleFiles.filter(moduleName => !styleless.has(moduleName) && !cssOwners.has(moduleName));
 	const staleStyleless = stylelessModules.filter(moduleName => !moduleFiles.includes(moduleName) || cssOwners.has(moduleName));
-	const unimportedStyles = [...cssOwners].filter(moduleName => !resStyles.includes(`@import 'modules/${moduleName}';`));
+	const unimportedStyles = [...cssOwners].filter(moduleName => !resStyles.includes(`@use 'modules/${moduleName}';`));
 
 	assert.deepEqual(missingOwnership, [], 'new modules must add an owned stylesheet or an explicit styleless declaration');
 	assert.deepEqual(staleStyleless, [], 'styleless declarations must name a current module without a stylesheet');

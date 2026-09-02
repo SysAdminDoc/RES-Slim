@@ -151,5 +151,5 @@ test('commentTreeExport SCSS ships in the bundle', () => {
 	// rather than re-declared per module.
 	assert.match(fs.readFileSync(path.join(repoRoot, 'lib/css/_tokens.scss'), 'utf8'), /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/commentTreeExport'/);
+	assert.match(resScss, /@use 'modules\/commentTreeExport'/);
 });

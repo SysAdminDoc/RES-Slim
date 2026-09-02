@@ -149,7 +149,7 @@ test('no shipped in-page surface uses a pill or fully-rounded backdrop', () => {
 	// Only partials res.scss actually imports, so an unreferenced leftover can
 	// never fail this for a rule that does not ship.
 	const res = read('lib/css/res.scss');
-	const shipped = [...res.matchAll(/@import 'modules\/(\w+)';/g)].map(m => `_${m[1]}.scss`);
+	const shipped = [...res.matchAll(/@use 'modules\/(\w+)';/g)].map(m => `_${m[1]}.scss`);
 	assert.ok(shipped.length > 20, `expected the module imports to be found, got ${shipped.length}`);
 
 	const offenders = [];
@@ -166,5 +166,5 @@ test('no shipped in-page surface uses a pill or fully-rounded backdrop', () => {
 
 test('oldRedditRedirect CSS partial is wired into res.scss', () => {
 	const res = read('lib/css/res.scss');
-	assert.match(res, /@import 'modules\/oldRedditRedirect';/);
+	assert.match(res, /@use 'modules\/oldRedditRedirect';/);
 });

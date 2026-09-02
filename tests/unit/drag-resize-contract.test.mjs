@@ -70,7 +70,7 @@ test('dragResize SCSS ships in the bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_dragResize.scss');
 	assert.ok(fs.existsSync(scssPath));
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/dragResize'/);
+	assert.match(resScss, /@use 'modules\/dragResize'/);
 });
 
 // WCAG 2.2 SC 2.5.7 Dragging Movements. The handle was `pointerdown` and nothing

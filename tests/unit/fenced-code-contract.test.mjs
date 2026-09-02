@@ -57,7 +57,7 @@ test('fencedCodeBlocks is registered and styled', () => {
 	const index = read('lib/modules/index.js');
 	assert.match(index, /import \{ module as fencedCodeBlocks \} from '\.\/fencedCodeBlocks';/);
 	assert.match(index, /^\s*fencedCodeBlocks,/m);
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/fencedCodeBlocks';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/fencedCodeBlocks';/);
 });
 
 test('escapeHtml neutralizes markup', () => {
@@ -78,7 +78,7 @@ test('fencedCodeBlocks is on by default, with highlighting opt-in', () => {
 	assert.match(index, /import \{ module as fencedCodeBlocks \} from '\.\/fencedCodeBlocks';/);
 	assert.match(index, /^\s*fencedCodeBlocks,/m);
 
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/fencedCodeBlocks';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/fencedCodeBlocks';/);
 });
 
 test('the preview and the page agree about a fenced block', async () => {

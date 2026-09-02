@@ -104,5 +104,5 @@ test('crosspostMap SCSS ships in the bundle', () => {
 	assert.match(scss, /\[data-state='error'\]/);
 	assert.match(scss, /\[data-state='empty'\]/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/crosspostMap'/);
+	assert.match(resScss, /@use 'modules\/crosspostMap'/);
 });

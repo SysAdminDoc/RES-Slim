@@ -100,5 +100,5 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /html\.res-pageTheme:has\(shreddit-app\)/);
 	assert.match(scss, /shreddit-feed shreddit-post/);
 	assert.match(scss, /shreddit-comment\[depth='0'\]/);
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/pageTheme';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/pageTheme';/);
 });

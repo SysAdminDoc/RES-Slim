@@ -34,7 +34,7 @@ test('removePromoted matches both legacy class markup and the data-promoted attr
 
 test('removePromoted ships a hidden-count badge styled in res.scss imports', () => {
 	const css = read('lib/css/res.scss');
-	assert.match(css, /@import 'modules\/removePromoted';/);
+	assert.match(css, /@use 'modules\/removePromoted';/);
 	const partial = read('lib/css/modules/_removePromoted.scss');
 	assert.match(partial, /\.rsm-promoted-hidden-badge/);
 	assert.match(partial, /\.thing\.link\.promotedlink/);

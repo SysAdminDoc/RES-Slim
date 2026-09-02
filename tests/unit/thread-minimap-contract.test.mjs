@@ -47,5 +47,5 @@ test('threadMinimap supports a scroll-tracking viewport rectangle', () => {
 
 test('threadMinimap CSS partial is imported from res.scss', () => {
 	const res = read('lib/css/res.scss');
-	assert.match(res, /@import 'modules\/threadMinimap';/);
+	assert.match(res, /@use 'modules\/threadMinimap';/);
 });

@@ -212,5 +212,5 @@ test('saved manager styles are shipped', () => {
 	const res = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(scss, /\.rsm-savedBackup-panel/);
 	assert.match(scss, /\.rsm-savedBackup-tag-form/);
-	assert.match(res, /@import 'modules\/savedBackup'/);
+	assert.match(res, /@use 'modules\/savedBackup'/);
 });

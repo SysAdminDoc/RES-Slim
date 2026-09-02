@@ -100,5 +100,5 @@ test('arcticShift SCSS ships in the bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_arcticShift.scss');
 	assert.ok(fs.existsSync(scssPath));
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/arcticShift'/);
+	assert.match(resScss, /@use 'modules\/arcticShift'/);
 });

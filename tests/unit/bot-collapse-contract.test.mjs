@@ -79,5 +79,5 @@ test('botCollapse SCSS ships in the bundle', () => {
 	assert.match(scss, /\.rsm-botCollapse-badge/);
 	assert.match(scss, /\.rsm-botCollapse-reveal/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/botCollapse'/);
+	assert.match(resScss, /@use 'modules\/botCollapse'/);
 });

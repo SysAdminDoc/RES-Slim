@@ -1,4 +1,4 @@
-@import '../zindex';
+@use '../zindex' as *;
 
 // Local saved-content manager. The panel never displays Reddit HTML directly:
 // the module writes text into these surfaces after IndexedDB reads.

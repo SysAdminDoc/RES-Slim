@@ -1,4 +1,4 @@
-@import '../zindex';
+@use '../zindex' as *;
 
 // RES-Slim: minimap strip injected by threadMinimap. Fixed to the right (or
 // left) viewport edge, narrow enough not to overlap the main content

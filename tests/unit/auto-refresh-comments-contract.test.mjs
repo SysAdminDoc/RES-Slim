@@ -54,7 +54,7 @@ test('autoRefreshComments surfaces live status for paused, checking, success, an
 
 test('autoRefreshComments CSS partial is wired into res.scss', () => {
 	const res = read('lib/css/res.scss');
-	assert.match(res, /@import 'modules\/autoRefreshComments';/);
+	assert.match(res, /@use 'modules\/autoRefreshComments';/);
 });
 
 test('autoRefreshComments SCSS styles the status companion and focus states', () => {

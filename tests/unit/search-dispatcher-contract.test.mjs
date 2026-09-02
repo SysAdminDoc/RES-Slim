@@ -43,7 +43,7 @@ test('searchDispatcher hides the "this subreddit" option outside of /r/<sub> rou
 
 test('searchDispatcher styles + integrates with res.scss imports', () => {
 	const res = read('lib/css/res.scss');
-	assert.match(res, /@import 'modules\/searchDispatcher';/);
+	assert.match(res, /@use 'modules\/searchDispatcher';/);
 	const css = read('lib/css/modules/_searchDispatcher.scss');
 	assert.match(css, /\.rsm-search-dispatcher/);
 	assert.match(css, /width:\s*100%/);

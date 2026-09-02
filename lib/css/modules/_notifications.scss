@@ -1,4 +1,4 @@
-@import '../zindex';
+@use '../zindex' as *;
 
 #RESNotifications {
 	position: fixed;

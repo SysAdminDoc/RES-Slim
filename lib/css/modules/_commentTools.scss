@@ -1,4 +1,4 @@
-@import '../zindex';
+@use '../zindex' as *;
 
 .markdownEditor-wrapper { width: 500px; } // same as textarea.
 

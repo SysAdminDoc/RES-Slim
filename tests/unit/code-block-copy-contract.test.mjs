@@ -36,5 +36,5 @@ test('codeBlockCopy has a SCSS module', () => {
 
 test('codeBlockCopy SCSS is imported in res.scss', () => {
 	const res = read('lib/css/res.scss');
-	assert.ok(res.includes("@import 'modules/codeBlockCopy'"));
+	assert.ok(res.includes("@use 'modules/codeBlockCopy'"));
 });

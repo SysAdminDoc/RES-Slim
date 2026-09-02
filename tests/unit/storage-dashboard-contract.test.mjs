@@ -78,5 +78,5 @@ test('storageDashboard has a SCSS module', () => {
 
 test('storageDashboard SCSS is imported in res.scss', () => {
 	const res = read('lib/css/res.scss');
-	assert.ok(res.includes("@import 'modules/storageDashboard'"));
+	assert.ok(res.includes("@use 'modules/storageDashboard'"));
 });

@@ -58,5 +58,5 @@ test('repostDedupe module is registered, disabled by default, styled', () => {
 	const index = read('lib/modules/index.js');
 	assert.match(index, /import \{ module as repostDedupe \} from '\.\/repostDedupe';/);
 	assert.match(index, /^\s*repostDedupe,/m);
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/repostDedupe';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/repostDedupe';/);
 });

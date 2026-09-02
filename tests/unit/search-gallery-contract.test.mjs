@@ -41,5 +41,5 @@ test('searchGallery SCSS ships in the bundle', () => {
 	assert.match(scss, /\.rsm-searchGallery-strip/);
 	assert.match(scss, /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/searchGallery'/);
+	assert.match(resScss, /@use 'modules\/searchGallery'/);
 });

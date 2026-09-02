@@ -27,7 +27,7 @@ function toPosix(absolute) {
 	return path.relative(repoRoot, absolute).split(path.sep).join('/');
 }
 
-// Sass resolves `@import 'modules/foo'` against the importing file's directory and
+// Sass resolves `@use 'modules/foo'` against the importing file's directory and
 // tries both `foo.scss` and the partial form `_foo.scss`. Only those two forms
 // appear in this tree; index files and load paths are not configured.
 export function resolveImport(fromFile, specifier) {
@@ -49,7 +49,7 @@ export function readImports(source) {
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.replace(/(^|\s)\/\/[^\r\n]*/g, '$1');
 
-	// `@import '../vendor/index';` and `@use 'sass:math';` — the second is a
+	// `@use '../vendor/index';` and `@use 'sass:math';` — the second is a
 	// built-in module, not a file, and every built-in is `sass:`-prefixed.
 	return [...live.matchAll(/@(?:import|use)\s+['"]([^'"]+)['"]/g)]
 		.map(match => match[1])
@@ -57,10 +57,10 @@ export function readImports(source) {
 }
 
 test('the import reader sees files, skips sass built-ins, and ignores commented-out imports', () => {
-	assert.deepEqual(readImports("@import 'modules/hover';\n@use 'sass:math';\n@import \"../zindex\";"),
+	assert.deepEqual(readImports("@use 'modules/hover';\n@use 'sass:math';\n@import \"../zindex\";"),
 		['modules/hover', '../zindex']);
-	assert.deepEqual(readImports("// @import 'modules/gone';"), []);
-	assert.deepEqual(readImports("/* @import 'modules/gone';\n   @import 'modules/also-gone'; */"), []);
+	assert.deepEqual(readImports("// @use 'modules/gone';"), []);
+	assert.deepEqual(readImports("/* @use 'modules/gone';\n   @use 'modules/also-gone'; */"), []);
 	// A URL in a comment is not an import, and the `//` in `https://` is not a
 	// comment — the stripper keys on whitespace before the slashes for that reason.
 	assert.deepEqual(readImports("@import 'a'; // see https://example.com/x"), ['a']);
@@ -102,4 +102,20 @@ test('every stylesheet in the tree is reachable from an entry point', () => {
 	// beside it in the same commit; `git show v0.39.0:<path>` is the shorter route.
 	const orphans = [...all].filter(relative => !reachable.has(relative)).sort();
 	assert.deepEqual(orphans, [], `stylesheets no entry point imports:\n  ${orphans.join('\n  ')}`);
+});
+
+test('no stylesheet uses @import, which Dart Sass has deprecated', () => {
+	// 130 `@import` rules across 17 files printed 62 deprecation warnings on
+	// every production build, which is the kind of noise that hides a real one.
+	// The migration was mechanical and the compiled CSS came out byte-identical
+	// (401,338 bytes either way), so this line is what keeps it that way: an
+	// `@import` added back would compile fine and start the warnings again.
+	const offenders = [];
+	for (const file of collectScss(path.join(repoRoot, 'lib'))) {
+		const source = fs.readFileSync(file, 'utf8')
+			.replace(/\/\*[\s\S]*?\*\//g, '')
+			.replace(/(^|\s)\/\/[^\r\n]*/g, '$1');
+		if (/@import\s+['"]/.test(source)) offenders.push(toPosix(file));
+	}
+	assert.deepEqual(offenders, [], `these stylesheets still use @import:\n  ${offenders.join('\n  ')}`);
 });

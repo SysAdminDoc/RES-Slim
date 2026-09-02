@@ -57,5 +57,5 @@ test('editedCommentDiff module is registered, disabled by default, styled', () =
 	const index = read('lib/modules/index.js');
 	assert.match(index, /import \{ module as editedCommentDiff \} from '\.\/editedCommentDiff';/);
 	assert.match(index, /^\s*editedCommentDiff,/m);
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/editedCommentDiff';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/editedCommentDiff';/);
 });

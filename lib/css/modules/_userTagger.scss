@@ -1,4 +1,4 @@
-@import '../zindex';
+@use '../zindex' as *;
 
 // RES-Slim user tagger module styles. Scoped under .rsm-userTagger-* class
 // names so the host page's existing tagline layout (and any subreddit custom

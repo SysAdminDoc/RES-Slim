@@ -292,7 +292,7 @@ test('user tagger styles ship in the SCSS bundle', () => {
 	assert.match(scss, /\[aria-busy='true'\]/);
 
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/userTagger'/);
+	assert.match(resScss, /@use 'modules\/userTagger'/);
 });
 
 // The author index and the comment navigator's read set both grew for the life

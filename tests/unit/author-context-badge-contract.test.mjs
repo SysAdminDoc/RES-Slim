@@ -113,5 +113,5 @@ test('authorContextBadge SCSS ships in the bundle', () => {
 	const scss = fs.readFileSync(scssPath, 'utf8');
 	assert.match(scss, /\.rsm-authorBadge/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/authorContextBadge'/);
+	assert.match(resScss, /@use 'modules\/authorContextBadge'/);
 });

@@ -91,5 +91,5 @@ test('perSubSort SCSS ships in the bundle', () => {
 	const scssPath = path.join(repoRoot, 'lib/css/modules/_perSubSort.scss');
 	assert.ok(fs.existsSync(scssPath));
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/perSubSort'/);
+	assert.match(resScss, /@use 'modules\/perSubSort'/);
 });

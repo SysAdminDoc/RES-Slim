@@ -77,5 +77,5 @@ test('hoverZoom SCSS ships in the bundle', () => {
 	assert.match(scss, /#rsm-hoverZoom-popover/);
 	assert.match(scss, /prefers-reduced-motion: reduce/);
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
-	assert.match(resScss, /@import 'modules\/hoverZoom'/);
+	assert.match(resScss, /@use 'modules\/hoverZoom'/);
 });

@@ -28,7 +28,7 @@ test('hideAll is registered in the module index', () => {
 });
 
 test('hideAll ships its stylesheet through res.scss', () => {
-	assert.match(read('lib/css/res.scss'), /@import 'modules\/hideAll';/);
+	assert.match(read('lib/css/res.scss'), /@use 'modules\/hideAll';/);
 	assert.match(scss, /\.rsm-hideAll-link/);
 });
 
