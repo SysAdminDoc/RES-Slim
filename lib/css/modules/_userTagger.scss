@@ -275,3 +275,45 @@
 		color: var(--rsm-info-text);
 	}
 }
+
+// Under a page palette, the popover follows it. It was painted from the fixed `--rsm-surface` family, which is dark whatever
+// the page is. On the ten dark palettes that happened to look right; on Classic,
+// the one light palette, a dark card hung off a light page while every other
+// widget this extension injects followed the palette. Found by extending the
+// chrome sweep from two palettes to all eleven, which is what the 2026-09-02
+// audit left unchecked.
+html.res-pageTheme {
+	.rsm-userTagger-popover {
+		background: var(--rsm-th-bg-elev);
+		border-color: var(--rsm-th-border);
+		color: var(--rsm-th-txt);
+		box-shadow: 0 10px 28px var(--rsm-th-shadow);
+	}
+
+	.rsm-userTagger-popover-header {
+		border-bottom-color: var(--rsm-th-border);
+	}
+
+	.rsm-userTagger-popover-title { color: var(--rsm-th-txt-strong); }
+
+	.rsm-userTagger-popover-subtitle,
+	.rsm-userTagger-popover-row,
+	.rsm-userTagger-popover-status { color: var(--rsm-th-muted); }
+
+	.rsm-userTagger-popover-tag,
+	.rsm-userTagger-popover-color {
+		border-color: var(--rsm-th-control-border);
+		color: var(--rsm-th-txt);
+	}
+
+	.rsm-userTagger-popover-tag {
+		background: var(--rsm-th-bg-raise);
+
+		&::placeholder { color: var(--rsm-th-muted); }
+	}
+
+	.rsm-userTagger-popover-checkrow {
+		background: var(--rsm-th-bg-raise);
+		border-color: var(--rsm-th-border);
+	}
+}

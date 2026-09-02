@@ -4,6 +4,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- The user-tag popover follows the page palette. It was painted from a fixed
+  dark surface, so on Classic, the one light palette, a dark card hung off a
+  light page while every other widget this extension injects matched. Found by
+  measuring all eleven palettes instead of two.
+
 ### Changed
 
 - The old Reddit data links now open the settings console rather than panels of

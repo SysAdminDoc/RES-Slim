@@ -1984,6 +1984,18 @@ test('a stickied post keeps a green title, on the palette that has to read it', 
 // Probes rather than the real toast: the claim is about which stylesheet paints
 // these surfaces, and a notification's own lifecycle would decide whether one is
 // on screen when the measurement happens.
+//
+// All eleven palettes, not the two this started with. The 2026-09-02 audit
+// measured the toast and the dialog and left the hover card, the user-tag
+// popover and the comment navigator unchecked on nine of them - and a palette is
+// exactly a set of colours, so a colour defect that only exists on one of them
+// is invisible to a two-palette run. Classic is the light one and is measured
+// against the other direction.
+const PAGE_THEMES = [
+	'classic', 'oled', 'graphite', 'midnight', 'catppuccin', 'tokyonight',
+	'rosepine', 'nord', 'dracula', 'gruvbox', 'solarized',
+];
+
 test('RES chrome follows the page palette, not only night mode', async t => {
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
@@ -1993,7 +2005,7 @@ test('RES chrome follows the page palette, not only night mode', async t => {
 
 	const failures = [];
 	/* eslint-disable no-await-in-loop */
-	for (const theme of ['gruvbox', 'oled']) {
+	for (const theme of PAGE_THEMES) {
 		await worker.evaluate(value => new Promise(resolve => {
 			chrome.storage.local.set({
 				'RES.modulePrefs': { pageTheme: true, nightMode: false },
@@ -2018,7 +2030,13 @@ test('RES chrome follows the page palette, not only night mode', async t => {
 				</div>
 				<div class="RESDialogSmall"><h3>Dialog</h3><div class="RESDialogContents">Contents</div></div>
 				<div id="REScommentNavBox"><span class="commentNavFieldLabel">Label</span></div>
-				<div class="RESMacroDropdown"><ul><li><a href="#">Macro</a></li></ul></div>`;
+				<div class="RESMacroDropdown"><ul><li><a href="#">Macro</a></li></ul></div>
+				<div class="RESHover RESDialogSmall RESHoverInfoCard"><h3>Hover</h3><div class="RESDialogContents">Card body</div></div>
+				<div class="rsm-userTagger-popover">
+					<div class="rsm-userTagger-popover-header">u/someone</div>
+					<label class="rsm-userTagger-popover-label">Tag</label>
+					<div class="rsm-userTagger-popover-actions"><button type="button">Save</button></div>
+				</div>`;
 			document.body.append(host);
 			const read = selector => {
 				const element = host.querySelector(selector);
@@ -2035,6 +2053,11 @@ test('RES chrome follows the page palette, not only night mode', async t => {
 					navigatorLabel: read('.commentNavFieldLabel'),
 					macro: read('.RESMacroDropdown'),
 					macroItem: read('.RESMacroDropdown li a'),
+					hoverCard: read('.RESHoverInfoCard'),
+					hoverCardBody: read('.RESHoverInfoCard .RESDialogContents'),
+					tagPopover: read('.rsm-userTagger-popover'),
+					tagPopoverHeader: read('.rsm-userTagger-popover-header'),
+					tagPopoverLabel: read('.rsm-userTagger-popover-label'),
 				},
 			};
 			host.remove();
@@ -2043,12 +2066,27 @@ test('RES chrome follows the page palette, not only night mode', async t => {
 
 		// Nested probes inherit the card's ground rather than declaring one, so
 		// each says which surface is actually behind it.
-		const grounds = { toastFooter: 'toast', navigatorLabel: 'navigator', macroItem: 'macro' };
+		const grounds = {
+			toastFooter: 'toast',
+			navigatorLabel: 'navigator',
+			macroItem: 'macro',
+			hoverCardBody: 'hoverCard',
+			tagPopoverHeader: 'tagPopover',
+			tagPopoverLabel: 'tagPopover',
+		};
+		// Classic is the one light palette. Its widgets must be light, not dark:
+		// asserting "dark" for every palette would let a widget that ignores the
+		// palette entirely pass on ten of the eleven.
+		const wantsDark = theme !== 'classic';
 		for (const [what, surface] of Object.entries(measured.surfaces)) {
 			let ground = surface.background;
 			if (ground === 'rgba(0, 0, 0, 0)') ground = measured.surfaces[grounds[what]].background;
-			if (relativeLuminance(ground) >= 0.35) {
+			const luminance = relativeLuminance(ground);
+			if (wantsDark && luminance >= 0.35) {
 				failures.push(`${theme} ${what}: ${ground} is not a surface from a dark palette`);
+			}
+			if (!wantsDark && luminance < 0.35) {
+				failures.push(`${theme} ${what}: ${ground} is a dark surface on the light palette`);
 			}
 			const ratio = contrastRatio(surface.color, ground);
 			if (ratio < 4.5) failures.push(`${theme} ${what}: ${surface.color} on ${ground} = ${ratio.toFixed(2)}:1`);
@@ -2056,7 +2094,7 @@ test('RES chrome follows the page palette, not only night mode', async t => {
 	}
 	/* eslint-enable no-await-in-loop */
 
-	assert.deepEqual(failures, [], `RES chrome under a dark palette with night mode off:\n  ${failures.join('\n  ')}`);
+	assert.deepEqual(failures, [], `RES chrome under each palette with night mode off:\n  ${failures.join('\n  ')}`);
 });
 
 test('the light palette keeps dark inline ink, so injected chips stay readable', async t => {
