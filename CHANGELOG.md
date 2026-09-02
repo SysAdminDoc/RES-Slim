@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- A post whose thumbnail slot holds one of Reddit's small cards instead of an
+  image no longer squeezes that card into the 70px rail and pushes it into the
+  first letter of the title. The row gets the same placeholder a post with no
+  thumbnail gets.
 - Five media hosts ask for the permission their API actually needs: AAR Library,
   vidble, Imgur, OneDrive and Photobucket call an API that does not allow a
   cross-origin request, and were relying on one they had never declared. The

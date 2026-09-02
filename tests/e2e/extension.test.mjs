@@ -180,6 +180,21 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 			filteredDisplay: filtered ? getComputedStyle(filtered).display : null,
 			adDisplay: ad ? getComputedStyle(ad).display : null,
 			outboundHref: outbound?.href,
+			// A thumbnail slot that holds a card rather than an image. Read beside
+			// an ordinary row so "the title starts where the others do" is a
+			// measurement rather than a number someone wrote down.
+			cardThumbnail: (() => {
+				const card = document.querySelector('#t3_fixture4');
+				const ordinary = document.querySelector('#t3_fixture1');
+				if (!card || !ordinary) return null;
+				const slot = card.querySelector('[slot="thumbnail"]');
+				return {
+					titleX: card.querySelector('[slot="title"]').getBoundingClientRect().x,
+					ordinaryTitleX: ordinary.querySelector('[slot="title"]').getBoundingClientRect().x,
+					slotDisplay: slot ? getComputedStyle(slot).display : 'missing',
+					placeholder: getComputedStyle(card, '::before').backgroundImage,
+				};
+			})(),
 			adapter: first ? {
 				classes: first.className,
 				fullname: first.getAttribute('data-fullname'),
@@ -254,6 +269,14 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.equal(state.filteredDisplay, 'none', 'the existing filter builder should receive current Reddit Things');
 	assert.equal(state.adDisplay, 'none', 'current Reddit ad elements should be removed');
 	assert.equal(new URL(state.outboundHref).searchParams.has('utm_source'), false, 'outbound cleansing should still run');
+
+	// Reddit fills the thumbnail slot with a small card for some posts. Treating
+	// every slot as a 70x70 image box wrapped that card's text into a 70px column
+	// and pushed its box into the first character of the title.
+	assert.ok(state.cardThumbnail, 'the card-thumbnail row is missing from the fixture');
+	assert.equal(state.cardThumbnail.slotDisplay, 'none', 'a thumbnail slot with no image in it is not a thumbnail');
+	assert.equal(state.cardThumbnail.titleX, state.cardThumbnail.ordinaryTitleX, 'the title should start where every other row\'s does');
+	assert.match(state.cardThumbnail.placeholder, /^url\(/, 'the row should get the placeholder a post with no thumbnail gets');
 	assert.match(state.adapter.classes, /\bthing\b/);
 	assert.match(state.adapter.classes, /\blink\b/);
 	assert.match(state.adapter.classes, /\bres-selected\b/, 'selected-entry navigation should receive current Reddit Things');

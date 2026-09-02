@@ -1943,7 +1943,7 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-
 // get the link placeholder and text posts the document icon. Same standalone
 // crops as the classic renderer below, painted as the host's own `::before`,
 // which the flat tree places as the shadow root's first child.
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage'], :has([slot='thumbnail'], [slot='post-media-container']))::before {
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage'], :has([slot='thumbnail'] :is(img, video), [slot='post-media-container']))::before {
 	content: '';
 	position: absolute;
 	top: 1px;
@@ -1953,7 +1953,7 @@ html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shredd
 	background: var(--rsm-th-bg-raise) url('../images/redditThumbnail-default.png') center / 70px 50px no-repeat;
 }
 
-html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post.self:not([view-context='CommentsPage'], :has([slot='thumbnail'], [slot='post-media-container']))::before {
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post.self:not([view-context='CommentsPage'], :has([slot='thumbnail'] :is(img, video), [slot='post-media-container']))::before {
 	background-image: url('../images/redditThumbnail-self.png');
 }
 
@@ -2000,6 +2000,16 @@ html.res-pageTheme.res-pageTheme--refined shreddit-post shreddit-post-overflow-m
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail'] > :not(a) {
+	display: none !important;
+}
+
+// Reddit sometimes fills the thumbnail slot with something that is not an image
+// - a small card carrying a community name, an age and a snippet. The rules
+// above treat every thumbnail slot as a 70x70 image box, so that card's text
+// wrapped inside a 70px column and its own box pushed into the first character
+// of the title. Hide the slot instead and let the placeholder below paint, which
+// is what a post with no thumbnail at all already gets.
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail']:not(:has(img, video)) {
 	display: none !important;
 }
 

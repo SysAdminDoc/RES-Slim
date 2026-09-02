@@ -87,6 +87,20 @@
 								<a slot="title" href="/r/example/comments/fixture3/promotional_post/">I built a promotional dashboard</a>
 							</shreddit-post>
 						</article>
+						<!-- A thumbnail slot holding something that is not an image. Reddit fills
+						     it with a small card for some posts, and the theme used to treat every
+						     thumbnail slot as a 70x70 image box: the card's text wrapped into a
+						     70px column and its own box pushed into the first character of the
+						     title. -->
+						<article>
+							<shreddit-post id="t3_fixture4" author="carol" subreddit-name="example" domain="example.com"
+								post-type="link" score="7" comment-count="3" permalink="/r/example/comments/fixture4/a_card_thumbnail/"
+								content-href="https://example.com/article">
+								<span slot="credit-bar"><a href="/r/example/">r/example</a> · posted by <a href="/user/carol/">carol</a></span>
+								<a slot="title" href="/r/example/comments/fixture4/a_card_thumbnail/">A post whose thumbnail slot is a card</a>
+								<div slot="thumbnail"><div class="thumbnail-card"><span>r/example</span><span>4 hr</span><span>a snippet of the linked page</span></div></div>
+							</shreddit-post>
+						</article>
 						<faceplate-partial src="/svc/shreddit/feeds/popular-feed?after=t3_fixture3" loading="action" id="fixture-feed-sentinel"></faceplate-partial>
 					</shreddit-feed>
 				</main>
