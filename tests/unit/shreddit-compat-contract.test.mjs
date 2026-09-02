@@ -196,6 +196,21 @@ test('current Reddit shadow paint hooks survive late rendering and rerenders', a
 	action.remove();
 });
 
+test('current Reddit post stylesheet survives shadow content replacement', async () => {
+	const post = document.createElement('shreddit-post');
+	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+	document.body.append(post);
+	Shreddit.prepareShredditThing(post);
+	const selector = `style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`;
+	assert.ok(post.shadowRoot.querySelector(selector));
+
+	post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="downvote"></button></div>';
+	await new Promise(resolve => { setTimeout(resolve, 0); });
+	assert.ok(post.shadowRoot.querySelector(selector), 'a full shadow rerender must restore the classic layout sheet');
+	assert.match(post.shadowRoot.querySelector('[data-action-bar-action="downvote"]').getAttribute('part'), /\brsm-vote-button\b/);
+	post.remove();
+});
+
 test('current Reddit tree preparation sweeps nested shadow hosts once', () => {
 	const root = document.createElement('div');
 	let parent = root;

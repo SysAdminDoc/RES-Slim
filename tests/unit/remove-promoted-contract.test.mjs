@@ -66,7 +66,8 @@ test('current Reddit ad elements belong to the ad remover, not to a theme option
 	// and current Reddit streams the comment tree so a document sweep misses it too.
 	assert.match(source, /watchForFutureDescendants\(document\.body, D2X_AD_ELEMENTS\.join\(', '\)/);
 	assert.match(source, /COUNTABLE_PROMOTED_SELECTOR/);
-	assert.match(source, /el\.parentElement\?\.closest\(COUNTABLE_PROMOTED_SELECTOR\)/);
+	assert.match(source, /const parent = el\.parentElement/);
+	assert.match(source, /parent && parent\.closest\(COUNTABLE_PROMOTED_SELECTOR\)/);
 	assert.match(source, /!el\.matches\('shreddit-comment-tree-ads'\) && !countableAncestor/);
 });
 

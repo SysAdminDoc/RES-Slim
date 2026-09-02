@@ -199,8 +199,9 @@ All notable changes to RES-Slim will be documented in this file.
   overflow control now inherit the selected page palette through stable Shadow
   Parts. Their native behavior remains intact, but the oversized rounded action
   wrappers no longer leak through the old Reddit layout. The compact controls
-  retain 24px pointer targets, and their parts are restored when Reddit replaces
-  a shadow root's contents during hydration or a later rerender. Streamed
+  retain 24px pointer targets. Their parts and registered layout sheets are
+  restored when Reddit replaces a shadow root's contents during hydration or a
+  later rerender. Streamed
   discussion ad wrappers are also handled by the always-on ad remover without
   counting nested markers as extra placements.
 - Preparing a nested current Reddit thread now sweeps its shadow hosts once.
