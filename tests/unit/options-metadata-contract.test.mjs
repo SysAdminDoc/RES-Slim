@@ -53,6 +53,40 @@ test('every module source produces metadata with the same declared display field
 	}
 });
 
+// `noconfig` takes an option out of the settings console. That is right for a
+// value the extension keeps for itself, and wrong for one a reader would want to
+// change: `hover.fadeSpeed` carried it with the comment "broken" while every
+// hover card read it for the close timer and the CSS transition, and the sibling
+// module exposed the same knob. Nobody could tell which of the two it was.
+const HIDDEN_BY_DESIGN = new Map([
+	// Rendered as the console's own "show all options" switch rather than as a
+	// row in the settings list, so it is read on purpose.
+	['settingsNavigation.js', new Set(['showAllOptions'])],
+]);
+
+test('an option hidden from the settings console is not one the module reads', () => {
+	const modulesDir = path.join(root, 'lib/modules');
+	const index = fs.readFileSync(path.join(modulesDir, 'index.js'), 'utf8');
+	const moduleFiles = [...index.matchAll(/from ['"]\.\/([^'"]+)['"]/g)]
+		.map(match => path.join(modulesDir, `${match[1]}.js`));
+
+	const offenders = [];
+	for (const filename of moduleFiles) {
+		const source = fs.readFileSync(filename, 'utf8');
+		// Without stripping line comments this reads the note explaining why an
+		// option is no longer `noconfig` as a declaration of one.
+		const code = source.replace(/^\s*\/\/.*$/gm, '');
+		const allowed = HIDDEN_BY_DESIGN.get(path.basename(filename)) || new Set();
+		for (const [, name] of code.matchAll(/(\w+):\s*\{[^{}]*noconfig:\s*true/g)) {
+			if (allowed.has(name)) continue;
+			if (new RegExp(`options\\.${name}\\b`).test(source)) {
+				offenders.push(`${path.basename(filename)}: ${name} is hidden from the console and read anyway`);
+			}
+		}
+	}
+	assert.deepEqual(offenders, [], offenders.join('\n  '));
+});
+
 test('host metadata extraction removes media handlers and their heavy imports', () => {
 	const source = `
 		/* @flow */
