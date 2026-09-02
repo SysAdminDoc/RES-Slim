@@ -76,6 +76,10 @@ RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local
 
 ## Build
 
+You need Node 22.18 or newer on the 22 line, or 24.11 or newer, and Yarn 1.22.22.
+That is Babel's floor rather than a preference, and the lockfile is Yarn 1's
+format. `yarn install` checks both and tells you what to do if either is wrong.
+
 ```bash
 yarn install
 yarn verify     # every gate, in order, stops at the first failure

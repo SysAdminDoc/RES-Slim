@@ -23,6 +23,9 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- `yarn install` says so when the Node or Yarn version cannot build this repo,
+  instead of letting the failure surface later as an error from inside a build
+  tool. The versions it wants are in the README.
 - A control that lets every suspended media host back in. Hosts that keep
   failing are skipped for a while, and a host suspended by a blip you have since
   fixed had no way to be tried again before its backoff ran out.

@@ -8,8 +8,12 @@
   "private": true,
   "type": "module",
   "homepage": "https://github.com/SysAdminDoc/RES-Slim",
+  "engines": {
+    "node": "^22.18.0 || >=24.11.0"
+  },
+  "packageManager": "yarn@1.22.22",
   "scripts": {
-    "preinstall": "node -v",
+    "preinstall": "node scripts/check-toolchain.mjs",
     "prestart": "rimraf dist",
     "start": "node build.js --watch --mode development",
     "preonce": "rimraf dist",
