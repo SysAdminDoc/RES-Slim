@@ -98,7 +98,9 @@ test('settings console uses the imagegen three-column navigation system', () => 
 	assert.match(styles, /--options-primary-rail:/);
 	assert.match(styles, /grid-template-columns: var\(--options-primary-rail\) var\(--options-module-rail\) minmax\(0, 1fr\)/);
 	assert.match(styles, /\.moduleRow:has\(\.moduleButton\.active\)/);
-	assert.match(styles, /is-console-prefs #RESConfigPanelModulesPane/);
+	// Both utility pages take the whole content area; the module rail is hidden
+	// for either of them by one rule.
+	assert.match(styles, /:is\(\.is-console-prefs, \.is-data-workspace\) #RESConfigPanelModulesPane/);
 	assert.match(controller, /function updateConsoleBreadcrumb\(/);
 	assert.match(controller, /case NAMED_KEYS\.Down:/);
 	assert.match(controller, /case NAMED_KEYS\.Up:/);

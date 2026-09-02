@@ -3788,21 +3788,30 @@ html[res-options]:root {
 		box-shadow: none;
 	}
 
-	#RESConsoleContainer.is-console-prefs #RESConfigPanelModulesPane,
-	#RESConsoleContainer.is-console-prefs #RESConfigPanelOptions {
+	#RESConsoleContainer:is(.is-console-prefs, .is-data-workspace) #RESConfigPanelModulesPane,
+	#RESConsoleContainer:is(.is-console-prefs, .is-data-workspace) #RESConfigPanelOptions {
 		display: none;
 	}
 
-	#RESConsoleContainer.is-console-prefs #RESConsoleContent {
+	#RESConsoleContainer:is(.is-console-prefs, .is-data-workspace) #RESConsoleContent {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	#RESConsoleContainer.is-console-prefs #RESGlobalSave:disabled {
+	#RESConsoleContainer:is(.is-console-prefs, .is-data-workspace) #RESGlobalSave:disabled {
 		display: none;
 	}
 
-	#RESConsoleContainer.is-console-prefs .consoleBreadcrumb {
+	#RESConsoleContainer:is(.is-console-prefs, .is-data-workspace) .consoleBreadcrumb {
 		visibility: hidden;
+	}
+
+	/* A module rail beside a data browser is furniture: the workspace takes the
+	   whole content area, exactly as the console-preferences page does. */
+	#RESDataWorkspace {
+		grid-column: 1;
+		grid-row: 1;
+		padding: 34px 42px 28px;
+		background: var(--options-bg);
 	}
 
 	#RESConsolePrefs {

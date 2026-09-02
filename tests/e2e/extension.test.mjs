@@ -854,6 +854,7 @@ test('the settings console renders in the options page', async t => {
 
 	// `:not([hidden])` because the console keeps a hidden `__search` tab in the
 	// tablist that exists to host search results and is never clickable.
+	const UTILITY_TABS = new Set(['__console', '__data']);
 	const tabHandles = await page.locator('[role="tablist"] [role="tab"]:not([hidden])').all();
 	assert.ok(tabHandles.length > 1, 'there should be several categories to walk');
 	const dir = saveScreenshotDir();
@@ -887,7 +888,10 @@ test('the settings console renders in the options page', async t => {
 		}));
 		assert.ok(layout.overflow <= 1, `${label} should not overflow the viewport horizontally`);
 
-		if (category !== '__console') {
+		// The two utility tabs own the workspace column instead of a module rail,
+		// so the rail geometry below does not apply to them. Everything above it
+		// does, including the locale-key sweep and the overflow check.
+		if (!UTILITY_TABS.has(category)) {
 			assert.ok(Math.abs(layout.primaryRight - layout.moduleLeft) <= 1, `${label} primary and module rails should meet cleanly`);
 			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), label); // eslint-disable-line no-await-in-loop
 			assert.ok(Math.abs(layout.moduleRight - layout.workspaceLeft) <= 1, `${label} module rail and workspace should meet cleanly`);
@@ -904,17 +908,22 @@ test('the settings console renders in the options page', async t => {
 				assert.equal(await optionInputs.first().isEnabled(), true, `${label} should allow preparing options before enabling the module`); // eslint-disable-line no-await-in-loop
 			}
 		} else {
-			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), 'Console preferences'); // eslint-disable-line no-await-in-loop
-			const consoleLayout = await page.evaluate(() => ({ // eslint-disable-line no-await-in-loop
+			const isConsole = category === '__console';
+			const panelSelector = isConsole ? '#RESConsolePrefs' : '#RESDataWorkspace';
+			const heading = isConsole ? 'Console preferences' : 'Local data';
+			assert.equal((await page.locator('#RESHeaderCategory').innerText()).trim(), heading); // eslint-disable-line no-await-in-loop
+			const consoleLayout = await page.evaluate(selector => ({ // eslint-disable-line no-await-in-loop
 				moduleDisplay: getComputedStyle(document.querySelector('#RESConfigPanelModulesPane')).display,
 				primaryRight: document.querySelector('#RESPrimaryRail').getBoundingClientRect().right,
-				prefsLeft: document.querySelector('#RESConsolePrefs').getBoundingClientRect().left,
-				advancedTop: document.querySelector('.utilityPanel--advanced').getBoundingClientRect().top,
+				prefsLeft: document.querySelector(selector).getBoundingClientRect().left,
 				viewportHeight: window.innerHeight,
-			}));
-			assert.equal(consoleLayout.moduleDisplay, 'none', 'Console preferences should not retain an empty module rail');
-			assert.ok(Math.abs(consoleLayout.primaryRight - consoleLayout.prefsLeft) <= 1, 'Console preferences should begin where the primary rail ends');
-			assert.ok(consoleLayout.advancedTop < consoleLayout.viewportHeight, 'Console preferences should expose Advanced options without an initial scroll');
+			}), panelSelector);
+			assert.equal(consoleLayout.moduleDisplay, 'none', `${heading} should not retain an empty module rail`);
+			assert.ok(Math.abs(consoleLayout.primaryRight - consoleLayout.prefsLeft) <= 1, `${heading} should begin where the primary rail ends`);
+			if (isConsole) {
+				const advancedTop = await page.evaluate(() => document.querySelector('.utilityPanel--advanced').getBoundingClientRect().top); // eslint-disable-line no-await-in-loop
+				assert.ok(advancedTop < consoleLayout.viewportHeight, 'Console preferences should expose Advanced options without an initial scroll');
+			}
 		}
 
 		await page.screenshot({ path: path.join(pageDir, `${screenshotSlug(label)}.png`), fullPage: false, animations: 'disabled' }); // eslint-disable-line no-await-in-loop
