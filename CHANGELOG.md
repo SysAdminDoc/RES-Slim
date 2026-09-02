@@ -120,6 +120,13 @@ All notable changes to RES-Slim will be documented in this file.
   an untracked file is not a change — but the build bundles whatever is on disk,
   which is how v0.54.0's ZIPs came to contain code the tag does not have.
 
+### Removed
+
+- The gifs.com and redditbooru.com media handlers. Both sites are gone:
+  gifs.com serves an expired certificate, gifyoutube.com is a parked "domain
+  registration has expired" page, and redditbooru.com does not answer at all, so
+  neither handler could produce a preview for anyone. 71 host handlers remain.
+
 ## v0.54.0, 2026-09-02
 
 ### Changed

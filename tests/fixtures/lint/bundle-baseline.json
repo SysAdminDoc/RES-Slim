@@ -1,22 +1,22 @@
 {
 	"chrome": {
-		"foreground.entry.js": 695840,
+		"foreground.entry.js": 694517,
 		"snudown.entry.js": 61985,
-		"options.entry.js": 390525,
-		"background.entry.js": 97156,
+		"options.entry.js": 389762,
+		"background.entry.js": 98106,
 		"trackingSabotage.entry.js": 2008,
-		"res.css": 400444,
+		"res.css": 401338,
 		"options.css": 83322,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630
 	},
 	"firefox": {
-		"foreground.entry.js": 695963,
+		"foreground.entry.js": 694640,
 		"snudown.entry.js": 61985,
-		"options.entry.js": 390525,
-		"background.entry.js": 97278,
+		"options.entry.js": 389762,
+		"background.entry.js": 98228,
 		"trackingSabotage.entry.js": 2008,
-		"res.css": 400444,
+		"res.css": 401338,
 		"options.css": 83322,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630

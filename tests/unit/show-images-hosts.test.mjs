@@ -7,7 +7,13 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-const expectedHostCount = 73;
+// 73 until 2026-09-02, when `gifs.com` and `redditbooru.com` were removed: both
+// hosts are gone (an expired certificate and a connection timeout, from a script
+// and from a real browser), so neither handler could produce an expando for
+// anyone. gifyoutube.com is a parked "registration has expired" page and
+// gifyt.com does not answer either, so all three domains the first one claimed
+// are dead.
+const expectedHostCount = 71;
 const criticalHosts = new Set([
 	'defaultImage',
 	'defaultAudio',

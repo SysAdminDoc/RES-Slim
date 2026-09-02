@@ -258,26 +258,6 @@
       "url": "https://getyarn.io/yarn-clip/embed/${code}"
     },
     {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://cdn.gifs.com/resources/favicon.png"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://gifs.com/api/${id}"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.gif"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.mp4"
-    },
-    {
-      "file": "lib/modules/hosts/gifyoutube.js",
-      "url": "https://share.gifyoutube.com/${id}.webm"
-    },
-    {
       "file": "lib/modules/hosts/giphy.js",
       "url": "https://media.giphy.com/media/${id}/giphy.gif"
     },
@@ -448,14 +428,6 @@
     {
       "file": "lib/modules/hosts/ppy.js",
       "url": "https://s.ppy.sh/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/redditbooru.js",
-      "url": "https://redditbooru.com/favicon.ico"
-    },
-    {
-      "file": "lib/modules/hosts/redditbooru.js",
-      "url": "https://redditbooru.com/images/"
     },
     {
       "file": "lib/modules/hosts/redditgallery.js",
