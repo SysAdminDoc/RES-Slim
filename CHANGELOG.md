@@ -14,6 +14,16 @@ All notable changes to RES-Slim will be documented in this file.
   page is open rather than waiting for a reload. Picking one of the nine still
   wins and still persists.
 
+### Fixed
+
+- Night mode had no off position on current Reddit. The anti-FOUC guard writes
+  `res-nightmode` onto the page at document_start on every renderer, and there
+  the module only ever removed `res-d2x-nightmode`, so the class stayed for the
+  life of the document: a #262626 body, dark toasts and dark dialogs under
+  Reddit's own light page, whatever the setting said. Turning it on now sets both
+  names rather than relying on the guard's leftover, so switching it on mid-page
+  paints the extension's own surfaces too.
+
 ## v0.54.0, 2026-09-02
 
 ### Changed

@@ -1626,6 +1626,61 @@ test('turning the theme off leaves the page unpainted, not black', async t => {
 	assert.doesNotMatch(state.classes, /rsm-theme-dark/);
 });
 
+test('night mode has an off position on current Reddit', async t => {
+	// The anti-FOUC guard writes `res-nightmode` onto <html> at document_start on
+	// every page. On old Reddit the module owns that exact class and takes it back
+	// off; on current Reddit it owned `res-d2x-nightmode` instead, so the r2 class
+	// stayed for the life of the document and every `.res-nightmode` rule - the
+	// #262626 body, the dark toast, the dialogs, the hover cards - kept applying
+	// with the module switched off. The tests below this one all navigate to
+	// old.reddit.com, which is why nothing saw it.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+
+	// A detached probe rather than the real toast: the first-run notification is
+	// not guaranteed to be on screen at any particular moment, and the claim here
+	// is about which stylesheet paints RES chrome, not about the toast's own
+	// lifecycle.
+	const read = () => page.evaluate(() => {
+		const probe = document.createElement('div');
+		probe.className = 'RESNotification';
+		document.body.appendChild(probe);
+		const notification = getComputedStyle(probe).backgroundColor;
+		probe.remove();
+		return {
+			classes: document.documentElement.className,
+			bodyBackground: getComputedStyle(document.body).backgroundColor,
+			notification,
+		};
+	});
+
+	const load = async prefs => {
+		await worker.evaluate(stored => new Promise(resolve => {
+			chrome.storage.local.set({ 'RES.modulePrefs': stored }, resolve);
+		}), prefs);
+		await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await page.waitForTimeout(800);
+		return read();
+	};
+
+	const off = await load({ pageTheme: false, nightMode: false });
+	assert.doesNotMatch(off.classes, /res-nightmode/, 'the night class outlives the module that owns it');
+	assert.doesNotMatch(off.classes, /res-d2x-nightmode/);
+	assert.notEqual(off.bodyBackground, 'rgb(38, 38, 38)', 'the night skin is painting the page with night mode off');
+	assert.notEqual(off.notification, 'rgba(17, 22, 29, 0.98)', 'RES chrome is painting its night variant with night mode off');
+
+	// The on position, which was never broken and must stay that way: both names,
+	// so the dark chrome no longer depends on a leftover from the guard.
+	const on = await load({ pageTheme: false, nightMode: true });
+	assert.match(on.classes, /res-nightmode/, 'the surfaces scoped to res-nightmode are what a reader sees dark');
+	assert.match(on.classes, /res-d2x-nightmode/);
+	assert.equal(on.notification, 'rgba(17, 22, 29, 0.98)');
+});
+
 // Inline-chip ink against the surface that is actually behind it, over the
 // combinations that decide which of two stylesheets paints that surface.
 //
