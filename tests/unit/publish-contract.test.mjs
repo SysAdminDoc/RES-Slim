@@ -72,6 +72,8 @@ test('the artifacts are hashed, renamed, and their digests shipped', () => {
 	assert.match(source, /createHash\('sha256'\)/, 'a download nobody can verify is a download nobody should trust');
 	assert.match(source, /RES-Slim-\$\{tag\}-\$\{target\}\.zip/, 'two releases\' assets are indistinguishable once downloaded under a generic name');
 	assert.match(source, /SHA256SUMS\.txt/, 'the digests have to be published beside what they describe');
+	assert.match(source, /fs\.statSync\(artifact\.source\)\.size/, 'artifact size checks must not quote Windows paths through a child shell');
+	assert.doesNotMatch(source, /node -e .*readFileSync/, 'cmd.exe breaks nested quotes around absolute Windows paths');
 	// `dist/zip` is produced by `yarn build`, whose `prebuild` rimrafs `dist` —
 	// so the artifacts are from this run. Stated in the script, because a stale
 	// artifact is the one failure that looks exactly like success.

@@ -209,7 +209,9 @@ All notable changes to RES-Slim will be documented in this file.
   which approached quadratic work as a discussion grew deeper.
 - Release publication now resolves and verifies annotated tags with Git commands
   that survive Windows shell parsing. The previous peel syntax lost its caret in
-  `cmd.exe` and stopped before any commit or artifact could be published.
+  `cmd.exe` and stopped before any commit or artifact could be published. Package
+  size checks now read file metadata directly instead of nesting a Windows path
+  inside a quoted `node -e` subprocess.
 
 ### Added
 

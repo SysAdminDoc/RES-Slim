@@ -126,9 +126,9 @@ for (const artifact of artifacts) {
 	// The manifest inside the zip is the only thing that can say which version was
 	// actually built. A zip left over from a previous version is otherwise
 	// indistinguishable from a fresh one.
-	const listing = run(`node -e "const z=require('fs').readFileSync(${JSON.stringify(artifact.source)});process.stdout.write(String(z.length))"`).out;
-	if (!Number(listing)) fail(`${artifact.source} is empty`);
-	artifact.bytes = Number(listing);
+	const bytes = fs.statSync(artifact.source).size;
+	if (!bytes) fail(`${artifact.source} is empty`);
+	artifact.bytes = bytes;
 	artifact.sha256 = crypto.createHash('sha256').update(fs.readFileSync(artifact.source)).digest('hex');
 }
 
