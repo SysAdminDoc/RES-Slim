@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- `yarn publish:release` counts an untracked file as uncommitted work. It
+  filtered `??` lines out of `git status` before deciding, on the reasoning that
+  an untracked file is not a change — but the build bundles whatever is on disk,
+  which is how v0.54.0's ZIPs came to contain code the tag does not have.
 
 ## v0.54.0, 2026-09-02
 

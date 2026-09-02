@@ -64,7 +64,14 @@ if (version !== pkg.version) {
 const dirty = git('status', '--porcelain').split('\n').filter(Boolean)
 	// `.md` files other than README are gitignored here, so an edited ROADMAP is
 	// not uncommitted work in the sense that matters.
-	.filter(line => !/\.md$/.test(line) && !line.startsWith('??'));
+	//
+	// Untracked files are: they are in the tree, so `yarn build` bundles them and
+	// every gate below runs against them, while `git` has never seen them. v0.54.0
+	// shipped that way — a half-finished settings-console feature and its
+	// untracked test were in the tree when the ZIPs were built, so the published
+	// artifacts carried a locale string and a changed default that the tag does
+	// not contain, and the digest file vouched for them.
+	.filter(line => !/\.md$/.test(line));
 if (dirty.length) fail(`working tree has uncommitted changes:\n  ${dirty.join('\n  ')}`);
 
 const remote = git('remote', 'get-url', 'origin');

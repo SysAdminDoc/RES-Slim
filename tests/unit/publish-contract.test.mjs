@@ -48,6 +48,30 @@ test('a version that is not a version is refused', () => {
 	assert.match(result.stderr, /is not a version/);
 });
 
+test('an untracked file in the tree is uncommitted work, and stops a publish', () => {
+	// This is not hypothetical: v0.54.0's ZIPs were built with an untracked test
+	// and six modified files in the tree, so the published bundles carried a
+	// locale string and a changed default that the tag does not contain, and the
+	// SHA256SUMS file vouched for them. The refusal that should have caught it
+	// filtered `??` lines out before counting, on the reasoning that an untracked
+	// file is not a change — but `yarn build` bundles whatever is on disk, and so
+	// does every gate that runs before the upload.
+	//
+	// Run for real rather than asserted as source shape: the refusal is a filter
+	// over `git status` output, and the previous version of this file would have
+	// passed any regex you could write about it.
+	const probe = path.join(repoRoot, 'tests', 'unit', 'publish-untracked-probe.generated.js');
+	fs.writeFileSync(probe, '// deleted by publish-contract.test.mjs\n');
+	try {
+		const result = publish('--dry-run');
+		assert.notEqual(result.status, 0, 'a tree with an untracked source file must not publish');
+		assert.match(result.stderr, /working tree has uncommitted changes/);
+		assert.match(result.stderr, /publish-untracked-probe\.generated\.js/, 'the refusal has to name what it found');
+	} finally {
+		fs.rmSync(probe, { force: true });
+	}
+});
+
 test('every refusal named in the acceptance is actually implemented', () => {
 	// Each of these is a way to publish something nobody can reproduce, and each
 	// one has been a real failure in some project. Checked as source shape,
