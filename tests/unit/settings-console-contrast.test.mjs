@@ -192,6 +192,48 @@ for (const theme of THEMES) {
 	});
 }
 
+for (const theme of THEMES) {
+	test(`${theme}: what sits on the accent fill stays legible (>= 4.5:1)`, () => {
+		// The enabled Save button's label and the knob of an enabled toggle are
+		// both painted on --options-accent rather than on a surface, so no suite
+		// above reaches them. They were `#fff` at all three call sites, under a
+		// comment claiming the accent "is dark in every theme" — only Paper's is.
+		// Measured white on the accent: Forest 1.86, Graphite 2.53, OLED (the
+		// default) 2.61, against 4.5 for the 14px bold label and 3 for the knob.
+		const block = extractBlock(theme);
+		const accent = parseColor(readToken(block, '--options-accent'));
+		const onAccent = parseColor(readToken(block, '--options-bg'));
+		const ratio = contrast(onAccent, accent);
+		assert.ok(ratio >= TEXT_AA, `${theme}: --options-bg on --options-accent = ${ratio.toFixed(2)}:1 (needs >= ${TEXT_AA})`);
+	});
+}
+
+test('nothing painted on the accent fill is a white literal', () => {
+	// The measurement above is about the tokens. This is about the call sites:
+	// the three rules that sit on the accent have to use the token, or the
+	// arithmetic proves nothing about what the page renders.
+	//
+	// Every declaration of each selector, not the first: the knob is declared
+	// twice, once in the base sheet and once in the redesign block that wins, and
+	// a check that stopped at the first match would have passed while the rule
+	// the page actually uses said `#fff`.
+	const rules = [
+		[/\.globalSaveButton:not\(:disabled\)\s*\{[^}]*\}/g, 'the enabled Save label'],
+		[/\.toggleButton\.enabled \.toggleThumb::before\s*\{[^}]*\}/g, 'the enabled toggle knob'],
+		[/#RESAllOptions:checked::before\s*\{[^}]*\}/g, 'the show-all-options knob'],
+	];
+	for (const [pattern, what] of rules) {
+		const matches = [...styles.matchAll(pattern)].map(([rule]) => rule);
+		assert.ok(matches.length, `${what}: rule not found, so this contract is measuring nothing`);
+		for (const rule of matches) {
+			assert.doesNotMatch(rule, /#fff\b|#ffffff\b|:\s*white\b/, `${what} is white on the accent again`);
+		}
+		// The last declaration is the one the page renders: same or higher
+		// specificity, later in the sheet.
+		assert.match(matches[matches.length - 1], /var\(--options-bg\)/, `${what} should be painted from --options-bg`);
+	}
+});
+
 test('no disabled state is expressed as an opacity multiplier', () => {
 	// This is the assertion that would have caught the original defect. Three
 	// rules faded a control with `opacity`, which composites the text *and* the

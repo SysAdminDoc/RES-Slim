@@ -4581,6 +4581,22 @@ test('the options page has no accessibility violations in any theme', async t =>
 	await page.waitForSelector('#moduleOptionsScrim, #optionContainer, .optionContainer', { timeout: 30000 }).catch(() => {});
 	await page.waitForTimeout(1000);
 
+	// Stage a change before measuring. With nothing staged the Save button is
+	// disabled, and axe exempts a disabled control from contrast entirely — so
+	// this sweep ran nine times over a page whose most prominent control was
+	// never looked at, while "Save 1 Change" rendered white on a light accent in
+	// eight of the nine themes. The knob of the toggle it clicks is a
+	// pseudo-element, which axe does not measure at all; that one is held by
+	// `settings-console-contrast`.
+	await page.locator('#RESConsoleContainer .toggleButton').first().click();
+	await page.waitForSelector('.globalSaveButton:not(:disabled)', { timeout: 30000 });
+	// And clear the toast the click raises before measuring. A notification on
+	// its way out is a partly transparent element, and axe composites what it
+	// finds: measured mid-fade, the footer's #9ba7b4 reads as #616a74 at 3.33:1
+	// against the card. The toast's own colours are covered by the ink matrix.
+	await dismissVisualNotifications(page);
+	await page.waitForFunction(() => !document.querySelector('#RESNotifications .RESNotification'), null, { timeout: 30000 });
+
 	const failures = [];
 	// Sequential on purpose: each pass mutates the theme attribute on the one
 	// page and then measures it, so these cannot overlap.

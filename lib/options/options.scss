@@ -2982,7 +2982,7 @@ html[res-options]:root {
 	.globalSaveButton:not(:disabled) {
 		border-color: var(--options-accent);
 		background: var(--options-accent);
-		color: #fff;
+		color: var(--options-bg);
 		font-weight: 700;
 	}
 
@@ -3544,7 +3544,11 @@ html[res-options]:root {
 	}
 
 	#RESConsoleContainer .toggleButton.enabled .toggleThumb::before {
-		background: #fff;
+		// The ground here is the accent, not the field, so this is not
+		// `--options-knob`: that token answers the off state, where the track is
+		// `--options-field`. White measured 1.86:1 on Forest's accent and 2.61 on
+		// the default OLED orange, against the 3:1 a state indicator needs.
+		background: var(--options-bg);
 		transform: translateX(20px);
 	}
 
@@ -3813,8 +3817,9 @@ html[res-options]:root {
 
 	#RESAllOptions:checked::before {
 		transform: translateX(20px);
-		// On the accent fill, which is dark in every theme.
-		background: #fff;
+		// On the accent fill, which is light in eight of the nine themes - only
+		// Paper's is dark. White on it measured 1.86:1 to 2.61:1.
+		background: var(--options-bg);
 	}
 
 	.utilityPanel--build {

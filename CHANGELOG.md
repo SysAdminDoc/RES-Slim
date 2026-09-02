@@ -23,6 +23,10 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- The settings console's Save button and toggle knobs were white on the accent
+  colour, which is light in eight of the nine console themes: "Save 1 Change"
+  measured 2.61:1 on the default theme and 1.86:1 on Forest. Both now take the
+  theme's page colour, the way the button's hover state already did.
 - Dark palettes leaked Reddit's white below the header on current Reddit. Reddit
   declares its whole colour-token set a second time on the grid container that
   wraps the feed, the comment tree and the right rail, so everything inside it
