@@ -23,6 +23,9 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Clicking a comment and loading more comments both asked to be throttled to the
+  first event in a window, and both got a second, delayed one as well: the
+  options they passed were being dropped by a function that took two arguments.
 - Three things that grew for as long as a current Reddit tab stayed open: the
   settings console left a message listener on the page every time anything
   inside it navigated, the user tagger kept an author link for every post and
