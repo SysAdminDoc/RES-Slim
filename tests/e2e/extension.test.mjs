@@ -194,6 +194,13 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 				...rect(icon),
 			})),
 			shareButton: rect(share?.shadowRoot?.querySelector('[part="share-button"]')),
+			// Old Reddit's arrow is the button's own `::before`, cut with a clip-path.
+			voteArrow: upvote ? {
+				width: getComputedStyle(upvote, '::before').width,
+				height: getComputedStyle(upvote, '::before').height,
+				clipPath: getComputedStyle(upvote, '::before').clipPath,
+				background: getComputedStyle(upvote, '::before').backgroundColor,
+			} : null,
 			absoluteTimes: document.querySelectorAll('.res-slim-abs-ts').length,
 		};
 	});
@@ -210,7 +217,7 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.equal(state.leftDisplay, 'none');
 	assert.ok(state.mainWidth > 800, `the feed should reclaim the left rail, saw ${state.mainWidth}px`);
 	assert.ok(state.mastheadHeight >= 38 && state.mastheadHeight <= 42, `the community masthead should be compact, saw ${state.mastheadHeight}px`);
-	assert.equal(state.sortToolbarHeight, 32);
+	assert.equal(state.sortToolbarHeight, 26, 'the sort row is old Reddit\'s 10px line, not a 32px toolbar');
 	assert.ok(state.highlightsHeight <= 70, `community highlights should not become a hero, saw ${state.highlightsHeight}px`);
 	assert.equal(state.feedErrorDisplay, 'none', 'a hidden feed error must stay hidden');
 	assert.equal(state.postHeight, 72, 'listing rows should match old Reddit');
@@ -256,9 +263,17 @@ test('current Reddit receives the old-style theme and RES Thing behaviour', asyn
 	assert.equal(state.upvoteRect.x, 10);
 	assert.equal(state.upvoteRect.y, 5);
 	assert.ok(['upvote-outline', 'downvote-outline', 'comment-outline', 'share-outline'].every(name => state.actionIcons.some(icon => icon.name === name)), `native action icon coverage is incomplete: ${state.actionIcons.map(icon => icon.name).join(', ')}`);
-	assert.ok(state.actionIcons.filter(icon => icon.name.endsWith('-outline')).every(icon => icon.display === 'block' && icon.width === 16 && icon.height === 16 && icon.fill !== 'none'), 'native action SVGs should render at a consistent visible size');
-	assert.equal(state.shareButton.height, 16);
-	assert.ok(state.shareButton.width >= 40 && state.shareButton.width <= 60, `the native share control should remain compact, saw ${state.shareButton.width}px`);
+	// The native SVGs stay in the root, so the controls keep their listeners and
+	// labels, but old Reddit's row is text links and a 15x14 arrow glyph: every
+	// icon is hidden and the vote button paints its own arrow.
+	// `display` or size: the share icon is hidden through its exported part, so
+	// the SVG inside it keeps `inline` and simply has no box.
+	assert.ok(state.actionIcons.every(icon => icon.display === 'none' || icon.width === 0), `native action SVGs must be hidden behind the classic glyphs: ${state.actionIcons.map(icon => `${icon.name}=${icon.display}/${icon.width}`).join(', ')}`);
+	assert.deepEqual([state.voteArrow.width, state.voteArrow.height], ['15px', '14px'], 'the vote button paints old Reddit\'s 15x14 arrow');
+	assert.match(state.voteArrow.clipPath, /^polygon\(/, 'the arrow is cut from the button\'s own box');
+	assert.equal(state.voteArrow.background, 'rgb(198, 198, 198)', 'an unvoted arrow is old Reddit\'s #c6c6c6');
+	assert.equal(state.shareButton.height, 24, 'the share control keeps a 24px hit box behind its 16px line');
+	assert.ok(state.shareButton.width >= 20 && state.shareButton.width <= 45, `the native share control is the word alone, saw ${state.shareButton.width}px`);
 	assert.ok(state.absoluteTimes >= 2);
 
 	const visibleError = await page.evaluate(() => {
@@ -542,7 +557,7 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 		};
 	});
 
-	assert.equal(state.postTitleSize, '18px');
+	assert.equal(state.postTitleSize, '16px', 'old Reddit\'s link title is 16px on the thread page too');
 	assert.equal(state.scrollY, 0);
 	assert.deepEqual(state.headerNav, { y: 0, height: 45 });
 	assert.ok(state.logo.y >= 10 && state.logo.width >= 70 && state.logo.height === 22, `the thread wordmark should be visible in the header, saw ${JSON.stringify(state.logo)}`);
@@ -559,7 +574,9 @@ test('current Reddit comments keep full posts, nesting, and native collapse', as
 	assert.ok(state.mediaImage.width > 600 && state.mediaImage.height > 350, `the decoded image should fill the opened post, saw ${state.mediaImage.width}x${state.mediaImage.height}`);
 	assert.ok(Math.abs(state.mediaImage.width / state.mediaImage.height - 440 / 280) < 0.02, 'opened media should preserve its intrinsic aspect ratio');
 	assert.ok(['upvote-outline', 'downvote-outline', 'comment-outline', 'share-outline'].every(name => state.actionIcons.some(icon => icon.name === name)), `thread action icon coverage is incomplete: ${state.actionIcons.map(icon => icon.name).join(', ')}`);
-	assert.ok(state.actionIcons.filter(icon => icon.name.endsWith('-outline')).every(icon => icon.display === 'block' && icon.width === 16 && icon.height === 16), 'thread action icons should remain visible');
+	// The thread row is old Reddit's text-link row too: every native icon stays in
+	// the root for its control and is hidden behind the arrow glyph or the word.
+	assert.ok(state.actionIcons.every(icon => icon.display === 'none' || icon.width === 0), `thread action icons must be hidden behind the classic glyphs: ${state.actionIcons.map(icon => `${icon.name}=${icon.display}/${icon.width}`).join(', ')}`);
 	assert.equal(state.commentCount, 4);
 	assert.notEqual(state.topBackground, 'rgba(0, 0, 0, 0)');
 	assert.equal(state.topBorderWidth, '0px');
@@ -4699,7 +4716,9 @@ test('hiding scores works on both renderers, from one option set', async t => {
 	assert.equal(current.upvoteVisibility, 'visible', 'voting must keep working - the module hides numbers, not controls');
 	assert.equal(current.commentsVisibility, 'visible', 'hideCommentCounts was off, so the comments link stays');
 	assert.ok(current.classicStillInstalled, 'registering a second sheet must not clobber the classic layout');
-	assert.equal(current.sheetCount, 2, 'one style element per owner');
+	// The classic layout owns two sheets (geometry, then the old-Reddit glyphs),
+	// and the score hider is the third.
+	assert.equal(current.sheetCount, 3, 'one style element per owner');
 
 	// --- old Reddit: the same option set, a different DOM ----------------------
 	const old = await context.newPage();

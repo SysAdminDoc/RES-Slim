@@ -31,6 +31,15 @@ html.res-pageTheme {
 	// palette, so an un-corrected page is never a failing one.
 	--rsm-th-accent-text: var(--rsm-th-accent);
 	--rsm-th-accent-ui: var(--rsm-th-accent);
+
+	// The header's bottom rule and the pale account box in its corner. Defined
+	// once so every palette has them; Classic restates both with old Reddit's
+	// own values below. (The vote arrow grey, the voted orange and periwinkle,
+	// and the subscribe blue are not tokens: they are painted inside shadow
+	// roots, which by contract carry no palette tokens, as old Reddit's fixed
+	// colours on every palette.)
+	--rsm-th-header-edge: var(--rsm-th-border);
+	--rsm-th-header-box: color-mix(in srgb, var(--rsm-th-header) 55%, var(--rsm-th-bg));
 }
 
 // ---- Palettes -------------------------------------------------------------
@@ -56,6 +65,8 @@ html.res-pageTheme--classic {
 	--rsm-th-control-border: #888;
 	--rsm-th-shadow: rgb(0, 0, 0, 0.12);
 	--rsm-th-header: #cee3f8;
+	--rsm-th-header-edge: #5f99cf;
+	--rsm-th-header-box: #eff7ff;
 	--rsm-th-scheme: light;
 }
 
@@ -489,7 +500,7 @@ html.res-pageTheme.res-pageTheme--refined reddit-header-large {
 	height: 46px !important;
 	background: var(--rsm-th-header) !important;
 	border: 0 !important;
-	border-bottom: 1px solid var(--rsm-th-control-border) !important;
+	border-bottom: 1px solid var(--rsm-th-header-edge) !important;
 	box-shadow: none !important;
 }
 
@@ -638,9 +649,11 @@ html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-button) {
 	font-size: 0 !important;
 }
 
+// No colour here on purpose: the score follows the vote state, which only the
+// shadow sheet can see, and its rule is deliberately not important so the vote
+// enhancements `::part(rsm-score)` rule still wins when that module is on.
 html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-vote-score) {
-	color: var(--rsm-th-txt) !important;
-	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+	font: bold 13px/14px verdana, arial, helvetica, sans-serif !important;
 	text-align: center !important;
 }
 
@@ -652,6 +665,7 @@ html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-button) 
 	box-shadow: none !important;
 	color: var(--rsm-th-muted) !important;
 	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+	text-decoration: none !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-action-icon),
@@ -779,15 +793,17 @@ html.res-pageTheme.res-pageTheme--refined #right-sidebar-container:not(:empty) {
 	overflow: auto;
 }
 
+// The rail's wrapper carries no box of its own; each `aside` inside it is the
+// flat 12px panel old Reddit's `.side` had (rules further down).
 html.res-pageTheme.res-pageTheme--refined #right-sidebar-container > * {
 	margin: 0 0 5px !important;
-	padding: 7px !important;
+	padding: 0 !important;
 	background: var(--rsm-th-bg) !important;
-	border: 1px solid var(--rsm-th-border) !important;
+	border: 0 !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;
 	color: var(--rsm-th-txt-strong) !important;
-	font: 10px/14px verdana, arial, helvetica, sans-serif;
+	font: 12px/16px verdana, arial, helvetica, sans-serif;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-feed {
@@ -833,22 +849,23 @@ html.res-pageTheme.res-pageTheme--refined comment-body-header > div:has(> shredd
 	border-color: var(--rsm-th-control-border) !important;
 }
 
+// One line of links, not a card rail. The title and each card title are light
+// DOM; the card and rail roots are flattened by their own shadow sheets.
 html.res-pageTheme.res-pageTheme--refined community-highlight-carousel {
-	display: flex;
+	display: block !important;
 	box-sizing: border-box;
 	min-height: 0 !important;
-	height: 32px !important;
+	height: auto !important;
 	max-height: 70px;
 	margin: 0 0 4px !important;
-	padding: 7px 9px !important;
-	align-items: flex-start;
-	gap: 6px;
+	padding: 3px 8px !important;
 	overflow: hidden;
-	background: var(--rsm-th-bg) !important;
+	background: var(--rsm-th-bg-raise) !important;
 	border: 1px solid var(--rsm-th-border) !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;
 	color: var(--rsm-th-txt) !important;
+	font: 10px/16px verdana, arial, helvetica, sans-serif;
 }
 
 // `:not(:empty)` on the banner and `:has(> :not(script))` on the loader, because
@@ -857,8 +874,11 @@ html.res-pageTheme.res-pageTheme--refined community-highlight-carousel {
 // unconditionally put three empty bordered 38px boxes into every listing - one
 // above the first post and one at each streamed batch boundary. Each was measured
 // at exactly the `min-height` below, which is what gave them away. A banner
-// carrying only a text message is still a real error state and still painted.
-html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden], :empty),
+// carrying a message is still a real error state and still painted.
+// `:has(*)` rather than `:not(:empty)`: live Reddit ships the banner holding one
+// whitespace text node, which `:empty` counts as content, so the box painted on
+// every healthy listing anyway. A message arrives inside an element.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed-error-banner:not([hidden]):has(*),
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-loader:has(> :not(script)),
 html.res-pageTheme.res-pageTheme--refined shreddit-feed > faceplate-partial:not([src]) {
 	display: block;
@@ -887,7 +907,9 @@ html.res-pageTheme.res-pageTheme--refined #main-content > hr {
 // Descendant, not child: reddit streams everything past the first server-rendered
 // batch inside `<faceplate-batch>` wrappers, so `shreddit-feed > article` reached
 // three rows out of fifty-two and the rest of the feed lost its separators.
+// Positioned, because a media expando button is placed against the article.
 html.res-pageTheme.res-pageTheme--refined shreddit-feed article {
+	position: relative;
 	margin: 0 !important;
 	border: 0 !important;
 	border-bottom: 1px solid var(--rsm-th-border) !important;
@@ -920,7 +942,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='tit
 	text-overflow: ellipsis;
 }
 
-html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:has([slot='post-flair']) [slot='title'] {
+// `:not(:empty)`: live Reddit ships the flair host on every post, empty on most.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:has([slot='post-flair']:not(:empty)) [slot='title'] {
 	padding-right: 172px;
 }
 
@@ -1004,9 +1027,11 @@ html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='pos
 	font: normal 9px/12px verdana, arial, helvetica, sans-serif;
 }
 
+// Positioned, because the shadow sheet places the vote rail against this host.
 html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] {
+	position: relative !important;
 	margin: 0 0 10px !important;
-	padding: 7px 8px 8px 52px !important;
+	padding: 6px 8px 6px 52px !important;
 	background: var(--rsm-th-bg) !important;
 	border: 0 !important;
 	border-bottom: 1px solid var(--rsm-th-border) !important;
@@ -1017,14 +1042,18 @@ html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPa
 html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='title'] {
 	margin: 0 !important;
 	color: var(--rsm-th-link) !important;
-	font: normal 18px/24px verdana, arial, helvetica, sans-serif !important;
+	font: normal 16px/20px verdana, arial, helvetica, sans-serif !important;
 }
 
+// Block with inline contents, for the same target-size reason as the listing.
 html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] {
+	display: block !important;
 	min-height: 14px !important;
-	margin: 1px 0 0 !important;
+	margin: 0 0 1px !important;
+	padding: 0 !important;
 	color: var(--rsm-th-muted) !important;
 	font: normal 10px/14px verdana, arial, helvetica, sans-serif !important;
+	white-space: nowrap;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='text-body'] {
@@ -1331,9 +1360,15 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > div > .co
 	display: none !important;
 }
 
+// `.fold-more` deliberately gets no `display`: it is Reddit's permalink copy of
+// the "N more replies" control, hidden natively beside the live `faceplate-partial`
+// button. Forcing it visible printed every fold twice on a live thread.
+html.res-pageTheme.res-pageTheme--refined shreddit-comment #comment-children {
+	display: block !important;
+}
+
 html.res-pageTheme.res-pageTheme--refined shreddit-comment #comment-children,
 html.res-pageTheme.res-pageTheme--refined shreddit-comment .fold-more {
-	display: block !important;
 	grid-column: 1 / -1 !important;
 	width: auto !important;
 	min-width: 0 !important;
@@ -1502,6 +1537,590 @@ html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-overf
 html.res-pageTheme.res-pageTheme--refined shreddit-comment.collapsed {
 	min-height: 14px;
 	margin-top: 5px !important;
+}
+
+// ---- Old Reddit fidelity against live current Reddit (2026-09-02) ----------
+// Everything below was measured on a live public subreddit and thread, not on
+// the fixtures. It sits after the structural rules so it wins source-order ties.
+
+// Old Reddit fills the window. Reddit caps its grid at 1120px.
+html.res-pageTheme.res-pageTheme--refined shreddit-app > .grid-container,
+html.res-pageTheme.res-pageTheme--refined #subgrid-container {
+	max-width: none !important;
+}
+
+// The header search is a rounded pill inside its own root; the bar is exposed
+// as a part so it can become the plain bordered field old Reddit had. The same
+// form is server-rendered in light DOM until the component upgrades, so the
+// pre-hydration copy gets the same box.
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-search-large > form,
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-search-large > form .search-input,
+html.res-pageTheme.res-pageTheme--refined reddit-header-large reddit-search-large::part(rsm-header-search-bar) {
+	min-height: 28px !important;
+	height: 28px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+// The account corner: old Reddit's `#header-bottom-right`, a pale box hugging
+// the bottom-right of the header with plain 10px links in it.
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav > div:last-child {
+	align-self: flex-end;
+	min-height: 0 !important;
+	height: auto !important;
+	margin: 0 -8px -5px 0 !important;
+	padding: 4px 8px 4px 15px !important;
+	gap: 0 4px !important;
+	background: var(--rsm-th-header-box) !important;
+	border-radius: 8px 0 0 0;
+	color: var(--rsm-th-txt-strong);
+	font: 10px/12px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav > div:last-child:has(#signup-button, #login-button, a[href$='/login/'])::before {
+	content: 'want to join?';
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header nav :where(#signup-button, #login-button, a[href$='/register/'], a[href$='/login/']) {
+	display: inline !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	height: auto !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: 10px/12px verdana, arial, helvetica, sans-serif !important;
+	text-decoration: none !important;
+	text-transform: lowercase;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header nav :where(#signup-button, #login-button, a[href$='/register/'], a[href$='/login/']) span {
+	display: inline !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header nav :where(#signup-button, #login-button, a[href$='/register/'], a[href$='/login/']):hover {
+	text-decoration: underline !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header nav :where(#login-button, a[href$='/login/'])::before {
+	content: 'or ';
+	color: var(--rsm-th-txt-strong);
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav > div:last-child > div:last-child {
+	width: auto !important;
+	height: auto !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav > div:last-child > div:last-child::before {
+	content: '|';
+	margin: 0 2px 0 4px;
+}
+
+// The hidden-promotion count is a flow child of the fixed header, so it rendered
+// below the bar on top of the community strip. It rides beside the logo instead.
+html.res-pageTheme.res-pageTheme--refined reddit-header-large > #RSMPromotedHiddenBadge {
+	position: absolute;
+	top: 13px;
+	left: 132px;
+	margin: 0;
+}
+
+html.res-pageTheme.res-pageTheme--refined reddit-header-large header > nav > div:last-child :where(button, [role='button']) {
+	min-width: 0 !important;
+	min-height: 0 !important;
+	height: 16px !important;
+	padding: 0 2px !important;
+	border: 0 !important;
+}
+
+// The community strip continues the header's blue and carries the name like
+// old Reddit's `.pagename`, with the submit and subscribe controls as the small
+// flat buttons of that era rather than 38px pills.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead {
+	min-height: 0 !important;
+	margin: 0 0 6px !important;
+	padding: 3px 8px !important;
+	border: 0 !important;
+	border-bottom: 1px solid var(--rsm-th-header-edge) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section :where(h1, h2) {
+	font: bold 13px/20px verdana, arial, helvetica, sans-serif !important;
+}
+
+// Old Reddit's subreddit bar carries no icon. The positional rule above misses
+// communities whose icon is not the first block of the name row.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead :where(img, [avatar], [id^='subreddit-icon']) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section > div > div:last-child {
+	margin: 0 !important;
+	gap: 6px;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead > section > div > div:last-child > span {
+	margin: 0 !important;
+}
+
+// 24px tall for the target-size floor, with the visual box kept at 20px by
+// the negative vertical margin.
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead :where(button, a)[rpl],
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead create-post-entry-point-wrapper button {
+	box-sizing: border-box;
+	min-width: 24px !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	margin: -2px 0 !important;
+	padding: 0 8px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-header-edge) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-txt-strong) !important;
+	font: bold 11px/18px verdana, arial, helvetica, sans-serif !important;
+	white-space: nowrap !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead create-post-entry-point-wrapper button svg {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead :where(button, a)[rpl] span,
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead create-post-entry-point-wrapper button span {
+	font: inherit !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #subgrid-container > .masthead shreddit-subreddit-header-buttons {
+	width: auto !important;
+	min-width: 0 !important;
+	height: auto !important;
+	overflow: visible !important;
+}
+
+// The sort row is a 10px line, and the card/compact view switch has nothing to
+// decide once this layout owns the rows.
+html.res-pageTheme.res-pageTheme--refined #main-content > div:has(shreddit-sort-dropdown) {
+	min-height: 0 !important;
+	margin: 0 0 4px !important;
+	padding: 0 4px !important;
+	font: 10px/16px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-sort-dropdown::part(rsm-sort-button) {
+	min-width: 24px !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	margin: -4px 0 !important;
+	padding: 0 4px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined.res-pageTheme--declutter shreddit-layout-event-setter {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel > [slot='title'] {
+	display: inline !important;
+	height: auto !important;
+	margin: 0 6px 0 0 !important;
+	padding: 0 !important;
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel > [slot='title'] svg {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel > [slot='content'] {
+	display: inline !important;
+	width: auto !important;
+	min-width: 0 !important;
+	margin: 0 !important;
+	overflow: visible !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel [slot='content'] li {
+	display: inline !important;
+	flex: none !important;
+	min-width: 0 !important;
+	margin: 0 10px 0 0 !important;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel [slot='content'] li > a,
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel community-highlight-card {
+	display: inline !important;
+	min-height: 0 !important;
+	height: auto !important;
+	padding: 0 !important;
+	background: transparent !important;
+	border: 0 !important;
+	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel community-highlight-card > [slot='title'] {
+	display: inline !important;
+	margin: 0 !important;
+	color: var(--rsm-th-link) !important;
+	font: normal 12px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined community-highlight-carousel community-highlight-card > :where([slot='label'], [slot='upvotes-and-comments'], [slot='media'], [slot='thumbnail']) {
+	display: none !important;
+}
+
+// Feed row: `title (domain)` on one line, `submitted <time> by <author>` under
+// it, then the bold grey action links. The domain is the post attribute copied
+// onto the outbound link by `prepareShredditThing`, which used to print the
+// whole URL in bold 16px over the author line.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) > div > div:has(> div > [slot='title']) {
+	display: flex !important;
+	min-width: 0;
+	align-items: baseline;
+	flex-wrap: nowrap;
+	gap: 0 5px;
+	overflow: hidden;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) > div > div:has(> div > [slot='title']) > div {
+	min-width: 0;
+	flex: none;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) > div > div:has(> div > [slot='title']) > div:has(> [slot='title']) {
+	flex: 0 1 auto;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='title'] {
+	display: inline-block !important;
+	max-width: 100%;
+	overflow: hidden;
+	vertical-align: baseline;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post [slot='post-flair']:empty,
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='post-flair']:empty {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post a.domain[data-rsm-domain] {
+	display: inline-block !important;
+	max-width: 240px;
+	overflow: hidden;
+	color: var(--rsm-th-muted) !important;
+	font-size: 0 !important;
+	line-height: 14px !important;
+	text-decoration: none !important;
+	vertical-align: baseline;
+	white-space: nowrap;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post a.domain[data-rsm-domain]::before {
+	content: '(' attr(data-rsm-domain) ')';
+	color: var(--rsm-th-muted);
+	font: normal 10px/14px verdana, arial, helvetica, sans-serif;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post a.domain[data-rsm-domain]:hover::before {
+	text-decoration: underline;
+}
+
+// Inline flow, not flex: the author and community links have to stay links in
+// a sentence for the target-size rule, and `prepareShredditThing` has already
+// moved the timestamp to the front of the row, so no `order` is needed.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] {
+	display: block !important;
+	overflow: visible !important;
+	white-space: nowrap;
+}
+
+// Every wrapper down to the links is inline; Reddit's own flex wrappers would
+// otherwise break the line. Hidden hover-card bodies and the bullet separators
+// stay hidden, and the rules that hide the avatar come after this one.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child,
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child :where(span, div, a, time, faceplate-timeago, faceplate-tracker, faceplate-hovercard, faceplate-number, shreddit-async-loader, shreddit-distinguished-post-tags, shreddit-brand-affiliate-tag):not([hidden], [slot='content'], [aria-hidden='true'], [avatar], [class*='avatar'], [class*='snoovatar'], .created-separator) {
+	display: inline !important;
+	white-space: nowrap;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child span[aria-hidden='true'],
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child :where([avatar], [class*='avatar'], [class*='snoovatar'], img, svg) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child::before {
+	content: 'submitted ';
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] :where([avatar], [class*='snoovatar'], [class*='avatar'], img, faceplate-img) {
+	display: none !important;
+}
+
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:first-child:has([slot='authorName']) faceplate-timeago::after {
+	content: ' by ';
+}
+
+// The community-status emoji trigger is a 20px button that the 14px tagline
+// squashed into a 2px bar; old Reddit's tagline has no such thing.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] .created-separator,
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] rpl-hovercard {
+	display: none !important;
+}
+
+// Old Reddit never leaves the thumbnail rail empty: link posts without a preview
+// get the link placeholder and text posts the document icon. Same standalone
+// crops as the classic renderer below, painted as the host's own `::before`,
+// which the flat tree places as the shadow root's first child.
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post:not([view-context='CommentsPage'], :has([slot='thumbnail'], [slot='post-media-container']))::before {
+	content: '';
+	position: absolute;
+	top: 1px;
+	left: 52px;
+	width: 70px;
+	height: 70px;
+	background: var(--rsm-th-bg-raise) url('../images/redditThumbnail-default.png') center / 70px 50px no-repeat;
+}
+
+html.res-pageTheme.res-pageTheme--refined:has(shreddit-app) shreddit-feed shreddit-post.self:not([view-context='CommentsPage'], :has([slot='thumbnail'], [slot='post-media-container']))::before {
+	background-image: url('../images/redditThumbnail-self.png');
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] a.subreddit::before {
+	content: 'to ';
+	color: var(--rsm-th-muted);
+	font-weight: normal;
+}
+
+// Status icons and the overflow menu ride the action line instead of the
+// tagline, which is where old Reddit kept `save hide report`.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] > span:last-child {
+	position: absolute;
+	top: 20px;
+	right: 0;
+	display: flex !important;
+	height: 16px;
+	align-items: center;
+	gap: 0 4px;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post shreddit-post-overflow-menu {
+	width: auto !important;
+	height: auto !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post shreddit-post-overflow-menu button {
+	min-width: 24px !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	margin: -4px 0 !important;
+	padding: 0 2px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post shreddit-post-overflow-menu svg {
+	width: 16px !important;
+	height: 16px !important;
+	fill: currentcolor !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) [slot='thumbnail'] > :not(a) {
+	display: none !important;
+}
+
+// A media expando in a listing row. The button sits left of the tagline like
+// old Reddit's, the tagline and action line move right to make room, and an
+// opened box goes under the row's three lines with the row growing to hold it
+// rather than clipping it at 72px. The shadow sheet moves the action line.
+html.res-pageTheme.res-pageTheme--refined shreddit-feed article > .expando-button {
+	position: absolute;
+	top: 24px;
+	left: 128px;
+	margin: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed article:has(> .expando-button) shreddit-post:not([view-context='CommentsPage']) [slot='credit-bar'] {
+	left: 156px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']):has(> .res-expando-box > *) {
+	height: auto !important;
+	min-height: 72px !important;
+	overflow: visible !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-feed shreddit-post:not([view-context='CommentsPage']) > .res-expando-box:has(> *) {
+	margin: 44px 0 4px !important;
+}
+
+// The action links: bold grey text, no icons, no underline until hover.
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-button) {
+	text-transform: lowercase;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-share-icon),
+html.res-pageTheme.res-pageTheme--refined shreddit-post::part(rsm-comment-count-icon) {
+	display: none !important;
+}
+
+// Thread page: the post is a listing row with its media under it.
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] :where(pdp-back-button, .avatar, [avatar]) {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] > span:first-child,
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] [role='group'],
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] [role='group'] :where(span, div, a, faceplate-timeago, faceplate-tracker, faceplate-hovercard, shreddit-async-loader) {
+	display: inline !important;
+	min-width: 0;
+	padding: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] > span:first-child::before {
+	content: 'submitted ';
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] [role='group'] span[aria-hidden='true'] {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] a.subreddit-name::before {
+	content: 'to ';
+	color: var(--rsm-th-muted);
+	font-weight: normal;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] [slot='authorName']::before {
+	content: ' by ';
+	color: var(--rsm-th-muted);
+	font-weight: normal;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] * {
+	font-size: 10px !important;
+	line-height: 14px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='credit-bar'] > span:last-child {
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	display: flex !important;
+	align-items: center;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='post-media-container'] {
+	max-width: 640px;
+	margin: 6px 0 4px !important;
+	border-radius: 0 !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='post-media-container'] > div:empty {
+	display: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='post-media-container'] :where(a, button)[rpl] {
+	min-width: 0 !important;
+	min-height: 0 !important;
+	height: 18px !important;
+	padding: 0 6px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='ssr-share-button'] button {
+	min-width: 24px !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	margin: -4px 0 !important;
+	padding: 0 2px !important;
+	background: transparent !important;
+	border: 0 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-muted) !important;
+	font: bold 10px/16px verdana, arial, helvetica, sans-serif !important;
+	text-transform: lowercase;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='ssr-share-button'] button:hover {
+	color: var(--rsm-th-link) !important;
+	text-decoration: underline !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-post[view-context='CommentsPage'] [slot='ssr-share-button'] button :where(svg, .rpl-cab--leading-icon > :first-child) {
+	display: none !important;
+}
+
+// The right rail reads like old Reddit's `.side`: 12px text, flat boxes, and
+// the promotional and related-post modules gone under declutter.
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container aside {
+	margin: 0 0 10px !important;
+	padding: 6px 8px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container :where(h1, h2, h3) {
+	margin: 6px 0 4px !important;
+	color: var(--rsm-th-txt-strong) !important;
+	font: bold 12px/16px verdana, arial, helvetica, sans-serif !important;
+	text-transform: none !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container :where(p, li, a, span, div, summary, time, faceplate-number, faceplate-timeago) {
+	font-size: 12px !important;
+	line-height: 16px !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container :where(a, button)[rpl] {
+	display: inline-flex !important;
+	width: auto !important;
+	min-width: 0 !important;
+	min-height: 0 !important;
+	height: auto !important;
+	padding: 1px 6px !important;
+	background: var(--rsm-th-bg) !important;
+	border: 1px solid var(--rsm-th-control-border) !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+	color: var(--rsm-th-link) !important;
+	font: bold 11px/16px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined #right-sidebar-container hr {
+	margin: 6px 0 !important;
+	border: 0 !important;
+	border-top: 1px solid var(--rsm-th-border) !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined.res-pageTheme--declutter #right-sidebar-container :where([aria-label='Related Posts Section'], [aria-label='Promotion'], .legal-links, [id^='right-rail-experience']),
+html.res-pageTheme.res-pageTheme--refined.res-pageTheme--declutter #right-sidebar-container aside:has(> [aria-label='Related Posts Section']) {
+	display: none !important;
 }
 
 @media (width <= 960px) {

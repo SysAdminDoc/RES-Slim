@@ -2,6 +2,55 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- The Classic layout on current Reddit now looks like old Reddit instead of a
+  tidied-up new Reddit. Measured against a live public subreddit, the home feed
+  and a live thread rather than the fixtures, which had drifted a long way from
+  what Reddit ships. Listing rows read `title (domain)`, then `submitted 3 hr.
+  ago by author` (or `to r/name` on the home feed), then bold grey `131 comments
+  share` text links with the overflow menu at the end of that line. The vote
+  column paints old Reddit's 15x14 arrow glyphs in #c6c6c6 with the orange and
+  periwinkle voted states and a 13px grey score; Reddit's outline SVGs stay in
+  the shadow root, hidden, so the buttons keep their listeners and labels. Link
+  posts without a preview get the link placeholder and text posts the document
+  icon. The header's account corner is the pale box old Reddit had, reading
+  `want to join? sign up or log in`, and the search field is a plain bordered
+  box instead of a 40px pill. The community strip continues the header's blue
+  with the name at 13px and Create Post as a flat bordered button; the Join
+  control is old Reddit's small blue subscribe pill, reached two shadow roots
+  deep. Community highlights are one line of links. The right rail is flat 12px
+  panels, and declutter hides its related-posts, promotion and legal blocks. The
+  thread page is the same listing row with the media under it: the back button
+  and avatars go, the tagline is one 10px line, the title is 16px, the vote
+  rail sits top-left, and the share control is the word alone. A media expando
+  button sits left of the tagline like old Reddit's, and an opened expando
+  grows the row instead of being clipped inside its 72px.
+
+### Fixed
+
+- Every "N more replies" fold on a live thread printed twice. Reddit keeps a
+  hidden permalink copy of the control beside the live one, and the stylesheet
+  forced it visible.
+- The outbound URL of a link post painted as bold 16px text across the author
+  line. It is now the `(domain)` after the title, from the post's own attribute.
+- An empty 38px feed-status box painted above every listing. Live Reddit ships
+  the banner holding one whitespace node, which `:empty` counts as content.
+- The empty flair host on every post drew a bordered box at the right edge and
+  reserved 172px of the title line.
+- The hidden-promotion count rendered below the fixed header on top of the
+  community strip. It sits beside the logo now.
+- A community-status emoji button in the home feed's tagline was squashed into
+  a 2px bar. Old Reddit's tagline has no such thing, so it is hidden.
+- The home feed's tagline lost its community link: the post's invisible
+  full-post link also starts with `/r/` and took the class first.
+- A shadow host nested inside another root could never receive a stylesheet or
+  its parts: `documentElement.contains` stops at the boundary, so the host read
+  as detached and was dropped on the first sweep. Prepared roots are now swept
+  for nested hosts, and attachment is read through `isConnected`.
+
 ## v0.53.1, 2026-09-02
 
 ### Changed
