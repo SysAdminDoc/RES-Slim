@@ -2,6 +2,18 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- A **Match system** choice in the settings console theme picker, and it is what
+  a fresh install opens on. The console had nine themes, defaulted to OLED, and
+  read `prefers-color-scheme` nowhere, so somebody on a light desktop opened a
+  black settings page and had to go find the picker. Match system resolves to
+  Paper on a light desktop and OLED on a dark one, and follows a change while the
+  page is open rather than waiting for a reload. Picking one of the nine still
+  wins and still persists.
+
 ## v0.54.0, 2026-09-02
 
 ### Changed

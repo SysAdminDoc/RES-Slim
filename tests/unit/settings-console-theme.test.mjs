@@ -28,14 +28,23 @@ test('settings console theme picker is wired through template, controller, style
 	assert.match(template, /id="RESThemeSelector"/);
 	assert.match(template, /role="group"/);
 	assert.match(template, /aria-pressed/);
-	assert.match(template, /SETTINGS_THEME_PRESETS/);
+	// The picker renders the choices, which is the nine presets plus `system`.
+	// `SETTINGS_THEME_PRESETS` is the paintable list and is deliberately not what
+	// the template maps over any more.
+	assert.match(template, /SETTINGS_THEME_CHOICES/);
 	// The storage key lives in the shared presets module so the permissions
 	// prompt can read the same value and paint itself with the chosen accent,
 	// rather than each surface hardcoding its own copy.
 	assert.match(read('lib/constants/settingsThemes.js'), /SETTINGS_THEME_STORAGE_KEY = 'res-settings-theme'/);
 	assert.match(controller, /SETTINGS_THEME_STORAGE_KEY,/);
 	assert.match(controller, /normalizeSettingsTheme/);
-	assert.match(presets, /DEFAULT_SETTINGS_THEME = 'oled'/);
+	// The default was `oled` until v0.53.0, which meant a reader on a light
+	// desktop opened a black settings page. It is now the `system` choice, which
+	// resolves to `oled` on a dark desktop — so nothing changes for the readers
+	// who were happy, and a light desktop gets `paper`. The old assertion is not
+	// wrong about the code, it encodes a product decision that was reversed.
+	assert.match(presets, /DEFAULT_SETTINGS_THEME = SETTINGS_THEME_SYSTEM/);
+	assert.match(presets, /SETTINGS_THEME_SYSTEM = 'system'/);
 
 	for (const theme of themes) {
 		assert.match(presets, new RegExp(`id: '${theme}'`));

@@ -950,6 +950,9 @@
     "settingsConsoleThemeLabel": {
         "message": "Theme"
     },
+    "settingsConsoleThemeSystem": {
+        "message": "Match system"
+    },
     "settingsConsoleThemeOled": {
         "message": "OLED"
     },

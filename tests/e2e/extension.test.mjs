@@ -745,7 +745,7 @@ test('the settings console renders in the options page', async t => {
 	// the product default; screenshots opt into Paper so parity is measured
 	// without changing an existing user's preference.
 	await page.locator('#RESCategoryTab-console').click();
-	await page.locator('[data-settings-theme="paper"]').click();
+	await page.locator('#RESThemeSelector [data-settings-theme="paper"]').click();
 	await page.locator('#RESCategoryTab-appearanceCategory').click();
 	await page.waitForTimeout(2600);
 
@@ -872,7 +872,10 @@ test('settings console themes and display controls work by keyboard', async t =>
 	await page.waitForSelector('#RESConsolePrefs:not([hidden])');
 
 	const themeButtons = page.locator('#RESThemeSelector .themeOption');
-	assert.equal(await themeButtons.count(), 9, 'every settings theme should be reachable');
+	// The painted presets plus `system`, which is a choice rather than a theme: it
+	// paints whichever of the two presets the desktop is asking for, and the
+	// picker keeps the choice highlighted rather than the resolution.
+	assert.equal(await themeButtons.count(), SETTINGS_THEMES.length + 1, 'every settings theme should be reachable');
 	for (const theme of await themeButtons.evaluateAll(buttons => buttons.map(button => button.dataset.settingsTheme))) {
 		const button = page.locator(`#RESThemeSelector [data-settings-theme="${theme}"]`);
 		await button.focus();
@@ -881,11 +884,16 @@ test('settings console themes and display controls work by keyboard', async t =>
 			const styles = getComputedStyle(document.documentElement);
 			return {
 				theme: document.documentElement.dataset.settingsTheme,
+				pressed: Array.from(document.querySelectorAll('#RESThemeSelector .themeOption'))
+					.filter(option => option.getAttribute('aria-pressed') === 'true')
+					.map(option => option.dataset.settingsTheme),
 				background: styles.getPropertyValue('--options-bg').trim(),
 				accent: styles.getPropertyValue('--options-accent').trim(),
 			};
 		});
-		assert.equal(state.theme, theme, `${theme} should apply from a focused button`);
+		const painted = theme === 'system' ? ['paper', 'oled'] : [theme];
+		assert.ok(painted.includes(state.theme), `${theme} should apply from a focused button, painted ${state.theme}`);
+		assert.deepEqual(state.pressed, [theme], `${theme} should be the one pressed choice once chosen`);
 		assert.ok(state.background && state.accent, `${theme} should expose its live token set`);
 	}
 
@@ -957,7 +965,7 @@ test('user-tag imports preview conflicts, commit once, and cannot replay', async
 		.include('#optionContainer-userTagger-importActions')
 		.withTags(WCAG_TAGS)
 		.analyze();
-	assert.deepEqual(accessibility.violations.map(violation => violation.id), []);
+	assert.deepEqual(accessibility.violations.map(violation => violation.id), [], describeViolations(accessibility.violations));
 	await page.screenshot({ path: path.join(saveScreenshotDir(), 'user-tag-import-preview.png'), fullPage: false, animations: 'disabled' });
 
 	const beforeCommit = await page.evaluate(() => new Promise(resolve => {
@@ -1176,7 +1184,7 @@ test('saved content stays isolated across an Alice to Bob to Alice account switc
 		.withTags(WCAG_TAGS)
 		.analyze();
 	assert.ok(accessibility.passes.flatMap(result => result.nodes).length > 0, 'Axe should inspect saved-content controls');
-	assert.deepEqual(accessibility.violations.map(violation => violation.id), []);
+	assert.deepEqual(accessibility.violations.map(violation => violation.id), [], describeViolations(accessibility.violations));
 	await page.screenshot({
 		path: path.join(saveScreenshotDir(), 'saved-content-account-isolation.png'),
 		fullPage: false,
@@ -4425,10 +4433,89 @@ const SETTINGS_THEMES = (() => {
 	// Read out of the source of truth rather than imported: that file is Flow
 	// annotated, so Node cannot load it directly from here.
 	const source = fs.readFileSync(path.join(repoRoot, 'lib', 'constants', 'settingsThemes.js'), 'utf8');
-	const ids = [...source.matchAll(/id: '([a-z]+)'/g)].map(([, id]) => id);
+	// Scoped to SETTINGS_THEME_PRESETS. That file also declares
+	// SETTINGS_THEME_CHOICES, which carries `system` — a choice, not a painted
+	// theme. Writing `system` into `data-settings-theme` matches no theme block,
+	// so the sweep would have measured the bare `:root` defaults under a name
+	// that suggests otherwise. What `system` resolves to is `paper` or `oled`,
+	// and both are in this list already.
+	const start = source.indexOf('SETTINGS_THEME_PRESETS = Object.freeze([');
+	assert.notEqual(start, -1, 'the presets array moved or was renamed');
+	const presets = source.slice(start, source.indexOf(']);', start));
+	const ids = [...presets.matchAll(/id: '([a-z]+)'/g)].map(([, id]) => id);
 	assert.ok(ids.length >= 8, `expected the console's theme presets, found ${ids.length}`);
+	assert.ok(!ids.includes('system'), 'system is a choice, not a paintable preset');
 	return ids;
 })();
+
+// The `system` theme choice follows the desktop's colour scheme. Whether it
+// actually follows is a browser claim: it depends on `prefers-color-scheme`
+// firing a change event on a live MediaQueryList, which jsdom does not implement
+// and a source assertion cannot see. Playwright's `emulateMedia` changes the
+// scheme on an open page without navigating, which is exactly the case that was
+// broken before — the choice was read once at startup, so a reader switching
+// their OS to dark in the evening kept the light console until they reloaded.
+test('the settings console follows the desktop colour scheme, live and only when asked', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	// Attached, not visible: the picker lives in the console's Preferences tab,
+	// which is not the tab the console opens on. The click below goes through the
+	// element itself for the same reason.
+	await page.waitForSelector('#RESThemeSelector .themeOption[data-settings-theme="system"]', { state: 'attached', timeout: 30000 });
+	const chooseTheme = id => page.$eval(`#RESThemeSelector .themeOption[data-settings-theme="${id}"]`, button => button.click());
+
+	const painted = () => page.evaluate(() => document.documentElement.dataset.settingsTheme);
+	const stored = () => page.evaluate(() => localStorage.getItem('res-settings-theme'));
+	const pressed = () => page.evaluate(() =>
+		Array.from(document.querySelectorAll('#RESThemeSelector .themeOption'))
+			.filter(button => button.getAttribute('aria-pressed') === 'true')
+			.map(button => button.dataset.settingsTheme));
+
+	// A fresh profile has nothing stored, so this is the default: follow the
+	// desktop, which is light here.
+	assert.equal(await painted(), 'paper', 'a fresh install on a light desktop must not open black');
+	assert.deepEqual(await pressed(), ['system'], 'the picker highlights the choice, not the resolution');
+
+	await page.emulateMedia({ colorScheme: 'dark' });
+	await page.waitForFunction(() => document.documentElement.dataset.settingsTheme === 'oled', null, { timeout: 5000 })
+		.catch(() => {});
+	assert.equal(await painted(), 'oled', 'the desktop going dark must repaint without a reload');
+	assert.deepEqual(await pressed(), ['system'], 'following the desktop is not a change of choice');
+	assert.ok(!(await stored()) || (await stored()) === 'system',
+		'following the desktop must not persist the resolution as if it had been picked');
+
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.waitForFunction(() => document.documentElement.dataset.settingsTheme === 'paper', null, { timeout: 5000 })
+		.catch(() => {});
+	assert.equal(await painted(), 'paper', 'and back again');
+
+	// An explicit choice wins, and keeps winning when the desktop changes.
+	await chooseTheme('rosepine');
+	assert.equal(await painted(), 'rosepine');
+	assert.equal(await stored(), 'rosepine');
+	await page.emulateMedia({ colorScheme: 'dark' });
+	await page.waitForTimeout(200);
+	assert.equal(await painted(), 'rosepine', 'the desktop must not overrule a theme the reader picked');
+
+	// And it survives a reload, which is the half localStorage is there for.
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESThemeSelector .themeOption', { state: 'attached', timeout: 30000 });
+	assert.equal(await painted(), 'rosepine');
+
+	// Choosing system again puts the reader back on the desktop's scheme, which
+	// is dark at this point.
+	await chooseTheme('system');
+	assert.equal(await painted(), 'oled');
+	assert.equal(await stored(), 'system');
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.waitForFunction(() => document.documentElement.dataset.settingsTheme === 'paper', null, { timeout: 5000 })
+		.catch(() => {});
+	assert.equal(await painted(), 'paper', 'switching back to system has to re-arm the following');
+});
 
 test('the options page has no accessibility violations in any theme', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
