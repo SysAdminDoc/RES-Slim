@@ -10,7 +10,10 @@ const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
 const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-fenced-code');
 fs.mkdirSync(tmpDir, { recursive: true });
-const stripped = flowRemoveTypes(read('lib/utils/fencedCode.js'), { all: true }).toString();
+// `escapeHtmlText` lives in lib/utils/html.js now, so it has to be emitted
+// beside the module under test.
+fs.writeFileSync(path.join(tmpDir, 'html.mjs'), flowRemoveTypes(read('lib/utils/html.js'), { all: true }).toString());
+const stripped = flowRemoveTypes(read('lib/utils/fencedCode.js'), { all: true }).toString().replace('from \'./html\'', 'from \'./html.mjs\'');
 const modulePath = path.join(tmpDir, 'fencedCode.mjs');
 fs.writeFileSync(modulePath, stripped);
 const Fenced = await import(pathToFileURL(modulePath).href);

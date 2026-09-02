@@ -23,6 +23,12 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- A subreddit rule containing an apostrophe is escaped like every other special
+  character in the rules popover. Four files carried their own copy of the same
+  escape function and this one had drifted; there is one copy now.
+- Every page load stopped building a timing report nobody had asked for, and the
+  timing marks are cleared once they have been measured. Asking for the report,
+  through the support dump or the diagnostics hook, still works.
 - Clicking a comment and loading more comments both asked to be throttled to the
   first event in a window, and both got a second, delayed one as well: the
   options they passed were being dropped by a function that took two arguments.

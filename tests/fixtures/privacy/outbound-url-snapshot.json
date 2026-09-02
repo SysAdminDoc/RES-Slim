@@ -823,7 +823,7 @@
     },
     {
       "file": "lib/utils/commentTreeExport.js",
-      "url": "https://old.reddit.com${escapeHtml(post.permalink"
+      "url": "https://old.reddit.com${escapeHtmlText(post.permalink"
     },
     {
       "file": "lib/utils/commentTreeExport.js",

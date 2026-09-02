@@ -9,7 +9,13 @@ const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const tmpDir = path.join(repoRoot, 'tests', 'unit', '.tmp-comment-tree-export');
 fs.mkdirSync(tmpDir, { recursive: true });
 const src = fs.readFileSync(path.join(repoRoot, 'lib/utils/commentTreeExport.js'), 'utf8');
-const stripped = flowRemoveTypes(src, { all: true }).toString();
+// `escapeHtmlText` lives in lib/utils/html.js now, so it has to be emitted
+// beside the module under test.
+fs.writeFileSync(
+	path.join(tmpDir, 'html.mjs'),
+	flowRemoveTypes(fs.readFileSync(path.join(repoRoot, 'lib/utils/html.js'), 'utf8'), { all: true }).toString(),
+);
+const stripped = flowRemoveTypes(src, { all: true }).toString().replace('from \'./html\'', 'from \'./html.mjs\'');
 const modulePath = path.join(tmpDir, 'commentTreeExport.mjs');
 fs.writeFileSync(modulePath, stripped);
 const {
