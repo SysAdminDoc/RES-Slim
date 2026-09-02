@@ -23,6 +23,13 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- A control that lets every suspended media host back in. Hosts that keep
+  failing are skipped for a while, and a host suspended by a blip you have since
+  fixed had no way to be tried again before its backoff ran out.
+- About 3.5 KB of code nothing could reach is gone from the page bundle: an
+  unused table widget, a set of selection movers left over from a keyboard
+  navigation feature this fork does not ship, and a handful of helpers with no
+  callers.
 - A subreddit rule containing an apostrophe is escaped like every other special
   character in the rules popover. Four files carried their own copy of the same
   escape function and this one had drifted; there is one copy now.

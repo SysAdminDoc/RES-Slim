@@ -155,3 +155,24 @@ test('an empty host name is ignored rather than stored under one', async () => {
 	const stored = await storageGet(STORAGE_KEY);
 	assert.ok(!stored || !Object.hasOwn(stored, ''), 'a nameless host must not become a real record');
 });
+
+test('a reader can let every suspended host back in', async () => {
+	// `pardonAll` was exported and wired to nothing, so a host suspended by a
+	// blip the reader has since fixed stayed skipped until its backoff expired,
+	// with no way to say "try again now". It is a button in the settings.
+	const option = PenaltyBox.module.options.pardon;
+	assert.ok(option, 'the module has no pardon control');
+	assert.equal(option.type, 'button');
+	assert.equal(option.values.length, 1);
+	assert.equal(typeof option.values[0].callback, 'function');
+
+	PenaltyBox._resetForTests();
+	await PenaltyBox.noteFailure('dead.example', Date.now());
+	await PenaltyBox.noteFailure('dead.example', Date.now());
+	await PenaltyBox.noteFailure('dead.example', Date.now());
+	assert.equal(PenaltyBox.isHostSuspended('dead.example'), true, 'three failures should suspend the host');
+
+	await option.values[0].callback();
+	assert.equal(PenaltyBox.isHostSuspended('dead.example'), false, 'the button did not clear the suspension');
+	assert.deepEqual(PenaltyBox.listSuspended(), []);
+});
