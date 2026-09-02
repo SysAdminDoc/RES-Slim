@@ -489,6 +489,103 @@ test('one stylesheet object per key, adopted by every root that needs it', async
 	assert.equal(measured.firstArrow, 'rgb(111, 111, 111)', 'and painted by the classic sheet rather than by nothing');
 });
 
+test('a vote tick reinstalls one post and then stops', async t => {
+	// `keepShadowPartsCurrent` observes each prepared shadow root with
+	// `{childList: true, subtree: true}` and re-runs the whole install on any
+	// mutation, because a Reddit rerender can replace the root's contents
+	// including our sheet. Reddit's own vote button mutates that same root, so
+	// the 2026-09-02 audit flagged this as unmeasured: what does one click
+	// actually cost?
+	//
+	// Two things would make it cost something. A reinstall that itself mutates
+	// the root feeds its own observer, and one click becomes an endless cascade.
+	// And an install that reached across posts would make the cost of a click
+	// grow with the length of the feed. Both are visible from the page: a second
+	// observer on the same roots sees exactly the mutations the module's does.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+	await page.waitForFunction(
+		() => (document.querySelector('#t3_fixture1')?.shadowRoot?.adoptedStyleSheets || []).length > 0,
+		null, { timeout: 30000 },
+	);
+
+	const measured = await page.evaluate(async () => {
+		const feed = document.querySelector('shreddit-feed');
+		const clones = Array.from({ length: 40 }, (unused, i) => {
+			const post = document.createElement('shreddit-post');
+			post.id = `t3_vote${i}`;
+			post.setAttribute('author', 'alice');
+			post.setAttribute('subreddit-name', 'example');
+			post.setAttribute('post-type', 'link');
+			post.setAttribute('score', '7');
+			post.setAttribute('comment-count', '3');
+			post.setAttribute('permalink', `/r/example/comments/vote${i}/x/`);
+			feed.append(post);
+			return post;
+		});
+		await new Promise(resolve => { setTimeout(resolve, 150); });
+		for (const post of clones) {
+			post.attachShadow({ mode: 'open' });
+			post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+		}
+		await new Promise(resolve => { setTimeout(resolve, 2500); });
+
+		const prepared = clones.filter(post => (post.shadowRoot.adoptedStyleSheets || []).length);
+		const voted = prepared[0];
+		const others = prepared.slice(1);
+
+		let mutationsInVoted = 0;
+		let mutationsElsewhere = 0;
+		const watchers = [];
+		const watch = (root, bump) => {
+			const observer = new MutationObserver(records => { bump(records.length); });
+			observer.observe(root, { childList: true, subtree: true, attributes: true });
+			watchers.push(observer);
+		};
+		watch(voted.shadowRoot, n => { mutationsInVoted += n; });
+		for (const post of others) watch(post.shadowRoot, n => { mutationsElsewhere += n; });
+
+		// What Reddit's own vote does inside that root: flip the pressed state and
+		// swap the icon.
+		const vote = voted.shadowRoot.querySelector('[data-action-bar-action="upvote"]');
+		vote.setAttribute('aria-pressed', 'true');
+		vote.append(document.createElement('span'));
+
+		// Long enough for a cascade to run away if there is one: the install is
+		// synchronous and a MutationObserver delivers on the microtask queue.
+		await new Promise(resolve => { setTimeout(resolve, 1200); });
+		for (const observer of watchers) observer.disconnect();
+
+		return {
+			prepared: prepared.length,
+			others: others.length,
+			mutationsInVoted,
+			mutationsElsewhere,
+			sheetsAfter: (voted.shadowRoot.adoptedStyleSheets || []).length,
+			styleNodesAfter: voted.shadowRoot.querySelectorAll('style[data-res-shreddit-shadow-style]').length,
+		};
+	});
+
+	assert.ok(measured.prepared >= 38, `expected the clones to be prepared, saw ${measured.prepared}`);
+	assert.ok(measured.others >= 37, 'the comparison needs a feed to compare against');
+
+	// The two mutations the test made itself, and whatever the reinstall added.
+	// A cascade would be unbounded; this is the bound that says there is not one.
+	assert.ok(
+		measured.mutationsInVoted <= 8,
+		`one vote tick produced ${measured.mutationsInVoted} mutations in its own post, which is a cascade rather than a reinstall`,
+	);
+	// The cost of a click does not grow with the feed.
+	assert.equal(measured.mutationsElsewhere, 0, 'a tick in one post must not touch the other 39');
+	assert.equal(measured.sheetsAfter, 2, 'the reinstall must not stack another copy of each sheet');
+	assert.equal(measured.styleNodesAfter, 0, 'and must not fall back to a style node');
+});
+
 test('current Reddit keeps the classic shell usable at responsive and 200 percent zoom widths', async t => {
 	const { context, dispose } = await launchWithExtension({ viewport: { width: 960, height: 800 } });
 	t.after(dispose);
