@@ -2236,7 +2236,7 @@ test('ads inside a discussion are removed by the ad remover, with the theme opti
 
 	const html = staticFixture(SHREDDIT_THREAD).replace(
 		'</main>',
-		'<shreddit-comments-page-ad id="rsm-page-ad">sponsored</shreddit-comments-page-ad></main>',
+		'<shreddit-comments-page-ad id="rsm-page-ad"><shreddit-dynamic-ad-link id="rsm-nested-ad">sponsored</shreddit-dynamic-ad-link></shreddit-comments-page-ad></main>',
 	);
 	const page = await context.newPage();
 	await context.route('**/*', route => {
@@ -2270,13 +2270,18 @@ test('ads inside a discussion are removed by the ad remover, with the theme opti
 		document.querySelector('shreddit-comment')?.after(late);
 	});
 	await page.waitForSelector('#rsm-tree-ad', { state: 'hidden', timeout: 30000 });
+	await page.waitForFunction(() => document.getElementById('RSMPromotedHiddenBadge')?.textContent === '3', null, { timeout: 30000 });
 
 	const hidden = await page.evaluate(() => ({
 		pageAd: document.getElementById('rsm-page-ad')?.dataset.rsmPromotedHidden,
+		nestedAd: document.getElementById('rsm-nested-ad')?.dataset.rsmPromotedHidden,
 		treeAd: document.getElementById('rsm-tree-ad')?.dataset.rsmPromotedHidden,
+		badge: document.getElementById('RSMPromotedHiddenBadge')?.textContent,
 	}));
 	assert.equal(hidden.pageAd, 'true', 'the module must own the removal, not only the stylesheet');
+	assert.equal(hidden.nestedAd, 'true', 'nested markers must still be silenced');
 	assert.equal(hidden.treeAd, 'true', 'a streamed in-comment ad was hidden by CSS but never counted');
+	assert.equal(hidden.badge, '3', 'nested markers and the plural layout wrapper must not inflate the placement count');
 });
 
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {

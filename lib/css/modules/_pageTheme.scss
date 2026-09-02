@@ -1136,9 +1136,10 @@ html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea
 }
 
 html.res-pageTheme.res-pageTheme--refined comment-body-header faceplate-textarea-input::part(rsm-comment-composer-input) {
-	min-height: 18px !important;
-	height: 18px !important;
-	padding: 0 !important;
+	box-sizing: border-box !important;
+	min-height: 24px !important;
+	height: 24px !important;
+	padding: 3px 0 !important;
 	background: transparent !important;
 	border: 0 !important;
 	color: var(--rsm-th-txt) !important;
@@ -1263,7 +1264,7 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary {
 	grid-template-columns: 18px minmax(0, 1fr) !important;
 	width: 100% !important;
 	min-width: 0 !important;
-	min-height: 14px !important;
+	min-height: 24px !important;
 	height: auto !important;
 	margin: 0 !important;
 	padding: 0 !important;
@@ -1273,6 +1274,7 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment > details > summary {
 	border-radius: 0 !important;
 	color: var(--rsm-th-muted);
 	font: normal 10px/14px verdana, arial, helvetica, sans-serif !important;
+	align-items: center !important;
 	list-style: none;
 }
 
@@ -1390,8 +1392,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='comment'] {
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
 	display: flex !important;
-	min-height: 20px !important;
-	height: 20px !important;
+	min-height: 24px !important;
+	height: 24px !important;
 	margin: 0 !important;
 	padding: 0 !important;
 	align-items: center !important;
@@ -1405,8 +1407,8 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment [slot='actionRow'] {
 html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row {
 	display: inline-flex !important;
 	min-width: 0 !important;
-	min-height: 20px !important;
-	height: 20px !important;
+	min-height: 24px !important;
+	height: 24px !important;
 	margin: 0 !important;
 	padding: 0 !important;
 	align-items: center !important;
@@ -1419,16 +1421,21 @@ html.res-pageTheme.res-pageTheme--refined award-button::part(rsm-comment-action-
 html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-comment-action-button) {
 	box-sizing: border-box !important;
 	min-width: 0 !important;
-	min-height: 20px !important;
-	height: 20px !important;
+	min-height: 24px !important;
+	height: 24px !important;
 	margin: 0 !important;
-	padding: 2px 3px !important;
+	padding: 4px 3px !important;
 	background: transparent !important;
 	border: 1px solid transparent !important;
 	border-radius: 0 !important;
 	box-shadow: none !important;
 	color: var(--rsm-th-muted) !important;
 	font: bold 10px/14px verdana, arial, helvetica, sans-serif !important;
+}
+
+html.res-pageTheme.res-pageTheme--refined shreddit-overflow-menu::part(rsm-comment-action-button) {
+	width: 24px !important;
+	min-width: 24px !important;
 }
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row :where(button, [role='button']):hover,
@@ -1447,8 +1454,8 @@ html.res-pageTheme.res-pageTheme--refined award-button::part(rsm-award-icon) {
 
 html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-vote-group) {
 	display: inline-flex !important;
-	min-height: 20px !important;
-	height: 20px !important;
+	min-height: 24px !important;
+	height: 24px !important;
 	padding: 0 !important;
 	background: transparent !important;
 	border: 0 !important;
@@ -1458,11 +1465,11 @@ html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-
 html.res-pageTheme.res-pageTheme--refined shreddit-comment-action-row::part(rsm-vote-button) {
 	display: inline-flex !important;
 	box-sizing: border-box !important;
-	width: 20px !important;
-	height: 20px !important;
-	min-width: 20px !important;
-	min-height: 20px !important;
-	padding: 2px !important;
+	width: 24px !important;
+	height: 24px !important;
+	min-width: 24px !important;
+	min-height: 24px !important;
+	padding: 4px !important;
 	background: transparent !important;
 	border: 0 !important;
 	border-radius: 0 !important;

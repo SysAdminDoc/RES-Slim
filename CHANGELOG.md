@@ -198,16 +198,22 @@ All notable changes to RES-Slim will be documented in this file.
 - Reddit's current composer, sort/search toolbar, vote row, award control, and
   overflow control now inherit the selected page palette through stable Shadow
   Parts. Their native behavior remains intact, but the oversized rounded action
-  wrappers no longer leak through the old Reddit layout. Streamed discussion ad
-  wrappers are also handled by the always-on ad remover without inflating its
-  removed-item count.
+  wrappers no longer leak through the old Reddit layout. The compact controls
+  retain 24px pointer targets, and their parts are restored when Reddit replaces
+  a shadow root's contents during hydration or a later rerender. Streamed
+  discussion ad wrappers are also handled by the always-on ad remover without
+  counting nested markers as extra placements.
+- Preparing a nested current Reddit thread now sweeps its shadow hosts once.
+  The previous repair rescanned every descendant subtree for every comment,
+  which approached quadratic work as a discussion grew deeper.
 
 ### Added
 
 - A six-case browser matrix covers Classic and Gruvbox discussions at desktop,
   tablet, and narrow widths. It checks full-width comment rows, exact nesting,
   toolbar alignment, horizontal overflow, native collapse from the keyboard,
-  action paint, streamed ad removal, and uncaught page errors.
+  24px control targets, action paint, streamed ad removal, scoped WCAG checks,
+  and uncaught page errors.
 
 ## v0.52.2, 2026-08-28
 

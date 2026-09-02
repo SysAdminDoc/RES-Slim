@@ -180,6 +180,51 @@ test('current Reddit discussion controls expose stable paint hooks', () => {
 	comment.remove();
 });
 
+test('current Reddit shadow paint hooks survive late rendering and rerenders', async () => {
+	const action = document.createElement('shreddit-comment-action-row');
+	action.attachShadow({ mode: 'open' });
+	document.body.append(action);
+	Shreddit.prepareShredditTree(action);
+
+	action.shadowRoot.innerHTML = '<span class="rpl-vote-button-group"><button upvote></button></span>';
+	await new Promise(resolve => { setTimeout(resolve, 0); });
+	assert.match(action.shadowRoot.querySelector('[upvote]').getAttribute('part'), /\brsm-vote-button\b/);
+
+	action.shadowRoot.innerHTML = '<span class="rpl-vote-button-group"><button downvote></button></span>';
+	await new Promise(resolve => { setTimeout(resolve, 0); });
+	assert.match(action.shadowRoot.querySelector('[downvote]').getAttribute('part'), /\brsm-vote-button\b/);
+	action.remove();
+});
+
+test('current Reddit tree preparation sweeps nested shadow hosts once', () => {
+	const root = document.createElement('div');
+	let parent = root;
+	for (const depth of Array.from({ length: 20 }, (_, index) => index)) {
+		const comment = document.createElement('shreddit-comment');
+		comment.setAttribute('depth', String(depth));
+		const action = document.createElement('shreddit-comment-action-row');
+		action.attachShadow({ mode: 'open' });
+		comment.append(action);
+		parent.append(comment);
+		parent = comment;
+	}
+	document.body.append(root);
+
+	const original = Element.prototype.querySelectorAll;
+	let sharedShadowSweeps = 0;
+	Element.prototype.querySelectorAll = function querySelectorAll(selector) {
+		if (String(selector).includes('shreddit-comment-action-row')) sharedShadowSweeps += 1;
+		return Reflect.apply(original, this, [selector]);
+	};
+	try {
+		Shreddit.prepareShredditTree(root);
+	} finally {
+		Element.prototype.querySelectorAll = original;
+		root.remove();
+	}
+	assert.equal(sharedShadowSweeps, 1, 'nested comments must share one auxiliary shadow-host sweep');
+});
+
 test('current Reddit comments retain native collapse state and semantic roles', () => {
 	Shreddit.prepareShredditTree(document);
 	const comment = document.querySelector('shreddit-comment');

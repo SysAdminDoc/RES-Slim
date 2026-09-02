@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import AxeBuilder from '@axe-core/playwright';
+
 import { launchWithExtension, repoRoot, saveScreenshotDir } from './harness.mjs';
 
 const THREAD_FIXTURE = path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html');
@@ -100,6 +102,7 @@ function readParityState(page) {
 					part: vote.getAttribute('part'),
 					background: getComputedStyle(vote).backgroundColor,
 					borderRadius: getComputedStyle(vote).borderRadius,
+					height: getComputedStyle(vote).height,
 				} : null,
 				award: award ? {
 					part: award.getAttribute('part'),
@@ -112,6 +115,7 @@ function readParityState(page) {
 		});
 		const composer = document.querySelector('faceplate-textarea-input');
 		const composerBoundary = composer?.shadowRoot?.querySelector('.input-boundary-box');
+		const composerInput = composer?.shadowRoot?.querySelector('textarea');
 		const sort = document.querySelector('shreddit-sort-dropdown')?.shadowRoot?.querySelector('#comment-sort-button');
 		const search = document.querySelector('pdp-comment-search-input')?.shadowRoot?.querySelector('#expand-pdp-comment-search-button');
 		const commentsHeading = document.querySelector('#comment-tree > section[aria-label="Comments"] > h1');
@@ -122,6 +126,7 @@ function readParityState(page) {
 			bodyHeader: rect(document.querySelector('comment-body-header')),
 			composer: rect(composer),
 			composerBoundary: rect(composerBoundary),
+			composerInput: rect(composerInput),
 			sort: rect(sort),
 			search: rect(search),
 			commentsHeadingDisplay: getComputedStyle(commentsHeading).display,
@@ -143,6 +148,7 @@ function assertParity(state, viewport, theme) {
 	assert.ok(state.bodyHeader.width >= expectedContentWidth, `discussion header lost the content width at ${viewport.width}px`);
 	assert.ok(state.composer.width >= state.bodyHeader.width - 15, `composer collapsed to ${state.composer.width}px`);
 	assert.ok(state.composerBoundary.width >= state.composer.width - 1, `composer boundary collapsed to ${state.composerBoundary.width}px`);
+	assert.ok(state.composerInput.height >= 24, `composer input target collapsed to ${state.composerInput.height}px`);
 	assert.equal(state.sort.height, 24);
 	assert.equal(state.search.height, 24);
 	assert.ok(Math.abs(state.sort.y - state.search.y) <= 1, 'sort and search controls must share one toolbar row');
@@ -152,17 +158,19 @@ function assertParity(state, viewport, theme) {
 		assert.equal(comment.depth, index);
 		assert.equal(comment.summaryPosition, 'relative');
 		assert.equal(comment.summaryMarker, '"[-]"');
-		assert.equal(comment.summary.height, 14);
+		assert.equal(comment.summary.height, 24);
 		assert.equal(comment.meta.height, 14);
 		assert.equal(comment.metaFont, '10px');
 		assert.equal(comment.bodyFont, '14px');
 		assert.equal(comment.actionFont, '10px');
+		assert.ok(comment.actions.height >= 24, `depth ${index} action target collapsed to ${comment.actions.height}px`);
 		assert.equal(comment.nativeCollapseDisplay, 'none');
 		assert.ok(comment.meta.width > state.bodyHeader.width - 100, `depth ${index} metadata was squeezed to ${comment.meta.width}px`);
 		assert.ok(comment.body.width > state.bodyHeader.width - 100, `depth ${index} body was squeezed to ${comment.body.width}px`);
 		assert.ok(comment.meta.y < comment.body.y && comment.body.y < comment.actions.y, `depth ${index} row order broke`);
 		assert.equal(comment.vote.background, 'rgba(0, 0, 0, 0)');
 		assert.equal(comment.vote.borderRadius, '0px');
+		assert.equal(comment.vote.height, '24px');
 		assert.match(comment.vote.part, /\brsm-vote-button\b/);
 		if (index > 0) {
 			assert.ok(Math.abs(comment.host.x - state.comments[index - 1].host.x - 18) <= 1, `depth ${index} did not use one 18px nesting step`);
@@ -174,7 +182,7 @@ function assertParity(state, viewport, theme) {
 		background: 'rgba(0, 0, 0, 0)',
 		borderColor: 'rgba(0, 0, 0, 0)',
 		borderRadius: '0px',
-		height: '20px',
+		height: '24px',
 	});
 }
 
@@ -219,6 +227,21 @@ test('current Reddit discussion UI keeps old Reddit geometry across themes and w
 	await page.setViewportSize(VIEWPORTS[0]);
 	await page.goto(THREAD_URL, { waitUntil: 'domcontentloaded' });
 	await page.waitForSelector('shreddit-comment[data-res-shreddit-compat] > details[open] > summary', { timeout: 30000 });
+	const accessibility = await new AxeBuilder({ page })
+		.include('#comment-tree')
+		.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+		// Live Reddit places author and permalink anchors inside the native summary.
+		// The extension preserves that markup and its details-toggle behavior, so
+		// this focused check owns the sizing rule and leaves Reddit's nesting alone.
+		.disableRules(['nested-interactive'])
+		.analyze();
+	assert.ok(accessibility.passes.length > 0, 'axe found no passing checks in the discussion tree');
+	assert.deepEqual(
+		accessibility.violations.map(violation => violation.id),
+		[],
+		`discussion accessibility violations: ${accessibility.violations.map(violation =>
+			`${violation.id} (${violation.nodes.map(node => node.target.join(' ')).join(', ')})`).join('; ')}`,
+	);
 	const summary = page.locator('shreddit-comment[depth="0"] > details > summary');
 	await summary.focus();
 	await page.keyboard.press('Enter');
