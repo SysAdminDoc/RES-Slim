@@ -1,3 +1,9 @@
+// The storage dashboard used to be a panel injected into old Reddit: a row per
+// store, a count, and a purge button. All of that is the settings console's
+// data workspace now, which can also search and export and does not need a
+// Reddit page — so the module is the link to it, and these assertions follow
+// the behaviour to where it went rather than describing a panel that is gone.
+
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -7,81 +13,29 @@ import { loadFlowModule } from './helpers/loadFlowModule.mjs';
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-// The helper reaches the extension-origin database over the background bridge,
-// so the bridge is the boundary to stand in for. Executing it is what makes the
-// count and purge assertions below mean anything: the previous version of this
-// file stripped types out of the source and only ever called `formatCount`.
-const bridge = `
-export const calls = [];
-export const counts = { voteHistory: 3, mediaManifest: 0, savedContent: 7, subredditEmotes: 250 };
-export function countRecords(store) { calls.push(['count', store]); return Promise.resolve(counts[store]); }
-export function clearRecords(store) { calls.push(['clear', store]); counts[store] = 0; return Promise.resolve(1); }
-`;
+test('the userbar links carry the workspace route as their href', () => {
+	// `settingsNavigation` intercepts every settings link on the page, so the
+	// href is the whole mechanism - and it is what makes a ctrl-click open the
+	// console in a tab, which a click handler of our own would have swallowed.
+	for (const file of [
+		'lib/modules/storageDashboard.js',
+		'lib/modules/voteHistory.js',
+		'lib/modules/mediaArchiveManifest.js',
+	]) {
+		const src = read(file);
+		assert.match(src, /href = makeUrlHash\(DATA_WORKSPACE_ROUTE\)/, `${file} should link to the workspace`);
+		assert.doesNotMatch(src, /(?:a|trigger)\.addEventListener\('click'/, `${file} should leave the link to settingsNavigation`);
+	}
 
-const load = () => loadFlowModule('lib/utils/storageDashboard.js', 'storage-dashboard', {
-	deps: ['lib/utils/featureStores.js'],
-	stubs: {
-		'../environment/foreground/featureDb': bridge,
-		'../environment': 'export const canPersistFeatureData = () => true;',
-	},
-});
+	const dashboard = read('lib/modules/storageDashboard.js');
+	assert.doesNotMatch(dashboard, /rsm-storageDashboard-panel/, 'the panel is the workspace now');
+	assert.doesNotMatch(dashboard, /clearStore|getStoreInfos/, 'purging belongs to one implementation');
+	// Still a 24px target: the userbar text is 15px tall.
+	assert.match(dashboard, /rsm-target-24/);
 
-test('formatCount renders count and cap percentage', async () => {
-	const mod = await load();
-	const result = mod.formatCount({ id: 'voteHistory', name: 'Test', count: 500, cap: 1000, available: true });
-	assert.ok(result.includes('Test'));
-	assert.ok(result.includes('500'));
-	assert.ok(result.includes('1,000'));
-	assert.ok(result.includes('50%'));
-});
-
-test('formatCount handles null cap', async () => {
-	const mod = await load();
-	const result = mod.formatCount({ id: 'savedContent', name: 'Test', count: 42, cap: null, available: true });
-	assert.ok(result.includes('42'));
-	assert.ok(!result.includes('%'));
-});
-
-test('every local data set is counted, and purging one clears that store alone', async () => {
-	const mod = await load();
-	const infos = await mod.getStoreInfos();
-	assert.deepEqual(infos.map(info => info.id), ['voteHistory', 'mediaManifest', 'savedContent', 'subredditEmotes']);
-	assert.deepEqual(infos.map(info => info.count), [3, 0, 7, 250]);
-	// A set with no records still gets a row: "nothing here" is an answer, and
-	// the dashboard is where you go to find out.
-	assert.equal(infos.find(info => info.id === 'mediaManifest').name, 'Media history');
-
-	await mod.clearStore(infos.find(info => info.id === 'voteHistory'));
-	const after = await mod.getStoreInfos();
-	assert.equal(after.find(info => info.id === 'voteHistory').count, 0);
-	assert.equal(after.find(info => info.id === 'savedContent').count, 7);
-});
-
-test('a store that cannot be read reports zero rather than failing the whole dashboard', async () => {
-	const mod = await loadFlowModule('lib/utils/storageDashboard.js', 'storage-dashboard-error', {
-		deps: ['lib/utils/featureStores.js'],
-		stubs: {
-			'../environment': 'export const canPersistFeatureData = () => true;',
-			'../environment/foreground/featureDb': `
-				export function countRecords(store) {
-					if (store === 'savedContent') return Promise.reject(new Error('store unavailable'));
-					return Promise.resolve(1);
-				}
-				export function clearRecords() { return Promise.resolve(0); }
-			`,
-		},
-	});
-	const infos = await mod.getStoreInfos();
-	assert.equal(infos.length, 4);
-	assert.equal(infos.find(info => info.id === 'savedContent').count, 0);
-});
-
-test('the legacy database names stay recorded so an upgrade can still find the data', () => {
-	const src = read('lib/utils/featureStores.js');
-	assert.ok(src.includes('rsm-voteHistory'));
-	assert.ok(src.includes('rsm-mediaManifest'));
-	assert.ok(src.includes('rsm-savedContent'));
-	assert.ok(src.includes('rsm-subredditEmotes'));
+	for (const file of ['lib/modules/voteHistory.js', 'lib/modules/mediaArchiveManifest.js']) {
+		assert.doesNotMatch(read(file), /exporting…/, `${file} should not export straight from the page`);
+	}
 });
 
 test('storageDashboard module is registered in the module index', () => {
@@ -90,28 +44,28 @@ test('storageDashboard module is registered in the module index', () => {
 	assert.ok(index.includes('storageDashboard,'));
 });
 
-test('storageDashboard uses setTrustedHTML for DOM writes', () => {
-	const src = read('lib/modules/storageDashboard.js');
-	assert.ok(src.includes('setTrustedHTML'));
-	assert.ok(src.includes("from '../core/dom/trustedHtml'"));
-	assert.ok(src.includes("trigger.setAttribute('aria-expanded', 'false')"));
-	assert.ok(src.includes("panel.setAttribute('role', 'region')"));
-	assert.ok(src.includes("closeBtn.className = 'rsm-storageDashboard-close'"));
-	assert.ok(src.includes('panel.replaceChildren(header, ...rows)'));
-	assert.ok(!src.includes('panel.innerHTML ='));
+test('the workspace covers every set the dashboard used to list', async () => {
+	const workspace = read('lib/options/dataWorkspace.js');
+	for (const id of ['savedContent', 'userTags', 'voteHistory', 'mediaManifest', 'subredditEmotes']) {
+		assert.match(workspace, new RegExp(`id: '${id}'`), `${id} has no workspace adapter`);
+	}
+
+	// Every adapter names a registered private-context policy, because the
+	// database is the extension's and a private window shares it with the normal
+	// profile.
+	const policies = await loadFlowModule('lib/environment/foreground/privateBrowsing.js', 'workspace-policies');
+	const declared = [...workspace.matchAll(/featureId: '([^']+)'/g)].map(match => match[1]);
+	assert.equal(declared.length, 5);
+	for (const id of declared) {
+		assert.ok(Object.hasOwn(policies.FEATURE_DATA_STORE_POLICIES, id), `${id} has no registered policy`);
+	}
+	assert.match(workspace, /if \(!canPersistFeatureData\(\(set\.featureId: any\)\)\)/);
 });
 
-test('storageDashboard has a SCSS module', () => {
-	const scss = read('lib/css/modules/_storageDashboard.scss');
-	assert.ok(scss.includes('.rsm-storageDashboard-panel'));
-	assert.ok(scss.includes('.rsm-storageDashboard-header'));
-	assert.ok(scss.includes('.rsm-storageDashboard-close'));
-	assert.ok(scss.includes('.rsm-storageDashboard-purge'));
-	assert.ok(scss.includes("[data-state='success']"));
-	assert.ok(scss.includes('.rsm-storageDashboard-empty.is-error'));
-});
-
-test('storageDashboard SCSS is imported in res.scss', () => {
-	const res = read('lib/css/res.scss');
-	assert.ok(res.includes("@use 'modules/storageDashboard'"));
+test('the legacy database names stay recorded so an upgrade can still find the data', () => {
+	const src = read('lib/utils/featureStores.js');
+	assert.ok(src.includes('rsm-voteHistory'));
+	assert.ok(src.includes('rsm-mediaManifest'));
+	assert.ok(src.includes('rsm-savedContent'));
+	assert.ok(src.includes('rsm-subredditEmotes'));
 });

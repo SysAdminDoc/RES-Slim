@@ -86,9 +86,14 @@ test('settings console exposes refresh, copy, clear, and a readonly log field', 
 	assert.match(controller, /navigator\.clipboard\.writeText/);
 });
 
-test('storage dashboard exposes the same local log and clear action', () => {
-	const source = fs.readFileSync(path.join(repoRoot, 'lib/modules/storageDashboard.js'), 'utf8');
+test('the settings console exposes the same local log and clear action', () => {
+	// It used to be duplicated in a panel the storage dashboard injected into old
+	// Reddit. That panel is gone: the dashboard is a link to the console now, and
+	// the console is where the log has always also been.
+	const source = fs.readFileSync(path.join(repoRoot, 'lib/options/settingsConsole.js'), 'utf8');
 	assert.match(source, /getModuleErrorLog\(\)/);
 	assert.match(source, /clearModuleErrorLog\(\)/);
-	assert.match(source, /rsm-storageDashboard-errors-output/);
+	assert.match(source, /RESModuleErrorLogOutput/);
+	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib/modules/storageDashboard.js'), 'utf8');
+	assert.doesNotMatch(dashboard, /getModuleErrorLog/, 'the log has one implementation, not two');
 });

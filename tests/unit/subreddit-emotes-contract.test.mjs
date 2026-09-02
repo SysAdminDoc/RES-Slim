@@ -111,7 +111,6 @@ test('the opt-in old Reddit module uses bounded signed-in JSON and dashboard-acc
 	const index = fs.readFileSync(path.join(repoRoot, 'lib', 'modules', 'index.js'), 'utf8');
 	const moduleSource = fs.readFileSync(path.join(repoRoot, 'lib', 'modules', 'subredditEmotes.js'), 'utf8');
 	const stores = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'featureStores.js'), 'utf8');
-	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'storageDashboard.js'), 'utf8');
 	const styles = fs.readFileSync(path.join(repoRoot, 'lib', 'css', 'modules', '_subredditEmotes.scss'), 'utf8');
 	assert.match(index, /import \{ module as subredditEmotes \} from '\.\/subredditEmotes';/);
 	assert.match(index, /^\s*subredditEmotes,/m);
@@ -120,8 +119,10 @@ test('the opt-in old Reddit module uses bounded signed-in JSON and dashboard-acc
 	assert.match(moduleSource, /fetchRedditJson\(/);
 	assert.match(moduleSource, /raw_json=1&limit=500&depth=10/);
 	assert.match(moduleSource, /watchForThings\(\['comment'\]/);
-	// The store descriptor moved to the registry; the dashboard reads the cap.
+	// The store descriptor moved to the registry, and the cache is browsable and
+	// purgeable from the settings console rather than from a Reddit page.
 	assert.match(stores, /id: 'subredditEmotes'[\s\S]*?dbName: 'rsm-subredditEmotes', storeName: 'maps'/);
-	assert.match(dashboard, /subredditEmotes: 250/);
+	const workspace = fs.readFileSync(path.join(repoRoot, 'lib', 'options', 'dataWorkspace.js'), 'utf8');
+	assert.match(workspace, /id: 'subredditEmotes'/);
 	assert.match(styles, /height: 1em/);
 });

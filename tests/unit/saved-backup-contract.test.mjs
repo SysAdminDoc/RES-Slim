@@ -242,8 +242,11 @@ test('the account key and the v1 recovery path survived the move to the extensio
 	assert.match(migration, /altStoreName/);
 	assert.match(migration, /legacyDefaults/);
 
-	const dashboard = fs.readFileSync(path.join(repoRoot, 'lib/utils/storageDashboard.js'), 'utf8');
-	assert.match(dashboard, /purgeable: available && !descriptor\.accountScoped/, 'the generic dashboard must not offer a cross-account purge');
+	// A whole-store purge across accounts has no button anywhere: the workspace
+	// purges what is on screen, and saved content is filtered by account first.
+	const workspace = fs.readFileSync(path.join(repoRoot, 'lib/options/dataWorkspace.js'), 'utf8');
+	assert.match(workspace, /accountOf: record => text\(record\.username\)/);
+	assert.match(workspace, /if \(set\.accountOf && account !== ALL_ACCOUNTS && set\.accountOf\(record\) !== account\) return false;/);
 });
 
 test('every stored operation is scoped to one account', async () => {

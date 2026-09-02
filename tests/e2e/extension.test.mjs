@@ -3939,7 +3939,7 @@ test('the in-page UI keeps its edges in forced colours', async t => {
 				'.expando-button',
 				'::before',
 			),
-			armed: readNested('<div class="rsm-storageDashboard-row" data-armed="1">row</div>', '.rsm-storageDashboard-row'),
+			armed: readNested('<button class="rsm-savedBackup-purge" data-armed="1">purge</button>', '.rsm-savedBackup-purge'),
 		};
 	});
 
@@ -3948,8 +3948,8 @@ test('the in-page UI keeps its edges in forced colours', async t => {
 		assert.notEqual(measured[surface].width, '0px', `${surface} outline should have width`);
 	}
 
-	// A spam comment, a spoiler thumbnail, an over-18 thumbnail and a row whose
-	// purge button is armed. In normal rendering each is marked by a tint, a
+	// A spam comment, a spoiler thumbnail, an over-18 thumbnail and an armed
+	// purge button. In normal rendering each is marked by a tint, a
 	// striped gradient or an inset shadow, and the UA deletes all three, so
 	// without a restatement the flagged thing renders exactly like an unflagged
 	// one. `Mark` is the system colour that means "called out".
@@ -4746,6 +4746,54 @@ function describeViolations(violations) {
 	return violations.flatMap(v => v.nodes.map(node =>
 		`${v.id} (${v.impact}) — ${node.target.join(' ')}\n      ${(node.failureSummary || v.help).replace(/\n/g, '\n      ')}`)).join('\n  ');
 }
+
+test('the old Reddit data links open the workspace instead of panels of their own', async t => {
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const html = servableCapture(FRONT_CAPTURE);
+	await context.route('**/*', route => {
+		const url = route.request().url();
+		if (!/^https?:\/\//.test(url)) return route.continue();
+		if (route.request().resourceType() === 'document' && url.includes('old.reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	// Both links belong to opt-in modules, so they have to be turned on first.
+	const seed = await context.newPage();
+	await seed.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await seed.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RES.modulePrefs', stored => {
+			const prefs = { ...(stored['RES.modulePrefs'] || {}), storageDashboard: true, voteHistory: true };
+			chrome.storage.local.set({ 'RES.modulePrefs': prefs }, resolve);
+		});
+	}));
+	await seed.close();
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', error => pageErrors.push(String(error)));
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForSelector('#rsm-storageDashboard-trigger', { timeout: 30000 });
+
+	// A middle-click target, not a dead `#`: the link is a real settings URL, so
+	// opening it in a new tab lands on the same page.
+	assert.match(await page.locator('#rsm-storageDashboard-trigger').getAttribute('href'), /#res:settings\/data$/);
+	assert.match(await page.locator('#rsm-voteHistory-trigger').getAttribute('href'), /#res:settings\/data$/);
+
+	await page.locator('#rsm-storageDashboard-trigger').click();
+	await page.waitForSelector('#console-container', { timeout: 30000 });
+	const console_ = page.frameLocator('#console-container');
+	await console_.locator('#RESDataWorkspace').waitFor({ state: 'visible', timeout: 30000 });
+	assert.equal(await console_.locator('#RESCategoryTab-data').getAttribute('aria-selected'), 'true');
+
+	// The panel it used to open is gone rather than merely unlinked.
+	assert.equal(await page.locator('#rsm-storageDashboard-panel').count(), 0);
+	assert.deepEqual(pageErrors, []);
+});
 
 test('the local data workspace browses, searches, exports and purges without Reddit', async t => {
 	// No routes, no Reddit page, no network: the whole point of this workspace is

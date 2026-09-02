@@ -1927,5 +1927,8 @@
     },
     "dataWorkspaceImported": {
         "message": "Imported $1 records for u/$2."
+    },
+    "dataWorkspacePrivate": {
+        "message": "$1 is not readable from a private window."
     }
 }

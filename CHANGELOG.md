@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- The old Reddit data links now open the settings console rather than panels of
+  their own. `storage`, `vote log` and `media log` all land on the Data tab,
+  where the same records can be searched and read before anything is exported or
+  purged; the vote log and media log used to download the whole thing on the
+  first click, which is the one click you cannot take back. The saved-content
+  manager keeps its panel, because syncing from Reddit and tagging an item while
+  you are looking at it both need the page, and it gained a link across to the
+  workspace for everything else. The storage dashboard's own panel is gone.
+
 - The local data sets moved out of reddit.com's storage and into the extension's
   own. Vote history, the media manifest, saved content and the subreddit emoji
   cache were written by content scripts, which meant they lived in Reddit's

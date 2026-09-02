@@ -127,14 +127,20 @@ test('every export in the product goes through the helper', () => {
 	// copy is how that happens again.
 	for (const file of [
 		'lib/modules/savedBackup.js',
-		'lib/modules/mediaArchiveManifest.js',
-		'lib/modules/voteHistory.js',
 		'lib/modules/galleryZip.js',
 		'lib/modules/userTagger.js',
+		'lib/options/dataWorkspace.js',
 		'lib/options/settingsConsole.js',
 	]) {
 		const source = codeOnly(readRepoFile(file));
 		assert.doesNotMatch(source, /createObjectURL/, `${file} still builds its own download`);
 		assert.match(source, /downloadBlob|downloadText/, `${file} does not use the shared helper`);
+	}
+
+	// The vote log and the media manifest export from the settings console now,
+	// so neither may grow a download of its own again.
+	for (const file of ['lib/modules/mediaArchiveManifest.js', 'lib/modules/voteHistory.js']) {
+		const source = codeOnly(readRepoFile(file));
+		assert.doesNotMatch(source, /createObjectURL|downloadBlob|downloadText/, `${file} downloads from a Reddit page again`);
 	}
 });

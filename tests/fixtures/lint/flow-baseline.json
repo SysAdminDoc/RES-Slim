@@ -1,7 +1,7 @@
 {
 	"note": "Per-file flow error counts. Regenerate with `node scripts/flow-baseline.mjs --update` and commit the change.",
 	"flowVersion": "0.84.0",
-	"total": 114,
+	"total": 113,
 	"files": {
 		"lib/core/theme/antiFouc.js": 1,
 		"lib/environment/foreground/storage.js": 2,
@@ -33,7 +33,6 @@
 		"lib/modules/showImages/linkScanner.js": 4,
 		"lib/modules/showImages/mediaTypes.js": 1,
 		"lib/modules/sourceSnudown.js": 3,
-		"lib/modules/storageDashboard.js": 1,
 		"lib/modules/subRulesInline.js": 3,
 		"lib/modules/threadMinimap.js": 1,
 		"lib/modules/topCommentsPreview.js": 1,

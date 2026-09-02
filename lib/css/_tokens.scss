@@ -266,7 +266,6 @@ html.res-pageTheme {
 	// a background colour and a shadow, and loses both.
 	.rsm-toast,
 	.rsm-savedBackup-panel,
-	.rsm-storageDashboard-panel,
 	.rsm-subrules-popover,
 	.rsm-error-log-panel,
 	.res-search-pane,
@@ -326,10 +325,7 @@ html.res-pageTheme {
 		outline-offset: -2px;
 	}
 
-	// An inset shadow bar down the left of the armed row, from
-	// `_storageDashboard.scss`. The confirm button beside it keeps its own border,
-	// but the row-level warning is carried by the shadow alone.
-	.rsm-storageDashboard-row[data-armed='1'],
+	// An armed purge whose warning is carried by a shadow alone.
 	.rsm-savedBackup-purge[data-armed='1'] {
 		outline: 2px solid Mark;
 		outline-offset: -2px;
