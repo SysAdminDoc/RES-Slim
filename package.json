@@ -21,7 +21,7 @@
     "test:show-images": "node --test tests/unit/show-images-hosts.test.mjs",
     "test:privacy": "node --test tests/unit/privacy-outbound-urls.test.mjs",
     "pretest:e2e": "node build.js --mode development",
-    "test:e2e": "node --test --test-timeout=120000 tests/e2e/extension.test.mjs",
+    "test:e2e": "node --test --test-concurrency=1 --test-timeout=120000 tests/e2e/extension.test.mjs tests/e2e/current-thread-parity.test.mjs",
     "eslint": "eslint .",
     "stylelint": "stylelint lib/**/*.scss",
     "test:bundle": "node build.js --mode production --browsers chrome",

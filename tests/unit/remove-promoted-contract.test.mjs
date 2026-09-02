@@ -53,6 +53,7 @@ test('current Reddit ad elements belong to the ad remover, not to a theme option
 	for (const element of [
 		'shreddit-comments-page-ad',
 		'shreddit-comment-tree-ad',
+		'shreddit-comment-tree-ads',
 		'shreddit-sidebar-ad',
 		'shreddit-dynamic-ad-link',
 	]) {
@@ -64,6 +65,7 @@ test('current Reddit ad elements belong to the ad remover, not to a theme option
 	// An ad inside a discussion is not a post, so the Thing watcher cannot see one,
 	// and current Reddit streams the comment tree so a document sweep misses it too.
 	assert.match(source, /watchForFutureDescendants\(document\.body, D2X_AD_ELEMENTS\.join\(', '\)/);
+	assert.match(source, /if \(!el\.matches\('shreddit-comment-tree-ads'\)\) removedCount \+= 1/);
 });
 
 test('the declutter toggle no longer decides whether ads are removed', () => {
