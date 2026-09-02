@@ -23,6 +23,14 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Three things that grew for as long as a current Reddit tab stayed open: the
+  settings console left a message listener on the page every time anything
+  inside it navigated, the user tagger kept an author link for every post and
+  comment ever rendered, and the comment navigator kept every comment the reader
+  had selected. Old Reddit reloads on each navigation, which is why none of them
+  showed there.
+- Turning off image expansion at runtime now takes down the observer that was
+  watching for page scripts, instead of leaving it waking on every added node.
 - Storage lookups keyed by a name from the page no longer read through the
   object prototype. A reddit user called `constructor` or `toString` made a
   saved-value lookup return a built-in function instead of the default, and made

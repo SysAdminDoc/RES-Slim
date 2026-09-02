@@ -151,3 +151,48 @@ test('a selector parent is resolved, not required up front', async () => {
 	await flush();
 	assert.ok(isNeutralized(blocked), 'waiting for the parent is the point; missing it means the scripts run');
 });
+
+test('undo takes the observer down, not just the flag', async () => {
+	// `undo()` set a `stopped` flag and restored what it had blocked, but the
+	// MutationObserver over `head` or `#siteTable` stayed attached for the life of
+	// the page and woke on every added node to hit that flag and return. Reachable
+	// whenever showImages is switched off at runtime.
+	const observed = [];
+	const NativeMutationObserver = window.MutationObserver;
+	class CountingMutationObserver extends NativeMutationObserver {
+		constructor(callback) {
+			super(callback);
+			this.live = false;
+			observed.push(this);
+		}
+
+		observe(...args) {
+			this.live = true;
+			return super.observe(...args);
+		}
+
+		disconnect() {
+			this.live = false;
+			return super.disconnect();
+		}
+	}
+	window.MutationObserver = CountingMutationObserver;
+	globalThis.MutationObserver = CountingMutationObserver;
+
+	try {
+		const parent = document.createElement('div');
+		document.body.append(parent);
+		const handle = stopPageContextScript(() => true, parent, true);
+		await flush();
+
+		assert.ok(observed.length >= 1, 'the blocker should have attached an observer');
+		assert.ok(observed.some(o => o.live), 'and it should be watching while the blocker is armed');
+
+		await handle.undo();
+		await flush();
+		assert.deepEqual(observed.filter(o => o.live), [], 'an observer outlived the blocker that made it');
+	} finally {
+		window.MutationObserver = NativeMutationObserver;
+		globalThis.MutationObserver = NativeMutationObserver;
+	}
+});
