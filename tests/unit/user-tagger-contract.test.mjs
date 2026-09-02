@@ -294,3 +294,40 @@ test('user tagger styles ship in the SCSS bundle', () => {
 	const resScss = fs.readFileSync(path.join(repoRoot, 'lib/css/res.scss'), 'utf8');
 	assert.match(resScss, /@import 'modules\/userTagger'/);
 });
+
+// The author index and the comment navigator's read set both grew for the life
+// of the document. Old Reddit reloads on every navigation so neither could show
+// it; current Reddit keeps one document for the whole session, and an entry in
+// the index is otherwise dropped only when that exact username is re-tagged.
+test('the author index drops what the document no longer holds, on a route change', async () => {
+	const { loadModule } = await import('./helpers/loadModule.mjs');
+	const UserTagger = await loadModule('lib/modules/userTagger.js', 'user-tagger-index');
+	const { authorIndex, pruneAuthorIndex } = UserTagger._internal;
+
+	authorIndex.clear();
+	const attached = document.createElement('a');
+	attached.textContent = 'alice';
+	document.body.append(attached);
+	const detached = document.createElement('a');
+	detached.textContent = 'bob';
+
+	authorIndex.set('alice', new Set([attached]));
+	authorIndex.set('bob', new Set([detached]));
+	assert.equal(authorIndex.size, 2);
+
+	pruneAuthorIndex();
+	assert.deepEqual([...authorIndex.keys()], ['alice'], 'a username with no connected elements should be gone');
+	assert.equal(authorIndex.get('alice').size, 1);
+
+	// And the module wires it to the route signal the watchers already use.
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/userTagger.js'), 'utf8');
+	assert.match(mod, /document\.addEventListener\('reddit\.urlChanged', pruneAuthorIndex\)/);
+});
+
+test('the comment navigator does not hold every comment the reader selected', () => {
+	// `readComments` only ever calls `add` and `has`, so a Set bought nothing and
+	// kept a Thing - and its element - for every comment selected in the session.
+	const mod = fs.readFileSync(path.join(repoRoot, 'lib/modules/commentNavigator.js'), 'utf8');
+	assert.match(mod, /const readComments = new WeakSet\(\)/);
+	assert.doesNotMatch(mod, /readComments\.(delete|clear|forEach|size)/, 'a WeakSet cannot answer any of those');
+});
