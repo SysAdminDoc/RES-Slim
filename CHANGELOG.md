@@ -23,6 +23,15 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Storage lookups keyed by a name from the page no longer read through the
+  object prototype. A reddit user called `constructor` or `toString` made a
+  saved-value lookup return a built-in function instead of the default, and made
+  a "does this key exist" check answer yes for a key nothing had stored.
+  Importing a settings file or a tag list can no longer write into the
+  prototype either.
+- Four links built from reddit's own JSON, in the search gallery, the crosspost
+  list, the saved-content manager and the processing-image replacement, now go
+  through the same scheme check every media URL already passed.
 - Stickied posts show a green title again. The rule that painted it lost the
   cascade to the Classic layout layer, so under the refined layout, which is on
   by default, a stickied post was an ordinary blue link with a slightly

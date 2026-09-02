@@ -17,9 +17,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { loadFlowModule } from './helpers/loadFlowModule.mjs';
+import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
-const { isSafeMediaUrl, assertSafeMediaUrls, mediaUrls } =
+const { isSafeMediaUrl, isSafeLinkUrl, assertSafeMediaUrls, mediaUrls } =
 	await loadFlowModule('lib/utils/mediaUrl.js', 'media-url-scheme');
 
 const PAGE = 'https://www.reddit.com/r/example/';
@@ -176,4 +176,46 @@ test('an absent optional field is not treated as a bad URL', () => {
 	assert.doesNotThrow(() => assertSafeMediaUrls({ type: 'VIDEO', sources: [] }, PAGE));
 	assert.doesNotThrow(() => assertSafeMediaUrls({ type: 'TEXT', src: '<p>hello</p>' }, PAGE));
 	assert.doesNotThrow(() => assertSafeMediaUrls({ type: 'GENERIC_EXPANDO' }, PAGE));
+});
+
+// Four modules build a link or an image outside showImages, from a field in
+// reddit's own JSON: the search gallery's thumbnails, the crosspost list's
+// permalinks, the saved-content manager's titles and the processing-image
+// replacement. They used `new URL(value, base)` or nothing at all, and a base
+// does not constrain the scheme - an absolute value wins over it.
+test('a link URL is http(s) or a path that resolves to one', () => {
+	const link = url => isSafeLinkUrl(url, PAGE);
+
+	assert.equal(link('https://i.redd.it/a.jpg'), true);
+	assert.equal(link('http://old.reddit.com/r/x/'), true);
+	assert.equal(link('/r/example/comments/abc/title/'), true, 'a permalink is a path');
+	assert.equal(link('//i.redd.it/a.jpg'), true, 'protocol-relative resolves against the page');
+
+	assert.equal(link(SCRIPT_URL), false);
+	assert.equal(link(VBSCRIPT_URL), false);
+	assert.equal(link(`${scheme('data')}text/html,<script>alert(1)</script>`), false);
+	// Allowed for media, because the extension builds them itself. A link is
+	// navigated, so neither belongs in an href.
+	assert.equal(link(`${scheme('data')}image/png;base64,iVBORw0KGgo=`), false);
+	assert.equal(link(`${scheme('blob')}https://www.reddit.com/1234`), false);
+	assert.equal(link(`${scheme('file')}///C:/Windows/win.ini`), false);
+
+	assert.equal(link(''), false);
+	assert.equal(link(null), false);
+	assert.equal(link(undefined), false);
+	assert.equal(link(42), false);
+});
+
+test('the four sinks outside showImages route through it', () => {
+	// A behavioural test would need each module's whole runtime; what this holds
+	// is that the guard is what stands between reddit's JSON and the attribute.
+	const sinks = [
+		['lib/modules/searchGallery.js', /urls\.filter\(url => isSafeLinkUrl\(url, location\.origin\)\)/],
+		['lib/modules/crosspostMap.js', /isSafeLinkUrl\(dup\.permalink, location\.origin\) \? dup\.permalink : '#'/],
+		['lib/modules/savedBackup.js', /if \(isSafeLinkUrl\(record\.permalink, location\.origin\)\)/],
+		['lib/modules/fixProcessingImg.js', /if \(!isSafeLinkUrl\(src, location\.origin\)\) return;/],
+	];
+	for (const [file, pattern] of sinks) {
+		assert.match(readRepoFile(file), pattern, `${file} no longer routes its URL through the guard`);
+	}
 });
