@@ -13,8 +13,7 @@
 // API was present when `customElements` turned out to be null in the same
 // context, which silently disabled a whole retry path.
 //
-// Sixth libdef in here, same pattern as `intl`, `abort`, `customElements` and
-// `crypto`: the libs directory is where a browser-support decision belongs,
+// Another libdef in here, same pattern as `intl`, `abort` and `crypto`: the libs directory is where a browser-support decision belongs,
 // because there it is checked once. A cast at the call site asserts the same
 // thing and checks nothing.
 //

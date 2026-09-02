@@ -7,7 +7,7 @@
 // worker, which is the only place this repo calls it: `shredLease` mints the
 // token that identifies the holder of a comment-shredding run.
 //
-// Fifth libdef in here, same pattern as `intl`, `abort` and `customElements`:
+// Another libdef in here, same pattern as `intl` and `abort`:
 // the libs directory is where a browser-support decision belongs, because there
 // it is checked once. A cast at the call site asserts the same thing and checks
 // nothing.
