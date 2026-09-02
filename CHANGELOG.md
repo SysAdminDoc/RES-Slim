@@ -183,6 +183,32 @@ All notable changes to RES-Slim will be documented in this file.
   the other run is and how long it has been going, and can retry when that run
   finishes.
 
+## v0.53.0, 2026-09-01
+
+### Fixed
+
+- Current Reddit discussion pages match the old Reddit thread layout again.
+  Reddit moved each comment header into a full-width `details` summary while
+  RES-Slim still treated that summary as a small collapse button. That squeezed
+  metadata into a narrow rail, multiplied the native indent at every depth, and
+  left the body and action rows detached. The adapter now follows the live
+  structure directly. Metadata, body text, and actions stay in normal flow,
+  each reply adds one 18px step, and the `[-]` marker remains aligned with its
+  thread rail.
+- Reddit's current composer, sort/search toolbar, vote row, award control, and
+  overflow control now inherit the selected page palette through stable Shadow
+  Parts. Their native behavior remains intact, but the oversized rounded action
+  wrappers no longer leak through the old Reddit layout. Streamed discussion ad
+  wrappers are also handled by the always-on ad remover without inflating its
+  removed-item count.
+
+### Added
+
+- A six-case browser matrix covers Classic and Gruvbox discussions at desktop,
+  tablet, and narrow widths. It checks full-width comment rows, exact nesting,
+  toolbar alignment, horizontal overflow, native collapse from the keyboard,
+  action paint, streamed ad removal, and uncaught page errors.
+
 ## v0.52.2, 2026-08-28
 
 ### Fixed
