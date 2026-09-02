@@ -186,7 +186,7 @@
         "message": "Automatic"
     },
     "hideChildCommentsAutomaticDesc": {
-        "message": "Automatically hide all but parent comments, or provide a link to hide them all?"
+        "message": "Hide replies automatically. Turn this off to get a link you press yourself."
     },
     "hideChildCommentsNestedTitle": {
         "message": "Nested"
@@ -222,7 +222,7 @@
         "message": "Instances"
     },
     "hoverInstancesDesc": {
-        "message": "Manage particular pop-ups"
+        "message": "Turn individual pop-ups on or off, and set how long each waits before it opens."
     },
     "hoverInstancesName": {
         "message": "name"
@@ -345,7 +345,7 @@
         "message": "Comment Sort By"
     },
     "commentSortByDesc": {
-        "message": "Add link to set default comment sort by the drop down menu."
+        "message": "Add a link next to the sort dropdown that saves the current sort as your default."
     },
     "nightModeName": {
         "message": "Night Mode"
@@ -447,7 +447,7 @@
         "message": "Save Comments"
     },
     "saveCommentsDesc": {
-        "message": "To save comments with RES-Slim click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES-Slim saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES-Slim if you are not logged in, or if you are logged in to any account. All the comments will be visible in one location. You will only be able to view saved RES-Slim comments on whichever browser you have RES-Slim installed on.\n\nWhen saving comments with reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with reddit looks the same as saving with RES-Slim, but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES-Slim.)"
+        "message": "To save comments with RES-Slim click the **save-RES** button below a comment. You can view saved comments in the dashboard.\n\nSaving with RES-Slim saves a comment locally in your browser. This means that you can view the comment you saved *as it looked when you saved it*, even if it is later edited or deleted. You can save comments with RES-Slim if you are not logged in, or if you are logged in to any account. All the comments will be visible in one location. You will only be able to view saved RES-Slim comments on whichever browser you have RES-Slim installed on.\n\nWhen saving comments with Reddit, you must be logged into an account; the comment is saved specifically for that account; it won't be shown if you switch to a different account or log out. You can view these comments whenever you are logged into the Reddit account you saved them from, including on other browsers or devices.\n\nVisually, saving comments with Reddit looks the same as saving with RES-Slim, but the text is not saved locally, so the saved comment text shows the *current* state of the comment. If the comment has been edited or deleted since you saved it, the text that displays on your account's \"saved\" page will look different than it looked when you saved it.\n\nIf you have [Reddit gold](/gold/about) on an account, you can add a category/tag to comments you have saved with Reddit, then filter saved comments/posts by category. (You cannot sort or filter comments saved with RES-Slim.)"
     },
     "searchName": {
         "message": "Search RES-Slim Settings"
@@ -474,7 +474,7 @@
         "message": "Inline Image Viewer"
     },
     "showImagesDesc": {
-        "message": "Opens images inline in your browser with the click of a button. Also has configuration options, check it out!"
+        "message": "Open images and videos inline, without leaving the page."
     },
     "showParentName": {
         "message": "Show Parent on Hover"
@@ -486,7 +486,7 @@
         "message": "Show Snudown Source"
     },
     "sourceSnudownDesc": {
-        "message": "Add tool to show the original text on posts and comments, before reddit formats the text."
+        "message": "Add a control that shows the original text of a post or comment, before Reddit formatted it."
     },
     "spoilerTagsName": {
         "message": "Global Spoiler Tags"
@@ -726,7 +726,7 @@
         "message": "Highlight If Alt Account"
     },
     "commentToolsHighlightIfAltAccountDesc": {
-        "message": "Put in bold the \"Commenting As\" part if you are using an alt account. The first account in the Account Switcher module is considered as your main account."
+        "message": "Bold the \"Commenting as\" line when you post from an account other than the one you use most."
     },
     "commentToolsShowInputLengthTitle": {
         "message": "Show Input Length"
@@ -946,6 +946,39 @@
     },
     "settingsConsoleThemeGroup": {
         "message": "Settings theme"
+    },
+    "selectorDriftCopyReport": {
+        "message": "Copy report"
+    },
+    "selectorDriftClear": {
+        "message": "Clear"
+    },
+    "selectorDriftSummary": {
+        "message": "Reddit moved something a feature here depends on. Nothing is broken yet: these parts of the page were found by a fallback, or not found at all. Recorded on this device only, with no URLs, subreddits or account details."
+    },
+    "selectorOverrideTitle": {
+        "message": "Selector repair"
+    },
+    "selectorOverrideMeta": {
+        "message": "Point a feature at different markup when Reddit changes the page"
+    },
+    "selectorOverrideSummary": {
+        "message": "Tell a feature where to find something after Reddit moves it. Only parts of the page RES-Slim knows about, and only valid CSS selectors, can be saved. What you save stays on this device and is used instead of the built-in list."
+    },
+    "selectorOverrideLabel": {
+        "message": "Override JSON"
+    },
+    "selectorOverrideSave": {
+        "message": "Save overrides"
+    },
+    "selectorOverrideImport": {
+        "message": "Import JSON"
+    },
+    "selectorOverrideExport": {
+        "message": "Export JSON"
+    },
+    "selectorOverrideReset": {
+        "message": "Restore bundled"
     },
     "settingsConsoleThemeLabel": {
         "message": "Theme"
@@ -1644,7 +1677,7 @@
         "message": "When loading selftext from an Aa+ expando, auto expand enclosed expandos."
     },
     "showImagesAutoExpandSelfTextFirstVisibleNonMutedTitle": {
-        "message": "Auto Expand Self Text First Visible Non Muted"
+        "message": "Expand the first video with sound in self text"
     },
     "showImagesAutoExpandSelfTextFirstVisibleNonMutedDesc": {
         "message": "In selftexts, expand the first visible potentially non-muted expando."
@@ -1692,7 +1725,7 @@
         "message": "Autoplay inline videos."
     },
     "showImagesHidePinnedRedditVideosTitle": {
-        "message": "Hide pinned reddit videos"
+        "message": "Hide pinned Reddit videos"
     },
     "showImagesHidePinnedRedditVideosDesc": {
         "message": "Hide pinned Reddit-hosted videos when scrolling on comments page."

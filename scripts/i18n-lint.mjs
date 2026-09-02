@@ -73,6 +73,38 @@ if (missing.length) {
 	process.exit(1);
 }
 
+// Reddit is a proper noun in anything a reader sees. Fourteen strings spelled it
+// "reddit", which reads as a typo next to the forty that do not - and the drift
+// only ever goes one way, because the code around them says `reddit` everywhere
+// legitimately. Hostnames, the `old.reddit` spelling, subreddit paths and code
+// identifiers are all exempt; this looks only at the message text and at option
+// titles and descriptions.
+const LOWERCASE_REDDIT = /(^|[^.\w\/-])reddit(?![.\w\/-])/;
+
+function casingOffenders() {
+	const offenders = [];
+	for (const [key, entry] of Object.entries(locale)) {
+		const message = entry && typeof entry.message === 'string' ? entry.message : '';
+		if (LOWERCASE_REDDIT.test(message)) offenders.push(`locales/locales/en.json ${key}`);
+	}
+	for (const file of listSources()) {
+		const relative = path.relative(repoRoot, file).replace(/\\/g, '/');
+		fs.readFileSync(file, 'utf8').split(/\r?\n/).forEach((line, index) => {
+			const copy = /(?:title|description):\s*'((?:[^'\\]|\\.)*)'/.exec(line);
+			if (copy && LOWERCASE_REDDIT.test(copy[1])) offenders.push(`${relative}:${index + 1}`);
+		});
+	}
+	return offenders;
+}
+
+const casing = casingOffenders();
+if (casing.length) {
+	console.error(`${casing.length} user-visible string${casing.length === 1 ? '' : 's'} spell${casing.length === 1 ? 's' : ''} Reddit in lowercase:\n`);
+	for (const entry of casing) console.error(`  ${entry}`);
+	console.error('\nCapitalise it, or - if it is a hostname or a path - write it as one.');
+	process.exit(1);
+}
+
 // The unused count needs the OPPOSITE definition to the missing check above.
 // 63 of the `i18n()` calls take a variable — `i18n(mod.moduleName)`,
 // `i18n(option.title)` — whose value is a literal elsewhere in the tree, and the

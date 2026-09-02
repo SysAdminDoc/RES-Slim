@@ -23,6 +23,12 @@ All notable changes to RES-Slim will be documented in this file.
   Reddit's own light page, whatever the setting said. Turning it on now sets both
   names rather than relying on the guard's leftover, so switching it on mid-page
   paints the extension's own surfaces too.
+- Settings copy says what an option does rather than how it does it. A dozen
+  descriptions named CSS properties, lifecycle stages or other modules; two
+  described things that no longer exist, including one that pointed at an
+  account switcher this fork does not ship. The two selector-repair panels are
+  translatable now instead of hardcoded English, the two renderers are called
+  "old Reddit" and "current Reddit" throughout, and Reddit is capitalised.
 - A post whose thumbnail slot holds one of Reddit's small cards instead of an
   image no longer squeezes that card into the 70px rail and pushes it into the
   first letter of the title. The row gets the same placeholder a post with no
