@@ -56,6 +56,12 @@ const NON_GATE_SCRIPTS = new Set([
 	// before a release, or after anything touching the manifest or the page-world
 	// injection.
 	'firefox:audit',
+	// Attaches to a browser a person started and measures the classic layout on
+	// whatever live reddit page is open in it. It cannot be a gate for the reason
+	// the layout keeps regressing in the first place: live current Reddit refuses
+	// an automated profile, so this needs a real signed-in session and the
+	// internet. Operator-run after anything that touches the classic layout.
+	'live-probe',
 ]);
 
 function declaredGates() {

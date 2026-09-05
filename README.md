@@ -187,6 +187,18 @@ console boots, and that the telemetry patch reaches the page world on MV2 as
 well as MV3. Set `FIREFOX_PATH` if yours is somewhere unusual, and pass
 `--headful` to watch it.
 
+`yarn live-probe` is the one check that needs the real internet, so it is manual
+and nowhere near `yarn verify`. Everything above runs against fixtures, which is
+what makes it fast and repeatable and also what stops it noticing Reddit changing
+its markup underneath the classic layout. Start Chrome with
+`--remote-debugging-port=9222` on a profile that has the unpacked extension and
+is signed in, open the Reddit page you want measured, and run it. It attaches to
+that browser, measures the vote column offset, the arrow glyph, the thumbnail
+box, the title size, the comment indent and the sidebar width, computes the
+contrast on the vote score and arrow, and prints a table saying which numbers
+moved. It only reads: it will not navigate, click or resize the tab it finds, and
+if no tab is on Reddit it says so and stops rather than opening one.
+
 Both browser manifests come from `manifest.config.js`. Everything the two
 targets share is written once, each MV2 against MV3 difference is recorded with
 the reason for it, and a contract fails if the committed files stop matching.
