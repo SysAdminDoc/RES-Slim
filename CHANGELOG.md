@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- The subreddit blacklist takes a pasted list. It was one comma-separated field,
+  which is fine for the four subreddits you type by hand and useless for a list
+  you already have somewhere else. Paste one per line or comma-separated, in any
+  of the spellings a copied link gives you, and press Preview: it counts what is
+  valid, what is not a subreddit name, what is new and what you already had,
+  without writing anything. Importing merges rather than replaces, so it cannot
+  remove an entry, and it keeps the list exactly as it was so Undo can put it
+  back.
+
 - NSFW and spoiler posts can be revealed on current Reddit. Old Reddit hides a
   thumbnail by swapping in a placeholder image, which the module could already
   put back; current Reddit holds the decision in a property on its own component,
