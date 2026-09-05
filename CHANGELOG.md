@@ -2,6 +2,18 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Current Reddit stops loading forever on every listing, not just the first one.
+  The limiter armed one MutationObserver and kept it for the life of the
+  document, which on a renderer that never unloads meant it was still watching
+  the feed you scrolled away from while the listing you arrived at had none. It
+  is armed per route now and taken down by the route signal, so navigating away
+  disconnects it, puts back any feed sentinel it had parked, and removes its
+  control; arriving at the next listing arms a fresh one.
+
 ## v0.55.0, 2026-09-02
 
 ### Fixed

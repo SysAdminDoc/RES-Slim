@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readRepoFile, codeOnly } from './helpers/loadFlowModule.mjs';
+import { loadModule } from './helpers/loadModule.mjs';
 
 // Current Reddit navigates without unloading. Nothing in the module lifecycle
 // knew that: a page stage ran once, so a module that only became eligible after
@@ -94,7 +95,9 @@ test('work a route change starts is bound to that route, not to the page', () =>
 });
 
 test('a route change aborts the previous route scope and starts a new one', () => {
-	assert.match(modules, /export function getRouteSignal\(\): AbortSignal/);
+	// `getRouteSignal` is not asserted here any more. That it *exists* was the
+	// only thing this file ever checked about it, and it existed for weeks with
+	// nothing calling it — so the claim is made below, by executing it.
 	assert.match(modules, /export function _startRouteScope\(\)/);
 	assert.match(modules, /routeController\.abort\(\);\s*\n\s*routeController = new AbortController\(\);/);
 	assert.match(init, /document\.addEventListener\('reddit\.urlChanged', \(\) => \{[\s\S]*?_startRouteScope\(\);/);
@@ -152,4 +155,63 @@ test('the memoized page type is cleared before the new route is judged', () => {
 	assert.ok(clearAt > -1, 'the memoized page type has to be cleared');
 	assert.ok(runAt > -1);
 	assert.ok(clearAt < runAt, 'clearing after the stages run judges them against the page that was left');
+});
+
+// The claim the three assertions above cannot make: that a module actually
+// subscribes to the route scope, that the observer it registered for one route
+// is gone when that route ends, and that the next route gets a live one.
+//
+// `infiniteScroll`'s current-Reddit limiter is the case. Its observer used to say
+// "deliberately for the life of the page", which on a renderer that never unloads
+// meant watching the feed the reader scrolled away from while the listing they
+// arrived at had none — and a page stage runs once, so it never came back.
+test('a route-scoped observer dies with its route and the next route gets a new one', async () => {
+	const Modules = await loadModule('lib/core/modules/modules.js', 'route-scope-observer', {
+		dom: {
+			// No `xmlns`, so `appType()` answers d2x; `routename` is what makes
+			// `pageType()` answer `linklist` without guessing from the path.
+			url: 'https://www.reddit.com/r/all/',
+			html: '<!doctype html><html><body>' +
+				'<shreddit-app routename="subreddit"></shreddit-app>' +
+				'<shreddit-feed></shreddit-feed>' +
+				'</body></html>',
+		},
+	});
+
+	// Count construction and disconnection rather than reading the source. jsdom
+	// gives a real MutationObserver, so this is the observer the module built.
+	const live = new Set();
+	const Real = globalThis.MutationObserver;
+	globalThis.MutationObserver = class extends Real {
+		observe(...args) { live.add(this); return super.observe(...args); }
+		disconnect(...args) { live.delete(this); return super.disconnect(...args); }
+	};
+
+	try {
+		const infiniteScroll = Modules.get('infiniteScroll');
+		infiniteScroll.options.limitCurrentReddit.value = true;
+		infiniteScroll.options.currentRedditLimit.value = '1';
+
+		infiniteScroll.contentStart(new AbortController().signal);
+		assert.equal(live.size, 1, 'the limiter arms on the listing it starts on');
+		assert.ok(document.querySelector('.rsm-infiniteScroll-limit'), 'and injects its control');
+
+		// Exactly what `init.js` does on `reddit.urlChanged`, in that order: abort
+		// the scope the reader is leaving, then let the listeners run.
+		Modules._startRouteScope();
+		assert.equal(live.size, 0, 'the observer registered for that route is disconnected when it ends');
+		assert.equal(document.querySelector('.rsm-infiniteScroll-limit'), null, 'and its control goes with it');
+
+		document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+		assert.equal(live.size, 1, 'the next listing gets a live observer, not the corpse of the last one');
+		assert.ok(document.querySelector('.rsm-infiniteScroll-limit'));
+
+		// Twice, because a re-arm that only works once is the same bug later.
+		Modules._startRouteScope();
+		assert.equal(live.size, 0);
+		document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+		assert.equal(live.size, 1);
+	} finally {
+		globalThis.MutationObserver = Real;
+	}
 });
