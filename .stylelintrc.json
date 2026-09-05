@@ -12,7 +12,14 @@
   "rules": {
     "@stylistic/indentation": "tab",
     "alpha-value-notation": null,
-    "at-rule-prelude-no-invalid": null,
+    "at-rule-prelude-no-invalid": [
+      true,
+      {
+        "ignoreAtRules": [
+          "function"
+        ]
+      }
+    ],
     "color-named": null,
     "color-function-notation": null,
     "declaration-property-value-disallowed-list": null,

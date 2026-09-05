@@ -135,12 +135,31 @@ test('the MV2 and MV3 shapes are each actually correct for their target', () => 
 	assert.ok(committed.firefox.page_action && !committed.firefox.action);
 });
 
-test('the page-world script stays web accessible on both, whatever shape the key takes', () => {
+test('the page-world scripts stay web accessible on both, whatever shape the key takes', () => {
 	// The delivery fix for `eventTrackingSabotage` depends on this file being
 	// loadable by URL from a reddit page, and it is listed in two different
 	// shapes. Losing it on one target would make the module silently inert there
 	// again, which is exactly the failure it took a browser to find the first
 	// time.
-	assert.ok(committed.chrome.web_accessible_resources[0].resources.includes('trackingSabotage.entry.js'));
-	assert.ok(committed.firefox.web_accessible_resources.includes('trackingSabotage.entry.js'));
+	//
+	// Every page-world entry, not just the first one. `shredditReveal.entry.js`
+	// arrived later and this test was not widened with it, so for a while the
+	// NSFW reveal could have been dropped from either manifest with nothing
+	// failing — the same regression this test exists to prevent, one file over.
+	// Derived from the directory rather than listed, so the next one is covered
+	// on the day it is written.
+	const pageWorld = fs.readdirSync(path.join(repoRoot, 'lib', 'pageWorld'))
+		.filter(name => name.endsWith('.entry.js'));
+	assert.ok(pageWorld.length >= 2, `expected the page-world entries, found ${pageWorld.join(', ') || 'none'}`);
+
+	for (const entry of pageWorld) {
+		assert.ok(
+			committed.chrome.web_accessible_resources[0].resources.includes(entry),
+			`${entry} is not web accessible on chrome, so the page cannot load it`,
+		);
+		assert.ok(
+			committed.firefox.web_accessible_resources.includes(entry),
+			`${entry} is not web accessible on firefox, so the page cannot load it`,
+		);
+	}
 });

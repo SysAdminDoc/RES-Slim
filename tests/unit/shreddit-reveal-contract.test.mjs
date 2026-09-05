@@ -141,3 +141,36 @@ test('the module injects the page script by src, which is the only form MV3 allo
 	assert.doesNotMatch(mod, /script\.textContent\s*=/, 'an inline page script is silently blocked under MV3');
 	assert.match(mod, /if \(isAppType\('d2x'\)\)/, 'the old-Reddit watcher must not run on current Reddit');
 });
+
+test('a prototype that cannot be patched is a post that stays blurred, not an unhandled rejection', async () => {
+	// Assigning to a prototype can throw on its own — a frozen prototype, or a
+	// non-writable method. This runs inside a `then`, and nothing awaits what
+	// `installReveal` returns, so a throw here would surface as an unhandled
+	// rejection in the console of somebody's real reddit tab.
+	class Frozen {}
+	Object.defineProperty(Frozen.prototype, 'render', {
+		value() { return 'rendered'; },
+		writable: false,
+		configurable: false,
+	});
+	Object.freeze(Frozen.prototype);
+
+	await assert.doesNotReject(() => patchPrototype(fakeRegistry({ 'x-frozen': Frozen }), 'x-frozen', 'render', () => {}));
+	// And the element still renders, unpatched.
+	assert.equal(new Frozen().render(), 'rendered');
+});
+
+test('the marker and the assignment succeed together or not at all', () => {
+	// The double-install guard reads the marker. If the marker were set while the
+	// assignment failed, a second install would refuse to patch a prototype that
+	// was never patched; if the assignment succeeded while the marker failed, a
+	// second install would stack another proxy. They are one step.
+	const source = readRepoFile('lib/utils/shredditReveal.js');
+	const guarded = source.slice(source.indexOf('try {'), source.indexOf('}, () => {'));
+	assert.match(guarded, /Object\.defineProperty\(target, '__resSlimReveal'/);
+	assert.match(guarded, /ctor\.prototype\[method\] = wrapped;/);
+	assert.ok(
+		guarded.indexOf('Object.defineProperty') < guarded.indexOf('ctor.prototype[method] = wrapped'),
+		'the marker has to be in place before the wrapper any other install could see',
+	);
+});

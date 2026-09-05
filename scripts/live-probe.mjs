@@ -136,7 +136,12 @@ function measureInPage() {
 			out.contrast.voteArrow = ratio(arrowInk, groundOf(button));
 		}
 
-		const score = group.querySelector('faceplate-number, span:not(:has(button))');
+		// Not one comma-separated query. `querySelector` returns the first match in
+		// *document order*, not the first selector that matches, so a hidden label
+		// or an icon wrapper sitting before the real score would have been measured
+		// instead of it — and the number would have looked plausible.
+		const score = group.querySelector('faceplate-number') ||
+			[...group.children].find(el => el.matches('span') && !el.querySelector('button') && /\d/.test(el.textContent || ''));
 		if (score) {
 			out.contrast.voteScore = ratio(parse(getComputedStyle(score).color), groundOf(score));
 		}
@@ -232,8 +237,14 @@ for (const row of rows) {
 }
 console.log('');
 
+// `process.exitCode` rather than `process.exit(1)`. Everything above is a table
+// somebody is meant to read, and on Windows stdout to a pipe is asynchronous —
+// `process.exit` would cut it off mid-print for anyone redirecting the output to
+// a file, which is exactly what you do with a report. Setting the code lets the
+// script end on its own with the writes drained.
 if (failures) {
 	console.log(`live-probe: ${failures} measurement(s) moved${skipped ? `, ${skipped} not on this page` : ''}.`);
-	process.exit(1);
+	process.exitCode = 1;
+} else {
+	console.log(`live-probe: everything measured matches${skipped ? `, ${skipped} not on this page` : ''}.`);
 }
-console.log(`live-probe: everything measured matches${skipped ? `, ${skipped} not on this page` : ''}.`);
