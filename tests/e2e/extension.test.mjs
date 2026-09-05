@@ -5421,6 +5421,31 @@ const SHREDDIT_A11Y_MODULES = Object.fromEntries([
 	'layoutTweaks',
 ].map(id => [id, true]));
 
+// The surfaces this extension repaints inside reddit's own shadow roots.
+//
+// `installShadowStyles` puts a sheet in each `shreddit-post` root and
+// `exposeShadowParts` opens the rest to the document sheet's `::part` rules, so
+// the classic vote column is painted by us and lives somewhere no light-DOM
+// selector can reach. Every include built from `document.querySelectorAll` stops
+// at that boundary, which is why the score being unreadable on the one light
+// palette had to be found by hand.
+//
+// The score is a real element (`span` / `faceplate-number`) coloured by
+// `--rsm-vote-ink`, so `color-contrast` can measure it. The arrow beside it is a
+// `::before`, which axe does not evaluate at all — the listing geometry test
+// measures that one directly.
+// Per surface, because axe throws rather than shrugging when an include matches
+// nothing, and a listing has no comments to reach into.
+const SHREDDIT_SHADOW_A11Y_ROOTS = {
+	listing: [
+		{ fromShadowDom: ['shreddit-post', '.rpl-vote-button-group'] },
+	],
+	thread: [
+		{ fromShadowDom: ['shreddit-post', '.rpl-vote-button-group'] },
+		{ fromShadowDom: ['shreddit-comment', '.rpl-vote-button-group'] },
+	],
+};
+
 function shredditInjectedRoots(page) {
 	return page.evaluate(() => {
 		// Both prefixes this extension injects under. `res-slim-` is the older one
@@ -5477,9 +5502,19 @@ for (const palette of ['classic', 'oled']) {
 
 			let builder = new AxeBuilder({ page }).withTags(WCAG_TAGS);
 			for (const root of roots) builder = builder.include(root);
+			for (const shadow of SHREDDIT_SHADOW_A11Y_ROOTS[surface]) builder = builder.include(shadow);
 			const results = await builder.analyze();
 
 			assert.ok(results.passes.length > 0, 'axe found no passing checks, so it inspected nothing');
+			// Every root above this line is something this extension put in the
+			// document, and a light-DOM selector stops at a shadow boundary — so
+			// without the `fromShadowDom` includes the sweep never reached the
+			// controls this extension repaints inside reddit's own roots. axe reports
+			// a node it found across a boundary with an array target, which is what
+			// makes this checkable rather than assumed.
+			const crossedBoundary = [...results.passes, ...results.incomplete, ...results.violations]
+				.some(result => result.nodes.some(node => node.target.some(part => Array.isArray(part))));
+			assert.ok(crossedBoundary, 'the sweep never crossed a shadow boundary, so the vote column was not inspected');
 			assert.deepEqual(results.violations.map(v => v.id), [],
 				`accessibility violations in current Reddit injected UI (${surface}, ${palette}):\n  ${describeViolations(results.violations)}`);
 
