@@ -24,7 +24,26 @@ All notable changes to RES-Slim will be documented in this file.
   then covered up. Spoilers stay off by default, the whole module stays off by
   default, and the age gate on the way into a subreddit is untouched.
 
+### Changed
+
+- The supported Node versions are the long-term-support lines, and nothing else:
+  22.18+, 24.11+, or 26 and above. The old range was inherited from Babel and its
+  open upper end also accepted Node 25, which was never an LTS line and stopped
+  getting security fixes in June 2026. `yarn install` refuses anything outside
+  the range and says what to install.
+
+- Dependency refresh: four high-severity advisories in a build-time dependency
+  are gone, and eslint, stylelint, playwright, puppeteer and postcss moved up a
+  patch or minor. Nothing here ships to a browser.
+
 ### Fixed
+
+- An older build that meets a newer local database says so. Rolling back to an
+  earlier build is the only way to recover from a bad one here, and doing that
+  used to make user tags, vote history, saved content, the media manifest and
+  visited posts all go blank at once with a generic failure - which looks exactly
+  like the data having been deleted. Nothing was deleted; the database refused to
+  open. It now says that, and what to do about it.
 
 - The classic layout stands down in Windows High Contrast. That mode discards
   author colours, shadows and background images, which is what the layer is made
