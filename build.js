@@ -170,6 +170,9 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 			// as a web-accessible file that a content script points a <script src> at
 			// — the inline form MV3 forbids is what left eventTrackingSabotage inert.
 			'trackingSabotage.entry': './lib/pageWorld/trackingSabotage.entry.js',
+			// Same reason, different toggle: the reveal is off by default, so it is
+			// its own file rather than a branch a reader who never enabled it runs.
+			'shredditReveal.entry': './lib/pageWorld/shredditReveal.entry.js',
 			manifest,
 			options: './lib/options/options.scss',
 			res: './lib/css/res.scss',
@@ -281,6 +284,7 @@ async function buildForBrowser(targetName, { manifest, browserName, browserMinVe
 							'options.entry.js',
 							'background.entry.js',
 							'trackingSabotage.entry.js',
+							'shredditReveal.entry.js',
 							'res.css',
 							'options.css',
 							...VENDORED_ASSETS.map(({ file }) => file),

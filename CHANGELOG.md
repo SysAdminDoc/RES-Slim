@@ -4,6 +4,17 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- NSFW and spoiler posts can be revealed on current Reddit. Old Reddit hides a
+  thumbnail by swapping in a placeholder image, which the module could already
+  put back; current Reddit holds the decision in a property on its own component,
+  where no stylesheet and nothing in the page can reach it. The module now hooks
+  those components directly, in the page world, so the same two toggles work on
+  both. Nothing is fetched: every post it reveals is one Reddit already sent and
+  then covered up. Spoilers stay off by default, the whole module stays off by
+  default, and the age gate on the way into a subreddit is untouched.
+
 ### Fixed
 
 - The classic layout stands down in Windows High Contrast. That mode discards

@@ -115,7 +115,8 @@
 				"prompt.entry.js",
 				"options.css",
 				"options.html",
-				"trackingSabotage.entry.js"
+				"trackingSabotage.entry.js",
+				"shredditReveal.entry.js"
 			],
 			"matches": [
 				"https://*.reddit.com/*"

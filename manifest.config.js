@@ -97,6 +97,7 @@ const WEB_ACCESSIBLE_RESOURCES = [
 	'options.css',
 	'options.html',
 	'trackingSabotage.entry.js',
+	'shredditReveal.entry.js',
 ];
 
 const ICONS = { 48: 'icon48.png', 128: 'icon128.png' };
