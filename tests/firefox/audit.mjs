@@ -67,6 +67,14 @@ const FIXTURE = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'mhtml'
 const SHREDDIT_LISTING = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'listing.html'), 'utf8');
 const SHREDDIT_THREAD = fs.readFileSync(path.join(repoRoot, 'tests', 'fixtures', 'shreddit', 'thread.html'), 'utf8');
 
+// Axe, read straight from the package. `@axe-core/playwright` drives Playwright
+// and this suite is Puppeteer over WebDriver BiDi, so the source is evaluated in
+// the page instead. Same axe-core either way - the wrapper is a transport.
+const AXE_SOURCE = fs.readFileSync(path.join(repoRoot, 'node_modules', 'axe-core', 'axe.min.js'), 'utf8');
+
+// The same set the Chromium suite sweeps with.
+const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
+
 function bodyFor(url) {
 	if (url.includes('old.reddit.com')) return FIXTURE;
 	if (url.includes('/comments/')) return SHREDDIT_THREAD;
@@ -87,15 +95,20 @@ function watchForErrors(page, where) {
 // between them the way a reader does.
 async function interceptReddit(page) {
 	await page.setRequestInterception(true);
+	// Answering a request whose page has gone rejects, and an unhandled rejection
+	// takes the whole run down after every check has already passed — which is how
+	// a green audit came to exit 1. A request nobody is waiting for any more is not
+	// a finding; the errors that are one go through `watchForErrors`.
+	const settle = promise => { if (promise && promise.catch) promise.catch(() => {}); };
 	page.on('request', request => {
 		const url = request.url();
 		if (/reddit\.com/.test(url) && !/\.(?:js|css|png|jpe?g|gif|svg|woff2?|json|mp4)(?:$|\?)/i.test(url)) {
-			return request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: bodyFor(url) });
+			return settle(request.respond({ status: 200, contentType: 'text/html; charset=utf-8', body: bodyFor(url) }));
 		}
 		if (/^https?:\/\//.test(url) && !url.startsWith('http://127.0.0.1')) {
-			return request.respond({ status: 200, contentType: 'text/plain', body: '' });
+			return settle(request.respond({ status: 200, contentType: 'text/plain', body: '' }));
 		}
-		return request.continue();
+		return settle(request.continue());
 	});
 }
 
@@ -387,6 +400,96 @@ async function main() {
 				collapseWorks ? `${thread.comments} comments, [-] marker, collapse on click` : `comments=${thread.comments} marker=${thread.marker} collapsed=${thread.collapsedAfterClick}`);
 		} catch (e) {
 			record('a comments control works on current Reddit', false, e.message.split('\n')[0]);
+		}
+
+		// --- a second palette, and Axe over what this extension injected ---------
+		//
+		// Everything above runs on Classic, which is the default and the only light
+		// one. A palette that only ever gets exercised on Chromium is a palette
+		// nobody has seen on Gecko, and the two engines disagree about exactly the
+		// things this layer leans on — `:host-context`, `color-mix`, constructed
+		// stylesheets. Firefox takes the node path for shadow styles where Chromium
+		// adopts a sheet, so this is the half where that difference shows.
+		// The palette is swapped by writing the class rather than the option.
+		// `page.evaluate` runs in the page's world, where `browser.storage` does not
+		// exist, and BiDi will not navigate to a `moz-extension://` page or expose
+		// the console's cross-origin frame — so the option round-trip is not
+		// reachable from here. It is covered anyway, by the MV2 background check
+		// above and by the Chromium suite. What is *not* covered anywhere else is
+		// whether a second palette's CSS paints on Gecko, and that is what the class
+		// exercises: the tokens are keyed on it, and nothing re-runs `apply()` to
+		// take it away again.
+		try {
+			await shredditPage.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded', timeout: 30000 });
+			await shredditPage.waitForSelector('shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+			await shredditPage.evaluate(() => {
+				document.documentElement.classList.remove('res-pageTheme--classic');
+				document.documentElement.classList.add('res-pageTheme--oled');
+			});
+			await new Promise(resolve => { setTimeout(resolve, 250); });
+
+			const dark = await shredditPage.evaluate(() => ({
+				classes: document.documentElement.className,
+				background: getComputedStyle(document.body).backgroundColor,
+				// The layout must not be a property of the palette. That was a real
+				// defect once: ten of the eleven palettes got Reddit's own geometry
+				// because the parity layer was gated on the Classic class.
+				refined: document.documentElement.classList.contains('res-pageTheme--refined'),
+				prepared: document.querySelectorAll('shreddit-post[data-res-shreddit-compat]').length,
+			}));
+
+			const darkOk = /res-pageTheme--oled/.test(dark.classes) && dark.refined && dark.prepared >= 3 &&
+				dark.background !== 'rgb(255, 255, 255)';
+			record('a second palette paints current Reddit on Firefox, and keeps the layout', darkOk,
+				`body ${dark.background}, refined=${dark.refined}, ${dark.prepared} posts adapted`);
+
+			// Axe, from the packaged source rather than the Playwright wrapper — that
+			// one only drives Playwright, and this suite is Puppeteer over BiDi.
+			await shredditPage.evaluate(AXE_SOURCE);
+			const a11y = await shredditPage.evaluate(async tags => {
+				// Scoped to what this extension paints. Reddit's own markup fails
+				// plenty that this fork did not write and cannot fix.
+				//
+				// The vote column is always in the list, and on purpose: it is the one
+				// surface guaranteed to exist on any listing, and it is inside
+				// `shreddit-post`'s shadow root, which is precisely where the two
+				// engines differ. Chromium adopts a constructed stylesheet there;
+				// Firefox takes the `<style>` node path. Sweeping only the light DOM
+				// would skip the half that is Gecko-specific.
+				const SURFACE = '[id^="rsm-"], [class*="rsm-"], [id^="res-slim-"], [class*="res-slim-"]';
+				const skip = new Set([document.documentElement, document.body]);
+				const light = [...document.querySelectorAll(SURFACE)]
+					.filter(el => !skip.has(el))
+					.filter(el => !(el.parentElement && el.parentElement.closest(SURFACE)))
+					.map(el => (el.id ? `#${el.id}` : `.${el.className.toString().trim().split(/\s+/).find(c => c.startsWith('rsm-'))}`))
+					.filter((value, index, all) => value && all.indexOf(value) === index);
+
+				const include = [...light.map(selector => [selector]), { fromShadowDom: ['shreddit-post', '.rpl-vote-button-group'] }];
+				// eslint-disable-next-line no-undef
+				const results = await axe.run({ include }, { runOnly: { type: 'tag', values: tags } });
+				// A node found across a shadow boundary carries an array target. Without
+				// this the sweep could pass having inspected only the light DOM.
+				const crossed = [...results.passes, ...results.incomplete, ...results.violations]
+					.some(result => result.nodes.some(node => node.target.some(part => Array.isArray(part))));
+				return {
+					roots: include.length,
+					light: light.length,
+					crossed,
+					passes: results.passes.length,
+					violations: results.violations.map(v => `${v.id} (${v.nodes.length})`),
+				};
+			}, WCAG_TAGS);
+
+			// `passes > 0` stops a run that inspected nothing from reading as a clean
+			// one, and `crossed` stops one that inspected only the light DOM from
+			// reading as a sweep of the shadow paint.
+			const a11yOk = a11y.passes > 0 && a11y.crossed && a11y.violations.length === 0;
+			record('the controls this extension paints on current Reddit are clean under Axe on Firefox', a11yOk,
+				a11yOk ?
+					`${a11y.roots} surfaces (${a11y.light} in the light DOM, plus the shadow vote column), ${a11y.passes} checks passed` :
+					a11y.violations.join(', ') || (a11y.crossed ? 'axe inspected nothing' : 'the sweep never crossed a shadow boundary'));
+		} catch (e) {
+			record('a second palette paints current Reddit on Firefox, and keeps the layout', false, e.message.split('\n')[0]);
 		}
 
 		// Not reachable from here, and said so rather than left unmentioned.
