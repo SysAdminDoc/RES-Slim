@@ -215,3 +215,50 @@ test('a route-scoped observer dies with its route and the next route gets a new 
 		globalThis.MutationObserver = Real;
 	}
 });
+
+// The other half of arming per route, and the one that is easy to get wrong.
+//
+// `reddit.urlChanged` is driven fastest by the Navigation API's `navigatesuccess`,
+// which fires when the URL commits — before the new view renders, because reddit
+// swaps the URL first. So on arrival the feed is routinely not in the document
+// yet. A straight lookup at that moment finds nothing, and going from one
+// subreddit listing to another keeps `shreddit-app`'s `pagetype` and `routename`
+// identical, so there is no second event to try again on: the limiter would stay
+// unarmed for that listing and every scroll after it.
+test('arming waits for a feed that has not rendered yet', async () => {
+	const Modules = await loadModule('lib/core/modules/modules.js', 'route-scope-feed-wait', {
+		dom: {
+			url: 'https://www.reddit.com/r/all/',
+			html: '<!doctype html><html><body>' +
+				'<shreddit-app routename="subreddit"></shreddit-app>' +
+				'<shreddit-feed></shreddit-feed>' +
+				'</body></html>',
+		},
+	});
+
+	const infiniteScroll = Modules.get('infiniteScroll');
+	infiniteScroll.options.limitCurrentReddit.value = true;
+	infiniteScroll.options.currentRedditLimit.value = '1';
+
+	infiniteScroll.contentStart(new AbortController().signal);
+	assert.ok(document.querySelector('.rsm-infiniteScroll-limit'), 'armed on the listing it started on');
+
+	// Leave the route, and take the feed with it the way reddit does.
+	Modules._startRouteScope();
+	const feed = document.querySelector('shreddit-feed');
+	if (feed) feed.remove();
+	document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+
+	// Nothing to arm onto yet, and nothing injected on the strength of hoping.
+	assert.equal(document.querySelector('.rsm-infiniteScroll-limit'), null, 'must not arm before the new feed exists');
+
+	// Reddit renders the new listing a moment later. No further `reddit.urlChanged`
+	// arrives — this is the case that used to be lost.
+	document.body.append(document.createElement('shreddit-feed'));
+	const deadline = Date.now() + 3000;
+	while (Date.now() < deadline && !document.querySelector('.rsm-infiniteScroll-limit')) {
+		// eslint-disable-next-line no-await-in-loop
+		await new Promise(resolve => { setTimeout(resolve, 10); });
+	}
+	assert.ok(document.querySelector('.rsm-infiniteScroll-limit'), 'the limiter arms once the feed arrives');
+});

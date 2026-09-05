@@ -61,6 +61,13 @@ function staticFixture(file) {
 function fulfillShredditRequest(route, documentFixture) {
 	const request = route.request();
 	const url = new URL(request.url());
+	// `page.route('**/*')` catches `chrome-extension://` too, so the catch-all at
+	// the bottom of this function was answering the extension's own
+	// web-accessible resources with an empty `text/plain` body. A page-world
+	// script starved that way still fires `load`, and the injector removes the
+	// element on load, so the page ended up with no script, no error, and no
+	// trace that anything had been served at all.
+	if (url.protocol === 'chrome-extension:') return route.continue();
 	if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
 		return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(documentFixture) });
 	}
@@ -6131,6 +6138,194 @@ test('the classic layout stands down under forced colours and gives reddit its c
 	await page.emulateMedia({ forcedColors: 'none' });
 	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
 	assert.equal(await nativeIconDisplay(), 'none', 'leaving the mode restores the classic layout');
+
+	await page.close();
+});
+
+// The reveal on current Reddit, checked in the page world where it lives.
+//
+// `eventTrackingSabotage` is the cautionary tale this follows: its contract built
+// the same page script and ran it in a node:vm against fake globals, which proved
+// the logic perfectly and could never observe that MV3 was refusing to deliver
+// it. The module sat default-on and inert for its whole life. So nothing here
+// executes the script itself — the page is asked what it has.
+//
+// The fixtures are static HTML with declarative shadow roots and define no custom
+// elements at all, so the page defines a Lit-shaped one the way reddit would.
+// `whenDefined` resolves whether the definition happens before or after the hook
+// is installed, which is the property that makes this race-free in the first
+// place, and defining it late is the harder of the two orders.
+test('current Reddit posts blurred by a Lit property are revealed in the page world', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { nsfwThumbnails: true },
+			// Spoilers stay off, so the same run proves the other toggle is not
+			// quietly along for the ride.
+			'RESoptions.nsfwThumbnails': { showNsfw: { value: true }, showSpoilers: { value: false } },
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('shreddit-post', { timeout: 30000 });
+
+	const measured = await page.evaluate(async () => {
+		// Reddit's element, near enough: a class whose render() is what paints the
+		// blur, holding the decision in a property no CSS and no document script
+		// can reach.
+		class BlurredContainer extends HTMLElement {
+			render() { this.rendered = (this.rendered || 0) + 1; return this.blurred; }
+		}
+		customElements.define('shreddit-blurred-container', BlurredContainer);
+
+		class Spoiler extends HTMLElement {
+			render() { return this.revealed; }
+		}
+		customElements.define('shreddit-spoiler', Spoiler);
+
+		// The hook lands a microtask after `whenDefined` resolves.
+		const deadline = Date.now() + 5000;
+		while (Date.now() < deadline && !customElements.get('shreddit-blurred-container').prototype.render.__resSlimReveal) {
+			// eslint-disable-next-line no-await-in-loop -- polling for the hook is the point
+			await new Promise(resolve => { setTimeout(resolve, 25); });
+		}
+
+		const nsfw = new BlurredContainer();
+		nsfw.reason = 'nsfw';
+		nsfw.blurred = true;
+		nsfw.render();
+
+		const spoiler = new BlurredContainer();
+		spoiler.reason = 'spoiler';
+		spoiler.blurred = true;
+		spoiler.render();
+
+		const text = new Spoiler();
+		text.revealed = false;
+		text.render();
+
+		return {
+			patched: !!customElements.get('shreddit-blurred-container').prototype.render.__resSlimReveal,
+			nsfwBlurred: nsfw.blurred,
+			nsfwRendered: nsfw.rendered,
+			spoilerBlurred: spoiler.blurred,
+			textRevealed: text.revealed,
+			// The injected element tidies itself up once it has run.
+			scriptLeftBehind: !!document.querySelector('script[data-res-slim-reveal]'),
+		};
+	});
+
+	assert.equal(measured.patched, true, 'the page world never got the reveal hook');
+	assert.equal(measured.nsfwBlurred, false, 'an nsfw post must be revealed with showNsfw on');
+	assert.equal(measured.nsfwRendered, 1, 'the element still renders exactly once per call');
+	assert.equal(measured.spoilerBlurred, true, 'a spoiler must stay blurred while showSpoilers is off');
+	assert.equal(measured.textRevealed, false, 'an inline text spoiler must stay hidden too');
+	assert.equal(measured.scriptLeftBehind, false, 'the injected script element should remove itself');
+
+	await page.close();
+});
+
+test('the reveal hook is absent when the module is off', async t => {
+	// The other half of the claim. Without this, a hook that installed
+	// unconditionally would pass every assertion above.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({ 'RES.modulePrefs': { nsfwThumbnails: false } }, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('shreddit-post', { timeout: 30000 });
+
+	const measured = await page.evaluate(async () => {
+		class BlurredContainer extends HTMLElement {
+			render() { return this.blurred; }
+		}
+		customElements.define('shreddit-blurred-container', BlurredContainer);
+		await new Promise(resolve => { setTimeout(resolve, 500); });
+
+		const el = new BlurredContainer();
+		el.reason = 'nsfw';
+		el.blurred = true;
+		el.render();
+		return { patched: !!BlurredContainer.prototype.render.__resSlimReveal, blurred: el.blurred };
+	});
+
+	assert.equal(measured.patched, false, 'a disabled module must not patch the page');
+	assert.equal(measured.blurred, true, 'and a blurred post must stay blurred');
+
+	await page.close();
+});
+
+// The document_start replay, which is the half that bypasses every option.
+//
+// `pageTheme.onInit` paints the last-committed theme from localStorage before
+// options have loaded, so the page is not white while the module lifecycle
+// starts. That cache was written by whichever session ran last and knows nothing
+// about the mode this one is in — so a reader who turned High Contrast on since
+// then got the refined layout replayed at document_start, shadow sheet included,
+// until `always` corrected it. A flash of the exact half-erased layout the
+// stand-down exists to prevent.
+//
+// Sampling the class list after `domcontentloaded` cannot see it: `always` has
+// already corrected the page by then, and a test written that way passes with
+// the fix removed — it was, and it did. So the page records every value the
+// class attribute ever held, from an init script that runs before the content
+// script does, and the assertion is about that history rather than the end state.
+test('a cached refined layout is not replayed at document_start under forced colours', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { pageTheme: true },
+			'RESoptions.pageTheme': { theme: { value: 'classic' }, refinedLayout: { value: true } },
+		}, resolve);
+	}));
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+
+	// A first visit with the mode off. This is what writes the cache.
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme--refined', { timeout: 30000 });
+	const cached = await page.evaluate(() => localStorage.getItem('RES_pageTheme'));
+	assert.match(cached || '', /res-pageTheme--refined/, 'the cache must actually hold the refined layout, or this proves nothing');
+
+	// The reader turns High Contrast on, then opens another page.
+	await page.emulateMedia({ forcedColors: 'active' });
+	await page.addInitScript(() => {
+		window.__rsmClassHistory = [];
+		// Observed from `document`, not from `documentElement`: an init script runs
+		// before the root element exists, so observing it directly throws and the
+		// recorder silently records nothing — which reads exactly like a page that
+		// never set the class.
+		new MutationObserver(records => {
+			for (const record of records) {
+				if (record.target === document.documentElement) {
+					window.__rsmClassHistory.push(document.documentElement.className);
+				}
+			}
+		}).observe(document, { attributes: true, subtree: true, attributeFilter: ['class'] });
+	});
+	await page.goto('https://www.reddit.com/r/example/?second', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('shreddit-post', { timeout: 30000 });
+
+	const history = await page.evaluate(() => window.__rsmClassHistory || []);
+	assert.ok(history.length > 1, `the recorder saw ${history.length} class changes, so it was not watching`);
+	assert.ok(history.some(c => /res-pageTheme/.test(c)), 'the palette still replays early; that is what the cache is for');
+	assert.deepEqual(
+		history.filter(c => /res-pageTheme--refined/.test(c)),
+		[],
+		'the stale cache replayed the refined layout into forced colours at some point during load',
+	);
 
 	await page.close();
 });
