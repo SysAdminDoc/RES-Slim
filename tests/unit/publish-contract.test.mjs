@@ -100,10 +100,12 @@ test('the artifacts are hashed, renamed, and their digests shipped', () => {
 	assert.doesNotMatch(source, /node -e .*readFileSync/, 'cmd.exe breaks nested quotes around absolute Windows paths');
 	assert.match(source, /mkdtempSync\(path\.join\(os\.tmpdir\(\), 'res-slim-publish-'\)\)/, 'pre-push verification removes dist before GitHub receives staged files');
 	assert.doesNotMatch(source, /const staging = path\.join\(repoRoot, 'dist'/, 'release staging must survive the pre-push build');
-	// `dist/zip` is produced by `yarn build`, whose `prebuild` rimrafs `dist` —
-	// so the artifacts are from this run. Stated in the script, because a stale
-	// artifact is the one failure that looks exactly like success.
-	assert.match(source, /rimrafs `dist`/);
+	// This used to assert the script still said "rimrafs `dist`", which was how it
+	// argued the artifacts were from this run rather than an earlier one. That
+	// argument is gone because something stronger replaced it: the ZIPs are built
+	// in a fresh worktree of the tag, which cannot hold a stale artifact because
+	// it did not exist a moment ago. The freshness claim is asserted below, at the
+	// mechanism that now provides it, rather than at prose about the old one.
 });
 
 test('the result is read back off GitHub rather than assumed', () => {
@@ -132,4 +134,30 @@ test('the release notes come from the committed CHANGELOG, not a second copy', (
 	assert.match(source, /function releaseNotes\(/);
 	assert.match(source, /--notes-file/);
 	assert.ok(!/--notes ["']/.test(source), 'inline notes are a second copy of the changelog');
+});
+
+// The artifacts have to be what the tag says, not what this directory holds.
+//
+// The dirty check above is a real guard, but it reads `git status --porcelain`
+// and that does not list ignored paths — so anything the bundler reads from one
+// is outside it. `node_modules` is the obvious case: a locally edited dependency
+// is invisible to `git status` and lands in the bundle with nothing to say so.
+test('the ZIPs are built from a clean worktree of the tag, not from the working directory', () => {
+	assert.match(source, /function buildArtifactsFromTag\(\)/);
+	assert.match(source, /git worktree add --detach/, 'the tag has to be checked out somewhere of its own');
+	assert.match(source, /yarn install --frozen-lockfile/, 'the dependencies must come from the committed lockfile');
+	assert.match(source, /node build\.js --mode production --zip --browsers chrome,firefox/);
+
+	// The zip directory has to be the worktree's, or all of the above is theatre.
+	assert.match(source, /const zipDir = buildArtifactsFromTag\(\);/);
+	assert.doesNotMatch(
+		source,
+		/const zipDir = path\.join\(repoRoot/,
+		'reading dist/zip from this directory is what the tag build replaces',
+	);
+
+	// And it has to be cleaned up, or every publish leaves a full checkout plus a
+	// node_modules behind in the temp directory and a stale `git worktree list`
+	// entry in the repo.
+	assert.match(source, /git worktree remove --force/);
 });

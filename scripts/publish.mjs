@@ -32,8 +32,8 @@ function fail(message) {
 	process.exit(1);
 }
 
-function run(command, { capture = true, allowFailure = false } = {}) {
-	const result = spawnSync(command, { cwd: repoRoot, shell: true, encoding: 'utf8', stdio: capture ? 'pipe' : 'inherit' });
+function run(command, { capture = true, allowFailure = false, cwd = repoRoot } = {}) {
+	const result = spawnSync(command, { cwd, shell: true, encoding: 'utf8', stdio: capture ? 'pipe' : 'inherit' });
 	if (!allowFailure && result.status !== 0) {
 		if (capture) console.error(result.stdout || '', result.stderr || '');
 		fail(`\`${command}\` failed`);
@@ -120,10 +120,39 @@ if (skipFirefox) {
 
 // --- artifacts ----------------------------------------------------------------
 
-// `yarn verify` runs `yarn build`, whose `prebuild` rimrafs `dist`, so the zips
-// below are from this run and no earlier one. Checked rather than assumed: a
-// stale artifact is the one failure that looks exactly like success.
-const zipDir = path.join(repoRoot, 'dist', 'zip');
+// Built from the tag, in a worktree of its own, not from this directory.
+//
+// The gates above test the working tree, which is right — that is the thing
+// being reviewed. The artifacts are a different question: they have to be what
+// the tag says. The dirty check that guards them reads `git status --porcelain`,
+// and that does not list ignored paths, so anything the bundler reads out of one
+// is outside the guard entirely. `node_modules` is the obvious example: a locally
+// edited dependency is invisible to `git status` and lands in the bundle.
+//
+// A detached worktree at the tag, with its own install from the committed
+// lockfile, closes that. Nothing in this directory can reach it. Measured on
+// v0.55.0: about 22s to install against a warm yarn cache and 17s to build, and
+// the ZIPs come out byte-for-byte the size the published release carries.
+function buildArtifactsFromTag() {
+	// `git worktree add` refuses a directory that already exists, and `mkdtemp`
+	// creates one — so take the unique name and give the directory back.
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'res-slim-tagbuild-'));
+	fs.rmSync(dir, { recursive: true, force: true });
+
+	console.log(`publish: building ${tag} in a clean worktree`);
+	run(`git worktree add --detach "${dir}" ${tag}`, { capture: false });
+	process.once('exit', () => {
+		run(`git worktree remove --force "${dir}"`, { allowFailure: true });
+	});
+
+	// `--frozen-lockfile` is the point of doing this at all: it fails rather than
+	// resolving something the committed lockfile does not name.
+	run('yarn install --frozen-lockfile', { capture: false, cwd: dir });
+	run('node build.js --mode production --zip --browsers chrome,firefox', { capture: false, cwd: dir });
+	return path.join(dir, 'dist', 'zip');
+}
+
+const zipDir = buildArtifactsFromTag();
 const artifacts = ['chrome', 'firefox'].map(target => {
 	const source = path.join(zipDir, `${target}.zip`);
 	if (!fs.existsSync(source)) fail(`no ${target} artifact at ${source}; the build did not produce one`);
