@@ -245,9 +245,9 @@ The extension does tell you when it has been updated. Reload it across a minor-v
 
 Planning lives in the working copy, not in git. `.gitignore` ignores `*.md`, and
 only `README.md` and `CHANGELOG.md` are checked in past it, so `ROADMAP.md`,
-`RESEARCH.md`, `Roadmap_Blocked.md` and the `docs/archive/` history are all
-absent after a clone unless you created them. Shipped history is in the commit
-log and in `CHANGELOG.md`.
+`RESEARCH.md` and `Roadmap_Blocked.md` are all absent after a clone unless you
+created them. Shipped history is in the commit log and in `CHANGELOG.md`, which
+is the only changelog — there is no per-version directory beside it.
 
 ## License
 
