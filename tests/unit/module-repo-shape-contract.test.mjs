@@ -33,6 +33,15 @@ const moduleIDs = new Map(moduleFiles.map(moduleName => {
 
 function listJavaScriptFiles(directory) {
 	return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+		// `tests/unit/.tmp-*/` holds esbuild output, not source. Walking into it
+		// meant this scan read the suite's own bundles — the same shape as the
+		// locale scan that found `.tmp-bundle-sw-probe/background.entry.js` and
+		// declared all 1,631 keys used. A bundle has had its Flow types stripped,
+		// so it could never have carried the syntax this looks for, and reading it
+		// also races the process that owns it: those directories are removed when
+		// their test process exits, so a concurrent run can delete one between this
+		// listing and the read.
+		if (entry.name.startsWith('.tmp-')) return [];
 		const entryPath = path.join(directory, entry.name);
 		if (entry.isDirectory()) return listJavaScriptFiles(entryPath);
 		return /\.m?js$/.test(entry.name) ? [entryPath] : [];
