@@ -179,3 +179,41 @@ test('a put and a delete for the same store go through one transaction', () => {
 	assert.match(write, /keyedMutex\(/, 'writes to one store are serialised');
 	assert.match(write, /transact\(storeId, 'readwrite', \(store, done\) => \{[\s\S]*store\.delete[\s\S]*store\.put/);
 });
+
+// Rolling back to an earlier build is the documented way to recover from a bad
+// one — there is no automatic update here, and the README's only upgrade path is
+// pull, rebuild, reload. So an older build meeting a database a newer one wrote
+// is an ordinary thing to do, and IndexedDB answers it with a bare `VersionError`.
+// Every feature store rejects at once, so tags, vote history, saved content, the
+// media manifest and visited posts go blank together, which looks exactly like
+// the data having been lost.
+test('an older build meeting a newer database says so, instead of failing like data loss', async () => {
+	const stores = await loadFlowModule('lib/utils/featureStores.js', 'feature-db-version-error');
+	const { describeOpenFailure } = stores;
+
+	const versionError = new Error('The requested version is less than the existing version.');
+	versionError.name = 'VersionError';
+	const described = describeOpenFailure(versionError);
+
+	// The version gap, named, so the reader knows which way round it is.
+	assert.match(described.message, /older than the local data/);
+	assert.match(described.message, /version 1\b/, 'the message has to name the version this build is at');
+	assert.match(described.message, /newer build/);
+	// And the reassurance, because the failure mode is indistinguishable from loss.
+	assert.match(described.message, /have been lost/);
+	assert.match(described.message, /Pull and rebuild/, 'a message with no way out of it is only half a message');
+
+	// Everything else is passed through untouched. A quota failure, a blocked
+	// upgrade and a corrupt file are different problems and must not be dressed up
+	// as a version mismatch.
+	const other = new Error('Internal error opening backing store');
+	other.name = 'UnknownError';
+	assert.equal(describeOpenFailure(other), other, 'an unrelated failure must not be rewritten');
+	assert.match(describeOpenFailure(null).message, /Could not open the feature database/);
+});
+
+test('the open path reports through that description rather than a bare string', () => {
+	// The message is only worth writing if the thing that fails uses it.
+	const source = fs.readFileSync(path.join(repoRoot, 'lib', 'environment', 'background', 'featureDb.js'), 'utf8');
+	assert.match(source, /request\.onerror = \(\) => reject\(describeOpenFailure\(request\.error\)\);/);
+});
