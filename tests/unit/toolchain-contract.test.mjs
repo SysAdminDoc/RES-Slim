@@ -41,21 +41,49 @@ function runExpectingFailure(options) {
 	}
 }
 
-test('the floor is declared, and it is Babel 8\'s', () => {
+
+// A minimal reading of the two range shapes Babel and this repo use. Enough to
+// answer containment, and deliberately not a semver dependency: this file is
+// checking the thing that runs before install, where there are no dependencies.
+function satisfies(version, range) {
+	const parts = String(version).split('.').map(Number);
+	const atLeast = floor => parts[0] > floor[0] || (parts[0] === floor[0] && (parts[1] > floor[1] || (parts[1] === floor[1] && parts[2] >= floor[2])));
+	return range.split('||').some(clause => {
+		const caret = clause.trim().match(/^\^(\d+)\.(\d+)\.(\d+)$/);
+		if (caret) { const floor = caret.slice(1).map(Number); return parts[0] === floor[0] && atLeast(floor); }
+		const gte = clause.trim().match(/^>=\s*(\d+)\.(\d+)\.(\d+)$/);
+		if (gte) return atLeast(gte.slice(1).map(Number));
+		return false;
+	});
+}
+
+test('the declared range never admits a Node the compiler refuses', () => {
+	// This used to assert `engines.node === babel.engines.node`. Equality was the
+	// wrong relation: Babel's range is a floor, and this repo is entitled to be
+	// stricter than it — which it now is, because Babel's `>=24.11.0` also admits
+	// Node 25, an odd-numbered line that was never LTS and went out of security
+	// support on 2026-06-01. What has to hold is containment, so drift in either
+	// direction is still caught: anything this repo accepts, Babel must accept.
 	const babel = JSON.parse(fs.readFileSync(path.join(repoRoot, 'node_modules', '@babel', 'core', 'package.json'), 'utf8'));
-	assert.equal(pkg.engines.node, babel.engines.node, 'the declared floor drifted from the compiler that sets it');
+	assert.ok(babel.engines && babel.engines.node, 'Babel stopped declaring a Node range; the floor has to come from somewhere');
+
+	for (const version of ['22.18.0', '22.30.0', '24.11.0', '24.19.0', '26.0.0', '27.5.0']) {
+		assert.match(runWith({ node: version }), /toolchain ok/, `Node ${version} is on a supported line`);
+		assert.ok(
+			satisfies(version, babel.engines.node),
+			`this repo accepts Node ${version} but Babel ${babel.version} declares ${babel.engines.node}`,
+		);
+	}
+
 	assert.equal(pkg.packageManager, 'yarn@1.22.22');
 	assert.equal(pkg.scripts.preinstall, 'node scripts/check-toolchain.mjs');
 });
 
-test('a supported Node passes', () => {
-	assert.match(runWith({ node: '22.18.0' }), /toolchain ok/);
-	assert.match(runWith({ node: '24.11.0' }), /toolchain ok/);
-	assert.match(runWith({ node: '25.0.0' }), /toolchain ok/);
-});
-
 test('an unsupported Node is refused, with something to do about it', () => {
-	for (const version of ['20.19.0', '22.17.9', '24.10.0', '23.11.0']) {
+	// 25 is here rather than in the accepted list on purpose: odd majors are never
+	// LTS, and this one stopped receiving security fixes on 2026-06-01. Babel
+	// would take it; this repo does not.
+	for (const version of ['20.19.0', '22.17.9', '24.10.0', '23.11.0', '25.0.0', '25.9.9']) {
 		const output = runExpectingFailure({ node: version });
 		assert.ok(output, `Node ${version} should not have been accepted`);
 		assert.match(output, new RegExp(`Node ${version.replace(/\./g, '\\.')} cannot build this repo`));

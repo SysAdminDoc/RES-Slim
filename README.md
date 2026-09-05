@@ -108,9 +108,17 @@ RES-Slim runs on `https://*.reddit.com/*` and stores settings and optional local
 
 ## Build
 
-You need Node 22.18 or newer on the 22 line, or 24.11 or newer, and Yarn 1.22.22.
-That is Babel's floor rather than a preference, and the lockfile is Yarn 1's
-format. `yarn install` checks both and tells you what to do if either is wrong.
+You need Node on one of three lines and Yarn 1.22.22: **22.18 or newer on the 22
+line, 24.11 or newer on the 24 line, or anything from 26**. Those are Node's
+long-term-support lines, which is the whole rule — 22 is in maintenance until
+April 2027, 24 is the active LTS until October 2026 and then in maintenance until
+April 2028, and 26 became current in May 2026. Odd-numbered majors are never LTS
+and are refused: Node 25 in particular went out of security support in June 2026,
+and Babel's own floor would otherwise have let you build on it.
+
+Releases here are built on the 24 line. The lower bounds are Babel 8's, not a
+preference, and the lockfile is Yarn 1's format. `yarn install` checks both and
+tells you what to install if either is wrong.
 
 ```bash
 yarn install

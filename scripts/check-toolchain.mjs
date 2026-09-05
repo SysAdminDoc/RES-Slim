@@ -6,6 +6,21 @@
 // `import.meta.dirname` (Node 21.2+) throughout `build.js`, `scripts/` and
 // `tests/`, so the floor is real rather than aspirational.
 //
+// `engines.node` is narrower than Babel's floor on purpose, and each clause is a
+// line rather than a number. Dates from https://endoflife.date/nodejs, read
+// 2026-09-05:
+//
+//   ^22.18.0  Maintenance LTS since 2025-10-21, ends 2027-04-30.
+//   ^24.11.0  Active LTS, ends 2026-10-20, then maintenance to 2028-04-30.
+//   >=26.0.0  Current since 2026-05-05, Active LTS to 2027-10-27.
+//
+// The gap in the middle is the point. Babel's `>=24.11.0` also admits Node 25,
+// which is an odd-numbered line that was never LTS and went out of security
+// support on 2026-06-01 — so the old range let this repo be built on a runtime
+// that stopped receiving fixes three months ago. Odd majors are never LTS; the
+// next decision here is Node 28, and the trigger for making it is 24 leaving
+// maintenance rather than 26 shipping.
+//
 // Yarn is pinned too, and to Yarn 1: `yarn.lock` is the v1 format, and every
 // script here is written against v1's CLI. Yarn 2+ reads that lockfile and
 // silently converts it.
