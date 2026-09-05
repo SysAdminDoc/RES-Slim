@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The classic layout stands down in Windows High Contrast. That mode discards
+  author colours, shadows and background images, which is what the layer is made
+  of - the vote arrows are a pseudo-element whose whole visual is a background
+  colour cut to an arrow shape - so it was leaving a half-erased imitation of old
+  Reddit behind. Reddit's own controls show through instead, and they are drawn
+  with icons that survive the mode. The palette stays, turning the mode off puts
+  the layout straight back, and neither needs a reload.
+
 - Opening a post with the keyboard marks it visited. The module listened for
   `mousedown` only, which covers the middle click and the ctrl-click because both
   fire it, but not Enter on a focused link - that fires no pointer event at all,

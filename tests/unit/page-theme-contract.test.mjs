@@ -11,7 +11,7 @@ const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 // Loaded through the shared helper rather than a hand-rolled strip-and-import:
 // the helper resolves the sibling imports `lib/utils/pageTheme.js` now has, and a
 // second copy of that logic is a second thing to fix every time one grows.
-const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, sanitizeAccent } =
+const { PAGE_THEME_IDS, normalizeTheme, desiredThemeClasses, forcedColorsActive, sanitizeAccent } =
 	await loadFlowModule('lib/utils/pageTheme.js', 'page-theme', { deps: ['lib/utils/usernameColors.js'] });
 
 test('normalizeTheme falls back to Classic Reddit for unknown values', () => {
@@ -101,4 +101,46 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(scss, /shreddit-feed shreddit-post/);
 	assert.match(scss, /shreddit-comment\[depth='0'\]/);
 	assert.match(read('lib/css/res.scss'), /@use 'modules\/pageTheme';/);
+});
+
+// Windows High Contrast discards author colours, `box-shadow` and every non-URL
+// `background-image`. The classic layout is built out of exactly those: the vote
+// arrows are a `::before` whose entire visual is a background colour cut with a
+// `clip-path`, the thumbnail placeholders are background images, and the row and
+// panel edges are shadows. So the layer stands down there and reddit's own
+// markup — SVGs drawn with `currentColor`, which survive the mode — shows
+// through, rather than a half-erased imitation of old Reddit.
+test('the refined layout stands down under forced colours, and only that class does', () => {
+	const opts = { theme: 'oled', declutter: true, refinedLayout: true, roundedCorners: true, collapseSidebar: true };
+
+	const normal = desiredThemeClasses({ ...opts, forcedColors: false });
+	assert.ok(normal.includes('res-pageTheme--refined'));
+
+	const forced = desiredThemeClasses({ ...opts, forcedColors: true });
+	assert.ok(!forced.includes('res-pageTheme--refined'), 'the classic layout must not be gated on in forced colours');
+
+	// Everything else is unchanged. The palette classes only set colours the UA is
+	// already overriding, so dropping them would change nothing a reader sees in
+	// the mode and would change what they see the moment they leave it.
+	assert.deepEqual(forced, normal.filter(c => c !== 'res-pageTheme--refined'));
+});
+
+test('the forced-colours probe answers false rather than throwing where matchMedia is absent', () => {
+	// It runs at `always`, which is re-entered on every option change, and in
+	// contexts that have no `matchMedia` at all. Throwing there would take the
+	// whole theme down with it.
+	const saved = globalThis.matchMedia;
+	try {
+		delete globalThis.matchMedia;
+		assert.equal(forcedColorsActive(), false);
+
+		globalThis.matchMedia = () => { throw new Error('not supported'); };
+		assert.equal(forcedColorsActive(), false);
+
+		globalThis.matchMedia = query => ({ matches: query === '(forced-colors: active)' });
+		assert.equal(forcedColorsActive(), true);
+	} finally {
+		if (saved === undefined) delete globalThis.matchMedia;
+		else globalThis.matchMedia = saved;
+	}
 });

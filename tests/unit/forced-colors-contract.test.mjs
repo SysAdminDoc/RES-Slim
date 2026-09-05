@@ -192,3 +192,38 @@ test('every accepted exemption still describes something that exists', () => {
 		assert.ok(entry.reason.length > 40, `${entry.file} needs a real reason, not a label`);
 	}
 });
+
+// The classic layout is exempt from everything above, and this is why.
+//
+// It is not restated for forced colours because it does not apply there: the
+// whole layer, document sheet and shadow sheet alike, is gated on
+// `res-pageTheme--refined`, and `desiredThemeClasses` withholds that class when
+// the mode is active. Windows High Contrast drops author colours, `box-shadow`
+// and every non-URL `background-image`, which is what the layer is made of — the
+// vote arrows are a `::before` whose entire visual is a background colour cut
+// with a `clip-path` — so reddit's own `currentColor` markup showing through is
+// the better answer than a half-erased imitation of it.
+//
+// Asserted as the relationship rather than as a class list, so it keeps holding
+// if the gate is renamed: the sheet's gate and the class the theme withholds
+// have to be the same string.
+test('the refined layer is exempt because the theme withholds its gate in forced colours', () => {
+	const REFINED_GATE = 'res-pageTheme--refined';
+
+	const themeUtil = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'pageTheme.js'), 'utf8');
+	assert.ok(
+		themeUtil.includes(`if (opts.refinedLayout && !opts.forcedColors) classes.push('${REFINED_GATE}');`),
+		'the theme must withhold the refined gate under forced colours',
+	);
+
+	// And the layer really is gated on it, in both places it is written: the
+	// document sheet in SCSS and the sheet injected into reddit's shadow roots.
+	const pageThemeCss = fs.readFileSync(path.join(repoRoot, 'lib', 'css', 'modules', '_pageTheme.scss'), 'utf8');
+	assert.ok(pageThemeCss.includes(REFINED_GATE), 'the document sheet must be gated on the refined class');
+
+	const shadowSheet = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'shreddit.js'), 'utf8');
+	assert.ok(
+		shadowSheet.includes(`:host-context(html.res-pageTheme.${REFINED_GATE})`),
+		'the shadow sheet must be gated on the refined class too, or it would survive the stand-down',
+	);
+});

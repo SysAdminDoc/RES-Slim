@@ -6074,3 +6074,63 @@ test('subreddit emoji render as accessible inline media and reuse the local cach
 	await page.waitForSelector('#thing_t1_comment000001 img.rsm-subredditEmote', { timeout: 30000 });
 	assert.equal(metadataRequests, 1, 'a fresh thread map should be served from the extension database');
 });
+
+// Windows High Contrast, decided rather than left to chance.
+//
+// The UA discards author colours, `box-shadow` and every non-URL
+// `background-image` in this mode, and the classic layout is built out of those:
+// the vote arrows are a `::before` whose whole visual is a background colour cut
+// with a `clip-path`, the thumbnail placeholders are background images, the row
+// and panel edges are shadows. Restating 3,787 lines of recreated chrome in
+// system colours would be a large bet on a mode nobody has asked for, so the
+// layer stands down and reddit's own markup shows through — its controls are
+// `currentColor` SVGs, which the mode keeps.
+//
+// Driven as a before/after in one page rather than as a single measurement: the
+// only honest evidence that the layer stood down is that something was different
+// while it was up. It also exercises the live switch, because turning High
+// Contrast on is something a reader does mid-session and current Reddit may not
+// load another document for the rest of it.
+test('the classic layout stands down under forced colours and gives reddit its controls back', async t => {
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(mods => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': mods,
+			'RESoptions.pageTheme': { theme: { value: 'classic' }, refinedLayout: { value: true } },
+		}, resolve);
+	}), SHREDDIT_A11Y_MODULES);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('html.res-pageTheme--refined shreddit-post[data-res-shreddit-compat]', { timeout: 30000 });
+
+	// Reddit's own vote icon, inside the post's shadow root. The classic sheet
+	// hides it and paints its own glyph over the top, and that sheet is gated on
+	// the refined class — so this is where the stand-down has to be visible, on
+	// the far side of a shadow boundary rather than only in the document.
+	const nativeIconDisplay = () => page.evaluate(() => {
+		const post = document.querySelector('shreddit-post');
+		const icon = post && post.shadowRoot && post.shadowRoot.querySelector('.rpl-vote-button-group svg[icon-name]');
+		return icon ? getComputedStyle(icon).display : null;
+	});
+
+	assert.equal(await nativeIconDisplay(), 'none', 'with the layout up, the classic glyph replaces reddit\'s icon');
+
+	await page.emulateMedia({ forcedColors: 'active' });
+	await page.waitForFunction(() => !document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
+
+	const classes = await page.evaluate(() => document.documentElement.className);
+	assert.match(classes, /res-pageTheme--classic/, 'the palette stays; the UA is overriding its colours anyway');
+	assert.notEqual(await nativeIconDisplay(), 'none', 'reddit\'s own vote icon must come back when the layout stands down');
+
+	// And back, because a reader who turns the mode off should get the layout
+	// they chose rather than have to reload to see it.
+	await page.emulateMedia({ forcedColors: 'none' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res-pageTheme--refined'), null, { timeout: 30000 });
+	assert.equal(await nativeIconDisplay(), 'none', 'leaving the mode restores the classic layout');
+
+	await page.close();
+});
