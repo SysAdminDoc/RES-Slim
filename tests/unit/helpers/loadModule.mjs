@@ -190,10 +190,18 @@ async function stubDir() {
 			// — roughly one run in three. Renaming a private copy into place is no
 			// better on Windows, where the rename fails outright if a reader has the
 			// target open. Nobody shares the file now, so there is nothing to race.
-			// `run-unit-tests.mjs` clears every `.tmp-` directory before each run.
+			// `run-unit-tests.mjs` clears every `.tmp-` directory before and after a
+			// run, but a bare `node --test tests/unit/<one>.test.mjs` never goes
+			// through it, and each of those left another pid-named directory behind
+			// for good — thirty-three of them had piled up that way. Owning its own
+			// cleanup means the directory outlives the process that needs it by
+			// nothing at all, whichever way the suite was started.
 			const dir = path.join(repoRoot, 'tests', 'unit', `.tmp-module-stubs-${process.pid}`);
 			fs.mkdirSync(dir, { recursive: true });
 			fs.writeFileSync(path.join(dir, 'environment.js'), ENVIRONMENT_STUB);
+			// Synchronous on purpose: `exit` handlers cannot await, so an async
+			// removal here would be scheduled and then never run.
+			process.on('exit', () => { fs.rmSync(dir, { recursive: true, force: true }); });
 			return dir;
 		})();
 	}

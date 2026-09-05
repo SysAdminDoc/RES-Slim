@@ -38,12 +38,18 @@ const MINIMUM_FILES = 100;
 // never be read as source, and the tree does not grow.
 //
 // Before rather than after: after would race a suite that is still writing, and a
-// crashed run would leave them behind anyway.
-for (const entry of fs.readdirSync(unitDir, { withFileTypes: true })) {
-	if (entry.isDirectory() && entry.name.startsWith('.tmp-')) {
-		fs.rmSync(path.join(unitDir, entry.name), { recursive: true, force: true });
+// crashed run would leave them behind anyway. Which is why the sweep below runs
+// too — before is what makes the run correct, after is what stops the tree
+// carrying a run's worth of bundles around between runs.
+function sweepScratch() {
+	for (const entry of fs.readdirSync(unitDir, { withFileTypes: true })) {
+		if (entry.isDirectory() && entry.name.startsWith('.tmp-')) {
+			fs.rmSync(path.join(unitDir, entry.name), { recursive: true, force: true });
+		}
 	}
 }
+
+sweepScratch();
 
 const files = fs.readdirSync(unitDir)
 	.filter(name => name.endsWith('.test.mjs'))
@@ -62,6 +68,11 @@ if (files.length < MINIMUM_FILES) {
 const args = ['--test', ...process.argv.slice(2), ...files];
 const child = spawn(process.execPath, args, { stdio: 'inherit', cwd: repoRoot });
 child.on('exit', (code, signal) => {
+	// The child has exited, so nothing is still writing and the race the comment
+	// above describes cannot happen. Leaving them was costing 58 MB across 175
+	// directories, and a stale bundle sitting in the tree is the thing a scanner
+	// reads as source.
+	sweepScratch();
 	if (signal) process.kill(process.pid, signal);
 	else process.exit(code ?? 1);
 });
