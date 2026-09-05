@@ -6,6 +6,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Opening a post with the keyboard marks it visited. The module listened for
+  `mousedown` only, which covers the middle click and the ctrl-click because both
+  fire it, but not Enter on a focused link - that fires no pointer event at all,
+  so a keyboard user recorded nothing and the whole feature was inert for them.
+
 - Current Reddit stops loading forever on every listing, not just the first one.
   The limiter armed one MutationObserver and kept it for the life of the
   document, which on a renderer that never unloads meant it was still watching

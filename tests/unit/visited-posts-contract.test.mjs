@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { JSDOM } from 'jsdom';
 import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const vp = await loadFlowModule('lib/utils/visitedPosts.js', 'visited-posts');
@@ -87,4 +88,47 @@ test('the module asks for no browsing-history permission', () => {
 	// `history` permission to read visited state back out of the browser.
 	assert.doesNotMatch(mod, /chrome\.history|browser\.history|permissions.*history/);
 	assert.match(mod, /module\.disabledByDefault = true/);
+});
+
+// The keyboard half. `mousedown` fires for the middle click and the ctrl-click
+// as well as the ordinary one, so those were always covered; pressing Enter on a
+// focused link fires no pointer event at all, so a keyboard user's opened posts
+// were never recorded and the module did nothing for them.
+//
+// Executed against real elements rather than asserted from source: the decision
+// is `fullnameFromActivation`, and both listeners reach it.
+test('an activation on a comments link resolves the post, wherever it landed', () => {
+	const dom = new JSDOM('<!doctype html><html xmlns="http://www.w3.org/1999/xhtml"><body>' +
+		'<div class="thing" data-fullname="t3_1abcde">' +
+		'<a class="title" href="https://example.org/story">Title</a>' +
+		'<a class="comments" href="/r/aww/comments/1abcde/a_cat/"><span id="inner">24 comments</span></a>' +
+		'</div>' +
+		'<a class="title" href="https://example.org/loose">Outside any row</a>' +
+		'</body></html>');
+	const { document } = dom.window;
+
+	// The comments link, and a span inside it — a real Enter press targets
+	// whatever has focus, and `closest` is what walks back up to the anchor.
+	assert.equal(vp.fullnameFromActivation(document.querySelector('a.comments')), 't3_1abcde');
+	assert.equal(vp.fullnameFromActivation(document.querySelector('#inner')), 't3_1abcde');
+
+	// A title link inside a row means the row's own post, taken from the row.
+	assert.equal(vp.fullnameFromActivation(document.querySelector('.thing a.title')), 't3_1abcde');
+
+	// A title link with no row above it resolves to nothing rather than throwing.
+	assert.equal(vp.fullnameFromActivation(document.querySelector('body > a.title')), null);
+	// So does an element that is not in a link at all.
+	assert.equal(vp.fullnameFromActivation(document.querySelector('body')), null);
+	assert.equal(vp.fullnameFromActivation(null), null);
+});
+
+test('both the pointer and the keyboard path reach the same resolver', () => {
+	// Two listeners, one decision. If a future edit inlines the logic back into
+	// one of them the other silently stops agreeing with it.
+	assert.match(mod, /document\.addEventListener\('mousedown'/);
+	assert.match(mod, /document\.addEventListener\('keydown'/);
+	assert.equal((mod.match(/rememberFromEventTarget\(e\.target\)/g) || []).length, 2);
+	// Enter only, and not while the reader is holding a modifier that means
+	// something else. Space scrolls a page, it does not activate a link.
+	assert.match(mod, /if \(e\.key !== 'Enter' \|\| e\.ctrlKey \|\| e\.metaKey \|\| e\.altKey\) return;/);
 });
