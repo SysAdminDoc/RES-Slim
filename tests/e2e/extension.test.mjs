@@ -2607,6 +2607,153 @@ test('a dark palette paints nested comment boxes dark, not white', async t => {
 	}
 });
 
+test('a framed third party gets its own storage and cannot navigate the tab', async t => {
+	// Thirty-five hosts are framed by one template, each running its own script
+	// inside a reddit.com page, and until now the only thing checking that
+	// template's sandbox was an attribute string in jsdom. Every functional claim
+	// made for the token list was reasoned rather than measured, so a token that
+	// turns out to be needed, or one that grants more than intended, was
+	// invisible until a reader reported a broken embed.
+	//
+	// One host stands in for the thirty-five, because they all go through
+	// `iframeTemplate`: YouTube, whose embed URL is served here rather than
+	// fetched. What is asserted is what the sandbox actually did to the frame,
+	// read from inside it.
+	const { context, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// The frame reports on itself. `allow-same-origin` is the difference between
+	// a real origin and a null one, and a null origin loses cookies, storage and
+	// its own document.domain -- which is why YouTube and Twitch simply fail
+	// without it. Top navigation is the one thing deliberately withheld.
+	const PROBE = `<!doctype html><html><body><script>
+		const report = { origin: location.origin };
+		try { localStorage.setItem('rsm', '1'); report.storage = localStorage.getItem('rsm'); }
+		catch (e) { report.storage = 'threw: ' + e.name; }
+		try { document.cookie = 'rsm=1'; report.cookie = document.cookie; }
+		catch (e) { report.cookie = 'threw: ' + e.name; }
+		try { top.location.href = 'https://old.reddit.com/rsm-navigated-away/'; report.topNavigation = 'allowed'; }
+		catch (e) { report.topNavigation = 'threw: ' + e.name; }
+		parent.postMessage(JSON.stringify(report), '*');
+		// Submitted last, and observed from outside, because a blocked submission
+		// does not throw: Chrome refuses it and logs, and requestSubmit returns
+		// normally either way. Whether the frame actually went anywhere is the only
+		// honest signal, and the parent can see that through the frame's URL even
+		// though it cannot read into the document.
+		if (!location.search.includes('rsmSubmitted')) {
+			const form = document.createElement('form');
+			form.method = 'get';
+			form.action = location.pathname;
+			// A GET submission replaces the action's query string with the form's own
+			// fields, so the marker has to be a field.
+			const marker = document.createElement('input');
+			marker.type = 'hidden';
+			marker.name = 'rsmSubmitted';
+			marker.value = '1';
+			form.append(marker);
+			document.body.append(form);
+
+			// And a download, which a sandbox without allow-downloads blocks
+			// silently. Fired before the submission navigates this document away.
+			const save = document.createElement('a');
+			save.download = 'rsm-probe.txt';
+			save.href = 'data:text/plain,rsm';
+			save.textContent = 'save';
+			document.body.append(save);
+			save.click();
+
+			setTimeout(() => form.requestSubmit(), 200);
+		}
+	</script></body></html>`;
+
+	// A post that links to YouTube, so the shipped host builds the embed.
+	const html = servableCapture(FRONT_CAPTURE)
+		.replace(/https:\/\/example\.invalid\/fixture/g, 'https://www.youtube.com/watch?v=rsmFixture1')
+		.replace(/data-domain="example\.invalid"/g, 'data-domain="youtube.com"');
+
+	const page = await context.newPage();
+	// The paste and playground hosts offer downloads, and a sandbox without
+	// `allow-downloads` refuses them with no error the page can see. The event is
+	// the only observable.
+	const downloads = [];
+	page.on('download', download => downloads.push(download.suggestedFilename()));
+	await page.route('**/*', route => {
+		const url = new URL(route.request().url());
+		if (url.protocol === 'chrome-extension:') return route.continue();
+		if (url.hostname === 'www.youtube.com' && url.pathname.startsWith('/embed/')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: PROBE });
+		}
+		if (route.request().resourceType() === 'document' && url.hostname === 'old.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('.thing.link .expando-button', { timeout: 30000 });
+
+	// Collect the frame's report before opening it, or the message arrives first.
+	await page.evaluate(() => {
+		window.__rsmFrameReport = null;
+		window.addEventListener('message', event => {
+			try { window.__rsmFrameReport = JSON.parse(event.data); } catch (e) { /* not ours */ }
+		});
+	});
+
+	await page.locator('.thing.link .expando-button').first().click();
+	await page.waitForSelector('.res-iframe-expando iframe', { timeout: 30000 });
+
+	const attributes = await page.evaluate(() => {
+		const iframe = document.querySelector('.res-iframe-expando iframe');
+		return {
+			sandbox: (iframe.getAttribute('sandbox') || '').split(/\s+/).filter(Boolean),
+			allow: iframe.getAttribute('allow'),
+			src: iframe.getAttribute('src'),
+		};
+	});
+	assert.match(attributes.src, /^https:\/\/www\.youtube\.com\/embed\//, 'the shipped host has to have built the embed');
+	assert.ok(attributes.sandbox.includes('allow-same-origin'), 'the sandbox under test must be the shipped one');
+	assert.equal(attributes.allow, null, 'and it must not delegate anything the frame did not already have');
+
+	await page.waitForFunction(() => window.__rsmFrameReport !== null, null, { timeout: 30000 });
+	const report = await page.evaluate(() => window.__rsmFrameReport);
+
+	// A null origin is what a sandbox without allow-same-origin produces, and it
+	// is what breaks the players.
+	assert.equal(report.origin, 'https://www.youtube.com', `the frame lost its origin: ${report.origin}`);
+	assert.equal(report.storage, '1', `localStorage is unavailable in the frame: ${report.storage}`);
+	// The poll hosts and the code playgrounds submit forms, and a sandbox without
+	// `allow-forms` refuses them silently -- no error, no exception, the
+	// submission simply does not happen. So it is read as a navigation, from
+	// outside: the parent cannot see into the frame's document but can see where
+	// the frame went.
+	const submitted = await (async () => {
+		const deadline = Date.now() + 15000;
+		while (Date.now() < deadline) {
+			if (page.frames().some(frame => frame.url().includes('rsmSubmitted=1'))) return true;
+			// eslint-disable-next-line no-await-in-loop
+			await page.waitForTimeout(250);
+		}
+		return false;
+	})();
+	assert.equal(submitted, true, `form submission is blocked; frames were ${page.frames().map(f => f.url()).join(', ')}`);
+
+	assert.deepEqual(downloads, ['rsm-probe.txt'], `the frame could not start a download: ${JSON.stringify(downloads)}`);
+	// The frame's cookie jar is deliberately not asserted. It comes back empty
+	// here, and that is Chrome partitioning third-party cookies rather than
+	// anything the sandbox did -- a probe that cannot tell the two apart would
+	// red on a browser policy change and say nothing about this template.
+	// `localStorage` is the signal that distinguishes them: an opaque origin
+	// throws on it, a real one does not.
+	assert.equal(typeof report.cookie, 'string', 'the frame should at least have answered');
+
+	// The one that matters. Neither form of top-navigation is granted, so the
+	// assignment is refused; and the tab is still on reddit.
+	assert.notEqual(report.topNavigation, 'allowed', 'a framed third party must not be able to navigate the tab');
+	await page.waitForTimeout(500);
+	assert.match(page.url(), /old\.reddit\.com\/$/, `the frame navigated the tab to ${page.url()}`);
+});
+
 test('a coloured score is readable, as a badge and as a number, on light and dark', async t => {
 	// Two surfaces, and they fail for different reasons.
 	//
