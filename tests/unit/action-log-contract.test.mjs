@@ -16,6 +16,14 @@ import { loadFlowModule, readRepoFile, codeOnly } from './helpers/loadFlowModule
 
 const log = await loadFlowModule('lib/utils/actionLog.js', 'action-log');
 
+// The four modules that change what is on the page without saying anything.
+const WRITERS = [
+	'lib/modules/filterRules.js',
+	'lib/modules/removePromoted.js',
+	'lib/modules/showImages/linkScanner.js',
+	'lib/modules/penaltyBox.js',
+];
+
 function fill(count, overrides = {}) {
 	log.clearActionLog();
 	for (const index of Array.from({ length: count }, (_, at) => at)) {
@@ -78,12 +86,43 @@ test('an entry records the decision, never the thing that was decided about', ()
 	assert.deepEqual(Object.keys(entry).sort(), ['detail', 'moduleID', 'outcome', 'reason', 'target', 'timestamp']);
 	assert.equal(entry.target, 't3_abc');
 
-	// There is no field a post's title or body could go in, and that is the
-	// point: a log of what you were reading must not be constructible from this.
+	// There is no field a post's title or body could go in. That is the weaker
+	// half of the promise -- see the call-site contract below for the other half.
 	const source = codeOnly(readRepoFile('lib/utils/actionLog.js'));
 	for (const field of ['body', 'title', 'text', 'html']) {
 		assert.ok(!new RegExp(`^\\t${field}:`, 'm').test(source), `the entry has a \`${field}\` field`);
 	}
+});
+
+test('no writer puts what it was reading into a field that does exist', () => {
+	// Field names are the weaker half. Nothing stops a writer putting a post's
+	// title into `target` or `detail`, which is the same leak through a door left
+	// open, so the assertion has to be about the call sites rather than the type.
+	const accessors = /\b(getTitle|getBody|getSelftext|selftext|textContent|innerText|innerHTML|outerHTML|getPostFlair|getUserFlair)\b/;
+	const blocks = [];
+	for (const file of WRITERS) {
+		const source = codeOnly(readRepoFile(file));
+		for (const match of source.matchAll(/recordAction\(\{[\s\S]*?\n\t*\}\)/g)) {
+			blocks.push({ file, block: match[0] });
+		}
+	}
+
+	assert.equal(blocks.length, 5, `expected every writer's call sites; found ${blocks.length}`);
+	for (const { file, block } of blocks) {
+		const found = block.match(accessors);
+		assert.equal(found, null, `${file} records ${found && found[0]}, which is what was on the page rather than what was done to it`);
+	}
+});
+
+test('a limit that is not a number reads nothing, rather than everything', () => {
+	// `Math.min(NaN, n)` is NaN and `slice(n - NaN)` is `slice(0)`, so the old
+	// shape answered a nonsense cap with the whole log -- the wrong way round for
+	// something whose job is to bound an answer.
+	fill(10);
+	assert.deepEqual(log.readActionLog(NaN), []);
+	assert.deepEqual(log.readActionLog('20'), []);
+	assert.deepEqual(log.readActionLog(-5), []);
+	assert.equal(log.readActionLog(2.9).length, 2, 'a fractional limit should round down, not up');
 });
 
 test('a field long enough to be content is truncated rather than stored whole', () => {
@@ -107,15 +146,31 @@ test('a missing or nonsense field does not produce a broken row', () => {
 	assert.ok(Number.isFinite(entry.timestamp));
 });
 
-test('the report rendering says what happened, and says so when nothing did', () => {
+test('the report gets counts, never the things the counts are about', () => {
+	// A reddit fullname is not anonymous: one public `api/info?id=t3_x` call turns
+	// a pasted report back into the list of posts that were on screen. The report
+	// already reduces every stored option that could carry something private to a
+	// count, and this is the log held to that same rule.
 	log.clearActionLog();
-	assert.match(log.describeActionLog(), /Nothing recorded/);
+	assert.deepEqual(log.summariseActionLog([]), []);
 
-	fill(3, { moduleID: 'showImages', outcome: 'refused', reason: 'imgur' });
-	const described = log.describeActionLog();
-	assert.equal(described.split('\n').length, 3);
-	assert.match(described, /showImages: refused t3_2 via imgur/);
-	assert.equal(log.describeActionLog(1).split('\n').length, 1);
+	fill(3, { moduleID: 'filterRules', outcome: 'hidden', reason: 'no-politics' });
+	log.recordAction({ moduleID: 'filterRules', outcome: 'dimmed', target: 't3_zz', reason: 'long-titles' });
+	log.recordAction({ moduleID: 'showImages', outcome: 'refused', target: 'i.imgur.com', reason: 'imgur' });
+
+	const summary = log.summariseActionLog(log.readActionLog());
+	const text = summary.join('\n');
+
+	assert.deepEqual(summary, [
+		'filterRules: hidden 3 times across 2 rules or hosts',
+		'filterRules: dimmed 1 time across 2 rules or hosts',
+		'showImages: refused 1 time across 1 rule or host',
+	], text);
+
+	// Not one identifier from any of the five entries survives.
+	for (const leak of ['t3_', 'no-politics', 'long-titles', 'imgur']) {
+		assert.ok(!text.includes(leak), `the summary carries ${leak}`);
+	}
 });
 
 test('the modules that make silent decisions all write to it', () => {
@@ -129,6 +184,7 @@ test('the modules that make silent decisions all write to it', () => {
 		'lib/modules/showImages/linkScanner.js': /recordAction\(\{[\s\S]{0,200}moduleID: 'showImages'/,
 		'lib/modules/penaltyBox.js': /recordAction\(\{[\s\S]{0,200}moduleID: 'penaltyBox'/,
 	};
+	assert.deepEqual(Object.keys(writers), WRITERS);
 	for (const [file, pattern] of Object.entries(writers)) {
 		assert.match(readRepoFile(file), pattern, `${file} makes a silent decision and does not record it`);
 	}

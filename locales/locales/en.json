@@ -920,6 +920,9 @@
     "settingsConsoleActionLogCount": {
         "message": "$1 of $2 recorded on that page."
     },
+    "settingsConsoleActionLogIdle": {
+        "message": "Press Refresh to see what this page had done to it."
+    },
     "settingsConsoleSupportTitle": {
         "message": "Support report"
     },

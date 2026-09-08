@@ -1010,8 +1010,18 @@ test('the console lists what the extension did to the page it was opened from', 
 		// eslint-disable-next-line no-await-in-loop
 		if (!report.includes('RES-Slim v')) await page.waitForTimeout(500);
 	}
-	assert.match(report, /Page activity \(\d+ of \d+\)/, `the report has no page activity section:\n${report.slice(0, 400)}`);
-	assert.match(report, /filterRules: (hidden|dimmed) t3_/);
+	// The report says how much happened, and nothing about what it happened to. A
+	// reddit fullname is not anonymous -- one public `api/info?id=t3_x` call turns
+	// a pasted report back into the list of posts that were on screen -- so the
+	// rows stay in the panel above, which stays in the reader's browser.
+	assert.match(report, /Page activity \(\d+ recorded/, `the report has no page activity section:\n${report.slice(0, 400)}`);
+	assert.match(report, /filterRules: (hidden|dimmed) \d+ times?/);
+
+	const activity = report.slice(report.indexOf('Page activity'));
+	const section = activity.slice(0, activity.indexOf('\n\n') + 1 || undefined);
+	for (const leak of ['t3_', 'no-fixture', 'dim-long']) {
+		assert.ok(!section.includes(leak), `the report carries ${leak}:\n${section}`);
+	}
 });
 
 test('the settings console renders in the options page', async t => {

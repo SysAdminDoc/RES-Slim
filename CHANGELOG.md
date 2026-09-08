@@ -10,15 +10,20 @@ All notable changes to RES-Slim will be documented in this file.
   to the page you opened it from: which filter hid which post and by which rule,
   which promoted records were removed, which expandos were built or refused, and
   which hosts were suspended after repeated failures. It is kept in memory for
-  that tab only and never saved anywhere, and the support report carries the
-  last fifty entries.
+  that tab only, is never saved anywhere, and is dropped when you navigate. The
+  support report carries how many times each module did each of those things,
+  and across how many rules or hosts, but none of the post ids or hostnames the
+  panel shows you. A post id is not anonymous and a report is something you
+  paste in public.
 
 - The comment shredder saves a copy of everything it is about to destroy,
   before it destroys any of it. Two files, one to read and one a script can use,
   with the body, the score, the date and the link back for every comment. It is
-  on by default and turning it off asks you to type the confirmation word again.
-  Reddit keeps no history of an edited comment, so this was the only chance to
-  keep one.
+  on by default, turning it off asks you to type the confirmation word again,
+  and it cannot be turned off once you have pressed Shred. Both files are
+  written before the first comment is touched, and if either cannot be written
+  the run does not start. Reddit keeps no history of an edited comment, so this
+  was the only chance to keep one.
 
 - Current Reddit's nag surfaces can be switched off: the cookie bar, the four
   shapes the "open in app" push takes, the QR-code dialog an adult post shows,

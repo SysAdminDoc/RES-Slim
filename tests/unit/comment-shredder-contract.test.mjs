@@ -391,6 +391,21 @@ function planOf(count) {
 	}));
 }
 
+// A lease that does not answer until the test says so. The window between the
+// click and the background's answer is where the panel is most exposed, and it
+// cannot be reached with a lease that resolves immediately.
+function deferredLease() {
+	const calls = [];
+	let grant;
+	return {
+		calls,
+		acquire() { calls.push('acquire'); return new Promise(resolve => { grant = resolve; }); },
+		answer(value = { ok: true, token: 'token-1' }) { grant(value); },
+		renew(state) { calls.push(`renew:${state}`); return Promise.resolve(true); },
+		release() { calls.push('release'); return Promise.resolve(); },
+	};
+}
+
 function settle() {
 	return new Promise(resolve => { setTimeout(resolve, 0); });
 }
@@ -760,12 +775,17 @@ const ARCHIVE_PLAN = [
 // object URL, points an attached anchor at it and clicks -- rather than through
 // a stub of the helper itself. Watching the real path is the difference between
 // asserting the archive is written and asserting a function was called.
-function watchDownloads(events, { fail = false } = {}) {
+// `failFrom` is which write starts failing (1 fails both, 2 lets the first
+// through), so a half-written archive is reachable -- the case where a file is
+// on disk and the run has stopped.
+function watchDownloads(events, { fail = false, failFrom = 1 } = {}) {
 	const realCreate = URL.createObjectURL;
 	const realRevoke = URL.revokeObjectURL;
 	const blobs = [];
+	let attempts = 0;
 	URL.createObjectURL = blob => {
-		if (fail) throw new Error('no object URL available');
+		attempts += 1;
+		if (fail && attempts >= failFrom) throw new Error('no object URL available');
 		events.push('download');
 		blobs.push(blob);
 		return `blob:fixture-${blobs.length}`;
@@ -850,27 +870,29 @@ test('the copy is written before anything is destroyed, and both formats go out'
 	assert.ok(archiveBox, 'the panel has to offer the archive');
 	assert.equal(archiveBox.checked, true, 'and offer it on by default');
 
-	const input = panel.querySelector('input[type="text"]');
-	input.value = 'DELETE';
-	input.dispatchEvent(new Event('input'));
-	panel.querySelector('button').click();
-	await settle();
-	await settle();
+	try {
+		const input = panel.querySelector('input[type="text"]');
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		panel.querySelector('button').click();
+		await settle();
+		await settle();
 
-	assert.deepEqual(events, ['download', 'download', 'run'], `the copy has to be written first: ${events.join(', ')}`);
+		assert.deepEqual(events, ['download', 'download', 'run'], `the copy has to be written first: ${events.join(', ')}`);
 
-	const names = downloads.names();
-	assert.ok(names.some(name => name.endsWith('.json')), `no JSON file: ${names.join(', ')}`);
-	assert.ok(names.some(name => name.endsWith('.md')), `no Markdown file: ${names.join(', ')}`);
-	assert.ok(names.every(name => name.includes('someone')), 'the files should say whose comments they are');
+		const names = downloads.names();
+		assert.ok(names.some(name => name.endsWith('.json')), `no JSON file: ${names.join(', ')}`);
+		assert.ok(names.some(name => name.endsWith('.md')), `no Markdown file: ${names.join(', ')}`);
+		assert.ok(names.every(name => name.includes('someone')), 'the files should say whose comments they are');
 
-	// The entry count is the plan's, not a subset.
-	const json = JSON.parse(await downloads.blobs[0].text());
-	assert.equal(json.comments.length, ARCHIVE_PLAN.length);
-	assert.equal(json.comments[0].body, ['first body', 'second line'].join('\n'));
-
-	downloads.restore();
-	panel.remove();
+		// The entry count is the plan's, not a subset.
+		const json = JSON.parse(await downloads.blobs[0].text());
+		assert.equal(json.comments.length, ARCHIVE_PLAN.length);
+		assert.equal(json.comments[0].body, ['first body', 'second line'].join('\n'));
+	} finally {
+		downloads.restore();
+		panel.remove();
+	}
 });
 
 test('a copy that cannot be written stops the run rather than shredding without it', async () => {
@@ -881,19 +903,21 @@ test('a copy that cannot be written stops the run rather than shredding without 
 	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, () => { events.push('run'); }, lease, 'someone');
 	document.body.append(panel);
 
-	const input = panel.querySelector('input[type="text"]');
-	input.value = 'DELETE';
-	input.dispatchEvent(new Event('input'));
-	panel.querySelector('button').click();
-	await settle();
-	await settle();
+	try {
+		const input = panel.querySelector('input[type="text"]');
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		panel.querySelector('button').click();
+		await settle();
+		await settle();
 
-	assert.deepEqual(events, [], 'nothing may be destroyed when the copy could not be saved');
-	const status = panel.querySelector('[role="status"]');
-	assert.match(status.textContent, /nothing was changed/i, 'and the reader has to be told why');
-
-	downloads.restore();
-	panel.remove();
+		assert.deepEqual(events, [], 'nothing may be destroyed when the copy could not be saved');
+		const status = panel.querySelector('[role="status"]');
+		assert.match(status.textContent, /nothing was changed/i, 'and the reader has to be told why');
+	} finally {
+		downloads.restore();
+		panel.remove();
+	}
 });
 
 test('turning the copy off asks for the confirmation word again', async () => {
@@ -909,27 +933,109 @@ test('turning the copy off asks for the confirmation word again', async () => {
 	}, lease, 'someone');
 	document.body.append(panel);
 
-	const input = panel.querySelector('input[type="text"]');
-	const archiveBox = panel.querySelector('input[type="checkbox"]');
-	const shred = panel.querySelector('button');
+	try {
+		const input = panel.querySelector('input[type="text"]');
+		const archiveBox = panel.querySelector('input[type="checkbox"]');
+		const shred = panel.querySelector('button');
 
-	input.value = 'DELETE';
-	input.dispatchEvent(new Event('input'));
-	assert.equal(shred.disabled, false, 'the word alone arms it while the copy is on');
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		assert.equal(shred.disabled, false, 'the word alone arms it while the copy is on');
 
-	archiveBox.checked = false;
-	archiveBox.dispatchEvent(new Event('change'));
-	assert.equal(input.value, '', 'the typed word is cleared');
-	assert.equal(shred.disabled, true, 'and the button goes back to disabled');
+		archiveBox.checked = false;
+		archiveBox.dispatchEvent(new Event('change'));
+		assert.equal(input.value, '', 'the typed word is cleared');
+		assert.equal(shred.disabled, true, 'and the button goes back to disabled');
 
-	// Said again, it runs, and writes nothing.
-	input.value = 'DELETE';
-	input.dispatchEvent(new Event('input'));
-	shred.click();
-	await settle();
-	await settle();
-	assert.deepEqual(events, ['run'], `no copy should be written with the box off: ${events.join(', ')}`);
+		// Said again, it runs, and writes nothing.
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		shred.click();
+		await settle();
+		await settle();
+		assert.deepEqual(events, ['run'], `no copy should be written with the box off: ${events.join(', ')}`);
+	} finally {
+		downloads.restore();
+		panel.remove();
+	}
+});
 
-	downloads.restore();
-	panel.remove();
+test('unticking the copy after the click cannot take it away', async () => {
+	// The lease is answered by the background, which on an MV3 cold start is
+	// easily hundreds of milliseconds away. The box used to be read after that
+	// await and stayed clickable throughout, so a reader who clicked Shred and then
+	// changed their mind about the copy got neither the copy nor a second ask for
+	// the confirmation word: the most destructive path in the extension, reachable
+	// with a click and a tick.
+	const events = [];
+	const downloads = watchDownloads(events);
+	const lease = deferredLease();
+	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, controls => {
+		events.push('run');
+		controls.finish('done');
+	}, lease, 'someone');
+	document.body.append(panel);
+
+	try {
+		const input = panel.querySelector('input[type="text"]');
+		const archiveBox = panel.querySelector('input[type="checkbox"]');
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		panel.querySelector('button').click();
+		await settle();
+
+		// Mid-flight, the box is not the reader's to change any more.
+		assert.equal(archiveBox.disabled, true, 'the copy can still be switched off while the lease is pending');
+		archiveBox.checked = false;
+		archiveBox.dispatchEvent(new Event('change'));
+
+		lease.answer();
+		await settle();
+		await settle();
+
+		assert.deepEqual(events, ['download', 'download', 'run'],
+			`the copy the reader confirmed has to be written: ${events.join(', ')}`);
+	} finally {
+		downloads.restore();
+		panel.remove();
+	}
+});
+
+test('a copy that only half writes says so, and still destroys nothing', async () => {
+	// Both files are rendered before either is handed over, so this is the narrow
+	// case where the first write lands and the second does not. The reader has a
+	// file on disk; telling them nothing was saved sends them looking for one that
+	// is already there.
+	const events = [];
+	const downloads = watchDownloads(events, { fail: true, failFrom: 2 });
+	const lease = grantingLease();
+	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, () => { events.push('run'); }, lease, 'someone');
+	document.body.append(panel);
+
+	try {
+		const input = panel.querySelector('input[type="text"]');
+		input.value = 'DELETE';
+		input.dispatchEvent(new Event('input'));
+		panel.querySelector('button').click();
+		await settle();
+		await settle();
+
+		assert.deepEqual(events, ['download'], 'nothing may be destroyed when the copy is incomplete');
+		const status = panel.querySelector('[role="status"]');
+		assert.match(status.textContent, /nothing was changed/i);
+		assert.match(status.textContent, /1 of the two/i, `the reader is not told a file was written: ${status.textContent}`);
+		assert.equal(lease.calls.includes('release'), true, 'the lease has to go back');
+	} finally {
+		downloads.restore();
+		panel.remove();
+	}
+});
+
+test('the filenames and the timestamp inside the file come from one clock', () => {
+	// Two reads of the clock disagree across a UTC midnight, which puts one date on
+	// the file and a different one inside it.
+	const source = codeOnly(readRepoFile('lib/modules/commentShredder.js'));
+	const block = source.slice(source.indexOf('if (wantsArchive)'), source.indexOf('runInFlight = true;'));
+	assert.ok(block.includes('buildShredArchive'), 'the archive block was not found where it was looked for');
+	assert.equal((block.match(/Date\.now\(\)/g) || []).length, 1, 'the archive block reads the clock more than once');
 });
