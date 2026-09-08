@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadModule, installDom } from './helpers/loadModule.mjs';
@@ -115,6 +116,45 @@ test('the collapser looks inside the hidden thing rather than walking every expa
 	assert.match(images, /element\.querySelectorAll\(Expando\.expandoSelector\)/);
 	assert.ok(!/for \(const expando of expandos\.values\(\)\) \{\s*\n\s*if \(!\(expando instanceof Expando\) \|\| !expando\.open\)/.test(images),
 		'walking the global registry per hidden thing is O(hidden x expandos)');
+});
+
+test('the one host that frames reddit itself cannot take its own sandbox off', () => {
+	// `allow-scripts` with `allow-same-origin` is the documented combination that
+	// lets framed content remove its own sandbox, and it only bites when the frame
+	// is genuinely same-origin with the embedder. Thirty-four of these hosts are
+	// third parties and cannot be. `redditpoll` frames `www.reddit.com` from a
+	// `www.reddit.com` document on current Reddit, so it can -- and the sandbox it
+	// was given meant nothing.
+	const poll = mediaTypes.generateMedia({
+		type: 'IFRAME',
+		sameOrigin: true,
+		embed: 'https://www.reddit.com/poll/abc123/',
+		width: '700px',
+		height: '500px',
+	}, { href: 'https://www.reddit.com/poll/abc123/' });
+	const granted = (poll.element.querySelector('iframe').getAttribute('sandbox') || '').split(/\s+/).filter(Boolean);
+
+	assert.ok(!granted.includes('allow-same-origin'), 'a same-origin frame must not be handed the escape hatch');
+	// Everything else it had, it keeps: the poll still needs to run its script and
+	// submit the vote.
+	for (const token of ['allow-scripts', 'allow-forms', 'allow-popups']) {
+		assert.ok(granted.includes(token), `${token} is still needed by the poll`);
+	}
+	assert.ok(!granted.includes('allow-top-navigation'));
+
+	// And the flag is opt-in, so the thirty-four cross-origin hosts are unchanged:
+	// a frame without a real origin loses its cookies and storage, which is the
+	// difference between YouTube loading and not.
+	const thirdParty = iframeMedia();
+	const theirs = (thirdParty.element.querySelector('iframe').getAttribute('sandbox') || '').split(/\s+/).filter(Boolean);
+	assert.ok(theirs.includes('allow-same-origin'), 'a cross-origin embed still needs its own origin');
+
+	// The host that needs it is the host that declares it, and it is the only one.
+	const hostsDir = new URL('../../lib/modules/hosts/', import.meta.url);
+	const declaring = fs.readdirSync(hostsDir)
+		.filter(file => file.endsWith('.js'))
+		.filter(file => /sameOrigin:\s*true/.test(fs.readFileSync(new URL(file, hostsDir), 'utf8')));
+	assert.deepEqual(declaring, ['redditpoll.js'], `unexpected same-origin hosts: ${declaring.join(', ')}`);
 });
 
 test('a framed third party cannot navigate the tab out from under the reader', () => {
