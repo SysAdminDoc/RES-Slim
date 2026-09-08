@@ -8,14 +8,20 @@
 // enforceable. A cast at the call site would assert the same thing and check
 // nothing.
 //
-// `signal.reason` and `AbortSignal.timeout()` are deliberately left out — they
-// are Chrome 124 / Firefox 124-ish and this codebase does not use them, so
-// leaving them undeclared makes reaching for one a type error rather than a
-// runtime surprise on a browser we claim to support.
+// `AbortSignal.timeout()` is declared as of 2026-09-08, because the codebase now
+// uses it: every outbound request carries one. Measured against webstatus.dev on
+// that date — Chrome 124 (2024-04-16), Firefox 100 (2022-05-03) — against a
+// floor of chrome 125 / firefox 130, so it clears both. That check is the reason
+// this belongs here rather than in a cast at the call site.
+//
+// `signal.reason` is still deliberately left out: nothing reads it, so reaching
+// for one stays a type error rather than a runtime surprise.
 
 declare class AbortSignal extends EventTarget {
 	+aborted: boolean;
 	onabort: ?(event: Event) => mixed;
+	static timeout(milliseconds: number): AbortSignal;
+	static any(signals: Array<AbortSignal>): AbortSignal;
 }
 
 declare class AbortController {

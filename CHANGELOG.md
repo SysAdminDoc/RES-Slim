@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- A media host that stops answering no longer leaves every one of its links
+  stuck. Nothing had a deadline, so a host that accepted the connection and then
+  went quiet held its expando open forever, reading "Expando is not yet ready",
+  and because the request never failed the backoff that skips dead hosts never
+  counted it. Requests now give up after fifteen seconds, which surfaces the
+  error and lets the host be suspended.
+
 - Cached replies stay in the window that fetched them. The store behind the
   short-lived response cache was keyed on the address alone, so an answer
   fetched while signed in to a private window could be handed to a normal one,
