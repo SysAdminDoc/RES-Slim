@@ -1326,7 +1326,10 @@
         "message": "Restore deleted row"
     },
     "settingsConsoleMoveRow": {
-        "message": "Drag and drop to move this row"
+        "message": "Move row"
+    },
+    "settingsConsoleMoveRowHint": {
+        "message": "Drag this row, or move it with the up and down arrow keys."
     },
     "settingsConsoleAbandonChangesConfirmation": {
         "message": "Abandon your changes to RES-Slim settings?"

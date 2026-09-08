@@ -6777,6 +6777,103 @@ for (const palette of ['classic', 'oled']) {
 // actually do. Driven end to end because the interesting half is the reload:
 // the reset writes storage, the page reloads, and the undo has to be offered
 // from the persisted restore point on the way back up.
+test('a table row can be reordered from the keyboard, not only by dragging', async t => {
+	// WCAG 2.2 SC 2.5.7 Dragging Movements. The handle is a focusable button with
+	// an accessible name, so assistive technology announced an action that nothing
+	// on the keyboard could take: `mousedown` and HTML5 drag were the whole
+	// interaction. A control that announces itself and then does nothing is worse
+	// than one that cannot be reached.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const state = () => page.evaluate(() => {
+		const tbody = document.querySelector('#tbody_macros');
+		const rows = [...tbody.children];
+		const active = document.activeElement;
+		return {
+			labels: rows.map(row => {
+				const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+				return field ? field.value : null;
+			}),
+			focusedRow: active && active.closest ? rows.indexOf(active.closest('tr')) : -1,
+			focusedIsHandle: !!(active && active.classList && active.classList.contains('handle')),
+			saveDisabled: document.querySelector('#RESGlobalSave').disabled,
+		};
+	});
+
+	const before = await state();
+	assert.ok(before.labels.length >= 2, `the macros table needs rows to reorder, saw ${before.labels.length}`);
+	assert.equal(before.saveDisabled, true, 'nothing should be staged before the reorder');
+
+	// The name is short, because it is read on every row, and what the control
+	// does is the description.
+	const naming = await page.evaluate(() => {
+		const handle = document.querySelector('#tbody_macros tr .handle');
+		return { label: handle.getAttribute('aria-label'), title: handle.getAttribute('title') };
+	});
+	assert.equal(naming.label, 'Move row');
+	assert.match(naming.title, /arrow keys/i, `the handle does not say how to use it: "${naming.title}"`);
+
+	await page.locator('#tbody_macros tr:nth-child(1) .handle').focus();
+	assert.equal((await state()).focusedRow, 0);
+
+	await page.keyboard.press('ArrowDown');
+	// The console stages on a frame-debounced sweep, so the staged state arrives a
+	// frame after the move does.
+	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
+	const moved = await state();
+	assert.deepEqual(moved.labels, [before.labels[1], before.labels[0], ...before.labels.slice(2)], 'ArrowDown did not move the row');
+	assert.equal(moved.focusedRow, 1, 'focus did not follow the row it moved');
+	assert.equal(moved.focusedIsHandle, true, 'focus left the handle');
+	assert.equal(moved.saveDisabled, false, 'the reorder was not staged');
+
+	await page.keyboard.press('ArrowUp');
+	const back = await state();
+	assert.deepEqual(back.labels, before.labels, 'ArrowUp did not undo the move');
+	assert.equal(back.focusedRow, 0);
+
+	// At the top there is nowhere to go, and swallowing the key there would take
+	// the arrow away from whatever else would have used it -- scrolling the panel,
+	// most of the time. Recorded on `document`, which the keydown reaches after
+	// the handle's own listener has had it.
+	await page.evaluate(() => {
+		window.__rsmArrowLog = [];
+		document.addEventListener('keydown', e => {
+			window.__rsmArrowLog.push({ key: e.key, prevented: e.defaultPrevented });
+		});
+	});
+	const arrowLog = () => page.evaluate(() => window.__rsmArrowLog);
+
+	await page.keyboard.press('ArrowUp');
+	assert.deepEqual((await state()).labels, before.labels, 'ArrowUp at the top reordered something');
+	assert.deepEqual(await arrowLog(), [{ key: 'ArrowUp', prevented: false }], 'the arrow was swallowed with nowhere to move');
+
+	// And a move that does happen does claim the key, or the panel scrolls under
+	// the row the reader is dragging.
+	await page.keyboard.press('ArrowDown');
+	assert.deepEqual(
+		(await arrowLog()).slice(1),
+		[{ key: 'ArrowDown', prevented: true }],
+		'a move that happened let the key through as well',
+	);
+	await page.keyboard.press('ArrowUp');
+	assert.deepEqual((await state()).labels, before.labels);
+
+	// Tab must still move on: a widget that swallows Tab traps the reader on it.
+	await page.keyboard.press('Tab');
+	assert.equal((await state()).focusedIsHandle, false, 'Tab must leave the handle');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
 test('a deleted table row can be put back after the reader has left the module', async t => {
 	// The undo button lives on `document.body` for five seconds, which is long
 	// enough to click another module in the rail. Drawing one tears the options
