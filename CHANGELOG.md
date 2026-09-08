@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- A video the browser cannot play says so. Matroska and 3GP links were given a
+  media type no engine recognises, built from the file extension, so nothing
+  survived the playability check. The player wrote "No playable sources were
+  found" and then carried on into code that needs a source, which threw, and the
+  expando quietly closed itself over the message. Both extensions now carry
+  their real type, so an engine that can play them will, and one that cannot
+  leaves the message on screen.
+
 - Threads links expand. The handler returned the embed address wrapped in an
   object where both the media builder and the URL guard want the address itself,
   so the guard refused every Threads post and the expand handler quietly put the
