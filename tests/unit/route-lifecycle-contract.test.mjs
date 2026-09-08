@@ -146,13 +146,21 @@ test('the full preparation runs when slots arrive, not on every child mutation',
 	assert.match(watcher, /else refreshShredditThing\(owner\);/);
 });
 
-test('the memoized page type is cleared before the new route is judged', () => {
-	// `isRunning` reads `pageType()`, which is memoized. Judging eligibility for
-	// the new route against the old page type would pick the wrong modules.
+test('the memoized route is cleared before the new route is judged', () => {
+	// `isRunning` reads `pageType()`, which is memoized, and the stages it runs
+	// read five more memos of the same kind. Judging eligibility for the new route
+	// against any of the old values picks the wrong modules and then hands them the
+	// wrong subreddit.
+	//
+	// This used to name `pageType.cache.clear()` specifically, which pinned an
+	// expression rather than the property: the other five were cleared a microtask
+	// later, from a promise callback in `currentLocation`, and nothing here could
+	// see that. `clearLocationCaches` is all six, and the contract in
+	// `route-change-location-contract.test.mjs` proves it is all six.
 	const routeBlock = codeOnly(init).slice(codeOnly(init).indexOf('document.addEventListener(\'reddit.urlChanged\''));
-	const clearAt = routeBlock.indexOf('pageType.cache.clear()');
+	const clearAt = routeBlock.indexOf('clearLocationCaches()');
 	const runAt = routeBlock.indexOf('_runNewlyEligibleStage');
-	assert.ok(clearAt > -1, 'the memoized page type has to be cleared');
+	assert.ok(clearAt > -1, 'the memoized route has to be cleared');
 	assert.ok(runAt > -1);
 	assert.ok(clearAt < runAt, 'clearing after the stages run judges them against the page that was left');
 });
