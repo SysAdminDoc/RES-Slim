@@ -1337,6 +1337,9 @@
     "settingsConsoleSavingCloseBlocked": {
         "message": "Saving changes. You can close when it finishes."
     },
+    "settingsConsolePermissionDeclined": {
+        "message": "$1 was not switched on: the browser permission it needs ($2) was declined."
+    },
     "settingsConsolePermissionRequired": {
         "message": "Permission required"
     },
