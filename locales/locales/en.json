@@ -824,6 +824,18 @@
     "settingsSaveRollbackFailed": {
         "message": "Saving failed and the settings could not be put back automatically. Some of the changes may be stored even though this page is showing the old values. The error was: $1"
     },
+    "filterBuilderMoveCondition": {
+        "message": "Move condition"
+    },
+    "filterBuilderMoveConditionHint": {
+        "message": "Drag this condition, or move it with the up and down arrow keys."
+    },
+    "filterBuilderRemoveCondition": {
+        "message": "Remove condition"
+    },
+    "filterBuilderShareCondition": {
+        "message": "Copy and share this condition, or replace it with a new version"
+    },
     "settingsConsoleListSubredditsPlaceholder": {
         "message": "askreddit, pics"
     },
