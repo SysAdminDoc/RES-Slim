@@ -32,7 +32,33 @@ const html = `<!doctype html><html><body>
 
 const dom = installDom({ url: 'https://www.reddit.com/r/example/comments/post001/title/', html });
 Object.defineProperty(globalThis, 'HTMLDetailsElement', { value: dom.window.HTMLDetailsElement, configurable: true });
-const Shreddit = await loadFlowModule('lib/utils/shreddit.js', 'shreddit-compat');
+// Two `lib/utils/` siblings stand in, because pulling them in for real drags the
+// watcher graph behind them and this file is about the compat surface. Both
+// stubs are faithful rather than inert: `frameThrottle` really coalesces to one
+// call per frame, so a test here still sees the shape the shadow observers rely
+// on, and the shadow-observer behaviour itself is exercised against the real
+// modules in `shreddit-shadow-cost-contract.test.mjs`.
+const Shreddit = await loadFlowModule('lib/utils/shreddit.js', 'shreddit-compat', {
+	stubs: {
+		'./async': `
+export function frameThrottle(callback) {
+	let args = [];
+	let promise;
+	return (...a) => {
+		args = a;
+		promise = promise || new Promise((res, rej) => {
+			requestAnimationFrame(() => {
+				promise = null;
+				try { res(callback(...args)); } catch (e) { rej(e); }
+			});
+		});
+		return promise;
+	};
+}
+`,
+		'./dom': 'export function getPageSignal() { return globalThis.__resSlimPageSignal || null; }\n',
+	},
+});
 
 test('current Reddit posts are normalised into the Thing vocabulary', () => {
 	const prepared = Shreddit.prepareShredditTree(document);
@@ -180,6 +206,15 @@ test('current Reddit discussion controls expose stable paint hooks', () => {
 	comment.remove();
 });
 
+// The shadow observers coalesce to one install per frame, so a rerender is
+// visible after a frame rather than after a macrotask. The assertions below are
+// unchanged; only the wait is.
+function nextFrame() {
+	return new Promise(resolve => {
+		requestAnimationFrame(() => { setTimeout(resolve, 0); });
+	});
+}
+
 test('current Reddit shadow paint hooks survive late rendering and rerenders', async () => {
 	const action = document.createElement('shreddit-comment-action-row');
 	action.attachShadow({ mode: 'open' });
@@ -187,11 +222,11 @@ test('current Reddit shadow paint hooks survive late rendering and rerenders', a
 	Shreddit.prepareShredditTree(action);
 
 	action.shadowRoot.innerHTML = '<span class="rpl-vote-button-group"><button upvote></button></span>';
-	await new Promise(resolve => { setTimeout(resolve, 0); });
+	await nextFrame();
 	assert.match(action.shadowRoot.querySelector('[upvote]').getAttribute('part'), /\brsm-vote-button\b/);
 
 	action.shadowRoot.innerHTML = '<span class="rpl-vote-button-group"><button downvote></button></span>';
-	await new Promise(resolve => { setTimeout(resolve, 0); });
+	await nextFrame();
 	assert.match(action.shadowRoot.querySelector('[downvote]').getAttribute('part'), /\brsm-vote-button\b/);
 	action.remove();
 });
@@ -205,7 +240,7 @@ test('current Reddit post stylesheet survives shadow content replacement', async
 	assert.ok(post.shadowRoot.querySelector(selector));
 
 	post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="downvote"></button></div>';
-	await new Promise(resolve => { setTimeout(resolve, 0); });
+	await nextFrame();
 	assert.ok(post.shadowRoot.querySelector(selector), 'a full shadow rerender must restore the classic layout sheet');
 	assert.match(post.shadowRoot.querySelector('[data-action-bar-action="downvote"]').getAttribute('part'), /\brsm-vote-button\b/);
 	post.remove();
