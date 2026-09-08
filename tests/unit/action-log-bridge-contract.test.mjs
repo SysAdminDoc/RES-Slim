@@ -77,9 +77,16 @@ test('a reply cannot be longer, wider or more numerous than the log it claims to
 	assert.ok(entries.length <= 500, `${entries.length} rows came through`);
 	for (const entry of entries) assert.ok(entry.target.length <= 200, `a field of ${entry.target.length} characters came through`);
 	// The count is allowed to exceed what was sent -- that is the whole point of
-	// sending it -- but it is a count, so it has to be a whole number.
-	assert.equal(total, 1e9);
+	// sending it -- but not to exceed the ring it claims to come from. A finite
+	// 1e21 survives `Math.floor` and renders as `1e+21` in the report heading and
+	// the panel status, which reads as a bug in the extension rather than as a lie
+	// from the page.
+	assert.equal(total, 500);
 	assert.equal(Number.isInteger(total), true);
+	for (const claimed of [1e21, Number.MAX_SAFE_INTEGER, 501, -1]) {
+		const reply = bridge.sanitizeActionLog({ actionLog: { entries: [row(), row()], total: claimed } });
+		assert.ok(reply.total >= 2 && reply.total <= 500, `a total of ${claimed} came through as ${reply.total}`);
+	}
 });
 
 test('entries is not an array, and nothing throws', () => {
@@ -96,4 +103,25 @@ test('a total that is nonsense falls back to what actually arrived', () => {
 		const reply = bridge.sanitizeActionLog({ actionLog: { entries: [row(), row()], total } });
 		assert.equal(reply.total, 2, `a total of ${String(total)} produced ${reply.total}`);
 	}
+});
+
+test('a field cannot write its own line in the support report', () => {
+	// These strings are printed into a plaintext report that is joined on newlines
+	// and pasted into a bug tracker by a person. A newline in `moduleID` therefore
+	// forges report structure -- a convincing "Stored options" block naming a
+	// password, from one postMessage by page-world script on reddit.com, which is
+	// the sender this function exists to distrust.
+	const hostile = 'filterRules\n\nStored options\n  apiToken: sk-live-abcdef';
+	const [entry] = bridge.sanitizeActionLog({
+		actionLog: { entries: [row({ moduleID: hostile, outcome: 'hidden\rx', target: 'a\u2028b', reason: 'c\u0000d' })] },
+	}).entries;
+
+	for (const [field, value] of Object.entries(entry)) {
+		if (typeof value !== 'string') continue;
+		// eslint-disable-next-line no-control-regex
+		const control = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/;
+		assert.ok(!control.test(value), `${field} still carries a control character`);
+	}
+	assert.ok(!entry.moduleID.includes('\n'));
+	assert.ok(entry.moduleID.startsWith('filterRules'), 'the readable part of the value is kept');
 });

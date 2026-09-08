@@ -1023,7 +1023,8 @@ test('a copy that only half writes says so, and still destroys nothing', async (
 		assert.deepEqual(events, ['download'], 'nothing may be destroyed when the copy is incomplete');
 		const status = panel.querySelector('[role="status"]');
 		assert.match(status.textContent, /nothing was changed/i);
-		assert.match(status.textContent, /1 of the two/i, `the reader is not told a file was written: ${status.textContent}`);
+		assert.match(status.textContent, /\.json could be saved/i, `the reader is not told which file was written: ${status.textContent}`);
+		assert.ok(!/\.md could be saved/i.test(status.textContent), 'a file that was not written is named as one that was');
 		assert.equal(lease.calls.includes('release'), true, 'the lease has to go back');
 	} finally {
 		downloads.restore();

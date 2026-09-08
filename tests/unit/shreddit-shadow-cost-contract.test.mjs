@@ -16,7 +16,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { loadModule, installDom } from './helpers/loadModule.mjs';
+
+// Collection on demand, without needing `--expose-gc` on the runner's command
+// line. A retention question cannot be answered any other way: "is this object
+// still reachable" is exactly what a garbage collector decides.
+v8.setFlagsFromString('--expose_gc');
+const collect = vm.runInNewContext('gc');
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 
@@ -84,29 +92,32 @@ test('an action row runs the selectors that can match it, not every selector the
 	action.remove();
 });
 
-test('every host a stylesheet paints is a host the partition still runs on', () => {
+test('every host a stylesheet paints is a host every entry for that part runs on', () => {
 	// The safety net for the partition above. The part names exist to be reached
 	// by a `<host>::part(name)` rule, so the stylesheets are the authority on
-	// which hosts each rule has to run inside. Drop a host from a list in
-	// `shreddit.js` and this fails naming it.
+	// which hosts each rule has to run inside.
+	//
+	// Per entry, not per name. Unioning the host lists of every entry carrying a
+	// name is what a first version of this did, and it could not see a host being
+	// dropped from one of the two entries that expose `rsm-comment-action-button`
+	// -- the award button's selector and the overflow menu's -- because the other
+	// entry kept contributing the host to the union while the selector that
+	// actually matches there had stopped running.
 	const source = fs.readFileSync(path.join(repoRoot, 'lib', 'utils', 'shreddit.js'), 'utf8');
 	const table = source.slice(source.indexOf('const SHREDDIT_PARTS = ['), source.indexOf('function addPart('));
 
-	const allowed = new Map();
+	const entries = [];
 	for (const entry of table.split(/\n\t\{|\n\t\},/)) {
 		const names = [...entry.matchAll(/'(rsm-[a-z-]+)'/g)].map(match => match[1]);
 		if (!names.length) continue;
+		const selector = (entry.match(/selector: ('[^']*'|\[)/) || [])[1] || '(multi-line)';
 		const hostList = entry.match(/hosts: \[([^\]]*)\]/);
-		const hosts = hostList ? [...hostList[1].matchAll(/'([a-z-]+)'/g)].map(match => match[1]) : null;
-		for (const name of names) {
-			if (!allowed.has(name)) allowed.set(name, hosts && new Set(hosts));
-			else if (hosts && allowed.get(name)) for (const host of hosts) allowed.get(name).add(host);
-			else allowed.set(name, null);
-		}
+		const hosts = hostList ? new Set([...hostList[1].matchAll(/'([a-z-]+)'/g)].map(match => match[1])) : null;
+		entries.push({ selector, names, hosts });
 	}
-	// The share button's exportparts mapping is written outside the table.
-	allowed.set('rsm-share-button', new Set(['shreddit-post']));
-	allowed.set('rsm-share-icon', new Set(['shreddit-post']));
+	// The share button's exportparts mapping is written outside the table, guarded
+	// by its own `hostTag !== 'shreddit-post'` return.
+	entries.push({ selector: 'shreddit-post-share-button', names: ['rsm-share-button', 'rsm-share-icon'], hosts: new Set(['shreddit-post']) });
 
 	const cssDir = path.join(repoRoot, 'lib', 'css');
 	const files = [];
@@ -129,9 +140,15 @@ test('every host a stylesheet paints is a host the partition still runs on', () 
 
 	assert.ok(pairs.length > 20, `only ${pairs.length} part rules were found; the scan is not reading the stylesheets`);
 	for (const { host, name, file } of pairs) {
-		const hosts = allowed.get(name);
-		assert.notEqual(hosts, undefined, `${file} paints ::part(${name}), which nothing exposes`);
-		if (hosts) assert.ok(hosts.has(host), `${file} paints ${host}::part(${name}), which is not exposed inside ${host}`);
+		const carriers = entries.filter(entry => entry.names.includes(name));
+		assert.ok(carriers.length, `${file} paints ::part(${name}), which nothing exposes`);
+		for (const carrier of carriers) {
+			if (!carrier.hosts) continue;
+			assert.ok(
+				carrier.hosts.has(host),
+				`${file} paints ${host}::part(${name}); the entry for ${carrier.selector} does not run there`,
+			);
+		}
 	}
 });
 
@@ -253,4 +270,71 @@ test('a nested host that is still waiting does not drag the sweep back to its fa
 	} finally {
 		comment.remove();
 	}
+});
+
+test('a root that is thrown away is thrown away, observer and all', async () => {
+	// The first attempt at teardown here held every observer in a module-level Set
+	// so they could be disconnected on the page signal. That was strictly worse
+	// than holding none: the callback closes over its host, so the Set rooted every
+	// observed host and its whole shadow subtree for the life of the page -- on a
+	// thread scrolled through a few thousand comments, all of them.
+	//
+	// Held by nothing but the node it watches, an observer dies with that node.
+	// This is the probe that says so.
+	const probes = [];
+	// In a helper so the host is not still on this function's stack when the
+	// collector is asked: a local in the loop body above would keep the last one
+	// alive for reasons that have nothing to do with the module under test.
+	const prepareAndDrop = async index => {
+		const host = document.createElement('shreddit-comment-action-row');
+		host.dataset.index = String(index);
+		host.attachShadow({ mode: 'open' }).innerHTML = '<span class="rpl-vote-button-group"><button upvote></button></span>';
+		document.body.append(host);
+		Shreddit.prepareShredditTree(host);
+		await nextFrame();
+		host.remove();
+		probes.push(new WeakRef(host));
+	};
+
+	for (const index of Array.from({ length: 30 }, (_, at) => at)) {
+		// eslint-disable-next-line no-await-in-loop
+		await prepareAndDrop(index);
+	}
+
+	for (const _pass of [1, 2, 3, 4, 5, 6]) { // eslint-disable-line no-unused-vars
+		collect();
+		// eslint-disable-next-line no-await-in-loop
+		await new Promise(resolve => { setTimeout(resolve, 10); });
+		if (probes.filter(probe => probe.deref()).length <= 1) break;
+	}
+
+	const retained = probes.filter(probe => probe.deref()).length;
+	// One is allowed: the collector is not obliged to be exhaustive about the most
+	// recently dropped object.
+	assert.ok(retained <= 1, `${retained} of ${probes.length} removed hosts are still reachable`);
+});
+
+test('a stylesheet a rerender destroyed comes back in the same turn, not the next frame', async () => {
+	// The throttle is right for exposing parts: nothing there can be seen before
+	// the next paint. It is wrong for the injected sheet. A Reddit rerender that
+	// replaces a post root's contents takes the classic layout sheet with it, and a
+	// frame of waiting is a frame painted with Reddit's own vote rail -- on a vote,
+	// which is one of the things that causes the rerender. A background tab gets no
+	// frames at all, so the repair would wait until the reader looked at it.
+	const post = document.createElement('shreddit-post');
+	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+	document.body.append(post);
+	Shreddit.prepareShredditThing(post);
+	await nextFrame();
+
+	const selector = `style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`;
+	assert.ok(post.shadowRoot.querySelector(selector), 'the sheet was never installed, so this proves nothing');
+
+	post.shadowRoot.innerHTML = '<div class="action-row"><button data-action-bar-action="downvote"></button></div>';
+	// One microtask: that is when the observer is delivered its records. No frame.
+	await Promise.resolve();
+	await Promise.resolve();
+
+	assert.ok(post.shadowRoot.querySelector(selector), 'the layout sheet waited for a frame to come back');
+	post.remove();
 });
