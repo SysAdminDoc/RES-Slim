@@ -137,9 +137,13 @@ test('the twitter host asks the x.com oEmbed endpoint, and is allowed to', async
 	// refused before it leaves.
 	assert.ok(twitter.permissions.includes('https://publish.x.com/oembed'),
 		`the host requests publish.x.com but declares ${JSON.stringify(twitter.permissions)}`);
-	// The old origin stays declared for one release, so a profile that already
-	// granted it is not prompted again.
-	assert.ok(twitter.permissions.includes('https://publish.twitter.com/oembed'));
+	// And only that origin. Declaring the old one alongside it was meant to spare
+	// an existing profile a second prompt and does not: `Permissions.has` hands
+	// the whole array to `chrome.permissions.contains`, which is all-or-nothing,
+	// so a profile holding only twitter.com answers false and is prompted either
+	// way. The only thing the extra entry bought was a prompt naming a host
+	// nothing requests.
+	assert.deepEqual(twitter.permissions, ['https://publish.x.com/oembed']);
 
 	const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'chrome/manifest.json'), 'utf8'));
 	assert.ok(manifest.optional_host_permissions.includes('https://publish.x.com/oembed'),

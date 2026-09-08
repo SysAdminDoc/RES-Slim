@@ -18,16 +18,28 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { probeEndpoint, healthy, MAX_SAME_HOST_REDIRECTS } from '../../scripts/endpoint-probe.mjs';
+import { FETCHED, LINKED } from '../../scripts/endpoint-list.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const read = file => fs.readFileSync(path.join(repoRoot, file), 'utf8');
 
-// A `fetch` that answers from a script rather than a network.
+// A `fetch` that answers from a script rather than a network, and records how it
+// was called.
+//
+// The first version of this recorded only the URL, which made the whole file
+// unfalsifiable: deleting `redirect: 'manual'` from the probe -- the single line
+// the work exists for -- left all seven tests green, because no assertion could
+// see what the probe asked fetch to do. A stub that drops the argument under
+// test is a stub that tests nothing.
+//
+// It also refuses to follow a redirect itself, the way a real `redirect: 'manual'`
+// fetch does not, so a probe that stopped passing that option would run off the
+// end of the script and fail loudly rather than quietly reading the last step.
 function stubFetch(steps) {
-	const seen = [];
+	const calls = [];
 	const remaining = [...steps];
-	const doFetch = url => {
-		seen.push(url);
+	const doFetch = (url, options = {}) => {
+		calls.push({ url, options });
 		const step = remaining.shift();
 		if (!step) throw new Error(`unexpected request to ${url}`);
 		return Promise.resolve({
@@ -36,11 +48,38 @@ function stubFetch(steps) {
 			text: () => Promise.resolve(step.body || ''),
 		});
 	};
-	return { doFetch, seen };
+	return { doFetch, calls, urls: () => calls.map(call => call.url) };
 }
 
+test('the probe asks for manual redirects, or it can never see one', () => {
+	// Everything else in this file rests on the probe being handed the redirect
+	// itself. With `redirect: 'follow'` the browser resolves a 301 transparently
+	// and the probe is handed the final 200, so the cross-host check below has
+	// nothing to check.
+	const { doFetch, calls } = stubFetch([{ status: 200, body: '{}' }]);
+	return probeEndpoint({ name: 'x', url: 'https://example.test/a' }, { fetch: doFetch }).then(() => {
+		assert.equal(calls.length, 1);
+		assert.equal(calls[0].options.redirect, 'manual', 'a followed redirect is one the probe never sees');
+		assert.ok(calls[0].options.signal, 'and the timeout has to reach the request');
+	});
+});
+
+test('a probe that needs a POST sends one', () => {
+	// The Steam endpoint answers 405 to a GET. Probing it with the wrong method
+	// and then accepting 405 asserts only that a router is listening.
+	const { doFetch, calls } = stubFetch([{ status: 200, body: '{"publishedfiledetails":[]}' }]);
+	return probeEndpoint(
+		{ name: 'steam', url: 'https://api.test/x', method: 'POST', body: 'itemcount=1' },
+		{ fetch: doFetch },
+	).then(result => {
+		assert.equal(result.ok, true);
+		assert.equal(calls[0].options.method, 'POST');
+		assert.equal(calls[0].options.body, 'itemcount=1');
+	});
+});
+
 test('a redirect to another host fails, and says which host it moved to', async () => {
-	const { doFetch, seen } = stubFetch([
+	const { doFetch, urls } = stubFetch([
 		{ status: 301, location: 'https://publish.x.com/oembed' },
 	]);
 
@@ -52,13 +91,13 @@ test('a redirect to another host fails, and says which host it moved to', async 
 	assert.equal(result.ok, false, 'a cross-host redirect is not a healthy endpoint');
 	assert.match(result.error, /publish\.twitter\.com/, 'the message has to name the host the permission covers');
 	assert.match(result.error, /publish\.x\.com/, 'and the host it moved to');
-	assert.equal(seen.length, 1, 'the redirect must not be followed');
+	assert.equal(urls().length, 1, 'the redirect must not be followed');
 });
 
 test('a redirect within the same host is followed', async () => {
 	// A service reorganising its own paths. The extension's permission still
 	// covers it, so this is not a break.
-	const { doFetch, seen } = stubFetch([
+	const { doFetch, urls } = stubFetch([
 		{ status: 302, location: '/v2/oembed' },
 		{ status: 200, body: '{}' },
 	]);
@@ -69,7 +108,41 @@ test('a redirect within the same host is followed', async () => {
 	);
 
 	assert.equal(result.ok, true);
-	assert.deepEqual(seen, ['https://example.test/oembed', 'https://example.test/v2/oembed']);
+	assert.deepEqual(urls(), ['https://example.test/oembed', 'https://example.test/v2/oembed']);
+});
+
+test('a scheme downgrade is a move, and a port change is not', async () => {
+	// A permission for `https://api.example/*` does not cover an `http://` target,
+	// and the browser would refuse it as mixed content even if it did. Comparing
+	// bare hosts called that healthy -- the same class of miss this file exists
+	// for. A port, by contrast, is ignored by a Chrome match pattern, so changing
+	// one is not a move and calling it one would be a false alarm.
+	const downgraded = await probeEndpoint(
+		{ name: 'downgrade', url: 'https://api.test/x' },
+		{ fetch: stubFetch([{ status: 301, location: 'http://api.test/x' }]).doFetch },
+	);
+	assert.equal(downgraded.ok, false, 'https to http is a move');
+	assert.match(downgraded.error, /https:\/\/api\.test/);
+
+	const reported = await probeEndpoint(
+		{ name: 'port', url: 'https://api.test/x' },
+		{ fetch: stubFetch([{ status: 301, location: 'https://api.test:8443/x' }, { status: 200, body: '{}' }]).doFetch },
+	);
+	assert.equal(reported.ok, true, 'a port is not part of what a permission covers');
+});
+
+test('a 3xx that is not a redirect is not read as one', async () => {
+	// 304 says the cached copy is current and 300 offers choices without picking
+	// one. Neither carries the request anywhere, and treating them as a redirect
+	// with no `Location` reported a live endpoint as broken.
+	for (const status of [300, 304]) {
+		// eslint-disable-next-line no-await-in-loop
+		const result = await probeEndpoint(
+			{ name: 'not a redirect', url: 'https://api.test/x' },
+			{ fetch: stubFetch([{ status }]).doFetch },
+		);
+		assert.equal(result.ok, true, `${status} is not a redirect and the endpoint answered`);
+	}
 });
 
 test('a redirect loop within one host stops rather than spinning', async () => {
@@ -114,29 +187,49 @@ test('rate limiting is not death, and a 4xx nobody accepted is', () => {
 	assert.equal(healthy(500), false);
 });
 
-test('every host that declares an optional permission is probed', () => {
+test('every host that declares an optional permission is probed, or is deliberately not', () => {
 	// A permission is a promise that a module will reach exactly that origin. An
 	// origin that has moved or died is a broken module, and this gate is the only
 	// thing that would notice.
+	//
+	// The entries are imported, not regexed out of the runner. The first version
+	// of this searched the script's text for `(hosts/<name>)`, which a comment
+	// satisfies: replacing an entry with `// TODO: restore the (hosts/tumblr)
+	// probe` left both coverage tests green with tumblr entirely unprobed. It was
+	// evadable by a reformat too -- two spaces, a double-quoted name, a
+	// multi-line entry or a camelCase directory all slipped past the pattern.
 	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
 	const declaring = fs.readdirSync(hostsDir)
 		.filter(file => file.endsWith('.js'))
-		.map(file => ({ host: file.replace(/\.js$/, ''), source: fs.readFileSync(path.join(hostsDir, file), 'utf8') }))
-		.filter(({ source }) => /^\s*permissions: \[/m.test(source))
-		.map(({ host }) => host);
+		.filter(file => /^\s*permissions: \[/m.test(fs.readFileSync(path.join(hostsDir, file), 'utf8')))
+		.map(file => file.replace(/\.js$/, ''));
 
 	assert.ok(declaring.length >= 15, `only ${declaring.length} hosts declare a permission; the scan has drifted`);
 
-	const gate = read('scripts/check-endpoints.mjs');
-	const missing = declaring.filter(host => !gate.includes(`(hosts/${host})`));
+	const probedHosts = new Set([...FETCHED, ...LINKED]
+		.flatMap(entry => (entry.anyOf ? entry.anyOf : [entry]))
+		.map(entry => /\(hosts\/([A-Za-z]+)\)/.exec(entry.name))
+		.filter(Boolean)
+		.map(match => match[1]));
+
+	// One host is exempt, and the exemption is named here rather than left as an
+	// absence: `vreddit`'s permission is reddit's own media infrastructure, and
+	// probing it would make this gate fetch reddit from the machine that runs it.
+	const EXEMPT = new Set(['vreddit']);
+
+	const missing = declaring.filter(host => !probedHosts.has(host) && !EXEMPT.has(host));
 	assert.deepEqual(missing, [], `these hosts declare a permission and are never probed: ${missing.join(', ')}`);
+
+	// And the exemption is not a place to quietly park a host: anything in it must
+	// still declare a permission, or it is stale.
+	const stale = [...EXEMPT].filter(host => !declaring.includes(host));
+	assert.deepEqual(stale, [], `exempt from probing but no longer a permission-declaring host: ${stale.join(', ')}`);
 });
 
-test('every probed origin is one the extension is actually allowed to reach', () => {
-	// The other direction, and the one that would have caught the Twitter break
-	// on its own: a probe of an origin no manifest declares is measuring a host
-	// the extension could not request even if it were up.
-	const gate = read('scripts/check-endpoints.mjs');
+test('every probed host origin is one the extension is actually allowed to reach', () => {
+	// The other direction, and the one that would have caught the Twitter break on
+	// its own: a probe of an origin no manifest declares is measuring a host the
+	// extension could not request even if it were up.
 	const manifest = JSON.parse(read('chrome/manifest.json'));
 	const granted = [
 		...(manifest.host_permissions || []),
@@ -153,22 +246,24 @@ test('every probed origin is one the extension is actually allowed to reach', ()
 		return host === '*' || host === originHost;
 	});
 
-	// Only the entries whose host module declares a permission. The others are
-	// media URLs an `<img>` or `<video>` loads, and pages the extension links to
-	// or frames -- neither needs a permission and neither would be covered by one.
+	// Only the entries whose host module declares a permission. `LINKED` is pages
+	// a reader clicks or a frame loads, and giphy's are media URLs an `<img>` or a
+	// `<video>` loads: none of those needs a permission, and none would be covered
+	// by one.
 	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
 	const declaring = new Set(fs.readdirSync(hostsDir)
 		.filter(file => file.endsWith('.js'))
 		.filter(file => /^\s*permissions: \[/m.test(fs.readFileSync(path.join(hostsDir, file), 'utf8')))
 		.map(file => file.replace(/\.js$/, '')));
 
-	const probed = [...gate.matchAll(/\{ name: '[^']*\(hosts\/([a-z]+)\)', url: '([^']+)'/g)]
-		.map(match => ({ host: match[1], url: match[2] }))
-		.filter(({ host }) => declaring.has(host));
-	assert.ok(probed.length >= 15, `only ${probed.length} host probes were parsed; the scan has drifted`);
+	const probed = FETCHED
+		.flatMap(entry => (entry.anyOf ? entry.anyOf : [entry]))
+		.map(entry => ({ name: entry.name, url: entry.url, host: (/\(hosts\/([A-Za-z]+)\)/.exec(entry.name) || [])[1] }))
+		.filter(entry => entry.host && declaring.has(entry.host));
+	assert.ok(probed.length >= 13, `only ${probed.length} host probes were found; the list has drifted`);
 
 	const uncovered = probed
 		.filter(({ url }) => !covers(url))
-		.map(({ host, url }) => `${host}: ${new URL(url).origin}`);
+		.map(({ name, url }) => `${name}: ${new URL(url).origin}`);
 	assert.deepEqual(uncovered, [], `probed origins no manifest permission covers:\n  ${uncovered.join('\n  ')}`);
 });

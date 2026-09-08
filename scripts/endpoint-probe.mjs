@@ -5,14 +5,14 @@
 // stubbed `fetch`. The gate's whole job is to notice a third party moving or
 // dying, and until this was testable the gate itself had no test.
 //
-// **A cross-host redirect is a failure, not a success.** This is the case that
-// let the Twitter break ship. `publish.twitter.com/oembed` began answering
+// **A redirect to another origin is a failure, not a success.** This is the case
+// that let the Twitter break ship. `publish.twitter.com/oembed` began answering
 // `301 https://publish.x.com/oembed`, and a probe that follows redirects reads
-// that as a healthy 200 from the new host. The extension cannot: its request
-// carries an optional host permission for the *old* origin, and a cross-origin
-// redirect to an origin it has no permission for sends no CORS header it is
-// allowed to read, so the fetch is refused outright. So the endpoint was dead
-// for the extension and alive for the gate, for as long as anyone cared to look.
+// that as a healthy 200 from the new host. The extension cannot follow it: a
+// host request runs in the background worker at the extension's own origin, and
+// the browser refuses the redirect because the extension holds no host
+// permission for the target. So the endpoint was dead for the extension and
+// alive for the gate, for as long as anyone cared to look.
 //
 // A redirect *within* the same host is followed, because that is a service
 // reorganising its own paths and the extension's permission still covers it.
@@ -26,13 +26,29 @@
 
 export const MAX_SAME_HOST_REDIRECTS = 3;
 
+// 3xx is not the same as "redirect". 304 means the cached copy is current, and
+// 300 offers choices without picking one; neither carries the extension anywhere,
+// and treating them as a redirect with no `Location` reported a live endpoint as
+// broken. The four that actually move a request are these.
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
 export const healthy = status => status === 429 || (status >= 200 && status < 400);
 
-const isRedirect = status => status >= 300 && status < 400;
+const isRedirect = status => REDIRECT_STATUSES.has(status);
 
-function hostOf(url) {
+// Scheme and host, without the port.
+//
+// Scheme, because a permission of `https://api.example/*` does not cover an
+// `http://` target -- the browser would refuse it as mixed content even if the
+// permission did, so a downgrade is a move as surely as a rename is. Comparing
+// bare hosts missed that, which is the same class of bug this file exists to
+// catch. Without the port, because a Chrome match pattern ignores it, so
+// `https://a.example:8443` really is covered by a permission for
+// `https://a.example/*` and calling that a move would be a false alarm.
+function originOf(url) {
 	try {
-		return new URL(url).host;
+		const parsed = new URL(url);
+		return `${parsed.protocol}//${parsed.hostname}`;
 	} catch (e) {
 		return null;
 	}
@@ -44,7 +60,11 @@ function hostOf(url) {
  *               without a network, and so the timeout is visible to the caller.
  */
 export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 } = {}) {
-	const { name, expect, accept = [] } = entry;
+	// `method` and `body` because an endpoint that only answers a POST cannot be
+	// probed with a GET: the Steam one returns 405 to a GET, and accepting that
+	// would assert only that some router is listening. Probing the request the
+	// module actually makes is the whole point.
+	const { name, expect, accept = [], method = 'GET', body } = entry;
 	const accepted = new Set(accept);
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -57,15 +77,20 @@ export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 }
 			const response = await doFetch(url, {
 				signal: controller.signal,
 				redirect: 'manual',
-				headers: { 'user-agent': 'RES-Slim endpoint check' },
+				method,
+				headers: {
+					'user-agent': 'RES-Slim endpoint check',
+					...(body ? { 'content-type': 'application/x-www-form-urlencoded' } : {}),
+				},
+				...(body ? { body } : {}),
 			});
 			const status = response.status;
 
 			if (isRedirect(status)) {
 				const location = response.headers.get('location');
 				const target = location ? new URL(location, url).toString() : null;
-				const from = hostOf(url);
-				const to = target && hostOf(target);
+				const from = originOf(url);
+				const to = target && originOf(target);
 				if (!target) return { name, url, status, ok: false, error: 'redirected with no Location header' };
 				if (to !== from) {
 					return {
@@ -73,7 +98,7 @@ export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 }
 						url,
 						status,
 						ok: false,
-						error: `moved to another host: the permission covers ${from}, the endpoint is now on ${to}`,
+						error: `moved: the permission covers ${from}, the endpoint is now on ${to}`,
 					};
 				}
 				url = target;
