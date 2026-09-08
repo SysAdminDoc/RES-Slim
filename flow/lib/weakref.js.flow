@@ -1,0 +1,14 @@
+// Flow 0.84 ships the 2018 standard library, which predates `WeakRef`. It is
+// Chrome 84 and Firefox 79, both comfortably inside this project's floor, and
+// `lib/utils/Thing.js` needs it: a parent Thing holds its children, and holding
+// them strongly kept every detached comment of a long thread alive for the life
+// of the page.
+//
+// Declared here rather than cast to `any` at the use site, because the whole
+// point of the type is that `deref()` can answer nothing and every caller has to
+// say what it does about that.
+
+declare class WeakRef<T: interface {}> {
+	constructor(target: T): void;
+	deref(): T | void;
+}
