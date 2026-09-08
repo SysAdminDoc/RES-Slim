@@ -69,3 +69,22 @@ test('defaultVideo maps every extension it detects onto a real MIME subtype', ()
 	// The extension arrives from the URL, so casing is the reader's, not ours.
 	assert.equal(typeFor('https://example.com/clip.MKV'), 'video/x-matroska');
 });
+
+test('an unplayable video never enters the load lifecycle', async () => {
+	const media = videoMedia('video/x-matroska');
+
+	// `_restore()` waits for `loadedmetadata`, which an element with no source
+	// never fires. Before the guard, every expand of an error box left one
+	// pending promise and one live listener behind it — the same class of leak
+	// the expando teardown work exists to remove.
+	assert.equal(media.supportsUnload(), false, 'there is nothing to unload');
+
+	const settled = await Promise.race([
+		media._restore().then(() => 'settled'),
+		new Promise(resolve => { setTimeout(() => resolve('pending'), 50); }),
+	]);
+	assert.equal(settled, 'settled', '_restore must not wait for metadata that will never arrive');
+
+	// And the ordinary entry point is a no-op rather than a hang.
+	assert.doesNotThrow(() => media.expand());
+});

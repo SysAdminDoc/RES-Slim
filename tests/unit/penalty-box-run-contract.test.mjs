@@ -216,3 +216,63 @@ test('two hosts failing at the same time both get recorded', async () => {
 		['a.example', 'b.example'],
 	);
 });
+
+test('letting every host back in is not undone by a failure already in flight', async () => {
+	// `pardonAll` clears the same record the other two mutate. Left outside the
+	// queue it raced them, so the button could report success while a failure
+	// queued behind it re-suspended the host the reader had just pardoned.
+	await fresh();
+
+	const inFlight = [0, 1, 2].map(i => PenaltyBox.noteFailure('dead.example', T0 + i));
+	const pardoned = PenaltyBox.pardonAll();
+	await Promise.all([...inFlight, pardoned]);
+
+	assert.deepEqual(PenaltyBox.listSuspended(T0 + 100), [], 'the pardon has to be the last word');
+});
+
+test('a stuck diagnostics write does not block the next host from being recorded', async () => {
+	// The suspension notice goes through a write queue shared with every other
+	// module's error log. Awaiting it inside the record's critical section meant
+	// one slow or stuck log write stalled every later penalty-box decision.
+	await fresh();
+
+	const local = globalThis.chrome.storage.local;
+	const realSet = local.set;
+	// Only the first log write is held, and it is held rather than dropped so it
+	// can be let go before this test ends — an unsettled promise would outlive
+	// the test and fail the whole file.
+	let releaseHeldWrite = null;
+	local.set = function(items, callback) {
+		if (!releaseHeldWrite && Object.hasOwn(items, 'RES.moduleErrorLog')) {
+			releaseHeldWrite = () => Reflect.apply(realSet, this, [items, callback]);
+			return undefined;
+		}
+		return Reflect.apply(realSet, this, [items, callback]);
+	};
+
+	try {
+		// Suspends on the third, and that suspension's notice write hangs. Every
+		// later notice queues behind it, because the module error log is one
+		// shared write queue.
+		const stuck = Promise.all([0, 1, 2].map(i => PenaltyBox.noteFailure('wedge.example', T0 + i)));
+
+		// Un-awaited, which is how `linkScanner` calls this for every link on the
+		// page. The decision has to land in the record even though the notice for
+		// it cannot be written yet.
+		const later = Promise.all([0, 1, 2].map(i => PenaltyBox.noteFailure('other.example', T0 + 10 + i)));
+
+		await new Promise(resolve => { setTimeout(resolve, 50); });
+
+		assert.equal(
+			PenaltyBox.isHostSuspended('other.example', T0 + 100),
+			true,
+			'a stuck log write must not cost a later host its backoff',
+		);
+		assert.ok(releaseHeldWrite, 'sanity: the suspension notice should have been the held write');
+
+		releaseHeldWrite();
+		await Promise.all([stuck, later]);
+	} finally {
+		local.set = realSet;
+	}
+});
