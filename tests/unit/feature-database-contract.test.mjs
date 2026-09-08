@@ -54,11 +54,23 @@ function fakeIndexedDb(databases) {
 	};
 }
 
-async function loadMigration({ databases, marker = {}, privateWindow = false, withDatabaseList = true }) {
+async function loadMigration({
+	databases,
+	marker = {},
+	progress = {},
+	privateWindow = false,
+	withDatabaseList = true,
+	// A stand-in for `chrome.runtime.sendMessage`'s payload limit: the bridge
+	// serialises the whole thing, and the failure this file is about is one
+	// message that was too big to send.
+	maxPayloadBytes = Infinity,
+}) {
 	// The stubs read these lazily, inside their function bodies: a stub that
 	// captured them at module scope would hold the previous test's arrays.
 	globalThis.__migrationWrites = [];
-	globalThis.__migrationMarker = { value: marker };
+	globalThis.__migrationStores = { 'RESmodules.featureData.migrated': marker, 'RESmodules.featureData.migrationProgress': progress };
+	globalThis.__migrationSets = [];
+	globalThis.__migrationLimit = maxPayloadBytes;
 	const db = fakeIndexedDb(databases);
 	if (!withDatabaseList) delete db.databases;
 	globalThis.indexedDB = db;
@@ -68,20 +80,42 @@ async function loadMigration({ databases, marker = {}, privateWindow = false, wi
 		stubs: {
 			'../../utils/featureStores': 'export * from "./featureStores.mjs";',
 			'./featureDb': `
-				export function writeRecords(store, put) { globalThis.__migrationWrites.push([store, put]); return Promise.resolve(); }
+				export function writeRecords(store, put) {
+					const size = JSON.stringify(put).length;
+					if (size > globalThis.__migrationLimit) {
+						return Promise.reject(new Error('Message length exceeded maximum allowed length'));
+					}
+					globalThis.__migrationWrites.push([store, put]);
+					return Promise.resolve();
+				}
 			`,
 			'./privateBrowsing': `export const isPrivateBrowsing = () => ${privateWindow ? 'true' : 'false'};`,
+			// Keyed by name. One shared store would let the progress writes land on
+			// the marker and the marker's final write hide them, which is exactly the
+			// kind of accident that makes a resume test prove nothing.
 			'./storage': `
-				export function wrap() {
+				export function wrap(key) {
 					return {
-						get: () => Promise.resolve(globalThis.__migrationMarker.value),
-						set: value => { globalThis.__migrationMarker.value = value; return Promise.resolve(); },
+						get: () => Promise.resolve(globalThis.__migrationStores[key]),
+						set: value => {
+							globalThis.__migrationSets.push([key, JSON.parse(JSON.stringify(value))]);
+							globalThis.__migrationStores[key] = value;
+							return Promise.resolve();
+						},
 					};
 				}
 			`,
 		},
 	});
-	return { mod, written: globalThis.__migrationWrites, stored: globalThis.__migrationMarker, deleted: db.deleted };
+	return {
+		mod,
+		written: globalThis.__migrationWrites,
+		stored: { get value() { return globalThis.__migrationStores['RESmodules.featureData.migrated']; } },
+		progress: { get value() { return globalThis.__migrationStores['RESmodules.featureData.migrationProgress']; } },
+		sets: globalThis.__migrationSets,
+		deleted: db.deleted,
+		setLimit: bytes => { globalThis.__migrationLimit = bytes; },
+	};
 }
 
 test('records are copied across and the marker records how many', async () => {
@@ -216,4 +250,137 @@ test('the open path reports through that description rather than a bare string',
 	// The message is only worth writing if the thing that fails uses it.
 	const source = fs.readFileSync(path.join(repoRoot, 'lib', 'environment', 'background', 'featureDb.js'), 'utf8');
 	assert.match(source, /request\.onerror = \(\) => reject\(describeOpenFailure\(request\.error\)\);/);
+});
+
+// One message per store was never going to hold a vote history. The bridge is
+// `chrome.runtime.sendMessage`, which serialises the whole payload, and a
+// fifty-thousand record log with 240-character snippets does not fit in one --
+// so the copy threw, the marker was deliberately left unset, and the next Reddit
+// page load read the whole store and posted the whole thing again. For the life
+// of the profile, with nobody told.
+
+function bulkVotes(count) {
+	return Array.from({ length: count }, (_, index) => ({
+		id: `v${index}`,
+		timestamp: 1_700_000_000_000 + index,
+		snippet: 'x'.repeat(240),
+	}));
+}
+
+test('a store too big for one message is copied in batches', async () => {
+	const records = bulkVotes(60_000);
+	// Comfortably smaller than the whole store, comfortably larger than a batch.
+	const { mod, written, stored, progress } = await loadMigration({
+		databases: { 'rsm-voteHistory': { votes: records } },
+		maxPayloadBytes: 8 * 1024 * 1024,
+	});
+
+	const moved = await mod.migrateLegacyFeatureStores();
+
+	assert.equal(moved.voteHistory, 60_000, 'the copy did not finish');
+	const voteWrites = written.filter(([store]) => store === 'voteHistory');
+	assert.ok(voteWrites.length > 1, 'the whole store went in one message again');
+	assert.equal(voteWrites.reduce((total, [, put]) => total + put.length, 0), 60_000, 'records were lost between batches');
+
+	// Every id, once, in order.
+	const seen = voteWrites.flatMap(([, put]) => put.map(record => record.id));
+	assert.equal(new Set(seen).size, 60_000, 'a record was copied twice');
+	assert.equal(seen[0], 'v0');
+	assert.equal(seen[seen.length - 1], 'v59999');
+
+	assert.equal(stored.value.voteHistory, 60_000, 'the marker was not written');
+	assert.deepEqual(progress.value, {}, 'a finished store left half-done state behind');
+});
+
+test('a copy that fails part way resumes rather than starting again', async () => {
+	const records = bulkVotes(10_000);
+	const harness = await loadMigration({
+		databases: { 'rsm-voteHistory': { votes: records } },
+		maxPayloadBytes: 8 * 1024 * 1024,
+	});
+
+	// Two batches land, then the bridge starts refusing everything.
+	let landed = 0;
+	globalThis.__migrationLimit = Infinity;
+	const realWrites = globalThis.__migrationWrites;
+	globalThis.__migrationWrites = {
+		push(entry) {
+			landed += 1;
+			if (landed > 2) throw new Error('Message length exceeded maximum allowed length');
+			realWrites.push(entry);
+		},
+	};
+	try {
+		await harness.mod.migrateLegacyFeatureStores();
+	} finally {
+		globalThis.__migrationWrites = realWrites;
+	}
+
+	const copiedFirstTime = realWrites.reduce((total, [, put]) => total + put.length, 0);
+	assert.ok(copiedFirstTime > 0 && copiedFirstTime < 10_000, `the first attempt copied ${copiedFirstTime}`);
+	assert.equal(harness.progress.value.voteHistory.copied, copiedFirstTime, 'the progress was not recorded');
+	assert.equal(harness.progress.value.voteHistory.failures, 1);
+	assert.equal(harness.stored.value.voteHistory, undefined, 'an unfinished copy must not be marked done');
+
+	// The next page load: the bridge works again.
+	const second = await loadMigration({
+		databases: { 'rsm-voteHistory': { votes: records } },
+		marker: harness.stored.value,
+		progress: harness.progress.value,
+		maxPayloadBytes: 8 * 1024 * 1024,
+	});
+	const moved = await second.mod.migrateLegacyFeatureStores();
+
+	const copiedAgain = second.written.reduce((total, [, put]) => total + put.length, 0);
+	assert.equal(copiedAgain, 10_000 - copiedFirstTime, 'the resumed copy started from nothing');
+	assert.equal(moved.voteHistory, 10_000 - copiedFirstTime);
+	assert.equal(second.stored.value.voteHistory, 10_000);
+
+	// And between them, every record went across exactly once.
+	const all = [...realWrites, ...second.written].flatMap(([, put]) => put.map(record => record.id));
+	assert.equal(new Set(all).size, 10_000);
+});
+
+test('three failures in a row stop being a secret', async () => {
+	// Not a reason to give up -- the records are still in the old database -- but
+	// a reader whose vote history did not appear is entitled to find out why.
+	const reported = [];
+	let progress = {};
+	for (const attempt of [1, 2, 3, 4]) {
+		// eslint-disable-next-line no-await-in-loop
+		const harness = await loadMigration({
+			databases: { 'rsm-voteHistory': { votes: bulkVotes(5) } },
+			progress,
+			maxPayloadBytes: 1,
+		});
+		// eslint-disable-next-line no-await-in-loop
+		await harness.mod.migrateLegacyFeatureStores((storeId, attempts, error) => {
+			reported.push({ attempt, storeId, attempts, message: String(error && error.message) });
+		});
+		progress = harness.progress.value;
+		assert.equal(progress.voteHistory.failures, attempt, `attempt ${attempt} did not count`);
+	}
+
+	assert.equal(reported.length, 2, `reported on attempts ${reported.map(r => r.attempt).join(', ')}`);
+	assert.equal(reported[0].attempt, 3, 'the first report came too early or too late');
+	assert.equal(reported[0].storeId, 'voteHistory');
+	assert.equal(reported[0].attempts, 3);
+	assert.match(reported[0].message, /Message length/);
+});
+
+test('a reporter that throws does not stop the other stores', async () => {
+	const harness = await loadMigration({
+		databases: { 'rsm-voteHistory': { votes: bulkVotes(2) }, 'rsm-mediaManifest': { entries: [{ id: 'm' }] } },
+		progress: { voteHistory: { copied: 0, failures: 2 } },
+		maxPayloadBytes: 1,
+	});
+
+	await harness.mod.migrateLegacyFeatureStores(() => { throw new Error('the log is broken too'); });
+
+	// The media set has one record and a one-byte limit, so it fails as well --
+	// what matters is that it was still tried after the reporter threw.
+	assert.equal(harness.progress.value.voteHistory.failures, 3);
+	assert.equal(harness.progress.value.mediaManifest.failures, 1);
+	// And the stores with no old database still get their marker.
+	assert.equal(harness.stored.value.savedContent, 0);
 });
