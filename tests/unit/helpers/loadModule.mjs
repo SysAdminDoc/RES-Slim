@@ -41,6 +41,33 @@ globalThis.__chromeMessageListeners = [];
 // never reached the API rather than only that a guard exists in source.
 globalThis.__chromeDownloads = [];
 
+// A handful of background handlers that a foreground module cannot work without.
+//
+// storage-cas is the one that matters: the foreground routes compare-and-set
+// through the background so that several tabs share one mutex, so with nothing
+// answering it every compare-and-set resolves undefined -- which reads as "the
+// value changed" and refuses a write that should have landed. A test would then
+// be exercising a failure path that does not exist in a browser.
+//
+// This mirrors lib/environment/background/storage.js, including that the
+// comparison is structural: nothing survives a round trip through storage as the
+// same object. No backticks anywhere in here: this whole block is injected as a
+// template literal, and one would end it.
+const stableJson = value => {
+	if (value === null || typeof value !== 'object') return JSON.stringify(value);
+	if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
+	return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stableJson(value[k])).join(',') + '}';
+};
+const backgroundDefaults = {
+	'storage-cas': msg => new Promise(resolve => {
+		const [key, defaultValue, oldValue, newValue] = msg.data;
+		globalThis.chrome.storage.local.get({ [key]: defaultValue }, got => {
+			if (stableJson(got[key]) !== stableJson(oldValue)) { resolve(false); return; }
+			globalThis.chrome.storage.local.set({ [key]: newValue }, () => resolve(true));
+		});
+	}),
+};
+
 globalThis.chrome = globalThis.chrome || {
 	runtime: {
 		id: 'res-slim-test',
@@ -53,7 +80,7 @@ globalThis.chrome = globalThis.chrome || {
 		// __runtimeMessageResponder lets one test answer one message type, through
 		// the real foreground code path rather than around it.
 		sendMessage: (msg, cb) => {
-			const respond = globalThis.__runtimeMessageResponder;
+			const respond = globalThis.__runtimeMessageResponder || backgroundDefaults[msg && msg.type];
 			if (!respond) { if (cb) cb({ data: undefined }); return; }
 			Promise.resolve().then(() => respond(msg)).then(
 				data => { if (cb) cb({ data }); },

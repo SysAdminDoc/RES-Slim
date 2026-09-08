@@ -156,6 +156,24 @@ test('existing tags win by default unless replacement is explicit', () => {
 	assert.equal(replaced.alice.ignore, true);
 });
 
+// One store that several importers share, arbitrated the way the background
+// arbitrates it: the write lands only if what is there is still what the caller
+// last saw. Compared structurally, because nothing survives a round trip through
+// storage as the same object.
+function sharedTagStore(initial) {
+	const state = { value: initial, writes: 0, casCalls: [] };
+	const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+	state.compareAndSet = (expected, value) => {
+		state.casCalls.push({ expected, value });
+		if (!same(state.value, expected)) return Promise.resolve(false);
+		state.value = value;
+		state.writes += 1;
+		return Promise.resolve(true);
+	};
+	state.read = () => Promise.resolve(state.value);
+	return state;
+}
+
 test('a tag import snapshots, commits once, verifies, then clears its payload', async () => {
 	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
 	const next = { alice: original.alice, bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
@@ -166,9 +184,15 @@ test('a tag import snapshots, commits once, verifies, then clears its payload', 
 
 	const committed = await commitTagImport({
 		original,
+		storedOriginal: original,
 		next,
 		saveRollback: value => { snapshot = value; return Promise.resolve(); },
-		writeMap: value => { writes.push(value); stored = value; return Promise.resolve(); },
+		compareAndSetMap: (expected, value) => {
+			writes.push(value);
+			if (JSON.stringify(stored) !== JSON.stringify(expected)) return Promise.resolve(false);
+			stored = value;
+			return Promise.resolve(true);
+		},
 		readMap: () => Promise.resolve(stored),
 		clearPayload: () => { clears += 1; return Promise.resolve(); },
 	});
@@ -179,35 +203,127 @@ test('a tag import snapshots, commits once, verifies, then clears its payload', 
 	assert.equal(clears, 1);
 });
 
-test('a failed tag import restores the original map and leaves its payload', async () => {
+test('a commit that cannot finish restores what it wrote and leaves its payload', async () => {
+	// The store still holds this import's map when the failure happens, so putting
+	// the pre-import map back is right. The restore is a compare-and-set for the
+	// same reason the commit is: it must only undo its own write.
 	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
 	const next = { bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
 	let stored = original;
-	let attempts = 0;
 	let clears = 0;
 	const writes = [];
 
 	await assert.rejects(commitTagImport({
 		original,
+		storedOriginal: original,
 		next,
 		saveRollback: () => Promise.resolve(),
-		writeMap: value => {
+		compareAndSetMap: (expected, value) => {
+			if (JSON.stringify(stored) !== JSON.stringify(expected)) return Promise.resolve(false);
 			writes.push(value);
-			attempts += 1;
-			if (attempts === 1) {
-				stored = next;
-				return Promise.reject(new Error('quota exceeded'));
-			}
 			stored = value;
-			return Promise.resolve();
+			return Promise.resolve(true);
 		},
 		readMap: () => Promise.resolve(stored),
-		clearPayload: () => { clears += 1; return Promise.resolve(); },
+		clearPayload: () => {
+			clears += 1;
+			return Promise.reject(new Error('quota exceeded'));
+		},
 	}), /quota exceeded/);
 
-	assert.deepEqual(stored, original);
+	assert.deepEqual(stored, original, 'the failed import was left in place');
 	assert.deepEqual(writes, [next, original]);
-	assert.equal(clears, 0);
+	assert.equal(clears, 1, 'the payload must survive a failed import');
+});
+
+test('a failure discovered after somebody else wrote leaves their tags alone', async () => {
+	// The narrow case between the write and the read back. This import's map is no
+	// longer what is stored, so restoring the pre-import map would delete a third
+	// window's work as well as this one's. It says so instead.
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const next = { bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
+	const theirs = { carol: { tag: 'theirs', color: '', ignore: false, ts: 3 } };
+	let stored = original;
+	const writes = [];
+
+	await assert.rejects(commitTagImport({
+		original,
+		storedOriginal: original,
+		next,
+		saveRollback: () => Promise.resolve(),
+		compareAndSetMap: (expected, value) => {
+			if (JSON.stringify(stored) !== JSON.stringify(expected)) return Promise.resolve(false);
+			writes.push(value);
+			// Between the write landing and the read back, a third window writes.
+			stored = writes.length === 1 ? theirs : value;
+			return Promise.resolve(true);
+		},
+		readMap: () => Promise.resolve(stored),
+		clearPayload: () => Promise.resolve(),
+	}), /left alone because another window/i);
+
+	assert.deepEqual(stored, theirs, 'the other window\'s tags were overwritten by a restore');
+	assert.deepEqual(writes, [next], 'the restore should not have been attempted blind');
+});
+
+test('two windows importing at once cannot wipe each other', async () => {
+	// The failure this replaces: both windows passed the caller's signature check,
+	// both wrote, and then the first one's read-back saw the second one's map,
+	// called it a mismatch and restored the pre-import tags. Both imports were
+	// gone, and the second window's panel said it had succeeded. The per-tab mutex
+	// cannot see another tab.
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const fromA = { ...original, bob: { tag: 'from A', color: '', ignore: false, ts: 2 } };
+	const fromB = { ...original, carol: { tag: 'from B', color: '', ignore: false, ts: 3 } };
+	const store = sharedTagStore(original);
+
+	const importer = next => commitTagImport({
+		original,
+		storedOriginal: original,
+		next,
+		saveRollback: () => Promise.resolve(),
+		compareAndSetMap: store.compareAndSet,
+		readMap: store.read,
+		clearPayload: () => Promise.resolve(),
+	});
+
+	const [a, b] = await Promise.allSettled([importer(fromA), importer(fromB)]);
+	const outcomes = [a, b];
+	const winners = outcomes.filter(result => result.status === 'fulfilled');
+	const losers = outcomes.filter(result => result.status === 'rejected');
+
+	assert.equal(winners.length, 1, 'exactly one import can win');
+	assert.equal(losers.length, 1);
+	assert.match(losers[0].reason.message, /changed while this import was being committed/i);
+
+	// The winner's tags are what is stored, whole. Neither import vanished into a
+	// restore of the pre-import map.
+	assert.deepEqual(store.value, winners[0].value);
+	assert.notDeepEqual(store.value, original, 'both imports were rolled back');
+	assert.equal(store.writes, 1, `${store.writes} writes landed for one winning import`);
+});
+
+test('a loser is told to preview again, and nothing is restored on its behalf', async () => {
+	// Nothing was written, so there is nothing to put back -- and putting the
+	// pre-import map back would undo the window that did win.
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const theirs = { dave: { tag: 'theirs', color: '', ignore: false, ts: 9 } };
+	const mine = { erin: { tag: 'mine', color: '', ignore: false, ts: 8 } };
+	const store = sharedTagStore(theirs);
+
+	await assert.rejects(commitTagImport({
+		original,
+		storedOriginal: original,
+		next: mine,
+		saveRollback: () => Promise.resolve(),
+		compareAndSetMap: store.compareAndSet,
+		readMap: store.read,
+		clearPayload: () => { throw new Error('the payload must not be cleared by a losing import'); },
+	}), /preview it again/i);
+
+	assert.deepEqual(store.value, theirs, 'the losing import overwrote the winner');
+	assert.equal(store.writes, 0);
+	assert.equal(store.casCalls.length, 1, 'a loser must not try again with a restore');
 });
 
 test('tagBadgeText prefers tag text, falls back to ignored, then empty', () => {
