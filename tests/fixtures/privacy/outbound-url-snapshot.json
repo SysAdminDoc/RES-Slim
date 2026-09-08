@@ -139,7 +139,7 @@
     },
     {
       "file": "lib/modules/hosts/bluesky.js",
-      "url": "https://embed.bsky.app/oembed"
+      "url": "https://embed.bsky.app/oembed*"
     },
     {
       "file": "lib/modules/hosts/clyp.js",
@@ -183,7 +183,7 @@
     },
     {
       "file": "lib/modules/hosts/deviantart.js",
-      "url": "https://backend.deviantart.com/oembed"
+      "url": "https://backend.deviantart.com/oembed*"
     },
     {
       "file": "lib/modules/hosts/deviantart.js",
@@ -219,7 +219,7 @@
     },
     {
       "file": "lib/modules/hosts/flickr.js",
-      "url": "https://www.flickr.com/services/oembed"
+      "url": "https://www.flickr.com/services/oembed*"
     },
     {
       "file": "lib/modules/hosts/gamerdvr.js",
@@ -271,7 +271,7 @@
     },
     {
       "file": "lib/modules/hosts/gyazo.js",
-      "url": "https://api.gyazo.com/api/oembed"
+      "url": "https://api.gyazo.com/api/oembed*"
     },
     {
       "file": "lib/modules/hosts/gyazo.js",
@@ -527,7 +527,7 @@
     },
     {
       "file": "lib/modules/hosts/tumblr.js",
-      "url": "https://api.tumblr.com/v2/blog/*/posts"
+      "url": "https://api.tumblr.com/v2/blog/*/posts*"
     },
     {
       "file": "lib/modules/hosts/tumblr.js",
@@ -563,7 +563,7 @@
     },
     {
       "file": "lib/modules/hosts/twitter.js",
-      "url": "https://publish.x.com/oembed"
+      "url": "https://publish.x.com/oembed*"
     },
     {
       "file": "lib/modules/hosts/vidble.js",

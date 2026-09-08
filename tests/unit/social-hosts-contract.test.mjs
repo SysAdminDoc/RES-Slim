@@ -135,7 +135,7 @@ test('the twitter host asks the x.com oEmbed endpoint, and is allowed to', async
 
 	// And the permission it declares covers the host it requests, or the fetch is
 	// refused before it leaves.
-	assert.ok(twitter.permissions.includes('https://publish.x.com/oembed'),
+	assert.ok(twitter.permissions.includes('https://publish.x.com/oembed*'),
 		`the host requests publish.x.com but declares ${JSON.stringify(twitter.permissions)}`);
 	// And only that origin. Declaring the old one alongside it was meant to spare
 	// an existing profile a second prompt and does not: `Permissions.has` hands
@@ -143,10 +143,14 @@ test('the twitter host asks the x.com oEmbed endpoint, and is allowed to', async
 	// so a profile holding only twitter.com answers false and is prompted either
 	// way. The only thing the extra entry bought was a prompt naming a host
 	// nothing requests.
-	assert.deepEqual(twitter.permissions, ['https://publish.x.com/oembed']);
+	// The trailing `*` is not decoration. A Chrome match pattern's path is
+	// compared against the URL's path *and* query string, so a pattern without it
+	// matches only a request with no query -- and this one always carries
+	// `?url=…&omit_script=true`.
+	assert.deepEqual(twitter.permissions, ['https://publish.x.com/oembed*']);
 
 	const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'chrome/manifest.json'), 'utf8'));
-	assert.ok(manifest.optional_host_permissions.includes('https://publish.x.com/oembed'),
+	assert.ok(manifest.optional_host_permissions.includes('https://publish.x.com/oembed*'),
 		'a permission the code asks for and the manifest does not declare can never be granted');
 });
 

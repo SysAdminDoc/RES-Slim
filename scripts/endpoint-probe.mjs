@@ -65,6 +65,12 @@ export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 }
 	// would assert only that some router is listening. Probing the request the
 	// module actually makes is the whole point.
 	const { name, expect, accept = [], method = 'GET', body } = entry;
+	// A body on a GET is a configuration mistake, and `fetch` throws for it --
+	// which the catch below would report as `status: 0`, indistinguishable from a
+	// dead host. Say what it is instead.
+	if (body && method === 'GET') {
+		return { name, url: entry.url, status: 0, ok: false, error: 'a GET cannot carry a body; set method: POST on this entry' };
+	}
 	const accepted = new Set(accept);
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -86,7 +92,13 @@ export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 }
 			});
 			const status = response.status;
 
-			if (isRedirect(status)) {
+			// An explicitly accepted status is an answer rather than a hop, so it
+			// skips the redirect branch: otherwise `accept: [302]` would be
+			// silently unreachable, a knob that reads as available and is not. It
+			// does not skip the body check below, because pairing an accepted
+			// status with the service's own payload is the whole reason `accept`
+			// is safe to have.
+			if (isRedirect(status) && !accepted.has(status)) {
 				const location = response.headers.get('location');
 				const target = location ? new URL(location, url).toString() : null;
 				const from = originOf(url);
@@ -114,7 +126,10 @@ export async function probeEndpoint(entry, { fetch: doFetch, timeoutMs = 15000 }
 			// two: `404` on its own is what a parked domain, a stray proxy and a
 			// working API asked for a missing id all return. The service's own error
 			// payload is the only thing that tells them apart.
-			if (expect && status !== 429) {
+			// 304 has no body by definition, so there is nothing for an `expect` to
+			// match and requiring one would report a live endpoint as a bot
+			// challenge. 429 likewise carries nothing worth reading.
+			if (expect && status !== 429 && status !== 304) {
 				// eslint-disable-next-line no-await-in-loop
 				const body = await response.text();
 				if (!expect.test(body)) {

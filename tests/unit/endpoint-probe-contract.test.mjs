@@ -204,66 +204,147 @@ test('every host that declares an optional permission is probed, or is deliberat
 		.filter(file => /^\s*permissions: \[/m.test(fs.readFileSync(path.join(hostsDir, file), 'utf8')))
 		.map(file => file.replace(/\.js$/, ''));
 
-	assert.ok(declaring.length >= 15, `only ${declaring.length} hosts declare a permission; the scan has drifted`);
+	assert.equal(declaring.length, 16, `expected 16 permission-declaring hosts, found ${declaring.length}; update this number deliberately`);
 
-	const probedHosts = new Set([...FETCHED, ...LINKED]
+	// `FETCHED` only. `LINKED` is reported and does not gate the build, so moving
+	// an entry there is a way to stop a host failing without fixing it -- and the
+	// first version of this read both lists, which could not tell the two apart.
+	const hostsIn = list => new Set(list
 		.flatMap(entry => (entry.anyOf ? entry.anyOf : [entry]))
 		.map(entry => /\(hosts\/([A-Za-z]+)\)/.exec(entry.name))
 		.filter(Boolean)
 		.map(match => match[1]));
+	const gated = hostsIn(FETCHED);
+	const linkedOnly = hostsIn(LINKED);
 
-	// One host is exempt, and the exemption is named here rather than left as an
-	// absence: `vreddit`'s permission is reddit's own media infrastructure, and
-	// probing it would make this gate fetch reddit from the machine that runs it.
-	const EXEMPT = new Set(['vreddit']);
+	// Two hosts are exempt, each for a stated reason, and the set is closed:
+	// growing it is a change to this list, not something that can happen by
+	// adding a name.
+	//
+	//   vreddit  its permission is reddit's own media infrastructure, and probing
+	//            it would make this gate fetch reddit from the machine that runs
+	//            it, which the house rules forbid.
+	//   threads  the module frames the page rather than fetching it, so a scripted
+	//            refusal says nothing about whether the reader's frame loads. It
+	//            is probed, in `LINKED`.
+	const EXEMPT = new Set(['vreddit', 'threads']);
+	assert.equal(EXEMPT.size, 2, 'the exemption list is closed; adding to it is a decision, not an omission');
 
-	const missing = declaring.filter(host => !probedHosts.has(host) && !EXEMPT.has(host));
-	assert.deepEqual(missing, [], `these hosts declare a permission and are never probed: ${missing.join(', ')}`);
+	const missing = declaring.filter(host => !gated.has(host) && !EXEMPT.has(host));
+	assert.deepEqual(missing, [], `these hosts declare a permission and nothing gates them: ${missing.join(', ')}`);
 
-	// And the exemption is not a place to quietly park a host: anything in it must
-	// still declare a permission, or it is stale.
+	// An exemption must still be a permission-declaring host, and one exempted for
+	// being framed must actually still be probed somewhere.
 	const stale = [...EXEMPT].filter(host => !declaring.includes(host));
-	assert.deepEqual(stale, [], `exempt from probing but no longer a permission-declaring host: ${stale.join(', ')}`);
+	assert.deepEqual(stale, [], `exempt from the gate but no longer a permission-declaring host: ${stale.join(', ')}`);
+	assert.ok(linkedOnly.has('threads'), 'threads is exempt from the gate because it is probed as a link, not because it is unprobed');
 });
 
-test('every probed host origin is one the extension is actually allowed to reach', () => {
-	// The other direction, and the one that would have caught the Twitter break on
-	// its own: a probe of an origin no manifest declares is measuring a host the
-	// extension could not request even if it were up.
+// A Chrome match pattern, modelled the way Chromium implements it.
+//
+// The first version of this compared scheme and host and dropped the path, on
+// the grounds that Chromium builds its CORS allowlist from origins. That is true
+// of *CORS*, and it is not how a host permission is matched: `URLPattern::
+// MatchesURL` calls `MatchesPath(test.PathForRequest())`, and `PathForRequest()`
+// is the path **plus the query string**. So `https://www.flickr.com/services/
+// oembed` matches a request to that path with no query and nothing else -- while
+// every oEmbed call in this codebase appends `?url=…`.
+//
+// Six permissions were wrong that way, and three of the hosts (flickr,
+// deviantart, gyazo) send no `Access-Control-Allow-Origin` at all, measured
+// 2026-09-08, so the permission was the only thing that could have let the
+// request through. Dropping the path is what made that invisible.
+function matchesPattern(pattern, url) {
+	const parsed = /^(\*|https?|file|ftp):\/\/([^/]*)(\/.*)$/.exec(pattern);
+	if (!parsed) return false;
+	const [, scheme, host, path] = parsed;
+
+	const target = new URL(url);
+	if (scheme !== '*' && `${scheme}:` !== target.protocol) return false;
+	if (scheme === '*' && !['http:', 'https:'].includes(target.protocol)) return false;
+
+	if (host !== '*') {
+		if (host.startsWith('*.')) {
+			const bare = host.slice(2);
+			if (target.hostname !== bare && !target.hostname.endsWith(`.${bare}`)) return false;
+		} else if (host !== target.hostname) {
+			return false;
+		}
+	}
+
+	// The path is glob-matched against path + query, which is what
+	// `GURL::PathForRequest()` returns.
+	const pathForRequest = `${target.pathname}${target.search}`;
+	const escaped = path.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+	return new RegExp(`^${escaped}$`).test(pathForRequest);
+}
+
+test('the match-pattern model agrees with how Chromium matches one', () => {
+	// The property the six broken permissions violated, stated first.
+	assert.equal(matchesPattern('https://a.test/oembed', 'https://a.test/oembed'), true);
+	assert.equal(matchesPattern('https://a.test/oembed', 'https://a.test/oembed?url=x'), false,
+		'the query is part of what a pattern path is matched against');
+	assert.equal(matchesPattern('https://a.test/oembed*', 'https://a.test/oembed?url=x'), true);
+
+	// Host wildcards, and the boundary that stops `*.redd.it` covering
+	// `notredd.it`.
+	assert.equal(matchesPattern('https://*.redd.it/*', 'https://v.redd.it/x'), true);
+	assert.equal(matchesPattern('https://*.redd.it/*', 'https://redd.it/x'), true);
+	assert.equal(matchesPattern('https://*.redd.it/*', 'https://notredd.it/x'), false);
+
+	// Scheme, which a downgrade escapes.
+	assert.equal(matchesPattern('https://a.test/*', 'http://a.test/x'), false);
+	assert.equal(matchesPattern('*://a.test/*', 'http://a.test/x'), true);
+
+	// A path wildcard in the middle, which is how the tumblr permission is built.
+	assert.equal(matchesPattern('https://api.test/v2/blog/*/posts*', 'https://api.test/v2/blog/staff/posts?id=1'), true);
+	assert.equal(matchesPattern('https://api.test/v2/blog/*/posts*', 'https://api.test/v2/other/staff/posts'), false);
+});
+
+test('every host probe URL is covered by that host module own permission', () => {
+	// The check the previous version could not make. A probe URL is the shape the
+	// module actually requests, so a permission that does not match it is a
+	// permission that cannot let the request through -- and for the three hosts
+	// that send no CORS header of their own, that is the whole request.
+	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
+	const declared = new Map();
+	for (const file of fs.readdirSync(hostsDir).filter(name => name.endsWith('.js'))) {
+		const source = fs.readFileSync(path.join(hostsDir, file), 'utf8');
+		const block = /^\s*permissions: \[([^\]]*)\]/m.exec(source);
+		if (!block) continue;
+		declared.set(file.replace(/\.js$/, ''), [...block[1].matchAll(/'([^']+)'/g)].map(match => match[1]));
+	}
+	assert.equal(declared.size, 16, `expected 16 permission-declaring hosts, found ${declared.size}`);
+
+	const uncovered = FETCHED
+		.flatMap(entry => (entry.anyOf ? entry.anyOf : [entry]))
+		.map(entry => ({ url: entry.url, host: (/\(hosts\/([A-Za-z]+)\)/.exec(entry.name) || [])[1] }))
+		.filter(entry => entry.host && declared.has(entry.host))
+		.filter(({ host, url }) => !declared.get(host).some(pattern => matchesPattern(pattern, url)))
+		.map(({ host, url }) => `${host}: ${url} is not matched by ${JSON.stringify(declared.get(host))}`);
+
+	assert.deepEqual(uncovered, [], `a host requests a URL its own permission does not cover:\n  ${uncovered.join('\n  ')}`);
+});
+
+test('every host permission is one the manifest declares', () => {
+	// A module can only ask for what the manifest offers. A permission declared in
+	// code and missing from the manifest can never be granted, so the expando
+	// fails on a prompt the reader answered yes to.
 	const manifest = JSON.parse(read('chrome/manifest.json'));
-	const granted = [
+	const offered = new Set([
 		...(manifest.host_permissions || []),
 		...(manifest.optional_host_permissions || []),
-	];
+	]);
 
-	const covers = origin => granted.some(pattern => {
-		const [scheme, rest] = pattern.split('://');
-		if (!rest) return false;
-		const host = rest.split('/')[0];
-		if (scheme !== '*' && !origin.startsWith(`${scheme}://`)) return false;
-		const originHost = new URL(origin).host;
-		if (host.startsWith('*.')) return originHost === host.slice(2) || originHost.endsWith(`.${host.slice(2)}`);
-		return host === '*' || host === originHost;
-	});
-
-	// Only the entries whose host module declares a permission. `LINKED` is pages
-	// a reader clicks or a frame loads, and giphy's are media URLs an `<img>` or a
-	// `<video>` loads: none of those needs a permission, and none would be covered
-	// by one.
 	const hostsDir = path.join(repoRoot, 'lib', 'modules', 'hosts');
-	const declaring = new Set(fs.readdirSync(hostsDir)
-		.filter(file => file.endsWith('.js'))
-		.filter(file => /^\s*permissions: \[/m.test(fs.readFileSync(path.join(hostsDir, file), 'utf8')))
-		.map(file => file.replace(/\.js$/, '')));
-
-	const probed = FETCHED
-		.flatMap(entry => (entry.anyOf ? entry.anyOf : [entry]))
-		.map(entry => ({ name: entry.name, url: entry.url, host: (/\(hosts\/([A-Za-z]+)\)/.exec(entry.name) || [])[1] }))
-		.filter(entry => entry.host && declaring.has(entry.host));
-	assert.ok(probed.length >= 13, `only ${probed.length} host probes were found; the list has drifted`);
-
-	const uncovered = probed
-		.filter(({ url }) => !covers(url))
-		.map(({ name, url }) => `${name}: ${new URL(url).origin}`);
-	assert.deepEqual(uncovered, [], `probed origins no manifest permission covers:\n  ${uncovered.join('\n  ')}`);
+	const missing = [];
+	for (const file of fs.readdirSync(hostsDir).filter(name => name.endsWith('.js'))) {
+		const source = fs.readFileSync(path.join(hostsDir, file), 'utf8');
+		const block = /^\s*permissions: \[([^\]]*)\]/m.exec(source);
+		if (!block) continue;
+		for (const [, pattern] of block[1].matchAll(/'([^']+)'/g)) {
+			if (!offered.has(pattern)) missing.push(`${file}: ${pattern}`);
+		}
+	}
+	assert.deepEqual(missing, [], `declared in code, absent from the manifest:\n  ${missing.join('\n  ')}`);
 });

@@ -57,6 +57,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Flickr, DeviantArt and Gyazo links expand again. The permission the extension
+  asks for did not cover the address it actually requests, and those three sites
+  send no header that would let the request through without it.
+
+- Dismissing the login overlay puts you back where you were reading, instead of
+  at the top of the feed, and lifts the lock again if Reddit re-applies it.
+
 - Dismissing the login overlay gives the page its scrolling back properly.
   Current Reddit locks scrolling with a class that also pins the page at a fixed
   offset, so lifting the lock alone left you stuck where the overlay had

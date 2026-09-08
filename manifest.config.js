@@ -59,22 +59,30 @@ const PERMISSIONS = [
 const OPTIONAL_HOST_PERMISSIONS = [
 	'http://localhost/*',
 	'http://127.0.0.1/*',
+	// Every one of these ends in `*` where the module appends a query, and that is
+	// not decoration. A Chrome match pattern's path is compared against the URL's
+	// path *and* query string, so `https://www.flickr.com/services/oembed` matches
+	// only a request with no query at all -- and every oEmbed call here carries
+	// `?url=…`. Three of these hosts (flickr, deviantart, gyazo) send no
+	// `Access-Control-Allow-Origin` at all, measured 2026-09-08, so the permission
+	// is the only thing that lets the request through and the expando simply did
+	// not work.
 	// Twitter/X moved the oEmbed endpoint: the old host 301s to the new one, and
 	// the browser refuses a redirect to an origin the extension has no permission
 	// for. Only the new origin is declared. Keeping the old one would not have
 	// spared an existing profile a second prompt -- `chrome.permissions.contains`
 	// is all-or-nothing over the array it is given -- and would have named a host
 	// nothing requests.
-	'https://publish.x.com/oembed',
-	'https://backend.deviantart.com/oembed',
-	'https://api.gyazo.com/api/oembed',
-	'https://api.tumblr.com/v2/blog/*/posts',
+	'https://publish.x.com/oembed*',
+	'https://backend.deviantart.com/oembed*',
+	'https://api.gyazo.com/api/oembed*',
+	'https://api.tumblr.com/v2/blog/*/posts*',
 	'https://api.tenor.co/v1/gifs*',
 	'https://xkcd.com/*/info.0.json',
 	'https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/*',
 	'https://*.redd.it/*',
-	'https://www.flickr.com/services/oembed',
-	'https://embed.bsky.app/oembed',
+	'https://www.flickr.com/services/oembed*',
+	'https://embed.bsky.app/oembed*',
 	'https://www.threads.com/*',
 	'https://www.threads.net/*',
 	'https://web.archive.org/*',

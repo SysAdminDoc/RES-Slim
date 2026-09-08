@@ -66,7 +66,10 @@ test('everything the preview exists to render survives', () => {
 		['a spoiler', '<span class="md-spoiler-text">secret</span>', 'span.md-spoiler-text'],
 		['superscript', '<sup>high</sup>', 'sup'],
 		['a table', '<table><thead><tr><th>h</th></tr></thead><tbody><tr><td>c</td></tr></tbody></table>', 'table td'],
-		['fenced code', '<pre><code class="language-js"><span class="hljs-keyword">const</span></code></pre>', 'pre code .hljs-keyword'],
+		// The markup `buildCodeBlockHtml` actually emits, read off it rather than
+		// invented: a fixture pinning a class this codebase never produces would not
+		// notice the real one being stripped.
+		['fenced code', '<pre class="rsm-fenced" data-lang="js"><code><span class="rsm-tok-keyword">const</span></code></pre>', 'pre.rsm-fenced[data-lang="js"] code .rsm-tok-keyword'],
 		['a wiki anchor', '<h2 id="wiki_section">S</h2>', 'h2#wiki_section'],
 		['the toc list', '<div class="toc"><ul data-level="1"><li><a href="#wiki_section">S</a></li></ul></div>', '.toc ul[data-level="1"] a'],
 		['a plain link', '<a href="/r/example">r/example</a>', 'a[href="/r/example"]'],
@@ -87,11 +90,26 @@ test('the preview writes what the sanitizer returned, on both of its paths', () 
 	const code = codeOnly(readRepoFile('lib/modules/commentPreview.js'));
 
 	const body = code.slice(code.indexOf('async function markdownToHTML('), code.indexOf('const addBigEditorButton'));
-	const returns = [...body.matchAll(/\n\t*return ([^\n]+);/g)].map(match => match[1]);
+	// Every `return` in the function, wherever it sits on its line. The first
+	// version anchored the match to the start of a line, which made
+	// `if (md.length < 5000) return renderMarkdownWithFences(md, markdown);` --
+	// an ordinary-looking early return -- completely invisible to it.
+	const returns = [...body.matchAll(/\breturn\s+([^;]+);/g)].map(match => match[1].trim());
 	assert.ok(returns.length >= 2, `expected both render paths, found ${JSON.stringify(returns)}`);
 	for (const statement of returns) {
 		assert.match(statement, /^sanitizePreviewHtml\(/, `a render path returns unsanitized HTML: ${statement}`);
 	}
+
+	// And each renderer is reached exactly once, inside that call. A comma
+	// operator, a variable assigned earlier and returned later, or a second
+	// helper in between would all satisfy the check above while handing the
+	// renderer's output straight out.
+	assert.equal((body.match(/renderMarkdownWithFences\(/g) || []).length, 1,
+		'the prose renderer should be called once, inside the sanitizer');
+	assert.equal((body.match(/docBody\.innerHTML/g) || []).length, 1,
+		'and the wiki body read once, inside it too');
+	assert.match(body, /return sanitizePreviewHtml\(renderMarkdownWithFences\(/);
+	assert.match(body, /return sanitizePreviewHtml\(docBody\.innerHTML\)/);
 
 	assert.match(code, /import \{ sanitizePreviewHtml \} from '\.\.\/utils\/previewHtml'/);
 });

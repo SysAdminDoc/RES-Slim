@@ -1837,6 +1837,8 @@ test('the Reddit Markdown renderer loads only when a preview is requested', asyn
 	// what is asserted is that the preview cannot end up carrying an event handler
 	// or a live script whatever the renderer does with this.
 	await textarea.fill([
+		'rsm-hostile-marker',
+		'',
 		'<img src=x onerror="window.__rsmPreviewXss = true">',
 		'',
 		'[click](javascript:window.__rsmPreviewXss = true)',
@@ -1845,9 +1847,18 @@ test('the Reddit Markdown renderer loads only when a preview is requested', asyn
 		'',
 		'<a href="/ok" onmouseover="window.__rsmPreviewXss = true">hover</a>',
 	].join('\n'));
-	// Wait for the preview to have re-rendered to this input rather than the last.
+	// Wait for the preview to have re-rendered *to this input*, which is the whole
+	// difficulty. The first version waited for the preview to stop containing
+	// `onerror` -- and snudown escapes the input to
+	// `&lt;img src=x onerror=&quot;...&quot;&gt;`, so the rendered hostile preview
+	// contains that string and the condition was only ever true of the *previous*
+	// render. It resolved on its first poll against the fenced block above and
+	// measured that instead.
+	//
+	// So it waits for a marker only this input produces, and one snudown cannot
+	// escape away: a word in the plain text.
 	await page.waitForFunction(
-		() => (document.querySelector('.commentarea .livePreview .RESDialogContents') || {}).innerHTML?.includes('onerror') === false,
+		() => (document.querySelector('.commentarea .livePreview .RESDialogContents') || {}).textContent?.includes('rsm-hostile-marker'),
 		null,
 		{ timeout: 30000 },
 	);
@@ -1863,8 +1874,14 @@ test('the Reddit Markdown renderer loads only when a preview is requested', asyn
 			// Spelled in pieces so the rule that forbids a script URL in source does
 			// not fire on a test that exists to prove one never survives.
 			javascriptHrefs: hrefs.filter(href => href.toLowerCase().startsWith(`javascript${':'}`)),
+			text: element.textContent,
 		};
 	});
+	// Proof that what was measured is this input's preview and not the one before
+	// it: the escaped markup is visible as text.
+	assert.match(dangerous.text, /rsm-hostile-marker/, 'the preview measured was not the hostile one');
+	assert.match(dangerous.text, /onerror/, 'snudown should be showing the markup as text, which is why it is safe');
+
 	assert.deepEqual(dangerous.handlers, [], `the preview carries event handlers: ${dangerous.handlers.join(', ')}`);
 	assert.equal(dangerous.scripts, 0, 'the preview carries a script element');
 	assert.deepEqual(dangerous.javascriptHrefs, [], 'the preview carries a javascript: link');
@@ -5165,8 +5182,17 @@ test('a dismissed wall gives the page its scrolling back, class and offset alike
 		<div class="SomeRolloutClassName" style="position: fixed; inset: 0; background: #101010; z-index: 2147483647;">
 			<h2 style="color: #fff">Log in to continue</h2>
 		</div>`;
+	// The lock has to actually lock, or the test proves only that a class was
+	// removed. The fixture carries no `.rpl-scroll-lock` rule of its own, so the
+	// rule reddit ships is stated here: `position: fixed` with a negative `top`,
+	// which pins the document and puts its own scroll offset at 0. Without it the
+	// page was never locked and "scrolling was restored" could not fail.
+	// A page tall enough to scroll to the offset the lock was holding, or the
+	// restore has nowhere to put the reader and reads as a failure.
+	const lockStyle = '<style>.rpl-scroll-lock { position: fixed !important; overflow: hidden !important; width: 100%; }</style><style>body::after { content: ""; display: block; height: 4000px; }</style>';
 	const html = staticFixture(SHREDDIT_LISTING)
 		.replace('</shreddit-app>', `<div class="shell">${wall}</div></shreddit-app>`)
+		.replace('</head>', `${lockStyle}</head>`)
 		.replace('<body', '<body class="rpl-scroll-lock" style="top: -420px"');
 
 	const page = await context.newPage();
@@ -5186,12 +5212,84 @@ test('a dismissed wall gives the page its scrolling back, class and offset alike
 	const state = await page.evaluate(() => ({
 		locked: document.body.classList.contains('rpl-scroll-lock'),
 		top: document.body.style.top,
+		position: getComputedStyle(document.body).position,
 		overflow: getComputedStyle(document.body).overflow,
+		scrollY: Math.round(window.scrollY),
+		maxScroll: Math.round(document.documentElement.scrollHeight - window.innerHeight),
 	}));
 
 	assert.equal(state.locked, false, 'the lock class has to come off, not just be overridden');
 	assert.equal(state.top, '', 'and the offset it parked the document at has to go with it');
+	assert.notEqual(state.position, 'fixed', 'a document still pinned is a document that cannot scroll');
 	assert.notEqual(state.overflow, 'hidden');
+
+	// And the reader is put back where they were. The lock pins the page with a
+	// negative `top` equal to how far down they had scrolled, so while it is on
+	// the document's own offset is 0 -- removing the class without restoring that
+	// offset drops them at the very top of the feed, which is not where they were
+	// and is worse than the lock in the one way that matters.
+	// Not to the very top, which is what removing the offset without restoring it
+	// does, and never past where they were. The exact landing depends on how tall
+	// the document is at the moment the lock comes off, so the assertion is the
+	// property rather than a pixel: somewhere between the top and the offset the
+	// lock was holding.
+	assert.ok(state.scrollY > 0, `the reader was dropped at the top of the feed (${state.scrollY})`);
+	assert.ok(state.scrollY <= 420, `the reader was moved past where they were: ${state.scrollY}`);
+});
+
+test('a lock re-applied over an uncovered page is lifted again', async t => {
+	// Reddit re-locks by adding a class and nothing else, which a childList
+	// observer never sees however deep its subtree goes -- and `dismissLoginWall`
+	// would not help anyway, because the wall it already hid no longer covers the
+	// page, so there is nothing left for it to find.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { frictionRemovers: true },
+			'RESoptions.frictionRemovers': { dismissLoginWall: { value: true } },
+		}, resolve);
+	}));
+
+	const wall = `
+		<div class="SomeRolloutClassName" style="position: fixed; inset: 0; background: #101010; z-index: 2147483647;">
+			<h2 style="color: #fff">Log in to continue</h2>
+		</div>`;
+	// A page tall enough to scroll to the offset the lock was holding, or the
+	// restore has nowhere to put the reader and reads as a failure.
+	const lockStyle = '<style>.rpl-scroll-lock { position: fixed !important; overflow: hidden !important; width: 100%; }</style><style>body::after { content: ""; display: block; height: 4000px; }</style>';
+	const html = staticFixture(SHREDDIT_LISTING)
+		.replace('</shreddit-app>', `<div class="shell">${wall}</div></shreddit-app>`)
+		.replace('</head>', `${lockStyle}</head>`);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (url.protocol === 'chrome-extension:') return route.continue();
+		if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('rsm-friction-unwalled'), null, { timeout: 30000 });
+
+	// Reddit puts the lock back, touching nothing else.
+	await page.evaluate(() => {
+		document.body.style.top = '-300px';
+		document.body.classList.add('rpl-scroll-lock');
+	});
+
+	await page.waitForFunction(() => !document.body.classList.contains('rpl-scroll-lock'), null, { timeout: 15000 });
+	const after = await page.evaluate(() => ({
+		position: getComputedStyle(document.body).position,
+		scrollY: Math.round(window.scrollY),
+	}));
+	assert.notEqual(after.position, 'fixed', 'a re-applied lock has to be lifted too');
+	assert.equal(after.scrollY, 300, `the reader was moved to ${after.scrollY} instead of 300`);
 });
 
 test('the overlay is dismissed on current Reddit, where the anchors were old-Reddit only', async t => {
