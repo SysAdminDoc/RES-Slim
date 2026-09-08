@@ -270,3 +270,91 @@ test('arming waits for a feed that has not rendered yet', async () => {
 	}
 	assert.ok(document.querySelector('.rsm-infiniteScroll-limit'), 'the limiter arms once the feed arrives');
 });
+
+// The mechanism, not the one module that happened to need it.
+//
+// `_runNewlyEligibleStage` records `stage|module` forever, so a module that arms
+// on the route signal is cancelled by `_startRouteScope()` on the next
+// navigation and then refused by the already-ran filter while it is still
+// eligible: alive on the route it started on, dead on every route after. That is
+// not a bug in the filter -- re-running `contentStart` is how you get two of
+// every observer a module made -- so arming per route needs its own door.
+//
+// `infiniteScroll` found the shape first and kept it private, which meant the
+// only test of it tested that module rather than this.
+test('a module arming through the helper gets a live signal on every route', async () => {
+	const Modules = await loadModule('lib/core/modules/modules.js', 'route-arm-helper', {
+		dom: {
+			url: 'https://www.reddit.com/r/all/',
+			html: '<!doctype html><html><body><shreddit-app routename="subreddit"></shreddit-app></body></html>',
+		},
+	});
+
+	const arms = [];
+	try {
+		Modules.armOnRoute('a-second-module', signal => { arms.push(signal); });
+		assert.equal(arms.length, 1, 'the helper has to arm for the route the reader is already on');
+		assert.equal(arms[0].aborted, false);
+
+		// Exactly what `init.js` does, in that order: end the scope being left, then
+		// let the listeners run.
+		for (const pass of [1, 2, 3]) {
+			const before = arms[arms.length - 1];
+			Modules._startRouteScope();
+			assert.equal(before.aborted, true, `pass ${pass}: the signal for the route being left is still live`);
+
+			document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+			assert.equal(arms.length, pass + 1, `pass ${pass}: the module was not armed for the new route`);
+			assert.equal(arms[arms.length - 1].aborted, false, `pass ${pass}: the new route's signal arrived dead`);
+			assert.notEqual(arms[arms.length - 1], before, `pass ${pass}: the same signal was handed out twice`);
+		}
+
+		// Arming again replaces rather than doubles. A module calling this from a
+		// stage that runs more than once would otherwise stack listeners.
+		const secondArms = [];
+		Modules.armOnRoute('a-second-module', signal => { secondArms.push(signal); });
+		const countBefore = arms.length;
+		document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+		assert.equal(arms.length, countBefore, 'the replaced arm is still firing');
+		assert.equal(secondArms.length, 2, 'the replacement armed once on registration and once on the route change');
+
+		// And two modules are independent of each other.
+		const other = [];
+		Modules.armOnRoute('another-module', signal => { other.push(signal); });
+		document.dispatchEvent(new CustomEvent('reddit.urlChanged'));
+		assert.equal(other.length, 2);
+		assert.equal(secondArms.length, 3);
+	} finally {
+		Modules._clearRouteArms();
+	}
+});
+
+test('the stage path alone cannot do this, which is why the helper exists', async () => {
+	// The behaviour the helper works around, pinned so that if the stage path ever
+	// does learn to re-offer, this fails and says so rather than leaving two
+	// mechanisms doing the same job.
+	const Modules = await loadModule('lib/core/modules/modules.js', 'route-arm-stage-path', {
+		dom: {
+			url: 'https://www.reddit.com/r/all/',
+			html: '<!doctype html><html><body><shreddit-app routename="subreddit"></shreddit-app></body></html>',
+		},
+	});
+
+	const search = Modules.get('search');
+	const signals = [];
+	search.contentStart = signal => { signals.push(signal); };
+	search.include = ['linklist'];
+	Modules.allowedModules.push('search');
+	await Modules._loadModulePrefs();
+
+	const first = await Modules._runNewlyEligibleStage('contentStart');
+	assert.ok(first.includes('search'), 'the module never became eligible, so this proves nothing');
+	assert.equal(signals.length, 1);
+
+	Modules._startRouteScope();
+	assert.equal(signals[0].aborted, true, 'the signal handed to a stage ends with the route that offered it');
+
+	const second = await Modules._runNewlyEligibleStage('contentStart');
+	assert.ok(!second.includes('search'), 'a module that already had this stage must not get it again');
+	assert.equal(signals.length, 1, 'the stage path re-ran and would have duplicated every observer');
+});
