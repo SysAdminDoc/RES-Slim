@@ -1847,6 +1847,12 @@
     "blueskyExpandoUnavailable": {
         "message": "This Bluesky post could not be embedded. It may require signing in on Bluesky."
     },
+    "mastodonExpandoUnavailable": {
+        "message": "This Mastodon post could not be embedded. It may be private, deleted, or on an instance that does not answer."
+    },
+    "threadsExpandoUnavailable": {
+        "message": "This Threads post could not be embedded. It may be private or deleted."
+    },
     "dataWorkspaceTab": {
         "message": "Data"
     },
