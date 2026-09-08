@@ -1090,6 +1090,62 @@ test('the settings console renders in the options page', async t => {
 	await page.screenshot({ path: path.join(dir, 'settings-console.png'), fullPage: false, animations: 'disabled' });
 });
 
+test('the JSON and paste-list options are edited in a box, not a one-line field', async t => {
+	// A nested rule set, a pasted tag map and a pasted subreddit list are all
+	// multi-kilobyte, and two of the three are line-delimited. The console drew
+	// each as a single-line `<input>`, so the filter rules field showed
+	// `[{"id":"i-built","field":"keyword","op":"regex","value":` and scrolled the
+	// rest out of sight, and a paste with line breaks lost them on the way in.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	const field = async (moduleId, optionKey) => {
+		await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/${moduleId}`, { waitUntil: 'domcontentloaded' });
+		const selector = `#${moduleId}-${optionKey}`;
+		await page.waitForSelector(selector, { timeout: 30000 });
+		return page.evaluate(sel => {
+			const element = document.querySelector(sel);
+			const label = document.querySelector(`label[for="${element.id}"]`);
+			return {
+				tag: element.tagName,
+				rows: element.getAttribute('rows'),
+				spellcheck: element.getAttribute('spellcheck'),
+				labelled: Boolean(label),
+				// A `<textarea>` that was filled through innerHTML would show entities
+				// here rather than the characters the reader typed.
+				value: element.value,
+			};
+		}, selector);
+	};
+
+	const rules = await field('filterRules', 'rulesJson');
+	assert.equal(rules.tag, 'TEXTAREA', 'the rule set is JSON, and JSON does not fit on one line');
+	assert.equal(rules.rows, '8');
+	assert.equal(rules.spellcheck, 'false', 'JSON is not prose, and every key would be underlined');
+	assert.ok(rules.labelled, 'a textarea is labelable, so the option title still points at it');
+	assert.match(rules.value, /^\[/, 'the default rule set has to arrive intact');
+	assert.doesNotMatch(rules.value, /&quot;|&amp;/, 'the value is text, not markup');
+
+	assert.equal((await field('userTagger', 'importJson')).tag, 'TEXTAREA');
+	assert.equal((await field('subredditBlacklist', 'importList')).tag, 'TEXTAREA');
+
+	// The half that a rendering check cannot see: a value with line breaks in it
+	// has to survive being typed, staged and read back. This is what the
+	// single-line input could not do at all.
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/subredditBlacklist`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#subredditBlacklist-importList', { timeout: 30000 });
+	const multiline = 'pics\nr/aww\n/r/videos';
+	await page.fill('#subredditBlacklist-importList', multiline);
+	const staged = await page.inputValue('#subredditBlacklist-importList');
+	assert.equal(staged, multiline, 'the line breaks are the whole point of the change');
+
+	assert.deepEqual(pageErrors, [], 'the console must not throw while drawing the new type');
+});
+
 test('settings console themes and display controls work by keyboard', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

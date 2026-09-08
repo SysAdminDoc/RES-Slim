@@ -4,6 +4,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- The filter rules, the user-tag import and the subreddit paste list are edited
+  in a proper box now. All three hold JSON or a pasted list, and all three were
+  single-line fields that showed the first forty characters and hid the rest.
+  Pasting something with line breaks used to lose them.
+
 ### Fixed
 
 - Night mode now darkens the browser's own controls too. Scrollbars, dropdown

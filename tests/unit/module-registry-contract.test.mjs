@@ -83,7 +83,28 @@ test('every enum option default is one of its own values', () => {
 test('option types are drawable by the settings console', () => {
 	// The console switches on `type`; an unrecognised one renders nothing at all,
 	// so the option exists in storage but the user can never reach it.
-	const DRAWABLE = new Set(['boolean', 'text', 'password', 'list', 'enum', 'keycode', 'color', 'table', 'builder', 'button']);
+	//
+	// Read out of the console rather than listed here. The hand-written list this
+	// replaced was already wrong: it omitted `textarea`, `select` and `hidden`,
+	// all three of which `drawOptionInput` has drawn all along, so the first
+	// option to use one of them failed a test that was describing the test's own
+	// staleness rather than a defect in the console.
+	const console_ = fs.readFileSync(path.join(repoRoot, 'lib', 'options', 'settingsConsole.js'), 'utf8');
+	const draw = console_.slice(
+		console_.indexOf('function drawOptionInput'),
+		console_.indexOf('async function toggleModuleEnabled'),
+	);
+	const cases = [...draw.matchAll(/case '([a-z]+)':/g)].map(m => m[1]);
+	assert.ok(cases.includes('text') && cases.includes('textarea'),
+		`the switch was not found where it was expected, got ${JSON.stringify(cases)}`);
+
+	// `table` and `builder` never reach that switch: they are branched on before
+	// it, in the caller. Asserted rather than assumed, so a rename there does not
+	// silently widen this set.
+	for (const special of ['table', 'builder']) {
+		assert.match(console_, new RegExp(`option\.type === '${special}'`), `${special} is drawn by its own branch`);
+	}
+	const DRAWABLE = new Set([...cases, 'table', 'builder']);
 	const offenders = [];
 
 	for (const module of all) {
