@@ -93,6 +93,7 @@
 		"downloads",
 		"http://localhost/*",
 		"http://127.0.0.1/*",
+		"https://publish.x.com/oembed",
 		"https://publish.twitter.com/oembed",
 		"https://backend.deviantart.com/oembed",
 		"https://api.gyazo.com/api/oembed",

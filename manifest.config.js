@@ -59,6 +59,10 @@ const PERMISSIONS = [
 const OPTIONAL_HOST_PERMISSIONS = [
 	'http://localhost/*',
 	'http://127.0.0.1/*',
+	// Twitter/X moved the oEmbed endpoint: the old host 301s to the new one, and
+	// a redirect to an unpermitted origin fails the request. Both are requested
+	// for one release so an already-granted profile is not re-prompted.
+	'https://publish.x.com/oembed',
 	'https://publish.twitter.com/oembed',
 	'https://backend.deviantart.com/oembed',
 	'https://api.gyazo.com/api/oembed',

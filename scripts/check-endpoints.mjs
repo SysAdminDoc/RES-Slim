@@ -68,6 +68,11 @@ const FETCHED = [
 	// exercises the exact CDX query shape the module builds.
 	{ name: 'Wayback CDX API (waybackSnapshot)', url: 'https://web.archive.org/cdx/search/cdx?url=iana.org/domains/reserved&output=json&filter=statuscode%3A200&fl=timestamp%2Coriginal&limit=-1' },
 	{ name: 'Bluesky oEmbed (hosts/bluesky)', url: 'https://embed.bsky.app/oembed?url=https://bsky.app/profile/bsky.app/post/3l6oveex3ii2l' },
+	// The x.com host, not the twitter.com one. The old address answers a 301 to
+	// this, and a probe that follows redirects would have called it healthy while
+	// the extension's own request failed: a redirect to an origin it has no
+	// permission for, sending no CORS header, is refused outright.
+	{ name: 'Twitter/X oEmbed (hosts/twitter)', url: 'https://publish.x.com/oembed?url=https%3A%2F%2Ftwitter.com%2Fjack%2Fstatus%2F20&omit_script=true' },
 	// v0.40.0 dropped Giphy's API call for the media paths the id already
 	// determines, so these two URLs are the whole host now. If the pattern ever
 	// stops resolving, the expando breaks with nothing else to notice it.

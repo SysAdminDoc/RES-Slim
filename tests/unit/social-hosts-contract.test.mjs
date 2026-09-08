@@ -105,6 +105,47 @@ test('mastodon never blocks the page when the oembed call fails', () => {
 	assert.match(src, /catch \(e\) \{/);
 });
 
+test('the twitter host asks the x.com oEmbed endpoint, and is allowed to', async () => {
+	// The twitter.com endpoint answers `301 Moved Permanently` to the x.com one,
+	// probed 2026-09-08. A redirect to an origin the extension has no permission
+	// for sends no CORS header of its own, so the request fails outright and every
+	// tweet expando was broken -- silently, because the failure is a rejected
+	// fetch rather than an error the page shows.
+	//
+	// Asserted on the URL the host actually builds, not on the source: a source
+	// match cannot tell the request apart from the permission string beside it,
+	// and both name a host.
+	const twitter = await loadHost('twitter', 'social-hosts-twitter-endpoint');
+
+	const calls = [];
+	globalThis.__resSlimAjax = options => {
+		calls.push(options);
+		return Promise.resolve({ html: '<blockquote class="twitter-tweet"><p>hello</p></blockquote>' });
+	};
+	try {
+		const detected = twitter.detect(new URL('https://x.com/jack/status/20'));
+		assert.ok(detected, 'an x.com status URL has to be detected');
+		await twitter.handleLink('https://x.com/jack/status/20', detected);
+	} finally {
+		delete globalThis.__resSlimAjax;
+	}
+
+	assert.equal(calls.length, 1, 'the host should have made exactly one request');
+	assert.equal(calls[0].url, 'https://publish.x.com/oembed', `the request went to ${calls[0].url}`);
+
+	// And the permission it declares covers the host it requests, or the fetch is
+	// refused before it leaves.
+	assert.ok(twitter.permissions.includes('https://publish.x.com/oembed'),
+		`the host requests publish.x.com but declares ${JSON.stringify(twitter.permissions)}`);
+	// The old origin stays declared for one release, so a profile that already
+	// granted it is not prompted again.
+	assert.ok(twitter.permissions.includes('https://publish.twitter.com/oembed'));
+
+	const manifest = JSON.parse(fs.readFileSync(path.join(repoRoot, 'chrome/manifest.json'), 'utf8'));
+	assert.ok(manifest.optional_host_permissions.includes('https://publish.x.com/oembed'),
+		'a permission the code asks for and the manifest does not declare can never be granted');
+});
+
 test('oEmbed social handlers sanitize remote HTML before attaching', () => {
 	for (const host of ['twitter', 'mastodon', 'bluesky']) {
 		const src = readHost(host);

@@ -563,7 +563,11 @@
     },
     {
       "file": "lib/modules/hosts/twitter.js",
-      "url": "https://publish.twitter.com/oembed"
+      "url": "https://publish.x.com/oembed"
+    },
+    {
+      "file": "lib/modules/hosts/twitter.js",
+      "url": "https://publish.x.com/oembed"
     },
     {
       "file": "lib/modules/hosts/vidble.js",

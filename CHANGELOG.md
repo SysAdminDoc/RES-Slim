@@ -35,6 +35,10 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Tweets expand again. Twitter's embed service moved to an x.com address and
+  redirects the old one, and a redirect to an address the extension has no
+  permission for fails outright, so every tweet expando had stopped working.
+
 - Turning the compact layout off no longer leaves the browser's own controls
   light on a dark theme. The page theme told the browser which way round it was
   only while the compact layout was on, so with it off you got white scrollbars
