@@ -203,3 +203,35 @@ test('a stored run is what the undo replays, not the DOM in front of it', async 
 
 	globalThis.__fetchHook = null;
 });
+
+test('a partly failed undo keeps the control its own message points at', () => {
+	// The message says "Use \"undo hide all\" again to retry", and the link was
+	// removed unconditionally right before it was shown — so the instruction
+	// named a control that no longer existed until the page was reloaded.
+	//
+	// Asserted on the source because the undo path has no executable seam:
+	// `injectUndoLink` resolves the old-Reddit header through the selector
+	// bundle and returns early without it, so nothing observable happens in
+	// jsdom. Recorded against the test-coverage item in ROADMAP.md.
+	const undoBody = modCode.slice(modCode.indexOf('async function undo('), modCode.indexOf('async function runUndo('));
+
+	assert.match(undoBody, /if \(!remaining\.length\) \{[\s\S]*?removeUndoLink\(\);[\s\S]*?\} else \{/,
+		'the link is only removed when there is nothing left to retry');
+	assert.match(undoBody, /\} else \{[\s\S]*?injectUndoLink\(remaining\)/,
+		'and is re-offered with what actually failed when there is');
+	assert.match(undoBody, /lastRunStorage\.set\(\{ fullnames: remaining/,
+		'the stored run narrows to what is left, so a retry does not redo the successes');
+
+	// The count in the message and the count offered by the link have to be the
+	// same set, or the reader is told one number and shown another.
+	assert.match(undoBody, /\$\{remaining\.length\} couldn/);
+});
+
+test('an undo that never starts puts its control back', () => {
+	// Without a modhash nothing is attempted at all, but the click handler had
+	// already set aria-busy and replaced the label, so the control sat reading
+	// "restoring…" for good.
+	const runUndoBody = modCode.slice(modCode.indexOf('async function runUndo('), modCode.indexOf('async function undo(') > modCode.indexOf('async function runUndo(') ? modCode.indexOf('async function undo(') : modCode.length);
+	assert.match(runUndoBody, /injectUndoLink\(fullnames\);\s*\n\s*return;/,
+		'the no-modhash path has to restore the link before giving up');
+});

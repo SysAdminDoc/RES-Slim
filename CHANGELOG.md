@@ -4,6 +4,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- After a partly failed "undo hide all", the link you are told to use is still
+  there. It was removed a moment before the message appeared, so the instruction
+  named a control that had gone until the page was reloaded. It now comes back
+  offering only the posts that are still hidden, and a run that cannot start at
+  all restores the link instead of leaving it reading "restoring…".
+
 ### Changed
 
 - The header host toggle offers old and www, not sh. Reddit now answers every
