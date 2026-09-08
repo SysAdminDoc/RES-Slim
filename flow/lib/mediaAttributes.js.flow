@@ -1,0 +1,44 @@
+// Flow 0.84 ships the 2018 DOM, which predates two attributes this project sets
+// on media it creates.
+//
+// `referrerPolicy` is the one that matters: `hoverZoom` fetches from whatever
+// host a link names, on hover, before any click, and without it that request
+// carries the full Reddit URL the reader is on -- the subreddit, the post, and
+// on a profile the account -- to a host chosen by whoever posted the link.
+// Chrome 51 and Firefox 50.
+//
+// `loading` is Chrome 76 and Firefox 75, and was already being set here.
+//
+// Declared rather than cast at the use site, because a cast would hide the next
+// attribute Flow does not know about as well as these two.
+
+declare class HTMLImageElement extends HTMLElement {
+	src: string;
+	alt: string;
+	srcset: string;
+	sizes: string;
+	crossOrigin: string | null;
+	referrerPolicy: string;
+	loading: string;
+	decoding: string;
+	width: number;
+	height: number;
+	naturalWidth: number;
+	naturalHeight: number;
+	complete: boolean;
+	currentSrc: string;
+	decode(): Promise<void>;
+}
+
+declare class HTMLVideoElement extends HTMLMediaElement {
+	width: number;
+	height: number;
+	videoWidth: number;
+	videoHeight: number;
+	poster: string;
+	playsInline: boolean;
+	referrerPolicy: string;
+	requestPictureInPicture(): Promise<any>;
+	requestVideoFrameCallback(callback: (now: number, metadata: Object) => void): number;
+	cancelVideoFrameCallback(handle: number): void;
+}

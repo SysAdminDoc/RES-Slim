@@ -431,7 +431,7 @@
 		},
 		{
 			"file": "lib/modules/hosts/steampowered.js",
-			"url": "http://images.akamai.steamusercontent.com${pathname}"
+			"url": "https://images.akamai.steamusercontent.com${pathname}"
 		},
 		{
 			"file": "lib/modules/hosts/steampowered.js",
