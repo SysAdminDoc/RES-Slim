@@ -6,6 +6,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- Current Reddit's nag surfaces can be switched off: the cookie bar, the four
+  shapes the "open in app" push takes, the QR-code dialog an adult post shows,
+  and the guided-tour bubbles. All keyed on element names rather than on the
+  words they contain, so they work whatever language Reddit is showing you.
+
 - Reddit's tracking parameters are stripped off a link before the page loads.
   Opening a shared post no longer puts `correlation_id`, `ref`, `utm_content`
   and the rest in your address bar or your history. The parameters Reddit needs
@@ -44,6 +49,11 @@ All notable changes to RES-Slim will be documented in this file.
   by the redirect rules.
 
 ### Fixed
+
+- Dismissing the login overlay gives the page its scrolling back properly.
+  Current Reddit locks scrolling with a class that also pins the page at a fixed
+  offset, so lifting the lock alone left you stuck where the overlay had
+  appeared.
 
 - Tweets expand again. Twitter's embed service moved to an x.com address and
   redirects the old one, and a redirect to an address the extension has no

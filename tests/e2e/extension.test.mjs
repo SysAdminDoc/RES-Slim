@@ -5021,6 +5021,134 @@ test('the mandatory-login overlay is dismissed only when there is a page behind 
 	assert.equal(empty.unwalled, false);
 });
 
+test('the current-Reddit nag surfaces are hidden, and only while the option is on', async t => {
+	// The declutter toggle covers ads and gold prompts and none of the surfaces
+	// the annoyance lists actually carry for reddit.com: the cookie bar, the app
+	// cross-promo in its four shapes, the NSFW QR dialog and the guided-tour
+	// overlay. Selectors taken from AdGuard Annoyances 14.txt, read 2026-09-08.
+	//
+	// Element names and data attributes, never text. uAssets has to ship a
+	// separate German rule beside its English one for the same surface, which is
+	// what a text-keyed rule costs.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// One instance of each, in the shape reddit renders them.
+	const SURFACES = {
+		'shreddit-cookie-banner': '<shreddit-cookie-banner id="rsm-cookie">cookies</shreddit-cookie-banner>',
+		'shreddit-async-loader[bundlename="reddit_cookie_banner"]': '<shreddit-async-loader bundlename="reddit_cookie_banner" id="rsm-cookie-loader">cookies</shreddit-async-loader>',
+		'.configured-xpromo': '<div class="configured-xpromo" id="rsm-xpromo">open in app</div>',
+		'[id^="xpromo-"]': '<div id="xpromo-banner">open in app</div>',
+		'shreddit-async-loader[bundlename="bottom_bar_xpromo"]': '<shreddit-async-loader bundlename="bottom_bar_xpromo" id="rsm-xpromo-bar">open in app</shreddit-async-loader>',
+		'span[data-part="get-app-btn"]': '<span data-part="get-app-btn" id="rsm-get-app">Get the app</span>',
+		'#nsfw-qr-dialog': '<div id="nsfw-qr-dialog">scan me</div>',
+		'shreddit-experience-tree': '<shreddit-experience-tree id="rsm-tour">tour</shreddit-experience-tree>',
+	};
+
+	const html = staticFixture(SHREDDIT_LISTING).replace(
+		'</shreddit-app>',
+		`<div class="rsm-e2e-nags">${Object.values(SURFACES).join('')}</div></shreddit-app>`,
+	);
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (url.protocol === 'chrome-extension:') return route.continue();
+		if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	const measure = async options => {
+		await worker.evaluate(stored => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { frictionRemovers: true },
+				'RESoptions.frictionRemovers': stored,
+			}, resolve);
+		}), options);
+
+		await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await page.waitForTimeout(500);
+
+		return page.evaluate(selectors => Object.fromEntries(selectors.map(selector => {
+			const element = document.querySelector(`.rsm-e2e-nags ${selector}`);
+			return [selector, element ? getComputedStyle(element).display : 'absent'];
+		})), Object.keys(SURFACES));
+	};
+
+	const on = await measure({
+		hideAppPrompt: { value: true },
+		hideCookieBanner: { value: true },
+		hideOnboardingPrompts: { value: true },
+	});
+	for (const [selector, display] of Object.entries(on)) {
+		assert.equal(display, 'none', `${selector} is still shown with the option on`);
+	}
+
+	// And off, or the assertions above would pass on a fixture that never
+	// rendered the surfaces in the first place.
+	const off = await measure({
+		hideAppPrompt: { value: false },
+		hideCookieBanner: { value: false },
+		hideOnboardingPrompts: { value: false },
+	});
+	for (const [selector, display] of Object.entries(off)) {
+		assert.notEqual(display, 'absent', `${selector} is not in the fixture at all`);
+		assert.notEqual(display, 'none', `${selector} is hidden with every option off`);
+	}
+});
+
+test('a dismissed wall gives the page its scrolling back, class and offset alike', async t => {
+	// Current Reddit locks scrolling with a class rather than an inline style, and
+	// that class does more than `overflow: hidden`: it pins the document with a
+	// negative `top`, so lifting the overflow alone leaves the page held at
+	// whatever position the wall appeared over. The class comes off too.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { frictionRemovers: true },
+			'RESoptions.frictionRemovers': { dismissLoginWall: { value: true } },
+		}, resolve);
+	}));
+
+	const wall = `
+		<div class="SomeRolloutClassName" style="position: fixed; inset: 0; background: #101010; z-index: 2147483647;">
+			<h2 style="color: #fff">Log in to continue</h2>
+		</div>`;
+	const html = staticFixture(SHREDDIT_LISTING)
+		.replace('</shreddit-app>', `<div class="shell">${wall}</div></shreddit-app>`)
+		.replace('<body', '<body class="rpl-scroll-lock" style="top: -420px"');
+
+	const page = await context.newPage();
+	await page.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (url.protocol === 'chrome-extension:') return route.continue();
+		if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+
+	await page.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('rsm-friction-unwalled'), null, { timeout: 30000 });
+
+	const state = await page.evaluate(() => ({
+		locked: document.body.classList.contains('rpl-scroll-lock'),
+		top: document.body.style.top,
+		overflow: getComputedStyle(document.body).overflow,
+	}));
+
+	assert.equal(state.locked, false, 'the lock class has to come off, not just be overridden');
+	assert.equal(state.top, '', 'and the offset it parked the document at has to go with it');
+	assert.notEqual(state.overflow, 'hidden');
+});
+
 test('the overlay is dismissed on current Reddit, where the anchors were old-Reddit only', async t => {
 	// The module declares `include = ['r2', 'd2x']` and its header says the wall
 	// is matched on shape so it works on www.reddit.com. Its content anchors were
