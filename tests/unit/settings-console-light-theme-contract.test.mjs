@@ -108,6 +108,33 @@ test('the knob and the status tones are read from tokens, not written as literal
 	assert.match(knobRule, /background:\s*var\(--options-knob\)/);
 });
 
+test('nothing inside the console pins its own color-scheme', () => {
+	// The scheme is declared once on `:root` and once per theme block, so it
+	// follows the theme the reader picked. A literal on an inner selector wins
+	// over that in one direction only: `#RESConsoleContainer select, textarea`
+	// said `dark`, so the Paper theme (and Match system resolving to light) drew
+	// dark UA popups, scrollbars and carets inside a light console. The data-set
+	// dropdown, the account picker, the selector-override editor and the
+	// support-report box all take their native chrome from this declaration.
+	const offenders = [];
+	for (const match of styles.matchAll(/([^{}]*#RESConsoleContainer[^{}]*)\{([^{}]*)\}/g)) {
+		const [, selector, body] = match;
+		const declared = /color-scheme:\s*([\w-]+)/.exec(body);
+		if (declared && declared[1] !== 'inherit') {
+			offenders.push(`${selector.trim().replace(/\s+/g, ' ')} -> ${declared[1]}`);
+		}
+	}
+	assert.deepEqual(offenders, [], `a console rule overrides the theme's scheme:\n  ${offenders.join('\n  ')}`);
+});
+
+test('the two schemes that exist are declared where the theme is', () => {
+	// The counterpart to the rule above: removing a literal is only safe because
+	// the root and every theme block still declare one.
+	assert.match(root, /color-scheme:\s*dark;/, ':root has to carry the default scheme');
+	const declared = [...themes()].filter(([, t]) => /color-scheme:\s*\w+;/.test(t.body));
+	assert.ok(declared.length > 0, 'no theme block declares a scheme, so `inherit` inherits nothing');
+});
+
 test('the breadcrumb separator uses a text token, not a decoration one', () => {
 	// `--options-border-strong` is a panel-divider colour. As the "/" between
 	// breadcrumb items it measured 1.3-2.5:1 in all eleven themes, so the trail

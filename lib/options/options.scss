@@ -1837,8 +1837,13 @@ li {
 	resize: vertical;
 }
 
+// Inherit, not `dark`. The root declares the scheme per theme. A literal here
+// beat that in one direction only, so a light console (Paper, or Match system
+// resolving light) drew dark UA popups, scrollbars and carets. The data-set
+// dropdown, the account picker, the selector-override editor and the
+// support-report box all take their native chrome from this declaration.
 #RESConsoleContainer select,
-#RESConsoleContainer textarea { color-scheme: dark; }
+#RESConsoleContainer textarea { color-scheme: inherit; }
 
 #RESConsoleContainer input[type='color'] {
 	width: 56px;

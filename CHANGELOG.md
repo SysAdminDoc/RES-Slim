@@ -6,6 +6,15 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The light settings theme no longer opens dark dropdowns. Every menu and text
+  box in the settings window was pinned to a dark colour scheme, so on Paper
+  (and on Match system when your desktop is light) the data set picker, the
+  account picker, the selector editor and the support report box drew black
+  popups, scrollbars and text cursors inside a white panel. They now follow
+  whichever theme you picked.
+
+### Fixed
+
 - An embedded video or code sandbox can no longer navigate your tab. Thirty-five
   third-party sites are framed inside Reddit pages by the media expandos, and
   the frames were unrestricted, so any of them could send the whole tab
