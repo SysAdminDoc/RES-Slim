@@ -52,9 +52,18 @@ test('frictionRemovers matches the interstitials by button, never by form action
 	assert.doesNotMatch(code, /button\[type="submit"\], input\[type="submit"\], button:not/, 'never take the first submit control');
 	assert.doesNotMatch(code, /function ensureDest/, 'a body dest overrides the one reddit put in the query string');
 
-	// And the selector cannot hand `requestSubmit` a control it would refuse.
+	// The selector narrows to submit controls, which is most of the protection.
 	assert.match(code, /`button\$\{accept\}, input\[type="submit"\]\$\{accept\}`/,
 		'only submit controls may be chosen as the submitter');
+	// It is not all of it, though: `<button type="button">` and `type="reset"`
+	// match `button[name=…][value=…]` too, and both make `requestSubmit` throw.
+	// So the catch is a reachable path, and a failed attempt is reported rather
+	// than swallowed -- `.click()` on a non-submit control does nothing at all,
+	// and returning true there would have the module believe it answered a gate
+	// it did not touch.
+	assert.match(code, /function submitWith\(form: HTMLFormElement, accept: HTMLElement\): boolean/);
+	assert.match(code, /if \(submitWith\(form, button\)\) return true;/,
+		'a submission that did not happen must not read as success');
 });
 
 test('frictionRemovers injects a CSS rule that hides all enabled banner selectors', () => {

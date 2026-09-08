@@ -18,7 +18,9 @@ All notable changes to RES-Slim will be documented in this file.
   theme you had just picked, so clicking through the picker buried the Advanced
   switch and the support report's Copy button under five of them. Choosing a
   theme now says nothing at all, because the picker already shows you, and the
-  messages worth keeping replace each other rather than piling up.
+  messages worth keeping replace each other rather than piling up. The line sits
+  below the buttons rather than beside them, so nothing moves as you reach for
+  it, and a message about something that failed says so and stays up longer.
 
 - The filter rules, the user-tag import and the subreddit paste list are edited
   in a proper box now. All three hold JSON or a pasted list, and all three were
@@ -38,11 +40,13 @@ All notable changes to RES-Slim will be documented in this file.
   only while the compact layout was on, so with it off you got white scrollbars
   and white dropdown menus on a dark page.
 
-- Score numbers stay readable on a light page. With score colouring on, the
-  number was painted in a colour picked purely from the score, so a post around
-  150 points showed a yellow number on Reddit's white row. The colour now keeps
-  its hue, which is what tells you roughly how a post did, and is darkened or
-  lightened only as far as it takes to be legible against whatever is behind it.
+- Score numbers stay readable on a light page, and stay readable when you hover
+  the row. With score colouring on, the number was painted in a colour picked
+  purely from the score, so a post around 150 points showed a yellow number on
+  Reddit's white row. The colour now keeps its hue, which is what tells you
+  roughly how a post did, and is darkened or lightened only as far as it takes
+  to be legible on every surface it can land on: the page, a post row, and the
+  lighter shade a row takes under the pointer.
 
 - Moving between pages on current Reddit gives you a fresh selection. The
   extension held onto whichever post or comment was selected on the page you

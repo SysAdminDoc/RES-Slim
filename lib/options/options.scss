@@ -596,24 +596,26 @@ li {
 // just this console talking to itself. It also wrote a `settingsConsole` row
 // into the notifications table option on first use.
 .consoleStatusChip {
-	display: inline-flex;
-	align-items: center;
-	max-width: 320px;
-	padding: 8px 12px;
-	overflow: hidden;
-	border: 1px solid var(--options-border);
-	border-radius: var(--options-radius-md);
-	background: var(--options-panel-alt);
+	// Its own line, below the buttons, rather than beside them. In the row it
+	// pushed `#RESGlobalStageBar`, Discard, Save, the sidebar toggle and Close
+	// leftwards every time it appeared -- and the worst case was the message
+	// raised by a blocked close, which is immediately followed by focusing the
+	// Save button, so the control moved as focus arrived on it.
+	flex: 0 0 100%;
+	order: 1;
+	display: flex;
+	justify-content: flex-end;
+	padding: 6px 0 0;
 	color: var(--options-text-muted);
 	font-size: 12px;
 	font-weight: 600;
-	white-space: nowrap;
-	text-overflow: ellipsis;
-	transition: opacity 140ms ease;
+	// Wrapping, not truncating. The longest of these is 72 characters and its
+	// second half is the actionable part: "Copy failed. The report is selected,
+	// so use your browser's copy command." An ellipsis takes exactly that away.
+	text-align: right;
+	text-wrap: pretty;
 
 	&.is-error {
-		border-color: rgb(210 153 34 / 52%);
-		background: rgb(210 153 34 / 16%);
 		color: var(--options-warning-text-strong);
 	}
 }

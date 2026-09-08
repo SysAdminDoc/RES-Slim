@@ -173,6 +173,27 @@ test('settings console reports through one replaceable status line, not the noti
 	assert.match(controller, /clearTimeout\(settingsStatusTimer\)/);
 	assert.match(controller, /chip\.textContent = message;/);
 
+	// Unhidden before the text is written. A live region populated while it is
+	// `display: none` is outside the accessibility tree, and screen readers
+	// commonly do not announce the change when it is revealed afterwards.
+	const body = controller.slice(controller.indexOf('function settingsStatus('));
+	assert.ok(body.indexOf('chip.hidden = false;') < body.indexOf('chip.textContent = message;'),
+		'the region has to exist before it is given something to announce');
+
+	// A failure says so. `is-error` was declared in the stylesheet and set by
+	// nothing, so "Copy failed. …" rendered in the same muted grey as a success.
+	assert.match(controller, /isError: true/, 'the failure messages have to be marked as failures');
+
+	// And it wraps rather than truncating: the longest of these is 72 characters
+	// and the actionable half is at the end.
+	const chipRule = read('lib/options/options.scss');
+	const chipStart = chipRule.indexOf('.consoleStatusChip {');
+	assert.notEqual(chipStart, -1, 'the chip must have a rule of its own');
+	const chipBlock = chipRule.slice(chipStart, chipRule.indexOf('\n}', chipStart));
+	assert.match(chipBlock, /&\.is-error/, 'and a failure has to look different from a success');
+	assert.ok(!/white-space:\s*nowrap/.test(chipBlock), 'a truncated failure message loses the part that helps');
+	assert.match(chipBlock, /flex: 0 0 100%/, 'the chip takes its own line rather than displacing the buttons');
+
 	// A theme change says nothing at all: the picker's selected state is the
 	// feedback, and it was the single biggest source of the stack.
 	assert.ok(!/settingsThemeChoice\)\);/.test(controller), 'choosing a theme must not raise a message');

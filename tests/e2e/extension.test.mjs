@@ -2789,8 +2789,8 @@ test('a coloured score is readable, as a badge and as a number, on light and dar
 	const page = await context.newPage();
 	await servePalette(page, FRONT_CAPTURE, html);
 
-	const measure = async (mode, theme) => {
-		await worker.evaluate(([colorLinkScore, palette]) => new Promise(resolve => {
+	const measure = async (mode, theme, refined = true) => {
+		await worker.evaluate(([colorLinkScore, palette, refinedLayout]) => new Promise(resolve => {
 			chrome.storage.local.set({
 				'RES.modulePrefs': { voteEnhancements: true, pageTheme: Boolean(palette), nightMode: false },
 				// An empty threshold table is what sends `user` mode to its `#c6c6c6`
@@ -2799,9 +2799,9 @@ test('a coloured score is readable, as a badge and as a number, on light and dar
 					colorLinkScore: { value: colorLinkScore },
 					userDefinedLinkColoration: { value: [] },
 				},
-				'RESoptions.pageTheme': { theme: { value: palette || 'classic' }, refinedLayout: { value: true } },
+				'RESoptions.pageTheme': { theme: { value: palette || 'classic' }, refinedLayout: { value: refinedLayout } },
 			}, resolve);
-		}), [mode, theme]);
+		}), [mode, theme, refined]);
 
 		await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
 		await page.waitForFunction(
@@ -2828,7 +2828,17 @@ test('a coloured score is readable, as a badge and as a number, on light and dar
 				return chain.map(el => getComputedStyle(el).backgroundColor).find(opaque) || 'rgb(255, 255, 255)';
 			};
 
-			return [...document.querySelectorAll('.thing.link')].map(thing => {
+			// Both surfaces the row can be on: the resting one, and the hovered one.
+			// The palette paints `#siteTable > .thing.link:hover` with a different
+			// token, so a correction made against the page background alone goes
+			// back under the floor the moment the pointer arrives -- and the first
+			// version of this test could not see that, because it only ever
+			// measured the resting row.
+			const style = document.createElement('style');
+			style.id = 'rsm-e2e-force-hover';
+			document.head.append(style);
+
+			const read = () => [...document.querySelectorAll('.thing.link')].map(thing => {
 				const rank = thing.querySelector('.rank');
 				const number = thing.querySelector('.midcol.unvoted > .score.unvoted');
 				const rankStyle = getComputedStyle(rank);
@@ -2838,11 +2848,21 @@ test('a coloured score is readable, as a badge and as a number, on light and dar
 					number: number ? { color: getComputedStyle(number).color, background: groundBehind(number) } : null,
 				};
 			});
+
+			const resting = read();
+			// `:hover` cannot be forced from script, so the rule it triggers is
+			// restated against a class and applied. Taken from the stylesheet rather
+			// than invented, so it cannot drift from what a real hover paints.
+			style.textContent = '#siteTable > .thing.link { background: var(--rsm-th-bg-raise) !important; }';
+			const hovered = read();
+			style.remove();
+			return [...resting, ...hovered];
 		});
 	};
 
 	const check = (label, rows) => {
-		assert.equal(rows.length, 3, `${label}: the fixture must render three posts`);
+		// Three posts, read twice: resting and hovered.
+		assert.equal(rows.length, 6, `${label}: expected three posts on two surfaces, got ${rows.length}`);
 		for (const row of rows) {
 			// A badge ground that never got painted would make its ratio meaningless.
 			assert.notEqual(row.badge.background, 'rgba(0, 0, 0, 0)', `${label}: score ${row.score} has no badge ground`);
@@ -2863,6 +2883,11 @@ test('a coloured score is readable, as a badge and as a number, on light and dar
 	check('automatic, classic', await measure('automatic', 'classic'));
 	check('automatic, gruvbox', await measure('automatic', 'gruvbox'));
 	check('user, gruvbox', await measure('user', 'gruvbox'));
+	// And with the refined layout off, where the palette paints the row from a
+	// different token again. Both earlier versions of this test set it on, which
+	// is the one configuration where the page background happens to be the row's.
+	check('automatic, classic, unrefined', await measure('automatic', 'classic', false));
+	check('automatic, gruvbox, unrefined', await measure('automatic', 'gruvbox', false));
 });
 
 test('the refined layout leaves RES-Slim\'s own buttons alone', async t => {
@@ -6645,7 +6670,10 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 			bridge: Boolean(post?.shadowRoot?.querySelector('style[data-res-shreddit-shadow-style="vote-enhancements"]')),
 		};
 	});
-	assert.deepEqual(currentState, { value: '128', color: 'rgb(217, 43, 43)', part: 'rsm-vote-score rsm-score', bridge: false });
+	// The threshold colour, corrected for the surfaces it can land on. `#d92b2b`
+	// clears 4.5:1 on the palette's page background but not on its raised card,
+	// which is what a shreddit post is, so it is darkened by one step.
+	assert.deepEqual(currentState, { value: '128', color: 'rgb(216, 39, 39)', part: 'rsm-vote-score rsm-score', bridge: false });
 
 	const oldListing = await context.newPage();
 	await oldListing.goto('https://old.reddit.com/r/fixture/', { waitUntil: 'domcontentloaded' });
@@ -6655,19 +6683,21 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 	));
 	// This used to expect `rgb(243, 171, 50)`, the threshold colour exactly as
 	// configured. That colour measures 1.98:1 on Classic's white page, and the
-	// module now moves a score number's lightness until it clears 4.5:1 while
-	// keeping its hue -- the hue is the signal, the lightness is not. So the
-	// expected value is a darker orange of the same hue, and the ratio is asserted
-	// alongside it so a future change to the correction cannot quietly pin a
-	// number that no longer means anything.
-	assert.equal(oldListingColor, 'rgb(164, 106, 10)');
-	assert.ok(contrastRatio(oldListingColor, 'rgb(255, 255, 255)') >= 4.5,
-		`the corrected score colour is ${oldListingColor}, which is still unreadable on white`);
+	// module now moves a score number's lightness until it clears 4.5:1 on every
+	// surface the number can land on, while keeping its hue -- the hue is the
+	// signal, the lightness is not. So the expected value is a darker orange of
+	// the same hue, and the ratios are asserted alongside it so a future change to
+	// the correction cannot quietly pin a number that no longer means anything.
+	assert.equal(oldListingColor, 'rgb(154, 100, 9)');
+	for (const surface of ['rgb(255, 255, 255)', 'rgb(245, 245, 245)']) {
+		assert.ok(contrastRatio(oldListingColor, surface) >= 4.5,
+			`${oldListingColor} is ${contrastRatio(oldListingColor, surface).toFixed(2)}:1 on ${surface}`);
+	}
 
 	const oldThread = await context.newPage();
 	await oldThread.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
 	await oldThread.waitForFunction(() => (
-		getComputedStyle(document.querySelector('#thing_t1_comment000001 .score.unvoted')).color === 'rgb(217, 43, 43)'
+		getComputedStyle(document.querySelector('#thing_t1_comment000001 .score.unvoted')).color === 'rgb(216, 39, 39)'
 	), null, { timeout: 30000 });
 	const oldThreadState = await oldThread.evaluate(() => ({
 		post: getComputedStyle(document.querySelector('#thing_t3_post00000001 .score.unvoted')).color,
@@ -6676,7 +6706,7 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 	// The post score is corrected the same way it is on the listing. The comment's
 	// is not, because `#d92b2b` already clears the floor on this surface -- a
 	// colour that can be read is left exactly as the reader configured it.
-	assert.deepEqual(oldThreadState, { post: 'rgb(164, 106, 10)', comment: 'rgb(217, 43, 43)' });
+	assert.deepEqual(oldThreadState, { post: 'rgb(154, 100, 9)', comment: 'rgb(216, 39, 39)' });
 
 	const dir = saveScreenshotDir();
 	await dismissVisualNotifications(current);
