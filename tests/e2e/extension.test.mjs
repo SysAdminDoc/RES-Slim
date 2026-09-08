@@ -1146,6 +1146,83 @@ test('the JSON and paste-list options are edited in a box, not a one-line field'
 	assert.deepEqual(pageErrors, [], 'the console must not throw while drawing the new type');
 });
 
+test('console feedback is one replaceable line, not a growing stack of cards', async t => {
+	// Every console message went through `showNotification`, which prepends a card
+	// and deduplicates only on identical HTML. Choosing a theme raised a
+	// three-row card saying what the picker already shows, so clicking through
+	// the picker stacked one per click: five were on screen after ten clicks, and
+	// they covered the Advanced panel's switch and the support report's Copy
+	// button. Each card also carried an "Always show this type" footer offering to
+	// silence a notification type that is really this console talking to itself,
+	// and wrote a `settingsConsole` row into the notifications table option.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	// The picker lives on the console's own preferences panel, which is not the
+	// tab the console opens on.
+	await page.locator('#RESCategoryTab-console').click();
+	await page.waitForSelector('#RESConsolePrefs:not([hidden])', { timeout: 30000 });
+	await page.waitForSelector('#RESThemeSelector .themeOption', { timeout: 30000 });
+
+	const themes = await page.locator('#RESThemeSelector .themeOption').count();
+	assert.ok(themes >= 5, `the picker must offer several themes, saw ${themes}`);
+
+	// Every theme, clicked in a row and deliberately fast: the stack was a
+	// function of clicking faster than the cards expired.
+	const buttons = await page.locator('#RESThemeSelector .themeOption').all();
+	await buttons.reduce((chain, button) => chain.then(() => button.click()), Promise.resolve());
+
+	const after = await page.evaluate(() => ({
+		cards: document.querySelectorAll('#RESNotifications .RESNotification').length,
+		statusText: (document.getElementById('RESConsoleStatus') || {}).textContent || '',
+		statusHidden: (document.getElementById('RESConsoleStatus') || {}).hidden,
+	}));
+
+	// Nothing at all for a theme change: the picker's own selected state is the
+	// feedback, and the page repaints in front of the reader.
+	assert.equal(after.cards, 0, `choosing a theme raised ${after.cards} notification cards`);
+	assert.equal(after.statusText, '', 'and it does not say in words what the picker already shows');
+	assert.equal(after.statusHidden, true);
+
+	// A message that is worth showing still shows, and replaces rather than
+	// stacks. Toggling density is the cheapest one to provoke.
+	const density = page.locator('#RESDensityToggle');
+	await density.click();
+	await page.waitForFunction(() => {
+		const chip = document.getElementById('RESConsoleStatus');
+		return chip && !chip.hidden && chip.textContent.trim().length > 0;
+	}, null, { timeout: 15000 });
+
+	const first = await page.locator('#RESConsoleStatus').textContent();
+	await density.click();
+	await page.waitForFunction(previous => {
+		const chip = document.getElementById('RESConsoleStatus');
+		return chip && chip.textContent.trim() !== previous.trim();
+	}, first, { timeout: 15000 });
+
+	const stacked = await page.evaluate(() => ({
+		chips: document.querySelectorAll('#RESConsoleStatus').length,
+		cards: document.querySelectorAll('#RESNotifications .RESNotification').length,
+	}));
+	assert.equal(stacked.chips, 1, 'there is one status line, replaced in place');
+	assert.equal(stacked.cards, 0, 'and nothing goes to the page notification stack');
+
+	// The console must not have registered itself as a notification type. That
+	// row is what put an "Always show this type" checkbox in front of the reader
+	// for a message the console raises about itself.
+	const registered = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get('RESoptions.notifications', stored => {
+			const table = (stored['RESoptions.notifications'] || {}).notificationTypes;
+			resolve(JSON.stringify((table && table.value) || []));
+		});
+	}));
+	assert.doesNotMatch(registered, /settingsConsole/, `the console registered a notification type: ${registered}`);
+});
+
 test('settings console themes and display controls work by keyboard', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

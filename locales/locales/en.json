@@ -1088,9 +1088,6 @@
     "settingsConsoleToastReverted": {
         "message": "Reverted unsaved changes"
     },
-    "settingsConsoleToastThemeApplied": {
-        "message": "Theme: $1"
-    },
     "settingsConsoleToastDensityDense": {
         "message": "Density: dense"
     },

@@ -13,6 +13,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Changed
 
+- The settings window tells you things in one line at the top, instead of
+  stacking cards over the controls. Picking a theme raised a card saying which
+  theme you had just picked, so clicking through the picker buried the Advanced
+  switch and the support report's Copy button under five of them. Choosing a
+  theme now says nothing at all, because the picker already shows you, and the
+  messages worth keeping replace each other rather than piling up.
+
 - The filter rules, the user-tag import and the subreddit paste list are edited
   in a proper box now. All three hold JSON or a pasted list, and all three were
   single-line fields that showed the first forty characters and hid the rest.

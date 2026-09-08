@@ -152,24 +152,43 @@ test('settings console paints branded scrollbars scoped to the console container
 	assert.match(styles, /#RESConsoleContainer ::-webkit-scrollbar-thumb/);
 });
 
-test('settings console exposes a settings-toast helper used by every preference change', () => {
+test('settings console reports through one replaceable status line, not the notification stack', () => {
 	const controller = read('lib/options/settingsConsole.js');
+	const markup = read('lib/options/templates.js');
 	const locale = JSON.parse(read('locales/locales/en.json'));
 
-	assert.match(controller, /function settingsToast\(/);
+	// This used to assert that every one of these went through `settingsToast`,
+	// which called `showNotification`. That was the defect, not the design:
+	// `showNotification` prepends a card and deduplicates only on identical HTML,
+	// so clicking through the theme picker stacked one three-row card per click
+	// over the Advanced switch and the support report's Copy button, and each
+	// card offered to disable a "notification type" that is really this console
+	// talking to itself.
+	assert.match(controller, /function settingsStatus\(/);
+	assert.ok(!/function settingsToast\(/.test(controller), 'the notification-stack helper is gone');
+	assert.match(markup, /id="RESConsoleStatus"[^>]*role="status"/, 'the chip has to exist and announce itself');
+
+	// One element, cleared and rewritten, so a second message replaces the first
+	// rather than joining it.
+	assert.match(controller, /clearTimeout\(settingsStatusTimer\)/);
+	assert.match(controller, /chip\.textContent = message;/);
+
+	// A theme change says nothing at all: the picker's selected state is the
+	// feedback, and it was the single biggest source of the stack.
+	assert.ok(!/settingsThemeChoice\)\);/.test(controller), 'choosing a theme must not raise a message');
+	assert.equal(locale.settingsConsoleToastThemeApplied, undefined, 'and its string is gone with it');
+
 	for (const callSite of [
-		'settingsToast(i18n(\'settingsConsoleToastThemeApplied\'',
-		'settingsToast(i18n(nextDensity === SETTINGS_DENSITY_DENSE',
-		'settingsToast(i18n(nextMotion === SETTINGS_MOTION_REDUCE',
-		'settingsToast(i18n(enable ? \'settingsConsoleToastModuleEnabled\'',
-		'settingsToast(i18n(\'settingsConsoleToastSaved\'))',
-		'settingsToast(i18n(\'settingsConsoleToastReverted\'))',
+		'settingsStatus(i18n(nextDensity === SETTINGS_DENSITY_DENSE',
+		'settingsStatus(i18n(nextMotion === SETTINGS_MOTION_REDUCE',
+		'settingsStatus(i18n(enable ? \'settingsConsoleToastModuleEnabled\'',
+		'settingsStatus(i18n(\'settingsConsoleToastSaved\'))',
+		'settingsStatus(i18n(\'settingsConsoleToastReverted\'))',
 	]) {
-		assert.ok(controller.includes(callSite), `controller should toast: ${callSite}`);
+		assert.ok(controller.includes(callSite), `controller should report: ${callSite}`);
 	}
 
 	for (const key of [
-		'settingsConsoleToastThemeApplied',
 		'settingsConsoleToastDensityDense',
 		'settingsConsoleToastDensityComfortable',
 		'settingsConsoleToastMotionReduced',
@@ -244,7 +263,7 @@ test('console-level controls live in the Console tab, not a third column', () =>
 	}
 });
 
-test("night mode's blanket button rule cannot reach into the settings console", () => {
+test('night mode\'s blanket button rule cannot reach into the settings console', () => {
 	// res.css is loaded on the options page and <html> carries res-nightmode, so
 	// `.res-nightmode button` (0,1,1) outranked every class-based button style in
 	// options.scss (0,1,0). The filter chips, theme swatches, Export/Import and
@@ -261,7 +280,7 @@ test("night mode's blanket button rule cannot reach into the settings console", 
 	assert.notEqual(start, -1, 'the night-mode button rule should still exist');
 	const rule = nightMode.slice(start, nightMode.indexOf('background-color: hsl(0, 0%, 30%);', start) + 40);
 
-	for (const selector of ['button', "input[type='button']", "input[type='submit']", "input[type='reset']"]) {
+	for (const selector of ['button', 'input[type=\'button\']', 'input[type=\'submit\']', 'input[type=\'reset\']']) {
 		const excluded = new RegExp(
 			`${selector.replace(/[[\]']/g, m => `\\${m}`)}:not\\(:where\\([^)]*#RESConsoleContainer \\*`,
 		);

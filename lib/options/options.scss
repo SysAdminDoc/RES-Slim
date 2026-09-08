@@ -587,6 +587,37 @@ li {
 	&:hover { @extend %surface-button-hover; }
 }
 
+// One chip, replaced in place, rather than a stack of page notifications.
+// Every console status message used to go through `showNotification`, which
+// prepends a card and only deduplicates identical HTML -- so clicking through
+// the theme picker stacked one three-row card per click, five of them covered
+// the Advanced panel's switch and the support report's Copy button at 1440x900,
+// and each card's footer offered to disable a "notification type" that is really
+// just this console talking to itself. It also wrote a `settingsConsole` row
+// into the notifications table option on first use.
+.consoleStatusChip {
+	display: inline-flex;
+	align-items: center;
+	max-width: 320px;
+	padding: 8px 12px;
+	overflow: hidden;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-md);
+	background: var(--options-panel-alt);
+	color: var(--options-text-muted);
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	transition: opacity 140ms ease;
+
+	&.is-error {
+		border-color: rgb(210 153 34 / 52%);
+		background: rgb(210 153 34 / 16%);
+		color: var(--options-warning-text-strong);
+	}
+}
+
 .globalStageBar {
 	display: inline-flex;
 	align-items: center;
