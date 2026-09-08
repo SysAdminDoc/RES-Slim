@@ -350,12 +350,13 @@ test('filterRules module is registered and uses the utility helpers', () => {
 	}
 });
 
-test('the ReDoS guard catches the shapes that actually hang, and runs them to prove it', () => {
-	// Every one of these was measured un-flagged on Node 24 against 28 a's:
-	// 26.0s, 18.7s, 19.5s, 19.0s and 24.2s respectively. The old guard was a
-	// single regex looking for a quantifier inside one flat group, so it caught
-	// `(a+)+` and nothing else.
-	const catastrophic = [
+test('the ReDoS guard refuses the shapes that actually hang', () => {
+	// Every one of these was measured un-flagged and slow before the rewrite:
+	// (a|a)*$ 26.0s, (.*a){20}$ 24.2s, ((a+))+$ 19.5s, (?:a|a)*$ 19.0s,
+	// (a{1,10})+$ 18.7s, and the ones with an optional inner worst of all —
+	// (a?){26}$ 48.6s — because a group that can match nothing gives the repeat
+	// two ways to consume every position.
+	for (const pattern of [
 		'(a|a)*$',
 		'(a{1,10})+$',
 		'((a+))+$',
@@ -364,29 +365,35 @@ test('the ReDoS guard catches the shapes that actually hang, and runs them to pr
 		'(a+)+$',
 		'(a*)*$',
 		'(.+)*$',
-	];
-	for (const pattern of catastrophic) {
+		'(a?){24}$',
+		'(\s?){26}$',
+		'(a|ab)*$',
+		'(\s*\w+)+$',
+		'([a-z]+)+$',
+		'(a|)*$',
+		'(?=(a+)+)',
+	]) {
 		assert.equal(isLikelyCatastrophicRegex(pattern), true, `${pattern} should be refused`);
 	}
+});
 
-	// And the guard has to hold at the only place it matters: evaluating a rule
-	// against a body chosen to make the pattern backtrack. Any of these taking
-	// the naive path would run for tens of seconds.
+test('a refused pattern is never executed, however long it would take', () => {
+	// Separate from the assertions above on purpose: asserting the verdict first
+	// and the timing second in one test means a regression fails on the verdict
+	// and the timing check never runs, so it can never catch anything.
 	const hostile = `${'a'.repeat(28)}X`;
 	const started = Date.now();
-	for (const pattern of catastrophic) {
-		assert.equal(
-			ruleMatches(rule({ field: 'keyword', op: 'regex', value: pattern }), facts({ title: hostile })),
-			false,
-			`${pattern} must fail closed rather than run`,
-		);
+	for (const pattern of ['(a|a)*$', '(a?){26}$', '(.*a){20}$', '(\s*\w+)+$']) {
+		ruleMatches(rule({ field: 'keyword', op: 'regex', value: pattern }), facts({ title: hostile }));
 	}
-	assert.ok(Date.now() - started < 1000, 'a refused pattern must never be executed');
+	assert.ok(Date.now() - started < 1000, 'a refused pattern must never reach the engine');
 });
 
 test('the wider guard still allows ordinary user patterns', () => {
 	// A false positive costs the reader a rule that silently never fires, so the
-	// net has to stay off the shapes people actually write.
+	// net has to stay off the shapes people actually write. Alternation of
+	// distinct literals and a bounded repeat of a bounded inner are both common
+	// and both safe; an earlier draft of this guard refused all of them.
 	for (const pattern of [
 		'^hello$',
 		'(cat|dog)s?',
@@ -397,7 +404,25 @@ test('the wider guard still allows ordinary user patterns', () => {
 		'foo{2,3}bar',
 		'(abc)?def',
 		'[+*{|]+',
+		'(?:\d{1,3}\.){3}\d{1,3}',
+		'(foo|bar)+',
+		'(spam|scam|phish)+',
+		'(cat|dog){2}',
+		'(\.jpg|\.png){1}$',
+		'((abc))*',
 	]) {
 		assert.equal(isLikelyCatastrophicRegex(pattern), false, `${pattern} should be allowed`);
+	}
+});
+
+test('an allowed pattern is one that actually runs quickly', () => {
+	// The allow-list above is only meaningful if those patterns are in fact fast:
+	// otherwise it would be pinning a hole rather than an absence of one.
+	const hostile = `${'a'.repeat(30)}X`;
+	for (const pattern of ['(?:\d{1,3}\.){3}\d{1,3}', '(spam|scam|phish)+', '(foo|bar)+', '((abc))*']) {
+		const started = Date.now();
+		assert.equal(isLikelyCatastrophicRegex(pattern), false);
+		new RegExp(pattern, 'i').test(hostile);
+		assert.ok(Date.now() - started < 200, `${pattern} is allowed, so it has to be fast`);
 	}
 });

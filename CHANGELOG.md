@@ -6,6 +6,12 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Cached replies stay in the window that fetched them. The store behind the
+  short-lived response cache was keyed on the address alone, so an answer
+  fetched while signed in to a private window could be handed to a normal one,
+  and the other way round. Entries are now separated by browsing context, and by
+  whether the request carried credentials.
+
 - A settings file cannot smuggle in a reserved name any more. An option key
   named after a member every JavaScript object inherits was accepted on import
   and then written through onto every object on the settings page. Module names
