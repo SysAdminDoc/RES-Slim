@@ -12,6 +12,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
+import { loadModule, installDom } from './helpers/loadModule.mjs';
+
+// A DOM, for the one test that needs a real `Thing` to read a score off.
+installDom({ url: 'https://old.reddit.com/r/example/' });
+const { Thing } = await loadModule('lib/utils/index.js', 'vote-score-ink-thing');
 
 const { hslToRgb, contrastRatio } = await loadFlowModule('lib/utils/usernameColors.js', 'vote-score-ink-hsl');
 const votes = await loadFlowModule('lib/utils/voteEnhancements.js', 'vote-score-ink', {
@@ -104,6 +109,45 @@ test('the hsl arm agrees with the shared conversion, in both spellings', () => {
 		assert.deepEqual(votes.scoreColorRgb(`hsl(${h}deg ${s}% ${l}%)`), expected, 'space form');
 		assert.deepEqual(votes.scoreColorRgb(`hsla(${h}, ${s}%, ${l}%, 0.5)`), expected, 'alpha is dropped');
 	}
+});
+
+test('a post whose score reddit is hiding is left uncoloured, not painted NaN', () => {
+	// `Thing.getScore()` read `data-score` with `if (!isNaN(dataset.score))`, and
+	// `isNaN('')` is false because `Number('')` is 0 -- so a post whose score
+	// reddit withholds returned `parseInt('')`, which is NaN. Every caller guards
+	// with `typeof score !== 'number'`, and NaN passes that, so the NaN reached
+	// `automaticLinkScoreColor` and came out as `hsl(NaN, 75%, 50%)`. That is not
+	// a colour: `setProperty` rejects it, and the badge is left with no ground
+	// while the ink is chosen for a colour nothing painted.
+	const post = score => {
+		const element = document.createElement('div');
+		element.className = 'thing link';
+		element.setAttribute('data-fullname', 't3_scored1');
+		if (score !== null) element.setAttribute('data-score', score);
+		element.innerHTML = '<div class="entry"><p class="title"><a class="title" href="/r/x/comments/a/b/">t</a></p></div>';
+		document.body.append(element);
+		return Thing.checkedFrom(element);
+	};
+
+	// The case reddit actually emits, and the ones around it. What matters is the
+	// shape a caller sees: `applyLinkScoreColor` returns early on
+	// `typeof score !== 'number'`, and NaN slips through that guard while null
+	// does not.
+	for (const hidden of ['', '   ', 'none']) {
+		const score = post(hidden).getScore();
+		assert.equal(Number.isNaN(score), false, `data-score="${hidden}" read as NaN`);
+		assert.notEqual(typeof score, 'number', `data-score="${hidden}" has to fail the caller's guard`);
+	}
+	assert.equal(post('42').getScore(), 42, 'and a real score still arrives');
+	assert.equal(post('-150').getScore(), -150, 'including the one the hue formula divides by zero on');
+	assert.equal(post('0').getScore(), 0, 'zero is a score, not an absence of one');
+
+	// And the colour helpers still refuse to invent one for a NaN that reaches
+	// them some other way.
+	assert.equal(votes.scoreColorRgb(votes.automaticLinkScoreColor(NaN)), null,
+		'an unparseable ground has to read as unparseable');
+	assert.equal(votes.readableScoreInk(votes.automaticLinkScoreColor(NaN)), '#fff',
+		'and fall back to the ink the badge always had');
 });
 
 test('the stylesheet reads the token the module writes', () => {

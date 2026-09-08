@@ -4,47 +4,12 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
-### Fixed
+### Added
 
-- Moving between pages on current Reddit gives you a fresh selection. The
-  extension held onto whichever post or comment was selected on the page you
-  came from, so the new page had nothing selected and the comment navigator had
-  no starting point. Each page also remembers its own selection now, instead of
-  writing over the first page's.
-
-### Fixed
-
-- The login-wall dismisser works on current Reddit. It looked for old Reddit's
-  page structure to decide whether there was anything behind the overlay, found
-  none on www.reddit.com, and so left every wall in place while logging that
-  Reddit had sent an empty page. It reads the current Reddit feed, post and
-  comment elements now.
-
-### Fixed
-
-- "Skip the over-18 confirmation" actually skips it. The extension submitted
-  the form without saying which button it meant, and Reddit reads a missing
-  answer as "no", so you were sent back where you came from. The quarantined
-  community version of the same setting had never worked at all, because it was
-  looking for a form that does not exist on the page.
-
-### Fixed
-
-- Importing user tags works again when your saved tags predate the timestamp
-  field. Preview and Import compared the stored tags two different ways, and
-  the comparison included a timestamp that gets filled in fresh each time it is
-  read, so the import was refused with "the stored tags changed" for something
-  that had not changed at all.
-
-- Embedded players get exactly what they had before, no more. The sandbox added
-  in the previous entry also handed every embedded site permission to start
-  audio and video on its own, which it never had, and took away the download
-  buttons on the paste and code-playground sites. Downloads are back and the
-  autoplay grant is gone, so your "don't autoplay" setting means what it says.
-
-- A post at exactly -150 points gets a coloured rank badge like every other
-  post. The colour was computed by dividing by the score plus 150, so that one
-  score produced no colour at all.
+- Undo last import, for user tags. The importer has always saved a copy of your
+  tags from just before an import, and said so, but nothing could put it back.
+  There is a button for it now, next to Preview and Import. It restores the tags
+  on screen as well as in storage, and there is one undo per import.
 
 ### Changed
 
@@ -53,7 +18,47 @@ All notable changes to RES-Slim will be documented in this file.
   single-line fields that showed the first forty characters and hid the rest.
   Pasting something with line breaks used to lose them.
 
+- The header host toggle offers old and www, not sh. Reddit now answers every
+  sh.reddit.com address with a redirect to www, so that third button was either
+  a slower www or, with the old-Reddit redirect switched on, a round trip that
+  landed you back where you started. Requests to that host are still left alone
+  by the redirect rules.
+
 ### Fixed
+
+- Moving between pages on current Reddit gives you a fresh selection. The
+  extension held onto whichever post or comment was selected on the page you
+  came from, so the new page had nothing selected and the comment navigator had
+  no starting point. Each page also remembers its own selection now, instead of
+  writing over the first page's.
+
+- The login-wall dismisser works on current Reddit. It looked for old Reddit's
+  page structure to decide whether there was anything behind the overlay, found
+  none on www.reddit.com, and so left every wall in place while logging that
+  Reddit had sent an empty page. It reads the current Reddit feed, post and
+  comment elements now.
+
+- "Skip the over-18 confirmation" actually skips it, and so does the
+  quarantined-community version beside it. Neither had ever found the form:
+  both were looking for a form address that Reddit's page does not carry. Both
+  now find the "continue" button directly and press it, which is the only way
+  the answer reaches Reddit at all.
+
+- Importing user tags works again when your saved tags predate the timestamp
+  field. Preview and Import compared the stored tags two different ways, and
+  the comparison included a timestamp that gets filled in fresh each time it is
+  read, so the import was refused with "the stored tags changed" for something
+  that had not changed at all.
+
+- Embedded players get exactly what they had before, no more. The sandbox added
+  alongside it also handed every embedded site permission to start audio on its
+  own, which it never had, and took away the download buttons on the paste and
+  code-playground sites. Downloads are back and the autoplay grant is gone, so
+  your "don't autoplay" setting means what it says.
+
+- A post at exactly -150 points gets a coloured rank badge like every other
+  post. The colour was computed by dividing by the score plus 150, so that one
+  score produced no colour at all.
 
 - Night mode now darkens the browser's own controls too. Scrollbars, dropdown
   menus, date pickers and the plain form controls Reddit does not style stayed
@@ -61,15 +66,16 @@ All notable changes to RES-Slim will be documented in this file.
   was dark. It does now, and it stands aside when the page theme is the one
   painting the page.
 
-### Fixed
-
 - Score badges in a listing are readable at every score. With post score
   colouring on, the rank badge painted white digits on a colour picked from the
   score, and around 150 points that colour is yellow. The digits now switch
   between black and white to suit whatever the badge ends up being, so the
   number stays legible right across the range.
 
-### Fixed
+- A post whose score Reddit is hiding no longer gets a broken rank badge. An
+  absent score was read as the number zero-divided, which is not a colour, so
+  the badge was left unpainted while its digits were coloured for a background
+  that never arrived.
 
 - The light settings theme no longer opens dark dropdowns. Every menu and text
   box in the settings window was pinned to a dark colour scheme, so on Paper
@@ -78,38 +84,17 @@ All notable changes to RES-Slim will be documented in this file.
   popups, scrollbars and text cursors inside a white panel. They now follow
   whichever theme you picked.
 
-### Fixed
-
 - An embedded video or code sandbox can no longer navigate your tab. Thirty-five
   third-party sites are framed inside Reddit pages by the media expandos, and
   the frames were unrestricted, so any of them could send the whole tab
   somewhere else. They are now sandboxed with everything they need to work and
   nothing that lets them take over the page.
 
-### Added
-
-- Undo last import, for user tags. The importer has always saved a copy of your
-  tags from just before an import, and said so, but nothing could put it back.
-  There is a button for it now, next to Preview and Import. It restores the tags
-  on screen as well as in storage, and there is one undo per import.
-
-### Fixed
-
 - After a partly failed "undo hide all", the link you are told to use is still
   there. It was removed a moment before the message appeared, so the instruction
   named a control that had gone until the page was reloaded. It now comes back
   offering only the posts that are still hidden, and a run that cannot start at
   all restores the link instead of leaving it reading "restoring…".
-
-### Changed
-
-- The header host toggle offers old and www, not sh. Reddit now answers every
-  sh.reddit.com address with a redirect to www, so that third button was either
-  a slower www or, with the old-Reddit redirect switched on, a round trip that
-  landed you back where you started. Requests to that host are still left alone
-  by the redirect rules.
-
-### Fixed
 
 - A media host that stops answering no longer leaves every one of its links
   stuck. Nothing had a deadline, so a host that accepted the connection and then

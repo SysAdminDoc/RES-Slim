@@ -148,11 +148,12 @@ test('a framed third party cannot navigate the tab out from under the reader', (
 	// No `allow`, and this assertion is the point rather than an omission. An
 	// earlier version of this file required autoplay, encrypted-media and
 	// picture-in-picture to be delegated, on the stated grounds that the sandbox
-	// took them away. It does not: `sandbox` has no token for any of the three,
-	// and all three are Permissions Policy features whose default allowlist is
-	// `self`, so a cross-origin frame never had them. Listing them granted a
-	// capability instead of restoring one, and an autoplay grant lets a host that
-	// plays by itself do so with `autoplayVideo` switched off.
+	// took them away. It does not: `sandbox` has no token for any of the three.
+	// autoplay and encrypted-media default to an allowlist of `self`, which a
+	// cross-origin frame is not, so listing them granted a capability instead of
+	// restoring one -- an autoplay grant lets a host that plays by itself do so
+	// with `autoplayVideo` switched off. picture-in-picture defaults to `*`, so
+	// listing it was merely redundant.
 	assert.equal(iframe.getAttribute('allow'), null, 'the frame must not be granted more than it had');
 
 	// Fullscreen comes from the attribute that predates the sandbox.

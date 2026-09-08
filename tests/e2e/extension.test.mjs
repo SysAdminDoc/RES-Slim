@@ -4491,16 +4491,18 @@ test('the overlay is dismissed on current Reddit, where the anchors were old-Red
 		<style>html, body { overflow: hidden !important; }</style>`;
 
 	// What reddit sends when it walls a current-Reddit page: the app shell, and no
-	// feed, post or comment inside it.
+	// feed, post or comment inside it. The wall goes *inside* `<shreddit-app>`,
+	// which is where current Reddit renders everything -- putting it directly
+	// under `<body>` would test the old-Reddit shape wearing a current-Reddit
+	// fixture, and the depth is precisely what the overlay search got wrong.
 	const EMPTY_WALLED = `<!doctype html><html><body>
-		<shreddit-app><reddit-header-large></reddit-header-large></shreddit-app>
-		${wall}
+		<shreddit-app><reddit-header-large></reddit-header-large><div class="shell">${wall}</div></shreddit-app>
 	</body></html>`;
 
 	async function measure(kind) {
 		const html = kind === 'empty' ?
 			EMPTY_WALLED :
-			staticFixture(SHREDDIT_LISTING).replace('</body>', `${wall}</body>`);
+			staticFixture(SHREDDIT_LISTING).replace('</shreddit-app>', `<div class="shell">${wall}</div></shreddit-app>`);
 
 		const tab = await context.newPage();
 		await tab.route('**/*', route => {
@@ -4542,6 +4544,40 @@ test('the overlay is dismissed on current Reddit, where the anchors were old-Red
 	assert.equal(empty.feedText, 0, 'the empty fixture has to actually be empty');
 	assert.equal(empty.overlayHidden, false);
 	assert.equal(empty.unwalled, false);
+
+	// And one that arrives after the page has settled, which is how the rollout
+	// actually delivers it. The observer watched `document.body` with no subtree,
+	// so a wall inserted anywhere below body's own children never woke it.
+	const late = await context.newPage();
+	await late.route('**/*', route => {
+		const request = route.request();
+		const url = new URL(request.url());
+		if (url.protocol === 'chrome-extension:') return route.continue();
+		if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: staticFixture(SHREDDIT_LISTING) });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await late.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+	await late.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await late.evaluate(markup => {
+		const host = document.querySelector('shreddit-app') || document.body;
+		const holder = document.createElement('div');
+		holder.className = 'shell';
+		holder.innerHTML = markup;
+		host.append(holder);
+	}, wall);
+	await late.waitForFunction(
+		() => document.documentElement.classList.contains('rsm-friction-unwalled'),
+		null,
+		{ timeout: 15000 },
+	);
+	const lateHidden = await late.evaluate(() => {
+		const overlay = document.querySelector('.SomeRolloutClassName');
+		return !overlay || getComputedStyle(overlay).display === 'none';
+	});
+	assert.equal(lateHidden, true, 'a wall that arrives after load has to be dismissed too');
+	await late.close();
 });
 
 test('drift on a real page shows up as a dated view in the settings console', async t => {

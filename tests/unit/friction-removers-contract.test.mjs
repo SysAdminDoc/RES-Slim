@@ -25,28 +25,36 @@ test('frictionRemovers wires every friction surface to its own opt-out switch', 
 	}
 });
 
-test('frictionRemovers submits the confirmations as a button press, not a bare form', () => {
+test('frictionRemovers matches the interstitials by button, never by form action', () => {
 	// This used to assert that the string `autoSubmitForm('/over18')` appears in
-	// the file. It did appear, and it did not work: the function called
-	// `form.submit()`, which never carries the pressed button's name and value,
-	// and reddit's answer to `/over18` is only ever that value. A source match on
-	// a call is not a claim about what the call does, which is why the three
-	// tests at the bottom of this file drive the real forms and read the body.
+	// the file. It did appear, and it did not work: the function matched the form
+	// by its action and then called `form.submit()`. Both halves were wrong. r2
+	// renders both interstitials through `submit_form` with no action argument,
+	// so the form carries `action=""` and no action selector can ever match it;
+	// and `form.submit()` never carries the pressed button's name and value,
+	// which on these pages is the entire answer.
 	//
-	// What is left here is the one thing those cannot see: that `requestSubmit`,
-	// the only DOM route that carries the submitter, is what the module reaches
-	// for first. A refactor back to `form.submit()` would still pass in jsdom
-	// while losing the field in a browser.
+	// So this forbids the class of match that cannot work, rather than pinning
+	// the particular spelling that was there. Everything else is executed by the
+	// tests at the bottom of this file.
 	const source = read('lib/modules/frictionRemovers.js');
-	assert.match(source, /form\.requestSubmit\(/, 'the submitter has to be carried into the submission');
-	assert.match(source, /\[name="over18"\]\[value="yes"\]/, 'the yes button is the answer');
-	assert.match(source, /\/api\/quarantine_optin/, 'the quarantine form posts here, not to /quarantine');
-	// Against code, not prose: the comment above the fix names the two selectors
-	// that never matched, so the unstripped source contains the very string this
-	// forbids. Stripping is proven by the assertion that follows it.
+	// Comments are stripped, because the block above the fix quotes the selectors
+	// that never matched; the assertion that follows proves the stripping ran.
 	const code = source.split(/\r?\n/).filter(line => !/^\s*\/\//.test(line)).join('\n');
-	assert.match(source, /form\[action\$="\/quarantine"\]/, 'the comment should still explain what never matched');
-	assert.doesNotMatch(code, /action\$?="\/quarantine"/, 'that action does not exist on the page');
+	assert.match(source, /form\[action\$="\/over18"\]/, 'the comment should still explain what never matched');
+	assert.doesNotMatch(code, /form\[action/, 'the form is found through its button, not its action');
+
+	assert.match(code, /form\.requestSubmit\(/, 'the submitter has to be carried into the submission');
+	assert.match(code, /\[name="over18"\]\[value="yes"\]/, 'the over-18 answer is the yes button');
+	assert.match(code, /\[name="accept"\]\[value="yes"\]/, 'and the quarantine answer is its own yes button');
+	// Both pages put "no thank you" first, so a selector that does not pin the
+	// value takes the wrong one.
+	assert.doesNotMatch(code, /button\[type="submit"\], input\[type="submit"\], button:not/, 'never take the first submit control');
+	assert.doesNotMatch(code, /function ensureDest/, 'a body dest overrides the one reddit put in the query string');
+
+	// And the selector cannot hand `requestSubmit` a control it would refuse.
+	assert.match(code, /`button\$\{accept\}, input\[type="submit"\]\$\{accept\}`/,
+		'only submit controls may be chosen as the submitter');
 });
 
 test('frictionRemovers injects a CSS rule that hides all enabled banner selectors', () => {
@@ -71,30 +79,41 @@ test('frictionRemovers stays in the privacy category and runs on both renderers'
 // shipped broken while looking covered: the contract asserted that
 // `autoSubmitForm('/over18')` appears in the file, and it did, and it did not
 // work. What reddit receives is a POST body, so that is what these assert.
+//
+// The fixtures are r2's own markup, not a guess at it. Both pages come from
+// `utils.html`'s `submit_form`, invoked as `<%utils:submit_form
+// _class="pretty-form">` with no action argument, so the form carries
+// `action=""` and a `uh` hidden input and nothing else. Read from
+// reddit-archive/reddit on 2026-09-08: over18interstitial.html,
+// quarantineinterstitial.html, utils.html:77-89 and config/routing.py:84.
+//
+// Two details in here are the whole point. The form has no useful `action`, so
+// anything matching on one matches nothing; and "no thank you" comes *first* in
+// both, so anything taking the form's first submit control declines the gate on
+// the reader's behalf.
 
 const OVER18 = `<!doctype html><html><body>
-	<div class="content" role="main">
+	<div class="interstitial">
 		<h1>you must be 18+ to view this community</h1>
-		<form action="/over18" method="post">
+		<form class="pretty-form" onsubmit="" action="" method="post">
 			<input type="hidden" name="uh" value="fixturemodhash">
-			<input type="hidden" name="dest" value="/r/fixture/">
-			<button class="btn" name="over18" value="yes" type="submit">continue</button>
-			<button class="btn" name="over18" value="no" type="submit">no thank you</button>
+			<div class="buttons">
+				<button class="c-btn c-btn-primary" type="submit" name="over18" value="no">no thank you</button>
+				<button class="c-btn c-btn-primary" type="submit" name="over18" value="yes">continue</button>
+			</div>
 		</form>
 	</div>
 </body></html>`;
 
-// Two forms, and only one of them is the answer the reader wants.
 const QUARANTINE = `<!doctype html><html><body>
-	<div class="content" role="main">
-		<form action="/api/quarantine_optout" method="post">
-			<input type="hidden" name="sr_name" value="fixture">
-			<button type="submit">go back</button>
-		</form>
-		<form action="/api/quarantine_optin" method="post">
-			<input type="hidden" name="sr_name" value="fixture">
+	<div class="interstitial">
+		<form class="pretty-form" onsubmit="" action="" method="post">
 			<input type="hidden" name="uh" value="fixturemodhash">
-			<button type="submit">continue</button>
+			<input type="hidden" name="sr_name" value="fixture">
+			<div class="buttons">
+				<button class="c-btn c-btn-primary" type="submit" name="accept" value="no">no thank you</button>
+				<button class="c-btn c-btn-primary" type="submit" name="accept" value="yes">continue</button>
+			</div>
 		</form>
 	</div>
 </body></html>`;
@@ -102,7 +121,7 @@ const QUARANTINE = `<!doctype html><html><body>
 // What the form would actually post, including which button was pressed.
 // `new FormData(form, submitter)` is how the platform answers that question, and
 // it is the difference the whole item is about: `form.submit()` carries no
-// submitter, so the field is simply absent.
+// submitter, so the answer field is simply absent.
 async function captureSubmission(url, html, name, prepare) {
 	// The DOM goes up before the module is loaded, because the module reads
 	// `document` at import time.
@@ -123,7 +142,7 @@ async function captureSubmission(url, html, name, prepare) {
 	return submissions;
 }
 
-test('the over-18 confirmation posts the answer, not an empty form', async () => {
+test('the over-18 confirmation posts yes, on a form with no action to match', async () => {
 	const submissions = await captureSubmission(
 		'https://old.reddit.com/over18?dest=%2Fr%2Ffixture%2F',
 		OVER18,
@@ -132,16 +151,36 @@ test('the over-18 confirmation posts the answer, not an empty form', async () =>
 
 	assert.equal(submissions.length, 1, 'the form should have been submitted exactly once');
 	const [submitted] = submissions;
-	assert.equal(submitted.action, '/over18');
+	assert.equal(submitted.action, '', 'the fixture must keep the empty action the real page has');
 
 	const fields = new Map(submitted.fields);
-	// The whole point. Old Reddit's page has two submit buttons and no checkbox,
-	// so which button was pressed *is* the answer, and `form.submit()` never
-	// carries one -- the POST arrived with no `over18` field at all, which reddit
-	// reads as the "no" branch.
-	assert.equal(fields.get('over18'), 'yes', `the answer must be in the body, got ${JSON.stringify(submitted.fields)}`);
+	// Which button was pressed is the whole answer, and "no thank you" is first in
+	// the source. `form.submit()` carries no submitter at all, so the POST arrived
+	// with no `over18` field, which reddit reads as the "no" branch.
+	assert.equal(fields.get('over18'), 'yes', `the answer must be yes, got ${JSON.stringify(submitted.fields)}`);
 	assert.equal(fields.get('uh'), 'fixturemodhash', 'and the modhash has to survive with it');
-	assert.ok(fields.get('dest'), 'reddit needs somewhere to send the reader back to');
+
+	// Nothing may add a `dest`. The empty action posts back to this URL with its
+	// query string, where reddit reads the real destination from; a body `dest`
+	// beats that and drops the reader on the front page.
+	assert.equal(fields.has('dest'), false, `an injected dest overrides the one in the URL: ${JSON.stringify(submitted.fields)}`);
+});
+
+test('the quarantine confirmation posts yes, not the no button beside it', async () => {
+	const submissions = await captureSubmission(
+		'https://old.reddit.com/quarantine?sr_name=fixture',
+		QUARANTINE,
+		'friction-quarantine',
+	);
+
+	assert.equal(submissions.length, 1, 'the single form on the page should go exactly once');
+	const fields = new Map(submissions[0].fields);
+	// One form, two answers, "no thank you" first. Taking the form's first submit
+	// control here would decline the gate for the reader.
+	assert.equal(fields.get('accept'), 'yes', `the answer must be yes, got ${JSON.stringify(submissions[0].fields)}`);
+	assert.equal(fields.get('sr_name'), 'fixture', 'reddit needs to know which community it is');
+	assert.equal(fields.get('uh'), 'fixturemodhash');
+	assert.equal(fields.has('dest'), false);
 });
 
 test('a form the reader never asked to submit is left alone', async () => {
@@ -156,19 +195,29 @@ test('a form the reader never asked to submit is left alone', async () => {
 	assert.deepEqual(elsewhere, [], 'the route guard has to hold');
 });
 
-test('the quarantine confirmation opts in, and never opts out by accident', async () => {
-	const submissions = await captureSubmission(
-		'https://old.reddit.com/quarantine?sr_name=fixture',
-		QUARANTINE,
-		'friction-quarantine',
-	);
+test('an answer that is not a submit button is left alone, not thrown over', async () => {
+	// `requestSubmit` throws `TypeError` when the submitter is not a submit
+	// button. Uncaught, that aborts `contentStart`, and `_runModuleStage` then
+	// records the module as errored -- so `dismissLoginWall()` and
+	// `watchForLoginWall()`, the two calls after this one, never start for the
+	// rest of the page. A gate the extension cannot answer is a bad afternoon; a
+	// module that switches itself off over it is a worse one.
+	//
+	// Two things stop it, and only the first is reachable from here: the selector
+	// matches `button` and `input[type="submit"]` and nothing else, so a hidden
+	// input carrying the same name and value is simply not found. The `catch` in
+	// `submitWith` is the second, and it cannot be provoked through this path by
+	// construction -- it is there so that widening the selector later cannot take
+	// the module down.
+	const HIDDEN_ANSWER = `<!doctype html><html><body><div class="interstitial">
+		<form class="pretty-form" action="" method="post">
+			<input type="hidden" name="over18" value="yes">
+			<button type="submit">continue</button>
+		</form>
+	</div></body></html>`;
 
-	assert.equal(submissions.length, 1, 'exactly one of the two forms should go');
-	// The page posts to `/api/quarantine_optin`, which matches neither
-	// `form[action="/quarantine"]` nor `form[action$="/quarantine"]`, so this
-	// branch had never fired once since it was written.
-	assert.equal(submissions[0].action, '/api/quarantine_optin', 'the opt-out form must not be the one that goes');
-	const fields = new Map(submissions[0].fields);
-	assert.equal(fields.get('sr_name'), 'fixture');
-	assert.equal(fields.get('uh'), 'fixturemodhash');
+	// Reaching this line at all is the assertion about not throwing: an exception
+	// out of `contentStart` would propagate through `captureSubmission`.
+	const submissions = await captureSubmission('https://old.reddit.com/over18', HIDDEN_ANSWER, 'friction-over18-hidden');
+	assert.deepEqual(submissions, [], 'a hidden input is not an answer this can press');
 });

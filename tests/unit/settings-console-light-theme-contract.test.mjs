@@ -113,18 +113,33 @@ test('the knob and the status tones are read from tokens, not written as literal
 // A regex over flat `selector { … }` text cannot do this, and the first version
 // of this file tried: `#RESConsoleContainer` is also a nesting *parent* here, so
 // `#RESConsoleContainer { select { color-scheme: dark; } }` is the same shipped
-// bug in the most natural SCSS spelling and matched nothing. This walks the
-// braces instead, so the spelling stops mattering.
+// bug in the most natural SCSS spelling and matched nothing.
+//
+// Quotes are tracked because a `}` inside a string would otherwise close a block
+// that is still open, and every chain after it would be wrong; `//` is only a
+// comment when it does not follow a colon, because `url(https://…)` is not the
+// start of one.
 function declarations(source) {
 	const found = [];
 	const stack = [];
 	let buffer = '';
 	let index = 0;
+	let quote = null;
 	while (index < source.length) {
+		const char = source[index];
+		if (quote) {
+			if (char === '\\') { buffer += source.slice(index, index + 2); index += 2; continue; }
+			if (char === quote) quote = null;
+			buffer += char;
+			index += 1;
+			continue;
+		}
+		if (char === '"' || char === '\'') { quote = char; buffer += char; index += 1; continue; }
 		const two = source.slice(index, index + 2);
-		if (two === '//') {
-			index = source.indexOf('\n', index);
-			if (index === -1) break;
+		if (two === '//' && source[index - 1] !== ':') {
+			const end = source.indexOf('\n', index);
+			if (end === -1) break;
+			index = end;
 			continue;
 		}
 		if (two === '/*') {
@@ -132,7 +147,6 @@ function declarations(source) {
 			index = end === -1 ? source.length : end + 2;
 			continue;
 		}
-		const char = source[index];
 		if (char === '{') {
 			stack.push(buffer.trim().replace(/\s+/g, ' '));
 			buffer = '';
@@ -152,42 +166,67 @@ function declarations(source) {
 	return found;
 }
 
-test('nothing inside the console pins its own color-scheme', () => {
-	// The scheme is declared once on `:root` and once per theme block, so it
-	// follows the theme the reader picked. A literal on an inner selector wins
-	// over that in one direction only: `#RESConsoleContainer select, textarea`
-	// said `dark`, so the Paper theme drew dark UA popups, scrollbars and carets
-	// inside a light console. That is the default install, not an edge case:
-	// `DEFAULT_SETTINGS_THEME` is `system`, which resolves to Paper on a light
-	// desktop. The data-set dropdown, the account picker, the selector-override
-	// editor and the support-report box all take their native chrome from it.
+// The two places a scheme may be declared, and nowhere else.
+const SCHEME_OWNER = /^(:root|html\[data-settings-theme='[a-z]+'\])$/;
+
+test('only the root and the theme blocks declare a colour scheme', () => {
+	// The scheme is declared once on `:root` and once per theme, so it follows
+	// whichever theme the reader picked. `#RESConsoleContainer select, textarea`
+	// said `dark`, which beat that in one direction only, so the Paper theme drew
+	// dark UA popups, scrollbars and carets inside a light console. That is the
+	// default install, not an edge case: `DEFAULT_SETTINGS_THEME` is `system`,
+	// which resolves to Paper on a light desktop. The data-set dropdown, the
+	// account picker, the selector-override editor and the support-report box all
+	// take their native chrome from it.
+	//
+	// Stated as "only these two selectors may declare one", rather than as "no
+	// rule under the console may". The narrower version had two holes: it matched
+	// the declaration with an anchored pattern, so `color-scheme: dark !important`
+	// -- the likeliest spelling of exactly this override -- slipped through; and
+	// it keyed on the chain containing `#RESConsoleContainer`, so the same
+	// declaration inside a `@mixin` that the console `@include`s was invisible.
+	// This owner rule has neither hole, because it looks at every `color-scheme`
+	// in the file and asks where it is.
 	const offenders = declarations(styles)
-		.filter(({ chain }) => chain.some(part => part.includes('#RESConsoleContainer')))
-		.map(({ chain, text }) => ({ chain, declared: /^color-scheme:\s*([\w-]+)$/.exec(text) }))
-		.filter(({ declared }) => declared && declared[1] !== 'inherit')
-		.map(({ chain, declared }) => `${chain.join(' / ')} -> ${declared[1]}`);
-	assert.deepEqual(offenders, [], `a console rule overrides the theme's scheme:\n  ${offenders.join('\n  ')}`);
+		.filter(({ text }) => /^color-scheme\s*:/.test(text))
+		.filter(({ chain, text }) => {
+			const owner = chain[chain.length - 1] || '(top level)';
+			if (SCHEME_OWNER.test(owner)) return false;
+			// `inherit` is a no-op that documents intent, and is what the console's
+			// own controls carry so the literal cannot come back by accident.
+			return !/^color-scheme\s*:\s*inherit\s*$/.test(text);
+		})
+		.map(({ chain, text }) => `${chain.join(' / ') || '(top level)'} -> ${text}`);
+	assert.deepEqual(offenders, [], `a scheme is declared somewhere it cannot follow the theme:\n  ${offenders.join('\n  ')}`);
 });
 
-test('the walker sees a nested declaration, or the gate above is decorative', () => {
-	// The positive control for the test above. Written against a fixture rather
-	// than the real sheet, so it keeps proving the walker works after the sheet
+test('the walker survives the constructs this stylesheet is allowed to contain', () => {
+	// The positive controls for the gate above. Written against fixtures rather
+	// than the real sheet, so they keep proving the walker works after the sheet
 	// stops containing anything to find.
-	const nested = `
-		#RESConsoleContainer {
-			display: grid;
-			select, textarea { color-scheme: dark; }
-		}
-	`;
-	const found = declarations(nested)
-		.filter(({ chain }) => chain.some(part => part.includes('#RESConsoleContainer')))
-		.filter(({ text }) => text.startsWith('color-scheme'));
-	assert.equal(found.length, 1, 'a nested color-scheme has to be visible to the walker');
-	assert.deepEqual(found[0].chain, ['#RESConsoleContainer', 'select, textarea']);
+	const nested = '#RESConsoleContainer { display: grid; select, textarea { color-scheme: dark; } }';
+	const inMixin = '@mixin console-bits { select { color-scheme: dark !important; } }';
+	const withUrl = '.a { background: url(https://example.com/x.png); color-scheme: dark; }';
+	const withBrace = '.b::after { content: "}"; color-scheme: dark; }';
 
-	// And that a comment cannot smuggle one past it.
-	assert.equal(declarations('#RESConsoleContainer { // color-scheme: dark;\n }').length, 0);
-	assert.equal(declarations('#RESConsoleContainer { /* color-scheme: dark; */ }').length, 0);
+	for (const [label, sheet] of [['nested', nested], ['mixin', inMixin], ['url', withUrl], ['brace', withBrace]]) {
+		const schemes = declarations(sheet).filter(({ text }) => /^color-scheme\s*:/.test(text));
+		assert.equal(schemes.length, 1, `${label}: the walker lost the declaration entirely`);
+		const owner = schemes[0].chain[schemes[0].chain.length - 1] || '(top level)';
+		assert.equal(SCHEME_OWNER.test(owner), false, `${label}: ${owner} must not read as an allowed owner`);
+	}
+
+	// And a comment still cannot smuggle one past it.
+	assert.equal(declarations('.a { // color-scheme: dark;\n }').length, 0);
+	assert.equal(declarations('.a { /* color-scheme: dark; */ }').length, 0);
+
+	// The two allowed owners really are recognised, or the gate rejects the sheet
+	// it is meant to accept.
+	for (const owner of [':root', 'html[data-settings-theme=\'paper\']']) {
+		const [only] = declarations(`${owner} { color-scheme: dark; }`);
+		assert.equal(only.chain[only.chain.length - 1], owner);
+		assert.ok(SCHEME_OWNER.test(owner), `${owner} has to be an allowed owner`);
+	}
 });
 
 test('a theme whose page is light says so, rather than inheriting dark', () => {
