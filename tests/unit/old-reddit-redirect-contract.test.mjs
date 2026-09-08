@@ -130,11 +130,17 @@ test('stored preference and module state both gate the persistent redirect rule'
 	}), false, 'the option remains off by default');
 });
 
-test('oldRedditRedirect injects an old/www/sh host toggle with active-state marking', () => {
+test('oldRedditRedirect injects an old/www host toggle with active-state marking', () => {
 	const source = read('lib/modules/oldRedditRedirect.js');
-	for (const host of ['old.reddit.com', 'www.reddit.com', 'sh.reddit.com']) {
+	for (const host of ['old.reddit.com', 'www.reddit.com']) {
 		assert.ok(source.includes(`'${host}'`), `expected host ${host}`);
 	}
+	// sh.reddit.com was a third option until 2026-09-08, when it began answering
+	// 301 to www.reddit.com for every path: with the redirect off it was a slower
+	// `www`, and with it on the redirect rule matched the 301 target and threw the
+	// tab back to old Reddit. It stays out of the DNR rules' way (asserted above
+	// and in the e2e), but it is no longer offered as somewhere to go.
+	assert.ok(!source.includes('{ key: \'sh\''), 'sh.reddit.com must not be offered as a destination');
 	assert.match(source, /classList\.add\('is-active'\)/);
 	assert.match(source, /hostToggleUrl\(location\.href, targetHost/);
 	const css = read('lib/css/modules/_oldRedditRedirect.scss');

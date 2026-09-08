@@ -4,6 +4,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Changed
+
+- The header host toggle offers old and www, not sh. Reddit now answers every
+  sh.reddit.com address with a redirect to www, so that third button was either
+  a slower www or, with the old-Reddit redirect switched on, a round trip that
+  landed you back where you started. Requests to that host are still left alone
+  by the redirect rules.
+
 ### Fixed
 
 - A media host that stops answering no longer leaves every one of its links
