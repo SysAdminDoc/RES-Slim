@@ -7280,6 +7280,119 @@ test('a deleted table row is put back on screen when its module is the one showi
 	await page.close();
 });
 
+test('leaving the console with unsaved edits is actually stopped', async t => {
+	// The guard returned its confirmation string from an `addEventListener`
+	// listener, which arms nothing: only the `onbeforeunload` property ever
+	// honoured a returned string. So the console had an unsaved-changes guard that
+	// had never once stopped a navigation, and nothing noticed because every test
+	// of it read the source.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const dialogs = [];
+	// Dismissed, which for `beforeunload` means "stay here" -- so the assertion
+	// can be about whether the page actually stayed.
+	page.on('dialog', dialog => { dialogs.push(dialog.type()); dialog.dismiss().catch(() => {}); });
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentDepth`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#commentDepth-defaultCommentDepth', { timeout: 30000 });
+
+	// Nothing staged: leaving has to be free.
+	await page.evaluate(() => { setTimeout(() => location.reload(), 50); });
+	await page.waitForTimeout(1500);
+	assert.deepEqual(dialogs, [], 'a clean console asked whether to leave');
+
+	await page.waitForSelector('#commentDepth-defaultCommentDepth', { timeout: 30000 });
+	// A trusted interaction, because Chromium only prompts on a page the reader
+	// has actually touched.
+	await page.fill('#commentDepth-defaultCommentDepth', '7');
+	await page.click('#commentDepth-defaultCommentDepth');
+	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
+
+	await page.evaluate(() => { setTimeout(() => location.reload(), 50); });
+	await page.waitForTimeout(2500);
+
+	assert.deepEqual(dialogs, ['beforeunload'], 'unsaved edits did not stop the navigation');
+	assert.equal(
+		await page.inputValue('#commentDepth-defaultCommentDepth'),
+		'7',
+		'the page navigated away after the reader declined to leave',
+	);
+
+	await page.close();
+});
+
+test('importing over a staged edit reloads without asking to leave the page', async t => {
+	// Import, reset and the restore-point undo all write every module blob and
+	// then reload. With a staged edit pending, `handleBeforeUnload` returned a
+	// string, so the reload raised the browser's "Leave site?" dialog -- and
+	// Cancel left the page rendering the values from before the import over
+	// storage that already held the ones from after it.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+	const dialogs = [];
+	page.on('dialog', dialog => {
+		dialogs.push(dialog.type());
+		// Accepted, so a `beforeunload` that does appear does not also hang the
+		// reload and turn this into a timeout instead of an assertion.
+		dialog.accept().catch(() => {});
+	});
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentDepth`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#commentDepth-defaultCommentDepth', { timeout: 30000 });
+
+	// Stage an edit and leave it unsaved. This is what arms the unload prompt.
+	await page.fill('#commentDepth-defaultCommentDepth', '7');
+	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
+
+	const snapshot = JSON.stringify({
+		app: 'res-slim',
+		modules: { commentDepth: { defaultCommentDepth: { value: '11' } } },
+	});
+	await page.setInputFiles('#RESSettingsImportFile', {
+		name: 'res-slim-settings.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(snapshot, 'utf8'),
+	});
+
+	// The reload is what proves the import got past the unload guard.
+	await page.waitForFunction(
+		() => new Promise(resolve => {
+			chrome.storage.local.get(['RESoptions.commentDepth'], r => {
+				const blob = r['RESoptions.commentDepth'];
+				resolve(Boolean(blob && blob.defaultCommentDepth && blob.defaultCommentDepth.value === '11'));
+			});
+		}),
+		null,
+		{ timeout: 30000 },
+	);
+	// The reload is what puts the imported value on screen. Bounded and swallowed,
+	// so a reload the unload guard cancelled fails on the assertion below rather
+	// than as a timeout with nothing to read.
+	await page.waitForFunction(() => {
+		const field = document.querySelector('#commentDepth-defaultCommentDepth');
+		return Boolean(field && field.value === '11');
+	}, null, { timeout: 15000 }).catch(() => {});
+
+	assert.deepEqual(dialogs, [], `the import raised ${dialogs.join(', ')}`);
+	// The imported value is on screen, not the one that was staged over it.
+	assert.equal(await page.inputValue('#commentDepth-defaultCommentDepth'), '11', 'the page is still showing the pre-import value');
+	// And nothing is left staged: the edit named a value in a profile that is gone.
+	assert.equal(
+		await page.evaluate(() => document.querySelector('#RESGlobalSave').disabled),
+		true,
+		'the staged edit survived the import',
+	);
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
 test('resetting to defaults clears settings and can be undone afterwards', async t => {
 	const { context, extensionId, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
