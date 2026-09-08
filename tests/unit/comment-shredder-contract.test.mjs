@@ -1040,3 +1040,74 @@ test('the filenames and the timestamp inside the file come from one clock', () =
 	assert.ok(block.includes('buildShredArchive'), 'the archive block was not found where it was looked for');
 	assert.equal((block.match(/Date\.now\(\)/g) || []).length, 1, 'the archive block reads the clock more than once');
 });
+
+// Every other field in this panel falls back in the safe direction. An
+// unreadable "older than" becomes a year, an unreadable cap becomes a hundred.
+// The keep-score fell back to `null`, and `null` there means "no score
+// threshold" -- so typing something the parser could not read made the selection
+// *wider*, on the one screen in this extension that deletes things, and nothing
+// said the number had been discarded.
+
+test('a keep-score that is not a number is not a missing keep-score', () => {
+	for (const typed of ['fifty', '50 or so', 'e5', '5.5', '-', '  ', ' 12 ', '-3', '+7', '', null, undefined]) {
+		const reads = cs.unreadableKeepScore(typed);
+		const shouldRead = typed === null || typed === undefined || String(typed).trim() === '' || /^[+-]?\d+$/.test(String(typed).trim());
+		if (shouldRead) assert.equal(reads, null, `"${String(typed)}" should have been readable`);
+		else assert.equal(reads, String(typed).trim(), `"${String(typed)}" was accepted`);
+	}
+});
+
+test('an unreadable keep-score selects nothing at all', () => {
+	// Not "selects everything with no threshold", which is what a silent fallback
+	// to null does. A question the reader has to answer is not the same as an
+	// answer of "no limit".
+	const items = [
+		{ id: 't1_a', subreddit: 'pics', score: 900, body: 'x', createdUtc: 1_600_000_000 },
+		{ id: 't1_b', subreddit: 'pics', score: -4, body: 'y', createdUtc: 1_600_000_000 },
+	];
+	const base = {
+		olderThanDays: 1,
+		subredditMode: 'deny',
+		subreddits: [],
+		keepScoreAtOrAbove: null,
+		keepGilded: false,
+		maxPerRun: 100,
+	};
+	const now = 1_700_000_000_000;
+
+	// With no threshold at all, both go.
+	const open = cs.planShred(items, base, now);
+	assert.equal(open.selected.length, 2, 'the fixture does not select anything, so this proves nothing');
+
+	// With one that could not be read, neither does.
+	const blocked = cs.planShred(items, { ...base, keepScoreUnreadable: 'fifty' }, now);
+	assert.equal(blocked.selected.length, 0, 'an unreadable threshold still let comments through');
+	assert.equal(blocked.skipped.length, 2);
+	for (const decision of blocked.skipped) {
+		assert.match(decision.reason, /keep-score value "fifty" could not be read/);
+	}
+
+	// And a readable one still works, including a negative and a zero.
+	assert.equal(cs.planShred(items, { ...base, keepScoreAtOrAbove: 0 }, now).selected.length, 1);
+	assert.equal(cs.planShred(items, { ...base, keepScoreAtOrAbove: -10 }, now).selected.length, 0);
+});
+
+test('the panel says the number was discarded, above everything else', () => {
+	// Every other line in that panel describes the plan, and with nothing selected
+	// they all read as "there is nothing to shred" -- which is the opposite of what
+	// happened.
+	const source = codeOnly(readRepoFile('lib/modules/commentShredder.js'));
+	const summary = source.slice(source.indexOf('function summarise('), source.indexOf('export function confirmPanel'));
+
+	const scoreAt = summary.indexOf('unreadableKeepScore(');
+	const subsAt = summary.indexOf('unreadableSubredditEntries(');
+	assert.ok(scoreAt > -1, 'the panel never mentions an unreadable keep-score');
+	assert.ok(subsAt > -1);
+	assert.ok(scoreAt < subsAt, 'the keep-score warning is below the subreddit one');
+	assert.match(summary, /could not be read, so no comments were selected/);
+
+	// And the option is read through the helper rather than parsed a second time
+	// somewhere else, which is how the two would drift.
+	const options = source.slice(source.indexOf('function shredOptions('), source.indexOf('function summarise('));
+	assert.match(options, /keepScoreUnreadable: unreadableKeepScore\(module\.options\.keepScoreAtOrAbove\.value\)/);
+});

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const list = await loadFlowModule('lib/utils/subredditBlacklist.js', 'subreddit-blacklist-import');
-const { normalizeSubredditName, parseSubredditList, inspectListImport, mergeSubredditList } = list;
+const { normalizeSubredditName, parseSubredditList, inspectListImport, mergeSubredditList, commitListImport, ListImportError } = list;
 
 const mod = readRepoFile('lib/modules/subredditBlacklist.js');
 
@@ -80,4 +80,77 @@ test('the pre-import list is saved before the list is overwritten', () => {
 	assert.ok(rollbackAt < writeAt, 'saving the rollback after the overwrite saves the overwritten value');
 	// And the payload is cleared, so pressing the button twice cannot import twice.
 	assert.match(commit, /Options\.set\(module, 'importList', ''\)/);
+});
+
+// The import is three writes: save what the list was, write the merged one,
+// clear the box. Any of them can fail, and the reader is left with a settings
+// page whose fields no longer say what is on disk. A bare throw told them
+// nothing about which.
+
+function steps(failAt) {
+	const done = [];
+	const step = name => () => {
+		if (name === failAt) return Promise.reject(new Error('quota exceeded'));
+		done.push(name);
+		return Promise.resolve();
+	};
+	return {
+		done,
+		saveRollback: step('rollback'),
+		writeList: step('list'),
+		clearPayload: step('payload'),
+	};
+}
+
+test('a clean import does all three, in the order that makes undo possible', async () => {
+	// Rollback first. A merge cannot lose an entry, but the reader is allowed to
+	// change their mind, and an undo that depends on remembering what the field
+	// said is not an undo.
+	const plan = steps(null);
+	assert.deepEqual(await commitListImport(plan), ['rollback', 'list', 'payload']);
+	assert.deepEqual(plan.done, ['rollback', 'list', 'payload']);
+});
+
+test('a failure to save the previous list changes nothing, and says so', async () => {
+	const plan = steps('rollback');
+	const error = await commitListImport(plan).then(() => null, e => e);
+	assert.ok(error instanceof ListImportError);
+	assert.deepEqual(plan.done, [], 'the list was written without a way back');
+	assert.deepEqual(error.landed, []);
+	assert.match(error.message, /Nothing was changed/);
+	assert.match(error.message, /quota exceeded/, 'the reason is dropped');
+});
+
+test('a failure to write the list names what did land', async () => {
+	// This is the case the reader most needs told: the rollback field now holds
+	// their old list, the box still holds the payload, and nothing was merged.
+	const plan = steps('list');
+	const error = await commitListImport(plan).then(() => null, e => e);
+	assert.deepEqual(plan.done, ['rollback']);
+	assert.deepEqual(error.landed, ['rollback']);
+	assert.match(error.message, /Nothing was added/);
+	assert.match(error.message, /previous list was saved/);
+	assert.match(error.message, /payload is still in the box/);
+});
+
+test('a failure to clear the box says the import worked', async () => {
+	// The merge is done and the rollback is saved. The only thing wrong is a
+	// field that still shows what was pasted, and importing it again is a no-op --
+	// which is worth saying, because it looks like the import did not happen.
+	const plan = steps('payload');
+	const error = await commitListImport(plan).then(() => null, e => e);
+	assert.deepEqual(plan.done, ['rollback', 'list']);
+	assert.deepEqual(error.landed, ['rollback', 'list']);
+	assert.match(error.message, /list was merged/);
+	assert.match(error.message, /would change nothing/);
+});
+
+test('the module reports the message rather than swallowing it', () => {
+	// The status line is the only place any of this reaches the reader.
+	const commit = mod.slice(mod.indexOf('async function commitPreviewedListImport'));
+	assert.match(commit, /await commitListImport\(\{/, 'the module does its own three writes again');
+	assert.match(commit, /setImportStatus\(error instanceof Error \? error\.message/);
+	// And it still rethrows, because the console's button handler reports a
+	// rejected callback separately.
+	assert.match(commit, /throw error instanceof Error \? error : new Error\(String\(error\)\);/);
 });
