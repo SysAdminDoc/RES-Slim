@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- A dead media host actually gets suspended now. The backoff counts failures,
+  and every failure on a page arrives at the same moment because the links are
+  all tried together, so twenty links to one dead host each read the same count
+  of zero and each wrote back one. The count never reached the threshold and the
+  host was retried on every page forever, which is the exact thing the feature
+  exists to prevent.
+
 - Scrolling past a lot of expanded videos no longer leaves the tab busy. An
   expando that scrolls out of range is destroyed, and destroying one dropped its
   media without telling it, so a video stayed in the list of things checked ten

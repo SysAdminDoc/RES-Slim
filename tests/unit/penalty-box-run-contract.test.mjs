@@ -176,3 +176,43 @@ test('a reader can let every suspended host back in', async () => {
 	assert.equal(PenaltyBox.isHostSuspended('dead.example'), false, 'the button did not clear the suspension');
 	assert.deepEqual(PenaltyBox.listSuspended(), []);
 });
+
+test('failures that arrive together still count, because that is how they arrive', async () => {
+	// Every test above awaits each failure in turn. The module is never called
+	// that way: `linkScanner` dispatches every link on the page through
+	// `Promise.allSettled` and calls `noteFailure` without awaiting it, so a
+	// listing with twenty links to one dead host fires twenty at once. Each read
+	// the same pre-write state, each computed `failures = 1`, and each wrote it
+	// back — so the count never reached the threshold and the host this module
+	// exists to suspend was never suspended.
+	await fresh();
+
+	await Promise.all(Array.from({ length: 20 }, (_, i) => PenaltyBox.noteFailure('dead.example', T0 + i)));
+
+	assert.equal(
+		PenaltyBox.isHostSuspended('dead.example', T0 + 100),
+		true,
+		'twenty concurrent failures on one host have to suspend it',
+	);
+	assert.deepEqual(
+		PenaltyBox.listSuspended(T0 + 100).map(({ host }) => host),
+		['dead.example'],
+	);
+});
+
+test('two hosts failing at the same time both get recorded', async () => {
+	// The record is one storage key holding every host, and each write is derived
+	// from the state that was read — so serialising per host would still let two
+	// hosts interleave and drop one.
+	await fresh();
+
+	await Promise.all([0, 1, 2].flatMap(i => [
+		PenaltyBox.noteFailure('a.example', T0 + i),
+		PenaltyBox.noteFailure('b.example', T0 + i),
+	]));
+
+	assert.deepEqual(
+		PenaltyBox.listSuspended(T0 + 100).map(({ host }) => host).sort(),
+		['a.example', 'b.example'],
+	);
+});
