@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Moving between pages on current Reddit gives you a fresh selection. The
+  extension held onto whichever post or comment was selected on the page you
+  came from, so the new page had nothing selected and the comment navigator had
+  no starting point. Each page also remembers its own selection now, instead of
+  writing over the first page's.
+
+### Fixed
+
 - The login-wall dismisser works on current Reddit. It looked for old Reddit's
   page structure to decide whether there was anything behind the overlay, found
   none on www.reddit.com, and so left every wall in place while logging that
