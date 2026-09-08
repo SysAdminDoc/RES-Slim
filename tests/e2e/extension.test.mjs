@@ -7153,6 +7153,53 @@ test('a delete that is followed straight away by leaving the module is still sta
 	await page.close();
 });
 
+test('Discard puts the deleted rows back, and a late undo does not add them twice', async t => {
+	// Discard clears the stage and redraws the panel from stored values, so every
+	// deleted row is already back. The undo button outlives that by up to five
+	// seconds, and splicing the row into the value anyway gave the reader two
+	// copies of it and a save button that said there was work to do.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows to delete, saw ${before.length}`);
+
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	assert.deepEqual(await labelsOf(), before.slice(1));
+
+	await page.click('#RESGlobalDiscard');
+	await page.waitForFunction(count => document.querySelectorAll('#tbody_macros tr').length === count, before.length, { timeout: 30000 });
+	assert.deepEqual(await labelsOf(), before, 'Discard did not put the deleted row back');
+
+	// The button is still there. It has to do nothing.
+	await page.evaluate(() => {
+		const button = document.querySelector('button.res-button-undo');
+		if (button) button.click();
+	});
+	await page.waitForTimeout(500);
+
+	assert.deepEqual(await labelsOf(), before, 'the late undo added a second copy of the row');
+	assert.equal(
+		await page.evaluate(() => document.querySelector('#RESGlobalSave').disabled),
+		true,
+		'the late undo re-staged a change nobody asked for',
+	);
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
 test('an undo does not throw away what was edited after the delete, or lose a second deleted row', async t => {
 	// The undo button lives five seconds, which is long enough to fix a typo in
 	// another row or to delete a second one. Restoring a snapshot of the whole
@@ -7218,12 +7265,13 @@ test('an undo does not throw away what was edited after the delete, or lose a se
 	await clickOldestUndo(1);
 	await clickOldestUndo(0);
 
-	const restored = await labelsOf();
-	assert.equal(restored.length, before.length, `undoing both deletes left ${restored.length} of ${before.length} rows`);
+	// Exact order, not sorted. Restoring one row moves the rows below it down, so
+	// the second undo has to be placed against a table the first one changed;
+	// comparing sorted copies hid that the pair came back reversed.
 	assert.deepEqual(
-		[...restored].sort(),
-		[before[0], 'edited after the delete', ...before.slice(2)].sort(),
-		'a row went missing between the two undos',
+		await labelsOf(),
+		[before[0], 'edited after the delete', ...before.slice(2)],
+		'the two undos put the rows back in the wrong order',
 	);
 
 	// And focus is somewhere in the table, not on `<body>`: the undo button

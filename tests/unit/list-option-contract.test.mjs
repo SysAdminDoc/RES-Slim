@@ -24,7 +24,7 @@ installDom({ url: 'https://old.reddit.com/', html: '<!doctype html><html><body><
 // loaded rather than copied. A copy would drift, and the subreddit this test
 // turns on comes out of that pattern.
 const commentDepth = await loadFlowModule('lib/modules/commentDepth.js', 'list-option-comment-depth', {
-	deps: ['lib/utils/location.js', 'lib/utils/subredditBlacklist.js'],
+	deps: ['lib/utils/location.js'],
 	stubs: {
 		'../core/module': [
 			'export class Module {',
@@ -35,12 +35,10 @@ const commentDepth = await loadFlowModule('lib/modules/commentDepth.js', 'list-o
 			'export { regexes, execRegexes } from \'./location.mjs\';',
 			'export const Thing = { from: () => null };',
 		].join('\n'),
-		'../utils/subredditBlacklist': 'export { parseSubredditList } from \'./subredditBlacklist.mjs\';\n',
 	},
 });
 
 const { module: mod } = commentDepth;
-const { parseSubredditList } = await loadFlowModule('lib/utils/subredditBlacklist.js', 'list-option-parser');
 
 function setUp(rows, { defaultDepth = '4' } = {}) {
 	mod.options = {
@@ -106,9 +104,39 @@ test('an empty entry matches nothing rather than everything', () => {
 	assert.equal(depthFor('https://old.reddit.com/r/pics/comments/abc123/title/'), '9');
 });
 
+test('a name reddit accepts is a name this table accepts', () => {
+	// Matching a subreddit is not the same question as validating one. A rule
+	// borrowed from the blacklist -- reddit's `[A-Za-z0-9_]{2,21}` -- dropped both
+	// of these, and the value they are compared against comes from a pattern that
+	// produces both.
+	//
+	// `r/reddit.com` is the legacy subreddit the dot in `[\w.]+` exists for.
+	setUp([['reddit.com', '9', '0']]);
+	assert.equal(depthFor('https://old.reddit.com/r/reddit.com/comments/abc123/title/'), '9');
+
+	// A profile's comments page becomes `u_<name>`, and reddit allows a
+	// 20-character username, so this is 22 characters and over that cap.
+	setUp([['u_abcdefghijklmnopqrst', '9', '0']]);
+	assert.equal(depthFor('https://old.reddit.com/user/abcdefghijklmnopqrst/comments/abc123/title/'), '9');
+
+	// The short name still works, so the fix is not a swap.
+	setUp([['u_shortname', '9', '0']]);
+	assert.equal(depthFor('https://old.reddit.com/user/shortname/comments/abc123/title/'), '9');
+});
+
+test('a link that does not say which subreddit it is in gets the defaults', () => {
+	// Both capture groups are optional, so a bare `/comments/<id>` shortlink left
+	// the captured name undefined and `.toLowerCase()` threw out of the mousedown
+	// listener -- the depth was not applied and an error was logged on every
+	// click.
+	setUp([['pics', '9', '0']], { defaultDepth: '5' });
+	assert.equal(depthFor('https://old.reddit.com/comments/abc123/'), '5');
+	assert.equal(depthFor('https://old.reddit.com/comments/abc123/title/'), '5');
+});
+
 test('rows are still taken in order, and a link that is not a post is left alone', () => {
 	setUp([['pics', '3', '0'], ['pics, videos', '9', '0']]);
-	assert.equal(depthFor('https://old.reddit.com/r/pics/comments/abc123/title/'), '3', 'the second row won');
+	assert.equal(depthFor('https://old.reddit.com/r/pics/comments/abc123/title/'), '3', 'a later row won over the first that matched');
 	assert.equal(depthFor('https://old.reddit.com/r/videos/comments/abc123/title/'), '9');
 
 	// Not a comments page, so nothing is rewritten at all.
@@ -132,7 +160,10 @@ test('the console shows the format, and reads listType to decide which', () => {
 	// field would accept, so the comma and the space are the point.
 	assert.match(message, /^[a-z0-9_]+, [a-z0-9_]+$/);
 	// And the example has to be a list this code actually accepts, or the hint on
-	// screen teaches a format the reader's entries will be dropped for.
-	assert.deepEqual(parseSubredditList(message).valid, ['askreddit', 'pics']);
-	assert.deepEqual(parseSubredditList(message).invalid, []);
+	// screen teaches a format the reader's entries are dropped for. Checked by
+	// storing the example itself and matching against it.
+	const [first, second] = message.split(',').map(entry => entry.trim());
+	setUp([[message, '9', '0']]);
+	assert.equal(depthFor(`https://old.reddit.com/r/${first}/comments/abc123/title/`), '9', 'the example does not match its own first entry');
+	assert.equal(depthFor(`https://old.reddit.com/r/${second}/comments/abc123/title/`), '9', 'the example does not match its own second entry');
 });

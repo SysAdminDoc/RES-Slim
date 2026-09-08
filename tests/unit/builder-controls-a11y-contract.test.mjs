@@ -194,6 +194,50 @@ test('the ends of the list leave the key alone, and a modified arrow is not ours
 	assert.deepEqual(namesIn(block), ['videos', 'pics']);
 });
 
+test('an item\'s own controls are named and described separately', () => {
+	// `drawBuilderItem` is the other half of the builder and carries the share
+	// control, which the block path never draws. Its name was a nine-word sentence
+	// read out on every item.
+	const option = {
+		value: [{ ver: 1, id: 'a', note: '', opts: {}, body: { type: 'group', op: 'AND', of: [{ type: 'subreddit', name: 'pics' }] } }],
+		customOptionsFields: [],
+		cases: CASES,
+		addItemText: 'filterBuilderAddCondition',
+	};
+	const wrapper = caseBuilder.drawOptionBuilder({ conditions: option }, { moduleID: 'filterRules' }, 'conditions');
+	document.body.replaceChildren(wrapper);
+
+	const share = wrapper.querySelector('.builderTrailingControls');
+	assert.equal(share.tagName, 'BUTTON');
+	assert.equal(share.getAttribute('aria-label'), 'filterBuilderShareCondition');
+	assert.notEqual(
+		share.getAttribute('title'),
+		share.getAttribute('aria-label'),
+		'the description just repeats the name',
+	);
+	assert.equal(share.getAttribute('title'), 'filterBuilderShareConditionHint');
+
+	// The note field and the add-condition option were English literals in a
+	// function that had just been localised.
+	assert.equal(wrapper.querySelector('textarea[name=builderNote]').getAttribute('placeholder'), 'filterBuilderNotePlaceholder');
+	assert.equal(wrapper.querySelector('select.addBuilderBlock option').textContent, 'filterBuilderAddCondition');
+});
+
+test('nothing in the builder still shows the reader an English literal', () => {
+	const source = readRepoFile('lib/utils/caseBuilder.js');
+	for (const literal of [
+		'Restore deleted item',
+		'Restore deleted block',
+		'Write a description',
+		'+ add a condition',
+		'drag and drop to move this condition',
+		'remove this condition',
+		'copy and share, or update your settings',
+	]) {
+		assert.ok(!source.includes(literal), `caseBuilder still hardcodes "${literal}"`);
+	}
+});
+
 test('the control names read as a person wrote them', () => {
 	const locale = JSON.parse(readRepoFile('locales/locales/en.json'));
 	const names = [
@@ -201,7 +245,21 @@ test('the control names read as a person wrote them', () => {
 		locale.filterBuilderRemoveCondition.message,
 		locale.filterBuilderShareCondition.message,
 	];
-	const messages = [...names, locale.filterBuilderMoveConditionHint.message];
+	const messages = [
+		...names,
+		locale.filterBuilderMoveConditionHint.message,
+		locale.filterBuilderShareConditionHint.message,
+		locale.filterBuilderRestoreItem.message,
+		locale.filterBuilderRestoreBlock.message,
+		locale.filterBuilderNotePlaceholder.message,
+		locale.filterBuilderAddCondition.message,
+	];
+
+	// A name is read on every row. The sentence explaining the control belongs in
+	// the description, which is read after it and only when asked for.
+	for (const name of names) {
+		assert.ok(name.split(/\s+/).length <= 4, `an accessible name is a sentence: "${name}"`);
+	}
 
 	for (const message of messages) {
 		assert.ok(message.length > 0);

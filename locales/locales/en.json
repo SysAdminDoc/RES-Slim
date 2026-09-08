@@ -833,8 +833,23 @@
     "filterBuilderRemoveCondition": {
         "message": "Remove condition"
     },
+    "filterBuilderAddCondition": {
+        "message": "+ add a condition"
+    },
+    "filterBuilderNotePlaceholder": {
+        "message": "Write a description or a note for this"
+    },
+    "filterBuilderRestoreBlock": {
+        "message": "Restore deleted block"
+    },
+    "filterBuilderRestoreItem": {
+        "message": "Restore deleted item"
+    },
     "filterBuilderShareCondition": {
-        "message": "Copy and share this condition, or replace it with a new version"
+        "message": "Copy or replace condition"
+    },
+    "filterBuilderShareConditionHint": {
+        "message": "Copy this and share it, or replace it with a new version."
     },
     "settingsConsoleListSubredditsPlaceholder": {
         "message": "askreddit, pics"

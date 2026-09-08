@@ -77,6 +77,10 @@ function reset({
 	// commit has taken its storage snapshot. A test that writes before that point
 	// is writing into the snapshot, not concurrently with the commit.
 	harness.slowSaveReached = new Promise(resolve => { harness.noteSlowSave = resolve; });
+	// A hook the concurrent-write test uses to land another context's write in the
+	// narrowest possible window: after the rollback has decided what to write and
+	// while it is inside the lock.
+	harness.beforeRestoreWrite = null;
 	// A failed commit leaves the stage dirty on purpose, so the next test would
 	// inherit edits naming options its own modules do not have.
 	stage.reset();
@@ -161,20 +165,41 @@ const stage = await loadFlowModule('lib/core/options/stage.js', 'settings-save-s
 			'	});',
 			'}',
 		].join('\n'),
+		// Modelled on `wrapPrefix`, including the part that bites: on Chrome the
+		// wrapper BATCHES reads, so `getNullable` never takes the per-key lock.
+		// Faking a locked read is what let the first version of the rollback look
+		// safe -- it made a read-modify-write atomic in the test and nowhere else.
 		'./storage': [
 			'const h = () => globalThis.__stageHarness;',
 			'export const storage = {',
-			'	getNullable(key) {',
+			'	async getNullable(key) {',
 			'		const harness = h();',
-			'		return harness.queue(key, () => (',
-			'			harness.store.has(key) ? JSON.parse(JSON.stringify(harness.store.get(key))) : null',
-			'		));',
+			'		return harness.store.has(key) ? JSON.parse(JSON.stringify(harness.store.get(key))) : null;',
 			'	},',
 			'	set(key, value) {',
 			'		const harness = h();',
 			'		return harness.queue(key, () => {',
 			'			if (harness.failRestore) throw new Error("rollback write failed");',
 			'			harness.store.set(key, value);',
+			'		});',
+			'	},',
+			'	patchShallow(key, value) {',
+			'		const harness = h();',
+			'		return harness.queue(key, async () => {',
+			'			if (harness.failRestore) throw new Error("rollback write failed");',
+			'			if (harness.beforeRestoreWrite) await harness.beforeRestoreWrite();',
+			'			harness.store.set(key, Object.assign(harness.store.get(key) || {}, value));',
+			'		});',
+			'	},',
+			'	deletePath(key, path) {',
+			'		const harness = h();',
+			'		return harness.queue(key, async () => {',
+			'			if (harness.failRestore) throw new Error("rollback write failed");',
+			'			if (harness.beforeRestoreWrite) await harness.beforeRestoreWrite();',
+			'			const blob = harness.store.get(key);',
+			'			if (!blob) return;',
+			'			delete blob[path];',
+			'			harness.store.set(key, blob);',
 			'		});',
 			'	},',
 			'	delete(key) {',
@@ -249,9 +274,13 @@ test('a save that throws before it reaches storage rolls back too', async () => 
 	assert.equal(harness.modules.showImages.options.maxWidth.value, 100);
 });
 
-test('a module with nothing stored is left with nothing stored', async () => {
-	// Restoring a snapshot of "absent" as an empty blob would leave a key behind
-	// that `prune` deletes on sight and that no earlier state ever had.
+test('a module with nothing stored keeps none of the values the failed commit wrote', async () => {
+	// Every key the commit created is removed. The blob itself is left behind
+	// empty rather than deleted: removing it would mean reading the whole object
+	// and writing it back, and that read does not take the lock, so it can lose an
+	// option another context wrote in the meantime. `prune` deletes an empty blob
+	// on the next load and `_loadModuleOptions` reads one as nothing stored, so
+	// the cost is a key that briefly exists and means nothing.
 	reset({ failSaveAt: 2 });
 	defineModules({
 		showImages: { options: { maxWidth: 100 } },
@@ -263,8 +292,9 @@ test('a module with nothing stored is left with nothing stored', async () => {
 
 	await assert.rejects(stage.commit(), /storage quota exceeded/);
 
-	assert.deepEqual(snapshotStore(), {}, 'a blob was invented for a module that had none');
-	assert.equal(harness.store.has('showImages'), false);
+	for (const [modId, blob] of Object.entries(snapshotStore())) {
+		assert.deepEqual(blob, {}, `${modId} kept a value from the failed commit`);
+	}
 });
 
 test('the rollback puts back what it wrote and leaves the rest of the blob alone', async () => {
@@ -280,11 +310,16 @@ test('the rollback puts back what it wrote and leaves the rest of the blob alone
 	stage.add('showImages', 'maxHeight', 480);
 
 	const commit = stage.commit();
-	// After the snapshot, or the concurrent write ends up *in* the snapshot and
-	// even a wholesale restore puts it back. That is how the first version of this
-	// test passed against the defect it was written for.
+	// Two things this has to get right, both of which an earlier version got
+	// wrong. The write has to land after the commit's snapshot, or it ends up
+	// *in* the snapshot and even a wholesale restore puts it back. And it has to
+	// land after the rollback has read whatever it reads, which is the window a
+	// read-modify-write loses it in.
 	await harness.slowSaveReached;
-	harness.store.set('showImages', { ...harness.store.get('showImages'), hideNSFW: { value: true } });
+	harness.beforeRestoreWrite = () => {
+		harness.beforeRestoreWrite = null;
+		harness.store.set('showImages', { ...harness.store.get('showImages'), hideNSFW: { value: true } });
+	};
 	harness.releaseGate();
 
 	await assert.rejects(commit, /storage quota exceeded/);

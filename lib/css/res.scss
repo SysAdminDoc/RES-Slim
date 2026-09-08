@@ -596,6 +596,14 @@ dialog#alert_message {
 }
 
 .builderControls {
+	// These are `<button>` elements, so on the reddit page they arrive with the
+	// platform's own border, background and font. The options page resets them
+	// through `%icon-button`; this is the reddit-page half, and the same `all:
+	// unset` the comment navigator and the user tagger use for a control that has
+	// to be a button for the keyboard and must not look like one.
+	all: unset;
+	box-sizing: border-box;
+	cursor: pointer;
 	padding: 0.2em 0.1em;
 	align-self: flex-start;
 
