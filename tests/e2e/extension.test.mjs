@@ -4465,6 +4465,85 @@ test('the mandatory-login overlay is dismissed only when there is a page behind 
 	assert.equal(empty.unwalled, false);
 });
 
+test('the overlay is dismissed on current Reddit, where the anchors were old-Reddit only', async t => {
+	// The module declares `include = ['r2', 'd2x']` and its header says the wall
+	// is matched on shape so it works on www.reddit.com. Its content anchors were
+	// `#siteTable`, `.commentarea` and two `.content[role="main"]` descendants,
+	// none of which exists there. So `hasContentBehind()` was always false on
+	// current Reddit: the wall was never hidden, and the module recorded "reddit
+	// sent no content behind it" once per page with a full feed behind the
+	// overlay. The test above this one serves only old.reddit.com, which is why
+	// nothing saw it.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { frictionRemovers: true },
+			'RESoptions.frictionRemovers': { dismissLoginWall: { value: true } },
+		}, resolve);
+	}));
+
+	const wall = `
+		<div class="SomeRolloutClassName" style="position: fixed; inset: 0; background: #101010; z-index: 2147483647;">
+			<h2 style="color: #fff">Log in to continue</h2>
+		</div>
+		<style>html, body { overflow: hidden !important; }</style>`;
+
+	// What reddit sends when it walls a current-Reddit page: the app shell, and no
+	// feed, post or comment inside it.
+	const EMPTY_WALLED = `<!doctype html><html><body>
+		<shreddit-app><reddit-header-large></reddit-header-large></shreddit-app>
+		${wall}
+	</body></html>`;
+
+	async function measure(kind) {
+		const html = kind === 'empty' ?
+			EMPTY_WALLED :
+			staticFixture(SHREDDIT_LISTING).replace('</body>', `${wall}</body>`);
+
+		const tab = await context.newPage();
+		await tab.route('**/*', route => {
+			const request = route.request();
+			const url = new URL(request.url());
+			if (url.protocol === 'chrome-extension:') return route.continue();
+			if (request.resourceType() === 'document' && url.hostname === 'www.reddit.com') {
+				return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: html });
+			}
+			return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+		});
+		await tab.goto('https://www.reddit.com/r/example/', { waitUntil: 'domcontentloaded' });
+		await tab.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await tab.waitForTimeout(600);
+
+		const state = await tab.evaluate(() => {
+			const overlay = document.querySelector('.SomeRolloutClassName');
+			const feed = document.querySelector('shreddit-feed');
+			return {
+				overlayHidden: !overlay || getComputedStyle(overlay).display === 'none',
+				unwalled: document.documentElement.classList.contains('rsm-friction-unwalled'),
+				bodyOverflow: getComputedStyle(document.body).overflow,
+				feedText: feed ? feed.textContent.trim().length : 0,
+			};
+		});
+		await tab.close();
+		return state;
+	}
+
+	const walled = await measure('full');
+	assert.ok(walled.feedText > 0, 'the fixture must carry a feed, or the next assertion passes for the wrong reason');
+	assert.equal(walled.overlayHidden, true, 'a full-viewport overlay over a real current-Reddit feed is what this exists for');
+	assert.equal(walled.unwalled, true);
+	assert.notEqual(walled.bodyOverflow, 'hidden', 'restoring scroll is half the feature');
+
+	// The other half, unchanged: with nothing behind it, hiding the wall would
+	// leave a blank page that looks like success.
+	const empty = await measure('empty');
+	assert.equal(empty.feedText, 0, 'the empty fixture has to actually be empty');
+	assert.equal(empty.overlayHidden, false);
+	assert.equal(empty.unwalled, false);
+});
+
 test('drift on a real page shows up as a dated view in the settings console', async t => {
 	// The unit contract can prove the record is structured and the report is
 	// clean; it cannot prove the console is wired to either. This drives the whole

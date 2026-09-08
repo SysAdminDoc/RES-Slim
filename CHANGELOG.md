@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The login-wall dismisser works on current Reddit. It looked for old Reddit's
+  page structure to decide whether there was anything behind the overlay, found
+  none on www.reddit.com, and so left every wall in place while logging that
+  Reddit had sent an empty page. It reads the current Reddit feed, post and
+  comment elements now.
+
+### Fixed
+
 - "Skip the over-18 confirmation" actually skips it. The extension submitted
   the form without saying which button it meant, and Reddit reads a missing
   answer as "no", so you were sent back where you came from. The quarantined
