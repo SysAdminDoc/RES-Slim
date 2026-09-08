@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- The comment shredder saves a copy of everything it is about to destroy,
+  before it destroys any of it. Two files, one to read and one a script can use,
+  with the body, the score, the date and the link back for every comment. It is
+  on by default and turning it off asks you to type the confirmation word again.
+  Reddit keeps no history of an edited comment, so this was the only chance to
+  keep one.
+
 - Current Reddit's nag surfaces can be switched off: the cookie bar, the four
   shapes the "open in app" push takes, the QR-code dialog an adult post shows,
   and the guided-tour bubbles. All keyed on element names rather than on the

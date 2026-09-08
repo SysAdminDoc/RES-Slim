@@ -373,6 +373,24 @@ function refusingLease(owner = { sameTab: false, state: 'running', runningForMs:
 
 // Starting is asynchronous now: the panel asks the background whether anyone
 // else is running before it hands over the controls.
+// `confirmPanel` takes the selected decisions rather than a count, because it
+// writes them down before the run starts. These fixtures only ever cared about
+// the length, so this builds a plan of the right size.
+function planOf(count) {
+	return Array.from({ length: count }, (_, index) => ({
+		item: {
+			fullname: `t1_fixture${index}`,
+			subreddit: 'fixture',
+			body: `body ${index}`,
+			score: 1,
+			createdUtc: 1700000000,
+			permalink: `/r/fixture/comments/a/b/c${index}/`,
+		},
+		shred: true,
+		reason: 'matched',
+	}));
+}
+
 function settle() {
 	return new Promise(resolve => { setTimeout(resolve, 0); });
 }
@@ -380,7 +398,7 @@ function settle() {
 test('the panel shows a live count and a working Stop button', async () => {
 	let captured = null;
 	const lease = grantingLease();
-	const panel = Shredder.confirmPanel(3, c => { captured = c; }, lease);
+	const panel = Shredder.confirmPanel(planOf(3), c => { captured = c; }, lease);
 	document.body.append(panel);
 
 	const input = panel.querySelector('input[type="text"]');
@@ -438,7 +456,7 @@ test('the panel shows a live count and a working Stop button', async () => {
 function panelInNotification(count, onConfirm, lease = grantingLease()) {
 	const host = document.createElement('div');
 	host.className = 'RESNotification';
-	const panel = Shredder.confirmPanel(count, onConfirm, lease);
+	const panel = Shredder.confirmPanel(planOf(count), onConfirm, lease);
 	host.append(panel);
 	document.body.append(host);
 
@@ -700,4 +718,218 @@ test('an entry that is not a subreddit name is reported rather than dropped', ()
 
 	// A name too long to be a subreddit is refused rather than truncated.
 	assert.deepEqual(cs.unreadableSubredditEntries('a'.repeat(22)), ['a'.repeat(22)]);
+});
+
+// The copy taken before the run, which is the only thing standing between a
+// reader and an irreversible mistake.
+//
+// The dry run says what will go and the typed word makes them say it out loud;
+// neither keeps anything. reddit stores no history of an edited comment, so once
+// the body is replaced the original is gone from every copy the reader can
+// reach.
+
+const ARCHIVE_PLAN = [
+	{
+		item: {
+			fullname: 't1_aaa',
+			subreddit: 'pics',
+			body: 'first body\nsecond line',
+			score: 42,
+			createdUtc: 1_700_000_000,
+			permalink: '/r/pics/comments/x/y/aaa/',
+		},
+		shred: true,
+		reason: 'matched',
+	},
+	{
+		item: {
+			fullname: 't1_bbb',
+			// A comment that is itself a heading. Archived as a quote, or it
+			// restructures the document it lands in.
+			body: '# not a heading in the archive',
+			subreddit: 'aww',
+			score: -3,
+			createdUtc: 1_700_000_600,
+		},
+		shred: true,
+		reason: 'matched',
+	},
+];
+
+// The download is watched at the seam the helper actually uses -- it creates an
+// object URL, points an attached anchor at it and clicks -- rather than through
+// a stub of the helper itself. Watching the real path is the difference between
+// asserting the archive is written and asserting a function was called.
+function watchDownloads(events, { fail = false } = {}) {
+	const realCreate = URL.createObjectURL;
+	const realRevoke = URL.revokeObjectURL;
+	const blobs = [];
+	URL.createObjectURL = blob => {
+		if (fail) throw new Error('no object URL available');
+		events.push('download');
+		blobs.push(blob);
+		return `blob:fixture-${blobs.length}`;
+	};
+	URL.revokeObjectURL = () => {};
+	// Anything an earlier test left behind on its 1.5-second removal timer, so the
+	// names read back are this test's.
+	for (const anchor of document.querySelectorAll('a[download]')) anchor.remove();
+	return {
+		blobs,
+		names: () => [...document.querySelectorAll('a[download]')].map(anchor => anchor.download),
+		restore() {
+			URL.createObjectURL = realCreate;
+			URL.revokeObjectURL = realRevoke;
+			for (const anchor of document.querySelectorAll('a[download]')) anchor.remove();
+		},
+	};
+}
+
+test('the archive carries every selected comment, with what reddit will not give back', () => {
+	const archive = cs.buildShredArchive(ARCHIVE_PLAN, 'someone', Date.UTC(2026, 8, 8, 12, 0, 0));
+
+	assert.equal(archive.count, ARCHIVE_PLAN.length);
+	assert.equal(archive.comments.length, ARCHIVE_PLAN.length, 'every selected comment has to be in it');
+	assert.equal(archive.account, 'someone');
+	assert.match(archive.savedAt, /^2026-09-08T/);
+
+	const [first] = archive.comments;
+	assert.equal(first.body, 'first body\nsecond line', 'the body is the whole point');
+	assert.equal(first.score, 42);
+	// The permalink is the field reddit will not hand back once the comment is
+	// gone, which makes it the one worth keeping most.
+	assert.equal(first.permalink, 'https://old.reddit.com/r/pics/comments/x/y/aaa/');
+	assert.equal(first.createdAt, new Date(1_700_000_000 * 1000).toISOString());
+
+	// A comment with no permalink is still archived, without one.
+	assert.equal(archive.comments[1].permalink, '');
+});
+
+test('both formats round-trip what they claim to', () => {
+	const archive = cs.buildShredArchive(ARCHIVE_PLAN, 'someone', Date.UTC(2026, 8, 8));
+
+	const parsed = JSON.parse(cs.shredArchiveJson(archive));
+	assert.deepEqual(parsed, archive, 'the JSON has to be the archive, not a rendering of it');
+
+	const markdown = cs.shredArchiveMarkdown(archive);
+	assert.match(markdown, /# Comments shredded from \/u\/someone/);
+	assert.match(markdown, /r\/pics/);
+	assert.match(markdown, /> first body/);
+	assert.match(markdown, /> second line/, 'a multi-line body stays quoted on every line');
+	// The comment that is a heading must not become one.
+	assert.match(markdown, /> # not a heading in the archive/);
+	assert.ok(!/^# not a heading/m.test(markdown), 'a comment cannot restructure the archive around it');
+});
+
+test('the filenames say whose comments they are and when', () => {
+	const names = cs.shredArchiveFilenames('some_one', Date.UTC(2026, 8, 8));
+	assert.equal(names.json, 'res-slim-shred-some_one-2026-09-08.json');
+	assert.equal(names.markdown, 'res-slim-shred-some_one-2026-09-08.md');
+
+	// A name that cannot go in a filename does not produce one that is unsafe.
+	const awkward = cs.shredArchiveFilenames('../../etc/passwd', Date.UTC(2026, 8, 8));
+	assert.ok(!awkward.json.includes('/'), `a path separator reached the filename: ${awkward.json}`);
+	assert.ok(!awkward.json.includes('..'), `a traversal reached the filename: ${awkward.json}`);
+});
+
+test('the copy is written before anything is destroyed, and both formats go out', async () => {
+	// The ordering is the feature. An archive written after the first overwrite is
+	// an archive of something that has already gone.
+	const events = [];
+	const downloads = watchDownloads(events);
+
+	const lease = grantingLease();
+	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, controls => {
+		events.push('run');
+		// Ends the run, so the module-wide in-flight flag is down for the next test.
+		controls.finish('done');
+	}, lease, 'someone');
+	document.body.append(panel);
+
+	const archiveBox = panel.querySelector('input[type="checkbox"]');
+	assert.ok(archiveBox, 'the panel has to offer the archive');
+	assert.equal(archiveBox.checked, true, 'and offer it on by default');
+
+	const input = panel.querySelector('input[type="text"]');
+	input.value = 'DELETE';
+	input.dispatchEvent(new Event('input'));
+	panel.querySelector('button').click();
+	await settle();
+	await settle();
+
+	assert.deepEqual(events, ['download', 'download', 'run'], `the copy has to be written first: ${events.join(', ')}`);
+
+	const names = downloads.names();
+	assert.ok(names.some(name => name.endsWith('.json')), `no JSON file: ${names.join(', ')}`);
+	assert.ok(names.some(name => name.endsWith('.md')), `no Markdown file: ${names.join(', ')}`);
+	assert.ok(names.every(name => name.includes('someone')), 'the files should say whose comments they are');
+
+	// The entry count is the plan's, not a subset.
+	const json = JSON.parse(await downloads.blobs[0].text());
+	assert.equal(json.comments.length, ARCHIVE_PLAN.length);
+	assert.equal(json.comments[0].body, ['first body', 'second line'].join('\n'));
+
+	downloads.restore();
+	panel.remove();
+});
+
+test('a copy that cannot be written stops the run rather than shredding without it', async () => {
+	const events = [];
+	const downloads = watchDownloads(events, { fail: true });
+
+	const lease = grantingLease();
+	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, () => { events.push('run'); }, lease, 'someone');
+	document.body.append(panel);
+
+	const input = panel.querySelector('input[type="text"]');
+	input.value = 'DELETE';
+	input.dispatchEvent(new Event('input'));
+	panel.querySelector('button').click();
+	await settle();
+	await settle();
+
+	assert.deepEqual(events, [], 'nothing may be destroyed when the copy could not be saved');
+	const status = panel.querySelector('[role="status"]');
+	assert.match(status.textContent, /nothing was changed/i, 'and the reader has to be told why');
+
+	downloads.restore();
+	panel.remove();
+});
+
+test('turning the copy off asks for the confirmation word again', async () => {
+	// Shredding without a copy is a different decision from shredding with one,
+	// and it is the more dangerous of the two.
+	const events = [];
+	const downloads = watchDownloads(events);
+
+	const lease = grantingLease();
+	const panel = Shredder.confirmPanel(ARCHIVE_PLAN, controls => {
+		events.push('run');
+		controls.finish('done');
+	}, lease, 'someone');
+	document.body.append(panel);
+
+	const input = panel.querySelector('input[type="text"]');
+	const archiveBox = panel.querySelector('input[type="checkbox"]');
+	const shred = panel.querySelector('button');
+
+	input.value = 'DELETE';
+	input.dispatchEvent(new Event('input'));
+	assert.equal(shred.disabled, false, 'the word alone arms it while the copy is on');
+
+	archiveBox.checked = false;
+	archiveBox.dispatchEvent(new Event('change'));
+	assert.equal(input.value, '', 'the typed word is cleared');
+	assert.equal(shred.disabled, true, 'and the button goes back to disabled');
+
+	// Said again, it runs, and writes nothing.
+	input.value = 'DELETE';
+	input.dispatchEvent(new Event('input'));
+	shred.click();
+	await settle();
+	await settle();
+	assert.deepEqual(events, ['run'], `no copy should be written with the box off: ${events.join(', ')}`);
+
+	downloads.restore();
+	panel.remove();
 });

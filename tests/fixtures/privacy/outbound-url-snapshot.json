@@ -798,6 +798,10 @@
       "url": "https://github.com/imputnet/cobalt/blob/main/docs/run-an-instance.md"
     },
     {
+      "file": "lib/utils/commentShredder.js",
+      "url": "https://old.reddit.com${item.permalink}"
+    },
+    {
       "file": "lib/utils/commentTreeExport.js",
       "url": "https://old.reddit.com${escapeHtmlText(post.permalink"
     },
