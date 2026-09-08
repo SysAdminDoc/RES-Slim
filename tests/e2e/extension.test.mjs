@@ -2069,6 +2069,74 @@ test('night mode has an off position on current Reddit', async t => {
 	assert.equal(on.notification, 'rgba(17, 22, 29, 0.98)');
 });
 
+test('a coloured comment score is readable on the palette behind it', async t => {
+	// The post half of this is the test above. Comments go through their own
+	// `applyCommentScoreColor`, with their own colour modes and their own
+	// no-rows default (`#888888`), and they sit on a different surface: the
+	// comment box, which the palette or the night skin paints, not the listing
+	// row. Same defect, second call site.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await servePalette(page, CAPTURE);
+
+	const measure = async (mode, theme) => {
+		await worker.evaluate(([colorCommentScore, palette]) => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { voteEnhancements: true, pageTheme: Boolean(palette), nightMode: false, commentStyle: true },
+				'RESoptions.voteEnhancements': {
+					colorCommentScore: { value: colorCommentScore },
+					userDefinedCommentColoration: { value: [] },
+				},
+				'RESoptions.pageTheme': { theme: { value: palette || 'classic' }, refinedLayout: { value: true } },
+			}, resolve);
+		}), [mode, theme]);
+
+		await page.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(
+			() => document.querySelectorAll('.thing.comment .tagline > .score[style]').length > 0,
+			null,
+			{ timeout: 30000 },
+		);
+		await page.waitForTimeout(500);
+
+		return page.evaluate(() => {
+			const groundBehind = start => {
+				const chain = [];
+				let node = start;
+				while (node) { chain.push(node); node = node.parentElement; }
+				const opaque = background => {
+					const parts = (background.match(/[\d.]+/g) || []).map(Number);
+					return background !== 'rgba(0, 0, 0, 0)' && (parts.length < 4 || parts[3] > 0.95);
+				};
+				return chain.map(el => getComputedStyle(el).backgroundColor).find(opaque) || 'rgb(255, 255, 255)';
+			};
+
+			// The one the reader can see. A comment carries three, for the voted,
+			// unvoted and downvoted states, and two of them are hidden.
+			return [...document.querySelectorAll('.thing.comment')].map(comment => {
+				const score = [...comment.querySelectorAll(':scope > .entry .tagline > .score')]
+					.find(element => getComputedStyle(element).display !== 'none');
+				return score ? { color: getComputedStyle(score).color, background: groundBehind(score) } : null;
+			}).filter(Boolean);
+		});
+	};
+
+	const check = (label, rows) => {
+		assert.ok(rows.length > 0, `${label}: no visible comment score to measure`);
+		for (const row of rows) {
+			const ratio = contrastRatio(row.color, row.background);
+			assert.ok(ratio >= 4.5, `${label}: ${row.color} on ${row.background} is ${ratio.toFixed(2)}:1, needs 4.5:1`);
+		}
+	};
+
+	check('automatic, classic', await measure('automatic', 'classic'));
+	check('automatic, gruvbox', await measure('automatic', 'gruvbox'));
+	// `user` with no rows falls to `#888888`, which is 3.54:1 on white.
+	check('user, classic', await measure('user', 'classic'));
+});
+
 test('the night skin claims a dark colour scheme, on both renderers', async t => {
 	// nightMode is on by default and, with pageTheme off, it is the whole of what
 	// paints the page. It declared no `color-scheme`, and that is the only thing
@@ -2482,16 +2550,24 @@ test('a dark palette paints nested comment boxes dark, not white', async t => {
 	}
 });
 
-test('a coloured rank badge is readable at every point on the hue wheel', async t => {
+test('a coloured score is readable, as a badge and as a number, on light and dark', async t => {
+	// Two surfaces, and they fail for different reasons.
+	//
 	// `.link .rank` wrote `color: #fff` over a ground `applyLinkScoreColor` paints
 	// from the score. The automatic mode walks the whole wheel at
 	// `hsl(H, 75%, 50%)`, so a post around 150 points got a yellow badge with
-	// white digits on it: 1.43:1. No contrast contract could see it, because every
-	// one of them resolves colours from a stylesheet and this ground is written by
-	// JS at runtime.
+	// white digits on it: 1.43:1.
 	//
-	// The `user` mode with no thresholds configured is the second ground, `#c6c6c6`
-	// under white: 1.71:1, the same number `shreddit.js` already calls unreadable.
+	// The score *number* has no ground of its own. It is painted straight onto
+	// whatever the listing behind it is, so the same yellow measures 1.43:1 on old
+	// Reddit's white row, and the `user` mode's no-rows default `#c6c6c6` measures
+	// 1.71:1. Black or white is not the answer there, because the hue is the
+	// feature -- so the correction moves lightness only.
+	//
+	// Both palettes, because the correction depends on what is behind the number
+	// and the two palettes put opposite things there. Nothing in the unit suite
+	// can see that: every contrast contract resolves colours from a stylesheet,
+	// and both of these are written by JS at runtime.
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
 
@@ -2509,18 +2585,19 @@ test('a coloured rank badge is readable at every point on the hue wheel', async 
 	const page = await context.newPage();
 	await servePalette(page, FRONT_CAPTURE, html);
 
-	const measure = async mode => {
-		await worker.evaluate(colorLinkScore => new Promise(resolve => {
+	const measure = async (mode, theme) => {
+		await worker.evaluate(([colorLinkScore, palette]) => new Promise(resolve => {
 			chrome.storage.local.set({
-				'RES.modulePrefs': { voteEnhancements: true, pageTheme: false, nightMode: false },
+				'RES.modulePrefs': { voteEnhancements: true, pageTheme: Boolean(palette), nightMode: false },
 				// An empty threshold table is what sends `user` mode to its `#c6c6c6`
-				// default, which is the second unreadable ground.
+				// default, which is the second unreadable colour.
 				'RESoptions.voteEnhancements': {
 					colorLinkScore: { value: colorLinkScore },
 					userDefinedLinkColoration: { value: [] },
 				},
+				'RESoptions.pageTheme': { theme: { value: palette || 'classic' }, refinedLayout: { value: true } },
 			}, resolve);
-		}), mode);
+		}), [mode, theme]);
 
 		await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
 		await page.waitForFunction(
@@ -2528,34 +2605,60 @@ test('a coloured rank badge is readable at every point on the hue wheel', async 
 			null,
 			{ timeout: 30000 },
 		);
+		// The number is coloured by the same pass, but read it only once the
+		// palette has actually painted, or the ground measured here is not the one
+		// the module resolved.
+		await page.waitForTimeout(500);
 
-		return page.evaluate(() => [...document.querySelectorAll('.thing.link')].map(thing => {
-			const rank = thing.querySelector('.rank');
-			const style = getComputedStyle(rank);
-			return {
-				score: thing.dataset.score,
-				color: style.color,
-				background: style.backgroundColor,
+		return page.evaluate(() => {
+			// The first opaque background behind an element, which is what decides
+			// whether its text can be read.
+			const groundBehind = start => {
+				const chain = [];
+				let node = start;
+				while (node) { chain.push(node); node = node.parentElement; }
+				const opaque = background => {
+					const parts = (background.match(/[\d.]+/g) || []).map(Number);
+					return background !== 'rgba(0, 0, 0, 0)' && (parts.length < 4 || parts[3] > 0.95);
+				};
+				return chain.map(el => getComputedStyle(el).backgroundColor).find(opaque) || 'rgb(255, 255, 255)';
 			};
-		}));
+
+			return [...document.querySelectorAll('.thing.link')].map(thing => {
+				const rank = thing.querySelector('.rank');
+				const number = thing.querySelector('.midcol.unvoted > .score.unvoted');
+				const rankStyle = getComputedStyle(rank);
+				return {
+					score: thing.dataset.score,
+					badge: { color: rankStyle.color, background: rankStyle.backgroundColor },
+					number: number ? { color: getComputedStyle(number).color, background: groundBehind(number) } : null,
+				};
+			});
+		});
 	};
 
-	const check = (mode, badges) => {
-		assert.equal(badges.length, 3, `${mode}: the fixture must render three ranks`);
-		for (const badge of badges) {
-			// A ground that never got painted would make the ratio meaningless: the
-			// badge would be measured against the row behind it, not the score colour.
-			assert.notEqual(badge.background, 'rgba(0, 0, 0, 0)', `${mode}: score ${badge.score} has no ground painted`);
-			const ratio = contrastRatio(badge.color, badge.background);
-			assert.ok(ratio >= 4.5, `${mode}: score ${badge.score} is ${badge.color} on ${badge.background}, ${ratio.toFixed(2)}:1, needs 4.5:1`);
+	const check = (label, rows) => {
+		assert.equal(rows.length, 3, `${label}: the fixture must render three posts`);
+		for (const row of rows) {
+			// A badge ground that never got painted would make its ratio meaningless.
+			assert.notEqual(row.badge.background, 'rgba(0, 0, 0, 0)', `${label}: score ${row.score} has no badge ground`);
+			const badge = contrastRatio(row.badge.color, row.badge.background);
+			assert.ok(badge >= 4.5, `${label}: badge ${row.score} is ${row.badge.color} on ${row.badge.background}, ${badge.toFixed(2)}:1`);
+
+			assert.ok(row.number, `${label}: score ${row.score} has no visible number to measure`);
+			const number = contrastRatio(row.number.color, row.number.background);
+			assert.ok(number >= 4.5, `${label}: number ${row.score} is ${row.number.color} on ${row.number.background}, ${number.toFixed(2)}:1`);
 		}
 	};
 
-	// Sequentially, and written out rather than looped: the two modes share one
-	// storage area and one page, so the second must not start until the first has
-	// been measured.
-	check('automatic', await measure('automatic'));
-	check('user', await measure('user'));
+	// Sequentially and written out rather than looped: every run shares one
+	// storage area and one page, so each must be measured before the next starts.
+	// `null` is the theme off, which is old Reddit's own white row.
+	check('automatic, no palette', await measure('automatic', null));
+	check('user, no palette', await measure('user', null));
+	check('automatic, classic', await measure('automatic', 'classic'));
+	check('automatic, gruvbox', await measure('automatic', 'gruvbox'));
+	check('user, gruvbox', await measure('user', 'gruvbox'));
 });
 
 test('the refined layout leaves RES-Slim\'s own buttons alone', async t => {
@@ -6346,7 +6449,16 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 	const oldListingColor = await oldListing.evaluate(() => (
 		getComputedStyle(document.querySelector('#thing_t3_post00000001 .score.unvoted')).color
 	));
-	assert.equal(oldListingColor, 'rgb(243, 171, 50)');
+	// This used to expect `rgb(243, 171, 50)`, the threshold colour exactly as
+	// configured. That colour measures 1.98:1 on Classic's white page, and the
+	// module now moves a score number's lightness until it clears 4.5:1 while
+	// keeping its hue -- the hue is the signal, the lightness is not. So the
+	// expected value is a darker orange of the same hue, and the ratio is asserted
+	// alongside it so a future change to the correction cannot quietly pin a
+	// number that no longer means anything.
+	assert.equal(oldListingColor, 'rgb(164, 106, 10)');
+	assert.ok(contrastRatio(oldListingColor, 'rgb(255, 255, 255)') >= 4.5,
+		`the corrected score colour is ${oldListingColor}, which is still unreadable on white`);
 
 	const oldThread = await context.newPage();
 	await oldThread.goto('https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/', { waitUntil: 'domcontentloaded' });
@@ -6357,7 +6469,10 @@ test('vote enhancements colour real score elements on old and current Reddit', a
 		post: getComputedStyle(document.querySelector('#thing_t3_post00000001 .score.unvoted')).color,
 		comment: getComputedStyle(document.querySelector('#thing_t1_comment000001 .score.unvoted')).color,
 	}));
-	assert.deepEqual(oldThreadState, { post: 'rgb(243, 171, 50)', comment: 'rgb(217, 43, 43)' });
+	// The post score is corrected the same way it is on the listing. The comment's
+	// is not, because `#d92b2b` already clears the floor on this surface -- a
+	// colour that can be read is left exactly as the reader configured it.
+	assert.deepEqual(oldThreadState, { post: 'rgb(164, 106, 10)', comment: 'rgb(217, 43, 43)' });
 
 	const dir = saveScreenshotDir();
 	await dismissVisualNotifications(current);

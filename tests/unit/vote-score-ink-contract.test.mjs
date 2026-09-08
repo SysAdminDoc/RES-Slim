@@ -18,7 +18,7 @@ import { loadModule, installDom } from './helpers/loadModule.mjs';
 installDom({ url: 'https://old.reddit.com/r/example/' });
 const { Thing } = await loadModule('lib/utils/index.js', 'vote-score-ink-thing');
 
-const { hslToRgb, contrastRatio } = await loadFlowModule('lib/utils/usernameColors.js', 'vote-score-ink-hsl');
+const { hslToRgb, rgbToHsl, contrastRatio } = await loadFlowModule('lib/utils/usernameColors.js', 'vote-score-ink-hsl');
 const votes = await loadFlowModule('lib/utils/voteEnhancements.js', 'vote-score-ink', {
 	deps: ['lib/utils/cssColor.js', 'lib/utils/usernameColors.js'],
 });
@@ -148,6 +148,70 @@ test('a post whose score reddit is hiding is left uncoloured, not painted NaN', 
 		'an unparseable ground has to read as unparseable');
 	assert.equal(votes.readableScoreInk(votes.automaticLinkScoreColor(NaN)), '#fff',
 		'and fall back to the ink the badge always had');
+});
+
+test('the score number keeps its hue and moves only its lightness', () => {
+	// The badge can take black or white ink because it has a ground of its own.
+	// The number does not: it is painted on whatever the listing behind it is, so
+	// the same yellow that is fine in a badge measures 1.43:1 on a white row. Black
+	// or white is not the answer here, because the hue is the feature -- it is what
+	// tells the reader roughly what the score is.
+	const WHITE = [255, 255, 255];
+	const NEAR_BLACK = [22, 22, 22];
+
+	const worst = { ratio: Infinity, at: null };
+	for (const hue of WHEEL) {
+		const original = `hsl(${hue}, 75%, 50%)`;
+		const corrected = votes.readableScoreText(original, WHITE);
+		const rgb = votes.scoreColorRgb(corrected);
+		assert.ok(rgb, `${original} corrected to something unreadable: ${corrected}`);
+
+		const ratio = contrastRatio(rgb, WHITE);
+		if (ratio < worst.ratio) { worst.ratio = ratio; worst.at = `${original} -> ${corrected}`; }
+
+		// The hue is what carries the meaning, so it may not move. Compared with a
+		// tolerance, because the round trip through whole-percent lightness and
+		// integer channels cannot be exact.
+		const [before] = rgbToHsl(votes.scoreColorRgb(original));
+		const [after] = rgbToHsl(rgb);
+		const drift = Math.abs(((before - after + 540) % 360) - 180);
+		assert.ok(drift <= 2, `hue moved from ${before.toFixed(1)} to ${after.toFixed(1)} for ${original}`);
+	}
+	assert.ok(worst.ratio >= 4.5, `${worst.at} is ${worst.ratio.toFixed(2)}:1, needs 4.5:1`);
+
+	// A colour that already clears the floor is returned untouched, rather than
+	// nudged for no reason. Which hues those are is derived, not guessed: at 50%
+	// lightness a red is dark enough to need correcting even on a near-black
+	// page, and a yellow is not.
+	let untouched = 0;
+	for (const hue of WHEEL) {
+		const original = `hsl(${hue}, 75%, 50%)`;
+		const already = contrastRatio(votes.scoreColorRgb(original), NEAR_BLACK) >= 4.5;
+		const corrected = votes.readableScoreText(original, NEAR_BLACK);
+		if (already) {
+			assert.equal(corrected, original, `${original} already reads at 4.5:1 and must not be moved`);
+			untouched += 1;
+		} else {
+			assert.ok(contrastRatio(votes.scoreColorRgb(corrected), NEAR_BLACK) >= 4.5,
+				`${original} was corrected to ${corrected}, which still cannot be read`);
+		}
+	}
+	assert.ok(untouched > 0, 'no hue was left alone, so the early return is never taken');
+	assert.ok(untouched < WHEEL.length, 'every hue was left alone, so the correction is never taken');
+
+	// And the `user` mode's no-rows default, which is the second colour the item
+	// named: 1.71:1 as text on a white row.
+	const corrected = votes.readableScoreText('#c6c6c6', WHITE);
+	assert.notEqual(corrected, '#c6c6c6', 'a grey that cannot be read has to move');
+	assert.ok(contrastRatio(votes.scoreColorRgb(corrected), WHITE) >= 4.5);
+});
+
+test('a colour or a ground it cannot read is returned as it came', () => {
+	// Refusing to colour at all would be a bigger change than the reader asked
+	// for, so an unparseable input keeps the configured value.
+	assert.equal(votes.readableScoreText('rebeccapurple', [255, 255, 255]), 'rebeccapurple');
+	assert.equal(votes.readableScoreText('hsl(60, 75%, 50%)', null), 'hsl(60, 75%, 50%)');
+	assert.equal(votes.readableScoreText(42, [255, 255, 255]), '');
 });
 
 test('the stylesheet reads the token the module writes', () => {

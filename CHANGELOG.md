@@ -33,6 +33,12 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Score numbers stay readable on a light page. With score colouring on, the
+  number was painted in a colour picked purely from the score, so a post around
+  150 points showed a yellow number on Reddit's white row. The colour now keeps
+  its hue, which is what tells you roughly how a post did, and is darkened or
+  lightened only as far as it takes to be legible against whatever is behind it.
+
 - Moving between pages on current Reddit gives you a fresh selection. The
   extension held onto whichever post or comment was selected on the page you
   came from, so the new page had nothing selected and the comment navigator had
