@@ -824,6 +824,9 @@
     "settingsSaveRollbackFailed": {
         "message": "Saving failed and the settings could not be put back automatically. Some of the changes may be stored even though this page is showing the old values. The error was: $1"
     },
+    "settingsConsoleListSubredditsPlaceholder": {
+        "message": "askreddit, pics"
+    },
     "settingsConsoleSaving": {
         "message": "Saving changes…"
     },
