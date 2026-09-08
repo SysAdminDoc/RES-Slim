@@ -2409,7 +2409,7 @@ test('a coloured rank badge is readable at every point on the hue wheel', async 
 	// `.link .rank` wrote `color: #fff` over a ground `applyLinkScoreColor` paints
 	// from the score. The automatic mode walks the whole wheel at
 	// `hsl(H, 75%, 50%)`, so a post around 150 points got a yellow badge with
-	// white digits on it: 1.48:1. No contrast contract could see it, because every
+	// white digits on it: 1.43:1. No contrast contract could see it, because every
 	// one of them resolves colours from a stylesheet and this ground is written by
 	// JS at runtime.
 	//
@@ -2419,7 +2419,7 @@ test('a coloured rank badge is readable at every point on the hue wheel', async 
 	t.after(dispose);
 
 	// 0, 150 and 600 sit at three different places on the wheel: the blue end, the
-	// yellow middle that measured 1.48:1, and the far end where hue has nearly
+	// yellow middle that measured 1.43:1, and the far end where hue has nearly
 	// wrapped. The fixture ships three posts, so each one carries a score.
 	const scores = [0, 150, 600];
 	let index = -1;
@@ -2552,8 +2552,10 @@ test('the default old Reddit theme is refined, readable, and reversible', async 
 	t.after(dispose);
 
 	const page = await context.newPage();
+	// No `.rank` injection here any more: the fixture carries one per post, the
+	// way a real old Reddit listing does. Injecting a second gave the first post
+	// two, which is harmless until something counts them.
 	const html = servableCapture(FRONT_CAPTURE)
-		.replace(/(<div class="midcol[^"]*">)/, '<span class="rank">1</span>$1')
 		.replace('<div class="side">', '<div class="side"><div class="spacer rsm-e2e-hidden-spacer"><div class="account-activity-box"></div></div>');
 	await page.route('**/*', route => {
 		const url = route.request().url();

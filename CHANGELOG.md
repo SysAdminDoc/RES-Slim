@@ -4,6 +4,24 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- Importing user tags works again when your saved tags predate the timestamp
+  field. Preview and Import compared the stored tags two different ways, and
+  the comparison included a timestamp that gets filled in fresh each time it is
+  read, so the import was refused with "the stored tags changed" for something
+  that had not changed at all.
+
+- Embedded players get exactly what they had before, no more. The sandbox added
+  in the previous entry also handed every embedded site permission to start
+  audio and video on its own, which it never had, and took away the download
+  buttons on the paste and code-playground sites. Downloads are back and the
+  autoplay grant is gone, so your "don't autoplay" setting means what it says.
+
+- A post at exactly -150 points gets a coloured rank badge like every other
+  post. The colour was computed by dividing by the score plus 150, so that one
+  score produced no colour at all.
+
 ### Changed
 
 - The filter rules, the user-tag import and the subreddit paste list are edited

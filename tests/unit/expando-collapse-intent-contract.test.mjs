@@ -134,8 +134,10 @@ test('a framed third party cannot navigate the tab out from under the reader', (
 
 	// And the ones the embeds genuinely need, or they fail to load rather than
 	// merely losing a feature. A cross-origin frame without allow-same-origin
-	// gets a null origin and loses its own cookies and storage.
-	for (const token of ['allow-scripts', 'allow-same-origin', 'allow-popups', 'allow-forms']) {
+	// gets a null origin and loses its own cookies and storage; allow-downloads
+	// is what the download buttons on the paste and playground hosts need, and a
+	// sandbox without it silently takes them away.
+	for (const token of ['allow-scripts', 'allow-same-origin', 'allow-popups', 'allow-forms', 'allow-downloads']) {
 		assert.ok(granted.includes(token), `${token} is needed by the shipped hosts`);
 	}
 
@@ -143,11 +145,16 @@ test('a framed third party cannot navigate the tab out from under the reader', (
 	// would otherwise hand every host the full post URL.
 	assert.equal(iframe.getAttribute('referrerpolicy'), 'strict-origin-when-cross-origin');
 
-	// Fullscreen and playback still have to work inside the sandbox. Compared as
-	// a parsed list rather than by regex, so no escaping can quietly turn the
-	// assertion into one that cannot fail.
-	const delegated = (iframe.getAttribute('allow') || '').split(';').map(s => s.trim()).filter(Boolean);
-	for (const feature of ['autoplay', 'fullscreen', 'encrypted-media']) {
-		assert.ok(delegated.includes(feature), `${feature} should be delegated, got ${JSON.stringify(delegated)}`);
-	}
+	// No `allow`, and this assertion is the point rather than an omission. An
+	// earlier version of this file required autoplay, encrypted-media and
+	// picture-in-picture to be delegated, on the stated grounds that the sandbox
+	// took them away. It does not: `sandbox` has no token for any of the three,
+	// and all three are Permissions Policy features whose default allowlist is
+	// `self`, so a cross-origin frame never had them. Listing them granted a
+	// capability instead of restoring one, and an autoplay grant lets a host that
+	// plays by itself do so with `autoplayVideo` switched off.
+	assert.equal(iframe.getAttribute('allow'), null, 'the frame must not be granted more than it had');
+
+	// Fullscreen comes from the attribute that predates the sandbox.
+	assert.equal(iframe.getAttribute('allowFullScreen'), 'true');
 });

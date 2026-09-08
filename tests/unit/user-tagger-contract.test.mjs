@@ -379,6 +379,51 @@ test('the last import can actually be undone', async () => {
 	await assert.rejects(action('Undo last import')(), /nothing to undo/i);
 });
 
+test('a previewed import still commits when the stored tags carry no timestamp', async () => {
+	// Preview recorded the stored tags and commit re-read them, and the two were
+	// compared as strings. `stringifyTags` includes `ts`, and `normalizeTag`
+	// stamps `Date.now()` on any record that arrives without a valid one, so two
+	// normalisations of the same storage differed unless they landed in the same
+	// millisecond. Every previewed import was then refused with "the stored tags
+	// changed", which is the same defect the undo guard had, one call site along.
+	//
+	// A stored record with no `ts` is not contrived: the migration path and the
+	// data workspace both write the map unnormalised, and this module's own
+	// in-memory default is `ts: 0`, which `normalizeTag` also restamps.
+	const { loadModule } = await import('./helpers/loadModule.mjs');
+	const UserTagger = await loadModule('lib/modules/userTagger.js', 'user-tagger-import-signature');
+	const set = items => new Promise(resolve => { globalThis.chrome.storage.local.set(items, resolve); });
+	const get = key => new Promise(resolve => { globalThis.chrome.storage.local.get(key, r => resolve(r[key])); });
+
+	const action = name => {
+		const found = UserTagger.module.options.importActions.values.find(v => v.text === name);
+		assert.ok(found, `no "${name}" action`);
+		return found.callback;
+	};
+
+	await set({ 'RESmodules.userTagger.tags': { alice: { tag: 'friend' } } });
+	UserTagger.module.options.importJson.value = JSON.stringify({ bob: { tag: 'imported' } });
+	UserTagger.module.options.importConflicts.value = 'keep';
+
+	// The clock advances on every read, so the two normalisations can never agree
+	// by luck. Under the old string comparison the commit below always throws.
+	const realNow = Date.now;
+	let tick = 1_700_000_200_000;
+	// $FlowIgnore - deliberately replacing a built-in for the duration of one test
+	Date.now = () => { tick += 1; return tick; };
+	try {
+		await action('Preview import')();
+		await action('Import previewed tags')();
+	} finally {
+		Date.now = realNow;
+	}
+
+	const stored = await get('RESmodules.userTagger.tags');
+	assert.deepEqual(Object.keys(stored).sort(), ['alice', 'bob'], 'the previewed record has to reach storage');
+	assert.equal(stored.bob.tag, 'imported');
+	assert.equal(stored.alice.tag, 'friend', 'and a keep-conflicts import leaves what was there');
+});
+
 test('undo refuses when the tags already match the snapshot', async () => {
 	const { loadModule } = await import('./helpers/loadModule.mjs');
 	const UserTagger = await loadModule('lib/modules/userTagger.js', 'user-tagger-undo-noop');
@@ -392,12 +437,25 @@ test('undo refuses when the tags already match the snapshot', async () => {
 
 	const undo = UserTagger.module.options.importActions.values.find(v => v.text === 'Undo last import').callback;
 
-	// Run several times: the first version of this guard compared two independent
-	// normalisations, and `normalizeTag` stamps a missing `ts` with the current
-	// time — so it only agreed when both calls landed in the same millisecond,
-	// and this assertion failed about one run in three.
-	for (const _ of [0, 1, 2, 3, 4, 5, 6, 7]) { // eslint-disable-line no-unused-vars
-		// eslint-disable-next-line no-await-in-loop
+	// The first version of this guard compared two independent normalisations, and
+	// `normalizeTag` stamps a missing `ts` with the current time, so it agreed only
+	// when both calls landed in the same millisecond. Repeating the call eight
+	// times made that fail most of the time, which is not the same as always: a
+	// ~1/3 event drawn eight times still comes up all-heads about once in twenty
+	// runs, so a reverted fix could ship on a lucky suite.
+	//
+	// So the clock advances on every read instead. Under it the broken comparison
+	// can never agree and the fixed one can never disagree, which turns a
+	// probabilistic assertion into a decisive one. The fixture is the hostile
+	// input it needs to be: `alice` carries no `ts`, so it is exactly the record
+	// that gets stamped.
+	const realNow = Date.now;
+	let tick = 1_700_000_100_000;
+	// $FlowIgnore - deliberately replacing a built-in for the duration of one test
+	Date.now = () => { tick += 1; return tick; };
+	try {
 		await assert.rejects(undo(), /nothing to undo/i);
+	} finally {
+		Date.now = realNow;
 	}
 });

@@ -3,7 +3,7 @@
 // `.link .rank` wrote `color: #fff` over a background `applyLinkScoreColor`
 // paints from the score. The automatic mode walks the entire hue wheel at
 // `hsl(H, 75%, 50%)`, so a post near 150 points had white digits on yellow:
-// 1.48:1. No contrast contract could see it, because they all resolve colours
+// 1.43:1. No contrast contract could see it, because they all resolve colours
 // out of a stylesheet and this one is written by JS at runtime.
 //
 // The e2e measures the real rendered badge. This measures the decision itself,
@@ -41,10 +41,20 @@ test('every ground the automatic link mode can produce is readable', () => {
 });
 
 test('the scores the module actually sees land on readable grounds', () => {
-	for (const score of [-500, -1, 0, 1, 10, 150, 600, 5000, 250000]) {
+	// -150 and -100 are the singular ones: each formula divides by an offset score
+	// that reaches zero there, and `hsl(-Infinity, 75%, 50%)` is not a colour, so
+	// `setProperty` rejected it and the badge got no ground at all. `ratioOf`
+	// insists the ground parses, so a return of that would fail here rather than
+	// pass quietly.
+	for (const score of [-500, -151, -150, -149, -100, -1, 0, 1, 10, 150, 600, 5000, 250000]) {
 		const ground = votes.automaticLinkScoreColor(score);
 		const { ink, ratio } = ratioOf(ground);
 		assert.ok(ratio >= WCAG_AA, `score ${score} is ${ink} on ${ground}, ${ratio.toFixed(2)}:1`);
+	}
+	// The comment formula has the same shape and its own singularity.
+	for (const score of [-101, -100, -99, 0, 100]) {
+		const ground = votes.automaticCommentScoreColor(score);
+		assert.ok(votes.scoreColorRgb(ground), `comment score ${score} produced ${ground}, which is not a colour`);
 	}
 });
 

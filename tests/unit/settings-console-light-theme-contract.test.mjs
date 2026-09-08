@@ -108,31 +108,119 @@ test('the knob and the status tones are read from tokens, not written as literal
 	assert.match(knobRule, /background:\s*var\(--options-knob\)/);
 });
 
+// Every declaration in the sheet, with the selector chain it actually lands on.
+//
+// A regex over flat `selector { … }` text cannot do this, and the first version
+// of this file tried: `#RESConsoleContainer` is also a nesting *parent* here, so
+// `#RESConsoleContainer { select { color-scheme: dark; } }` is the same shipped
+// bug in the most natural SCSS spelling and matched nothing. This walks the
+// braces instead, so the spelling stops mattering.
+function declarations(source) {
+	const found = [];
+	const stack = [];
+	let buffer = '';
+	let index = 0;
+	while (index < source.length) {
+		const two = source.slice(index, index + 2);
+		if (two === '//') {
+			index = source.indexOf('\n', index);
+			if (index === -1) break;
+			continue;
+		}
+		if (two === '/*') {
+			const end = source.indexOf('*/', index + 2);
+			index = end === -1 ? source.length : end + 2;
+			continue;
+		}
+		const char = source[index];
+		if (char === '{') {
+			stack.push(buffer.trim().replace(/\s+/g, ' '));
+			buffer = '';
+		} else if (char === '}') {
+			stack.pop();
+			buffer = '';
+		} else if (char === ';') {
+			const text = buffer.trim();
+			// `@use`, `@import` and friends are statements, not declarations.
+			if (text && !text.startsWith('@')) found.push({ chain: [...stack], text });
+			buffer = '';
+		} else {
+			buffer += char;
+		}
+		index += 1;
+	}
+	return found;
+}
+
 test('nothing inside the console pins its own color-scheme', () => {
 	// The scheme is declared once on `:root` and once per theme block, so it
 	// follows the theme the reader picked. A literal on an inner selector wins
 	// over that in one direction only: `#RESConsoleContainer select, textarea`
-	// said `dark`, so the Paper theme (and Match system resolving to light) drew
-	// dark UA popups, scrollbars and carets inside a light console. The data-set
-	// dropdown, the account picker, the selector-override editor and the
-	// support-report box all take their native chrome from this declaration.
-	const offenders = [];
-	for (const match of styles.matchAll(/([^{}]*#RESConsoleContainer[^{}]*)\{([^{}]*)\}/g)) {
-		const [, selector, body] = match;
-		const declared = /color-scheme:\s*([\w-]+)/.exec(body);
-		if (declared && declared[1] !== 'inherit') {
-			offenders.push(`${selector.trim().replace(/\s+/g, ' ')} -> ${declared[1]}`);
-		}
-	}
+	// said `dark`, so the Paper theme drew dark UA popups, scrollbars and carets
+	// inside a light console. That is the default install, not an edge case:
+	// `DEFAULT_SETTINGS_THEME` is `system`, which resolves to Paper on a light
+	// desktop. The data-set dropdown, the account picker, the selector-override
+	// editor and the support-report box all take their native chrome from it.
+	const offenders = declarations(styles)
+		.filter(({ chain }) => chain.some(part => part.includes('#RESConsoleContainer')))
+		.map(({ chain, text }) => ({ chain, declared: /^color-scheme:\s*([\w-]+)$/.exec(text) }))
+		.filter(({ declared }) => declared && declared[1] !== 'inherit')
+		.map(({ chain, declared }) => `${chain.join(' / ')} -> ${declared[1]}`);
 	assert.deepEqual(offenders, [], `a console rule overrides the theme's scheme:\n  ${offenders.join('\n  ')}`);
 });
 
-test('the two schemes that exist are declared where the theme is', () => {
-	// The counterpart to the rule above: removing a literal is only safe because
-	// the root and every theme block still declare one.
+test('the walker sees a nested declaration, or the gate above is decorative', () => {
+	// The positive control for the test above. Written against a fixture rather
+	// than the real sheet, so it keeps proving the walker works after the sheet
+	// stops containing anything to find.
+	const nested = `
+		#RESConsoleContainer {
+			display: grid;
+			select, textarea { color-scheme: dark; }
+		}
+	`;
+	const found = declarations(nested)
+		.filter(({ chain }) => chain.some(part => part.includes('#RESConsoleContainer')))
+		.filter(({ text }) => text.startsWith('color-scheme'));
+	assert.equal(found.length, 1, 'a nested color-scheme has to be visible to the walker');
+	assert.deepEqual(found[0].chain, ['#RESConsoleContainer', 'select, textarea']);
+
+	// And that a comment cannot smuggle one past it.
+	assert.equal(declarations('#RESConsoleContainer { // color-scheme: dark;\n }').length, 0);
+	assert.equal(declarations('#RESConsoleContainer { /* color-scheme: dark; */ }').length, 0);
+});
+
+test('a theme whose page is light says so, rather than inheriting dark', () => {
+	// The counterpart to the gate above: dropping the literal is only safe while
+	// the root and the themes still declare a scheme, so `inherit` has something
+	// to inherit. "At least one theme declares something" is not that check --
+	// it passes on the day the light theme stops declaring one, which is the
+	// exact regression, so the invariant is derived from each theme's own page
+	// colour instead. The dark themes say nothing on purpose: they inherit
+	// `:root`'s `dark`, and it is right for them.
 	assert.match(root, /color-scheme:\s*dark;/, ':root has to carry the default scheme');
-	const declared = [...themes()].filter(([, t]) => /color-scheme:\s*\w+;/.test(t.body));
-	assert.ok(declared.length > 0, 'no theme block declares a scheme, so `inherit` inherits nothing');
+
+	const luminance = hex => {
+		const body = hex.trim().replace('#', '');
+		const full = body.length === 3 ? body.split('').map(c => c + c).join('') : body;
+		const channels = [0, 2, 4].map(at => parseInt(full.slice(at, at + 2), 16) / 255);
+		const linear = channels.map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+		return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+	};
+
+	const wrong = [];
+	let checked = 0;
+	for (const [id, theme] of themes()) {
+		const background = /--options-bg:\s*(#[0-9a-fA-F]{3,8})\s*;/.exec(theme.body);
+		assert.ok(background, `theme "${id}" declares no --options-bg to judge it by`);
+		checked += 1;
+		const wantsLight = luminance(background[1]) > 0.5;
+		const declared = /color-scheme:\s*(\w+);/.exec(theme.body);
+		const scheme = declared ? declared[1] : 'dark (inherited from :root)';
+		if (wantsLight !== scheme.startsWith('light')) wrong.push(`${id}: page ${background[1]} but scheme ${scheme}`);
+	}
+	assert.ok(checked > 1, 'the theme list must load, or this checks nothing');
+	assert.deepEqual(wrong, [], `a theme's page colour and its colour scheme disagree:\n  ${wrong.join('\n  ')}`);
 });
 
 test('the breadcrumb separator uses a text token, not a decoration one', () => {

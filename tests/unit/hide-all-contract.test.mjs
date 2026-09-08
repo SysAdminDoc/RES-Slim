@@ -204,15 +204,49 @@ test('a stored run is what the undo replays, not the DOM in front of it', async 
 	globalThis.__fetchHook = null;
 });
 
+test('a partial retry keeps the original run its deadline, rather than extending it', async () => {
+	// The undo link's own title promises the offer lasts thirty minutes from the
+	// hide. A partial failure re-stores what is left, and writing a fresh `at`
+	// there would push the deadline out on every retry: a run could be undone an
+	// hour later by failing twice, which is not what the reader was told.
+	const at = Date.now() - (20 * 60 * 1000);
+	await contentStartWith({ fullnames: ['t3_ok', 't3_bad'], at });
+
+	const seen = [];
+	globalThis.__fetchHook = (url, init) => {
+		const body = String((init && init.body) || '');
+		seen.push(body);
+		// The fullname travels in the POST body, not the URL, so this is where the
+		// two posts are told apart.
+		if (body.includes('t3_bad')) return Promise.resolve(new Response('', { status: 500 }));
+		return Promise.resolve(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }));
+	};
+
+	document.querySelector('.rsm-hideAll-undo-link a').click();
+	await new Promise(resolve => { setTimeout(resolve, 300); });
+	globalThis.__fetchHook = null;
+
+	assert.equal(seen.filter(body => body.includes('t3_')).length, 2, `both posts should have been attempted, saw ${seen.join(' | ')}`);
+
+	const stored = await storageGet('RES.hideAll.lastRun');
+	assert.ok(stored, 'a partial failure has to keep the run, or there is nothing to retry');
+	assert.deepEqual(stored.fullnames, ['t3_bad'], 'the run narrows to what actually failed');
+	assert.equal(stored.at, at, 'the retry must inherit the original timestamp, not stamp a new one');
+
+	// And the control the message points at is still on the page.
+	assert.ok(document.querySelector('.rsm-hideAll-undo-link a'), 'the link the message names has to still exist');
+});
+
 test('a partly failed undo keeps the control its own message points at', () => {
 	// The message says "Use \"undo hide all\" again to retry", and the link was
 	// removed unconditionally right before it was shown — so the instruction
 	// named a control that no longer existed until the page was reloaded.
 	//
-	// Asserted on the source because the undo path has no executable seam:
-	// `injectUndoLink` resolves the old-Reddit header through the selector
-	// bundle and returns early without it, so nothing observable happens in
-	// jsdom. Recorded against the test-coverage item in ROADMAP.md.
+	// The behaviour itself is executed by the test above, which drives a real
+	// partial failure through the link and reads the stored run back. These are
+	// the shape assertions that go with it: which branch removes the control and
+	// which re-offers it, stated so a refactor cannot swap them and still pass on
+	// the storage assertions alone.
 	const undoBody = modCode.slice(modCode.indexOf('async function undo('), modCode.indexOf('async function runUndo('));
 
 	assert.match(undoBody, /if \(!remaining\.length\) \{[\s\S]*?removeUndoLink\(\);[\s\S]*?\} else \{/,
