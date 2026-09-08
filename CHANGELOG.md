@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Score badges in a listing are readable at every score. With post score
+  colouring on, the rank badge painted white digits on a colour picked from the
+  score, and around 150 points that colour is yellow. The digits now switch
+  between black and white to suit whatever the badge ends up being, so the
+  number stays legible right across the range.
+
+### Fixed
+
 - The light settings theme no longer opens dark dropdowns. Every menu and text
   box in the settings window was pinned to a dark colour scheme, so on Paper
   (and on Match system when your desktop is light) the data set picker, the

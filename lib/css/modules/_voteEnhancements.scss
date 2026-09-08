@@ -5,7 +5,10 @@
 		height: 1em;
 		padding: 4px;
 		border-radius: 8px;
-		color: #fff;
+		// Set per badge by `applyLinkScoreColor`, because the ground it has to be
+		// readable on is computed from the score. White is the fallback for a rank
+		// the module never coloured, which is what the badge always had.
+		color: var(--rsm-vote-enhancements-ink, #fff);
 		font-size: 12px;
 		line-height: 1;
 		text-align: center;

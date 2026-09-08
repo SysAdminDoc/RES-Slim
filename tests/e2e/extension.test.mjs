@@ -2291,6 +2291,82 @@ test('a dark palette paints nested comment boxes dark, not white', async t => {
 	}
 });
 
+test('a coloured rank badge is readable at every point on the hue wheel', async t => {
+	// `.link .rank` wrote `color: #fff` over a ground `applyLinkScoreColor` paints
+	// from the score. The automatic mode walks the whole wheel at
+	// `hsl(H, 75%, 50%)`, so a post around 150 points got a yellow badge with
+	// white digits on it: 1.48:1. No contrast contract could see it, because every
+	// one of them resolves colours from a stylesheet and this ground is written by
+	// JS at runtime.
+	//
+	// The `user` mode with no thresholds configured is the second ground, `#c6c6c6`
+	// under white: 1.71:1, the same number `shreddit.js` already calls unreadable.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// 0, 150 and 600 sit at three different places on the wheel: the blue end, the
+	// yellow middle that measured 1.48:1, and the far end where hue has nearly
+	// wrapped. The fixture ships three posts, so each one carries a score.
+	const scores = [0, 150, 600];
+	let index = -1;
+	const html = servableCapture(FRONT_CAPTURE).replace(/data-score="12"/g, () => {
+		index += 1;
+		return `data-score="${scores[index]}"`;
+	});
+	assert.equal(index, scores.length - 1, 'the fixture must carry one post per score');
+
+	const page = await context.newPage();
+	await servePalette(page, FRONT_CAPTURE, html);
+
+	const measure = async mode => {
+		await worker.evaluate(colorLinkScore => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { voteEnhancements: true, pageTheme: false, nightMode: false },
+				// An empty threshold table is what sends `user` mode to its `#c6c6c6`
+				// default, which is the second unreadable ground.
+				'RESoptions.voteEnhancements': {
+					colorLinkScore: { value: colorLinkScore },
+					userDefinedLinkColoration: { value: [] },
+				},
+			}, resolve);
+		}), mode);
+
+		await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(
+			() => document.querySelectorAll('.thing.link .rank[style]').length === 3,
+			null,
+			{ timeout: 30000 },
+		);
+
+		return page.evaluate(() => [...document.querySelectorAll('.thing.link')].map(thing => {
+			const rank = thing.querySelector('.rank');
+			const style = getComputedStyle(rank);
+			return {
+				score: thing.dataset.score,
+				color: style.color,
+				background: style.backgroundColor,
+			};
+		}));
+	};
+
+	const check = (mode, badges) => {
+		assert.equal(badges.length, 3, `${mode}: the fixture must render three ranks`);
+		for (const badge of badges) {
+			// A ground that never got painted would make the ratio meaningless: the
+			// badge would be measured against the row behind it, not the score colour.
+			assert.notEqual(badge.background, 'rgba(0, 0, 0, 0)', `${mode}: score ${badge.score} has no ground painted`);
+			const ratio = contrastRatio(badge.color, badge.background);
+			assert.ok(ratio >= 4.5, `${mode}: score ${badge.score} is ${badge.color} on ${badge.background}, ${ratio.toFixed(2)}:1, needs 4.5:1`);
+		}
+	};
+
+	// Sequentially, and written out rather than looped: the two modes share one
+	// storage area and one page, so the second must not start until the first has
+	// been measured.
+	check('automatic', await measure('automatic'));
+	check('user', await measure('user'));
+});
+
 test('the refined layout leaves RES-Slim\'s own buttons alone', async t => {
 	const { context, worker, dispose } = await launchWithExtension();
 	t.after(dispose);

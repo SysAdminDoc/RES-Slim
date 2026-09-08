@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const colors = await loadFlowModule('lib/utils/voteEnhancements.js', 'vote-enhancements', {
-	deps: ['lib/utils/cssColor.js'],
+	deps: ['lib/utils/cssColor.js', 'lib/utils/usernameColors.js'],
 });
 const mod = readRepoFile('lib/modules/voteEnhancements.js');
 const theme = readRepoFile('lib/css/modules/_pageTheme.scss');
