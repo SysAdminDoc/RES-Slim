@@ -5,7 +5,10 @@ import { loadModule, installDom } from './helpers/loadModule.mjs';
 
 installDom();
 
-const cs = await loadFlowModule('lib/utils/commentShredder.js', 'comment-shredder');
+// `subredditBlacklist` is where the careful subreddit-name normaliser lives; the
+// shredder reuses it so the destructive feature and the hide-only one agree on
+// what a keep-list entry means.
+const cs = await loadFlowModule('lib/utils/commentShredder.js', 'comment-shredder', { deps: ['lib/utils/subredditBlacklist.js'] });
 const { summariseOutcome } = cs;
 const { SHRED_LEASE_HEARTBEAT_MS } = await loadFlowModule('lib/utils/shredLease.js', 'shred-lease-heartbeat', { deps: ['lib/utils/userTags.js'] });
 const mod = readRepoFile('lib/modules/commentShredder.js');
@@ -634,4 +637,67 @@ test('a second shred cannot start while one is still running', async () => {
 	one.host.remove();
 	two.host.remove();
 	three.host.remove();
+});
+
+test('a keep-list entry written as a URL or with a trailing slash still protects', () => {
+	// The old parser only stripped a leading `/r/`, so `r/pics/` became `pics/`
+	// and a pasted URL stayed a URL. Neither matches the bare name `shouldShred`
+	// compares against, so in the default keep-list mode every comment in a
+	// subreddit the reader had explicitly protected was selected for
+	// overwrite-and-delete.
+	const spellings = [
+		'pics',
+		'r/pics',
+		'/r/pics',
+		'r/pics/',
+		'/r/pics/',
+		'R/PICS',
+		'https://old.reddit.com/r/pics',
+		'https://www.reddit.com/r/pics/',
+	];
+
+	for (const spelling of spellings) {
+		assert.deepEqual(cs.parseSubredditList(spelling), ['pics'], `${spelling} should name r/pics`);
+	}
+
+	// And the decision that matters: with any of those on the keep list, a
+	// comment in r/pics survives.
+	const item = {
+		fullname: 't1_a',
+		subreddit: 'pics',
+		body: 'x',
+		score: 0,
+		createdUtc: 1_600_000_000,
+		archived: false,
+		stickied: false,
+	};
+	const now = 1_700_000_000_000;
+	for (const spelling of spellings) {
+		const decision = cs.shouldShred(item, {
+			olderThanDays: 1,
+			subredditMode: 'deny',
+			subreddits: cs.parseSubredditList(spelling),
+			keepScoreAtOrAbove: null,
+			keepGilded: false,
+			maxPerRun: 100,
+		}, now);
+		assert.equal(decision.shred, false, `${spelling} should protect r/pics`);
+		assert.match(decision.reason, /keep list/);
+	}
+});
+
+test('an entry that is not a subreddit name is reported rather than dropped', () => {
+	// Silently dropping these is what made the defect above invisible: the list
+	// looked accepted and one line of it protected nothing.
+	// The field splits on whitespace as well as commas, which its own description
+	// promises, so each word is its own entry. `not` and `name` are perfectly
+	// good subreddit names; `a` is too short and `name!` has a character reddit
+	// does not allow.
+	assert.deepEqual(cs.unreadableSubredditEntries('pics, not a name!, aww'), ['a', 'name!']);
+	assert.deepEqual(cs.unreadableSubredditEntries('pics r/aww'), []);
+	assert.deepEqual(cs.unreadableSubredditEntries(''), []);
+	assert.deepEqual(cs.unreadableSubredditEntries(null), []);
+
+	// A name too long to be a subreddit is refused rather than truncated.
+	assert.deepEqual(cs.unreadableSubredditEntries('a'.repeat(22)), ['a'.repeat(22)]);
 });

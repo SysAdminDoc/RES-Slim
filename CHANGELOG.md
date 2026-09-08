@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- The comment shredder's keep list understands every way a subreddit gets
+  written down. `r/pics/` with a trailing slash, or a whole address pasted from
+  the browser, matched nothing, so a subreddit the reader had explicitly
+  protected was selected for overwrite-and-delete. Entries it still cannot read
+  are now named in the preview, above the confirmation, instead of being dropped
+  in silence.
+
 - A dead media host actually gets suspended now. The backoff counts failures,
   and every failure on a page arrives at the same moment because the links are
   all tried together, so twenty links to one dead host each read the same count
