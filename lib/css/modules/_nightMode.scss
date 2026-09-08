@@ -7,6 +7,25 @@ $link-color: hsl(210, 50%, 70%);
 $title-link-color: hsl(0, 0%, 87%);
 $title-link-visited-color: hsl(0, 0%, 65%);
 
+// The UA paints scrollbars, `<select>` popups, date pickers, the default form
+// control chrome and the canvas behind an unstyled iframe from `color-scheme`,
+// not from anything below. This skin is on by default and is the whole of what a
+// reader sees with `pageTheme` switched off, and it declared no scheme at all, so
+// every one of those surfaces stayed light on a 15% grey page. `_pageTheme.scss`
+// declares one per palette; this file is the arm that had none.
+// Gated on the refined layout, not on `pageTheme` being off, because that toggle
+// is what decides which of the two stylesheets actually paints the surface. It
+// is the same gate `_tokens.scss` uses for the nightMode ink arm, and for the
+// same reason: with the light Classic palette and nightMode both on, refined-on
+// leaves the page white and refined-off hands it to this skin at #161616. Claim
+// the scheme in exactly the second case. Both elements because `BodyClasses.add`
+// writes the class to `<html>` and `<body>` alike, and the root is what decides
+// the canvas and the scrollbars.
+html:not(.res-pageTheme--refined).res-nightmode,
+html:not(.res-pageTheme--refined) body.res-nightmode {
+	color-scheme: dark;
+}
+
 .res-nightmode {
 	html#{&},
 	body,

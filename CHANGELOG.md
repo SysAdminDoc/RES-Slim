@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Night mode now darkens the browser's own controls too. Scrollbars, dropdown
+  menus, date pickers and the plain form controls Reddit does not style stayed
+  white against the dark page, because the night skin never told the browser it
+  was dark. It does now, and it stands aside when the page theme is the one
+  painting the page.
+
+### Fixed
+
 - Score badges in a listing are readable at every score. With post score
   colouring on, the rank badge painted white digits on a colour picked from the
   score, and around 150 points that colour is yellow. The digits now switch

@@ -103,6 +103,32 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(read('lib/css/res.scss'), /@use 'modules\/pageTheme';/);
 });
 
+test('the night-mode skin claims a colour scheme, gated the way its ink is', () => {
+	// `color-scheme` is what the UA paints scrollbars, `<select>` popups, date
+	// pickers, default form controls and the canvas behind an unstyled iframe
+	// from. nightMode is on by default and is the whole of what a reader sees
+	// with pageTheme off, and it declared none, so all of those stayed light on
+	// its 15% grey page. Every other arm of the cascade declares one:
+	// `_pageTheme.scss` per palette, `options.scss` per settings theme, and the
+	// anti-FOUC guard for the moment before either exists.
+	const night = read('lib/css/modules/_nightMode.scss');
+	assert.match(night, /color-scheme:\s*dark;/, 'the night skin has to declare a scheme');
+
+	// And gated on the same thing its ink is. `refinedLayout` decides which of
+	// the two stylesheets paints the surface, so a scheme claimed unconditionally
+	// would put dark UA chrome on the white page that Classic-plus-refined leaves
+	// behind. The ink arm in `_tokens.scss` keys on exactly this.
+	const rule = night.slice(0, night.indexOf('color-scheme: dark;'));
+	const selector = rule.slice(rule.lastIndexOf('\n\n') + 2);
+	assert.match(selector, /html:not\(\.res-pageTheme--refined\)\.res-nightmode/,
+		`the root arm must stand down under the refined layout:\n  ${selector}`);
+	assert.match(selector, /html:not\(\.res-pageTheme--refined\) body\.res-nightmode/,
+		`the body arm must too, and both classes are written:\n  ${selector}`);
+
+	// The palettes keep theirs, so the two files still disagree about nothing.
+	assert.match(read('lib/css/modules/_pageTheme.scss'), /color-scheme:\s*var\(--rsm-th-scheme\);/);
+});
+
 // Windows High Contrast discards author colours, `box-shadow` and every non-URL
 // `background-image`. The classic layout is built out of exactly those: the vote
 // arrows are a `::before` whose entire visual is a background colour cut with a

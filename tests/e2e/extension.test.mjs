@@ -1936,6 +1936,64 @@ test('night mode has an off position on current Reddit', async t => {
 	assert.equal(on.notification, 'rgba(17, 22, 29, 0.98)');
 });
 
+test('the night skin claims a dark colour scheme, on both renderers', async t => {
+	// nightMode is on by default and, with pageTheme off, it is the whole of what
+	// paints the page. It declared no `color-scheme`, and that is the only thing
+	// the UA reads when it paints scrollbars, `<select>` popups, date pickers,
+	// default form-control chrome and the canvas behind an unstyled iframe. So all
+	// of those rendered light on its 15% grey page.
+	//
+	// Both renderers, because the class lands on `<html>` through two different
+	// paths: `nightMode.js` owns it on old Reddit and adds a second name on
+	// current Reddit, and the anti-FOUC guard writes it at document_start on both.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const setPrefs = prefs => worker.evaluate(stored => new Promise(resolve => {
+		chrome.storage.local.set({ 'RES.modulePrefs': stored }, resolve);
+	}), prefs);
+
+	const oldReddit = await context.newPage();
+	await servePalette(oldReddit, CAPTURE);
+	const currentReddit = await context.newPage();
+	await currentReddit.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+
+	const read = async (page, url, prefs) => {
+		await setPrefs(prefs);
+		await page.goto(url, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+		await page.waitForTimeout(600);
+		return page.evaluate(() => ({
+			scheme: getComputedStyle(document.documentElement).colorScheme,
+			classes: document.documentElement.className,
+			background: getComputedStyle(document.body).backgroundColor,
+		}));
+	};
+
+	const OLD_URL = 'https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/';
+	const CURRENT_URL = 'https://www.reddit.com/r/example/';
+	const NIGHT_ONLY = { pageTheme: false, nightMode: true };
+	const NEITHER = { pageTheme: false, nightMode: false };
+
+	const check = (label, on, off) => {
+		assert.match(on.classes, /res-nightmode/, `${label}: the skin has to be on for this to mean anything`);
+		assert.equal(on.scheme, 'dark', `${label}: the page is dark but the UA is painting a light scheme`);
+		// The off position, so the assertion above is measuring the skin rather
+		// than something else in the page that happens to be dark.
+		assert.doesNotMatch(off.classes, /res-nightmode/, `${label}: the skin outlived its module`);
+		assert.notEqual(off.scheme, 'dark', `${label}: the scheme stayed dark with night mode off`);
+	};
+
+	// Written out rather than looped: the two renderers share one storage area, so
+	// each read has to complete before the next prefs write.
+	check('old Reddit',
+		await read(oldReddit, OLD_URL, NIGHT_ONLY),
+		await read(oldReddit, OLD_URL, NEITHER));
+	check('current Reddit',
+		await read(currentReddit, CURRENT_URL, NIGHT_ONLY),
+		await read(currentReddit, CURRENT_URL, NEITHER));
+});
+
 // Inline-chip ink against the surface that is actually behind it, over the
 // combinations that decide which of two stylesheets paints that surface.
 //
