@@ -391,5 +391,13 @@ test('undo refuses when the tags already match the snapshot', async () => {
 	});
 
 	const undo = UserTagger.module.options.importActions.values.find(v => v.text === 'Undo last import').callback;
-	await assert.rejects(undo(), /nothing to undo/i);
+
+	// Run several times: the first version of this guard compared two independent
+	// normalisations, and `normalizeTag` stamps a missing `ts` with the current
+	// time — so it only agreed when both calls landed in the same millisecond,
+	// and this assertion failed about one run in three.
+	for (const _ of [0, 1, 2, 3, 4, 5, 6, 7]) { // eslint-disable-line no-unused-vars
+		// eslint-disable-next-line no-await-in-loop
+		await assert.rejects(undo(), /nothing to undo/i);
+	}
 });

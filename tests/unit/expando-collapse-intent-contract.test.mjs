@@ -116,3 +116,38 @@ test('the collapser looks inside the hidden thing rather than walking every expa
 	assert.ok(!/for \(const expando of expandos\.values\(\)\) \{\s*\n\s*if \(!\(expando instanceof Expando\) \|\| !expando\.open\)/.test(images),
 		'walking the global registry per hidden thing is O(hidden x expandos)');
 });
+
+test('a framed third party cannot navigate the tab out from under the reader', () => {
+	// Thirty-five hosts go through this one template, each running its own script
+	// inside a reddit.com page. The frame carried no sandbox at all.
+	const media = iframeMedia();
+	const iframe = media.element.querySelector('iframe');
+	assert.ok(iframe, 'the template should build an iframe');
+
+	const sandbox = iframe.getAttribute('sandbox') || '';
+	const granted = sandbox.split(/\s+/).filter(Boolean);
+
+	// The one that matters: neither form of top-navigation is granted.
+	assert.ok(!granted.includes('allow-top-navigation'), 'top navigation must not be granted');
+	assert.ok(!granted.includes('allow-top-navigation-by-user-activation'), 'nor the user-activation form of it');
+	assert.ok(!granted.includes('allow-top-navigation-to-custom-protocols'));
+
+	// And the ones the embeds genuinely need, or they fail to load rather than
+	// merely losing a feature. A cross-origin frame without allow-same-origin
+	// gets a null origin and loses its own cookies and storage.
+	for (const token of ['allow-scripts', 'allow-same-origin', 'allow-popups', 'allow-forms']) {
+		assert.ok(granted.includes(token), `${token} is needed by the shipped hosts`);
+	}
+
+	// A document-level <meta name="referrer"> of unsafe-url on the embedding page
+	// would otherwise hand every host the full post URL.
+	assert.equal(iframe.getAttribute('referrerpolicy'), 'strict-origin-when-cross-origin');
+
+	// Fullscreen and playback still have to work inside the sandbox. Compared as
+	// a parsed list rather than by regex, so no escaping can quietly turn the
+	// assertion into one that cannot fail.
+	const delegated = (iframe.getAttribute('allow') || '').split(';').map(s => s.trim()).filter(Boolean);
+	for (const feature of ['autoplay', 'fullscreen', 'encrypted-media']) {
+		assert.ok(delegated.includes(feature), `${feature} should be delegated, got ${JSON.stringify(delegated)}`);
+	}
+});

@@ -4,6 +4,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Fixed
+
+- An embedded video or code sandbox can no longer navigate your tab. Thirty-five
+  third-party sites are framed inside Reddit pages by the media expandos, and
+  the frames were unrestricted, so any of them could send the whole tab
+  somewhere else. They are now sandboxed with everything they need to work and
+  nothing that lets them take over the page.
+
 ### Added
 
 - Undo last import, for user tags. The importer has always saved a copy of your
