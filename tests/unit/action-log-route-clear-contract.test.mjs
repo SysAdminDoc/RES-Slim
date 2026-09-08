@@ -54,16 +54,27 @@ test('opening the settings does not throw away what the settings are there to sh
 	assert.equal(log.actionLogSize(), 3, 'moving between settings panels emptied the log');
 
 	// And closing it, which pushes state one more time.
-	history.pushState({}, '', location.pathname);
+	history.pushState({}, '', `${location.pathname}${location.search}`);
 	changeRoute();
 	assert.equal(log.actionLogSize(), 3, 'closing the console emptied the log');
 });
 
-test('a query the page changes for itself is not a new page either', () => {
+test('a query that changes what is on the page does clear it', () => {
+	// The first version of this guard compared paths only, and blessed the
+	// opposite: it kept the log across `/search/?q=alpha` to `/search/?q=beta`,
+	// which is a different set of results by any measure a reader would use. The
+	// same goes for a flair filter and a feed switch. The fragment is the only
+	// part of the address this extension writes to itself, so the fragment is the
+	// only part that gets ignored.
 	record();
 	history.pushState({}, '', `${location.pathname}?sort=new`);
 	changeRoute();
-	assert.equal(log.actionLogSize(), 3, 're-sorting the comments emptied the log');
+	assert.equal(log.actionLogSize(), 0, 're-sorting kept a log of the results that are no longer there');
+
+	record();
+	history.pushState({}, '', `${location.pathname}${location.search}#some-anchor`);
+	changeRoute();
+	assert.equal(log.actionLogSize(), 3, 'a fragment is not a new page');
 });
 
 test('going somewhere else does clear it', () => {

@@ -134,3 +134,21 @@ const EXAMPLES = {
 	account: '/account-activity',
 	prefs: '/prefs',
 };
+
+test('one page has one key, whichever spelling was in the address bar', () => {
+	// `fullLocation` is used as a key. Widening the patterns to accept `/u/`
+	// without normalising here would have given one multireddit two keys, which is
+	// the same reasoning `currentMultireddit` already applies one file over.
+	const pairs = [
+		['/u/bob', '/user/bob'],
+		['/u/bob/m/games', '/user/bob/m/games'],
+		['/u/bob/comments/abc123/title/', '/user/bob/comments/abc123/title/'],
+		['/u/bob/m/games/search', '/user/bob/m/games/search'],
+	];
+	for (const [short, long] of pairs) {
+		assert.equal(Location.fullLocation(short), Location.fullLocation(long), short);
+	}
+
+	// And it is still a key rather than the path back.
+	assert.equal(Location.fullLocation('/user/bob/m/games'), 'multireddit-user/bob/m/games');
+});

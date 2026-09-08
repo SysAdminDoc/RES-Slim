@@ -338,3 +338,34 @@ test('a stylesheet a rerender destroyed comes back in the same turn, not the nex
 	assert.ok(post.shadowRoot.querySelector(selector), 'the layout sheet waited for a frame to come back');
 	post.remove();
 });
+
+test('repairing a sheet repairs the sheet, not everything else with it', async () => {
+	// The repair runs outside the throttle, so whatever it does is paid once per
+	// mutation batch. Running the whole install there puts back exactly the
+	// per-batch cost the throttle exists to remove: twenty sheet-destroying
+	// batches inside one frame cost two hundred and thirty selector runs on one
+	// root when this called `installShadowStyles`. The parts can wait a frame; the
+	// sheet is the only thing that cannot.
+	const post = document.createElement('shreddit-post');
+	post.attachShadow({ mode: 'open' }).innerHTML = '<div class="action-row"><button data-action-bar-action="upvote"></button></div>';
+	document.body.append(post);
+	Shreddit.prepareShredditThing(post);
+	await nextFrame();
+
+	const calls = countQueries(post.shadowRoot);
+	for (const index of Array.from({ length: 20 }, (_, at) => at)) {
+		post.shadowRoot.innerHTML = `<div class="action-row" data-pass="${index}"><button data-action-bar-action="upvote"></button></div>`;
+		// eslint-disable-next-line no-await-in-loop
+		await Promise.resolve();
+	}
+	await nextFrame();
+
+	// The part selectors are the expensive half and belong to the throttled pass,
+	// so they must run about once, not about twenty times.
+	const partRuns = calls.filter(selector => selector === '.action-row, .shreddit-post-container').length;
+	assert.ok(partRuns <= 3, `the part selectors ran ${partRuns} times for twenty batches inside one frame`);
+
+	const selector = `style[${Shreddit.SHREDDIT_SHADOW_STYLE_ATTR}="classic"]`;
+	assert.ok(post.shadowRoot.querySelector(selector), 'and the sheet still came back');
+	post.remove();
+});

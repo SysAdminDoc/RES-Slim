@@ -158,14 +158,44 @@ test('the report gets counts, never the things the counts are about', () => {
 	log.recordAction({ moduleID: 'filterRules', outcome: 'dimmed', target: 't3_zz', reason: 'long-titles' });
 	log.recordAction({ moduleID: 'showImages', outcome: 'refused', target: 'i.imgur.com', reason: 'imgur' });
 
-	const summary = log.summariseActionLog(log.readActionLog());
-	const text = summary.join('\n');
+	let summary = log.summariseActionLog(log.readActionLog());
+	let text = summary.join('\n');
 
 	assert.deepEqual(summary, [
 		'filterRules: hidden 3 times across 2 rules or hosts',
 		'filterRules: dimmed 1 time across 2 rules or hosts',
 		'showImages: refused 1 time across 1 rule or host',
 	], text);
+
+	summary = log.summariseActionLog(log.readActionLog());
+	text = summary.join('\n');
+
+	// A module id is a value as far as this function is concerned, and one with a
+	// colon in it must not be taken apart in the wrong place. This is what a
+	// summary keyed on a joined string does.
+	log.clearActionLog();
+	log.recordAction({ moduleID: 'weird: name', outcome: 'hidden', target: 't3_a', reason: 'r1' });
+	log.recordAction({ moduleID: 'weird: name', outcome: 'hidden', target: 't3_b', reason: 'r2' });
+	assert.deepEqual(
+		log.summariseActionLog(log.readActionLog()),
+		['weird: name: hidden 2 times across 2 rules or hosts'],
+	);
+
+	// And two different pairs that would join to the same string stay apart. This
+	// is what keying on a joined value costs when either half comes from the page.
+	log.clearActionLog();
+	log.recordAction({ moduleID: 'a: b', outcome: 'c', target: 't3_a' });
+	log.recordAction({ moduleID: 'a', outcome: 'b: c', target: 't3_b' });
+	assert.equal(
+		log.summariseActionLog(log.readActionLog()).length,
+		2,
+		'two different module and outcome pairs were counted as one',
+	);
+
+	log.clearActionLog();
+	fill(3, { moduleID: 'filterRules', outcome: 'hidden', reason: 'no-politics' });
+	log.recordAction({ moduleID: 'filterRules', outcome: 'dimmed', target: 't3_zz', reason: 'long-titles' });
+	log.recordAction({ moduleID: 'showImages', outcome: 'refused', target: 'i.imgur.com', reason: 'imgur' });
 
 	// Not one identifier from any of the five entries survives.
 	for (const leak of ['t3_', 'no-politics', 'long-titles', 'imgur']) {

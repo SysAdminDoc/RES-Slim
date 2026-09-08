@@ -125,3 +125,30 @@ test('a field cannot write its own line in the support report', () => {
 	assert.ok(!entry.moduleID.includes('\n'));
 	assert.ok(entry.moduleID.startsWith('filterRules'), 'the readable part of the value is kept');
 });
+
+test('a field cannot make its line read as a different line', () => {
+	// One step down from forging structure: a right-to-left override in a module
+	// name reverses the visual order of everything after it on that line, in the
+	// report and in the panel row's tooltip, so what the reader sees is not what
+	// the row says. Zero-width and invisible spaces are the same problem smaller:
+	// two rows that read identically and are not identical.
+	const deceptive = {
+		'right-to-left override': '\u202e',
+		'left-to-right override': '\u202d',
+		'first strong isolate': '\u2068',
+		'pop directional isolate': '\u2069',
+		'arabic letter mark': '\u061c',
+		'zero width space': '\u200b',
+		'zero width joiner': '\u200d',
+		'left-to-right mark': '\u200e',
+		'word joiner': '\u2060',
+		'byte order mark': '\ufeff',
+	};
+	for (const [name, character] of Object.entries(deceptive)) {
+		const [entry] = bridge.sanitizeActionLog({
+			actionLog: { entries: [row({ moduleID: `a${character}b`, target: `c${character}d` })] },
+		}).entries;
+		assert.ok(!entry.moduleID.includes(character), `a ${name} survived in moduleID`);
+		assert.ok(!entry.target.includes(character), `a ${name} survived in target`);
+	}
+});
