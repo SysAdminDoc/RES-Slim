@@ -349,3 +349,55 @@ test('filterRules module is registered and uses the utility helpers', () => {
 		assert.ok(mod.includes(`case '${action}'`), `expected action ${action}`);
 	}
 });
+
+test('the ReDoS guard catches the shapes that actually hang, and runs them to prove it', () => {
+	// Every one of these was measured un-flagged on Node 24 against 28 a's:
+	// 26.0s, 18.7s, 19.5s, 19.0s and 24.2s respectively. The old guard was a
+	// single regex looking for a quantifier inside one flat group, so it caught
+	// `(a+)+` and nothing else.
+	const catastrophic = [
+		'(a|a)*$',
+		'(a{1,10})+$',
+		'((a+))+$',
+		'(?:a|a)*$',
+		'(.*a){20}$',
+		'(a+)+$',
+		'(a*)*$',
+		'(.+)*$',
+	];
+	for (const pattern of catastrophic) {
+		assert.equal(isLikelyCatastrophicRegex(pattern), true, `${pattern} should be refused`);
+	}
+
+	// And the guard has to hold at the only place it matters: evaluating a rule
+	// against a body chosen to make the pattern backtrack. Any of these taking
+	// the naive path would run for tens of seconds.
+	const hostile = `${'a'.repeat(28)}X`;
+	const started = Date.now();
+	for (const pattern of catastrophic) {
+		assert.equal(
+			ruleMatches(rule({ field: 'keyword', op: 'regex', value: pattern }), facts({ title: hostile })),
+			false,
+			`${pattern} must fail closed rather than run`,
+		);
+	}
+	assert.ok(Date.now() - started < 1000, 'a refused pattern must never be executed');
+});
+
+test('the wider guard still allows ordinary user patterns', () => {
+	// A false positive costs the reader a rule that silently never fires, so the
+	// net has to stay off the shapes people actually write.
+	for (const pattern of [
+		'^hello$',
+		'(cat|dog)s?',
+		'\b(spam|scam)\b',
+		'https?://',
+		'[a-z]+ing',
+		'^(?:re:)?\s*question',
+		'foo{2,3}bar',
+		'(abc)?def',
+		'[+*{|]+',
+	]) {
+		assert.equal(isLikelyCatastrophicRegex(pattern), false, `${pattern} should be allowed`);
+	}
+});

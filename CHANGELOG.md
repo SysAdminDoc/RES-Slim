@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- One imported filter rule can no longer hang the tab. The guard against
+  runaway regular expressions only recognised one shape, so the textbook ones
+  went straight through and ran against every post on the page. Measured before
+  the fix, five of them took between 18 and 26 seconds each on a 29-character
+  title. The guard now matches brackets properly and refuses any repeated group
+  whose contents could match the same text more than one way.
+
 - The comment shredder's keep list understands every way a subreddit gets
   written down. `r/pics/` with a trailing slash, or a whole address pasted from
   the browser, matched nothing, so a subreddit the reader had explicitly
