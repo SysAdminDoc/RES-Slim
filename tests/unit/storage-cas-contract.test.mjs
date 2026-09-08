@@ -149,6 +149,87 @@ test('null and an object are not the same thing', async () => {
 	assert.equal(await state.cas(['tags', null, null, { alice: {} }]), true);
 });
 
+test('values that are not the same do not compare the same', async () => {
+	// The cheap structural compare gets several of these wrong. `NaN`, `Infinity`
+	// and `-Infinity` all stringify as `null`, so a naive version says each of
+	// them equals a stored null and equals the others. An array and an object with
+	// numeric keys serialise alike once the keys are sorted and quoted. A Date has
+	// a `toJSON`, so comparing the raw object says every Date is every other Date.
+	globalThis.__casListeners = {};
+	const state = await loadHandler({});
+
+	const different = [
+		['NaN and null', NaN, null],
+		['Infinity and null', Infinity, null],
+		['NaN and Infinity', NaN, Infinity],
+		['an array and an object with numeric keys', [1, 2], { 0: 1, 1: 2 }],
+		['two dates', new Date(0), new Date(99_999)],
+		['a date and an empty object', new Date(0), {}],
+		['a number and its text', 1, '1'],
+		['nested shapes', { a: { b: 1 } }, { a: { b: '1' } }],
+	];
+	for (const [what, stored, claimed] of different) {
+		state.data.k = stored;
+		// eslint-disable-next-line no-await-in-loop
+		const wrote = await state.cas(['k', null, claimed, 'replaced']);
+		assert.equal(wrote, false, `${what} compared equal`);
+		assert.notEqual(state.data.k, 'replaced', `${what} let a stale write through`);
+	}
+
+	// And the pairs that really are the same still are, whichever way they got
+	// here.
+	const same = [
+		['zero and minus zero', 0, -0],
+		['the same array', [1, { b: 2 }], [1, { b: 2 }]],
+		['the same date', new Date(1234), new Date(1234)],
+		['keys in another order', { a: 1, b: 2 }, { b: 2, a: 1 }],
+	];
+	for (const [what, stored, claimed] of same) {
+		state.data.k = stored;
+		// eslint-disable-next-line no-await-in-loop
+		assert.equal(await state.cas(['k', null, claimed, 'replaced']), true, `${what} compared different`);
+	}
+});
+
+test('a value it cannot walk is refused rather than thrown out of', async () => {
+	// A compare-and-set that throws leaves its caller with an exception where it
+	// expected an answer, on a path that has usually already written something
+	// else. "It changed" is a reply the caller knows what to do with.
+	globalThis.__casListeners = {};
+	const state = await loadHandler({});
+
+	const cyclic = { name: 'loop' };
+	cyclic.self = cyclic;
+	state.data.k = { name: 'loop' };
+	assert.equal(await state.cas(['k', null, cyclic, 'replaced']), false);
+	assert.notEqual(state.data.k, 'replaced');
+
+	// Deeper than anything this extension stores, and deep enough that walking it
+	// without a bound overflows the stack.
+	let deep = {};
+	const root = deep;
+	for (const _step of Array.from({ length: 200_000 })) { // eslint-disable-line no-unused-vars
+		deep.next = {};
+		deep = deep.next;
+	}
+	state.data.k = 'something else';
+	assert.equal(await state.cas(['k', null, root, 'replaced']), false);
+
+	// A value that cannot be serialised at all, for a reason the depth bound does
+	// not cover. Nothing reaches the handler as a BigInt in the product -- the
+	// message bridge is JSON -- but a comparison is the wrong place to find out
+	// that something cannot be compared.
+	state.data.k = 'something else';
+	assert.equal(await state.cas(['k', null, { big: 1n }, 'replaced']), false);
+	assert.notEqual(state.data.k, 'replaced');
+
+	// And the key is not wedged afterwards: the mutex has to release even when the
+	// comparison could not be made.
+	state.data.k = 'something else';
+	assert.equal(await state.cas(['k', null, 'something else', 'replaced']), true);
+	assert.equal(state.data.k, 'replaced');
+});
+
 test('the handler is serialised per key by the real mutex', () => {
 	// The contract above runs against a stand-in for `keyedMutex`, so it can show
 	// that serialising is necessary and not that the product does it. This is the

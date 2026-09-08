@@ -143,6 +143,20 @@ test('a field cannot make its line read as a different line', () => {
 		'left-to-right mark': '\u200e',
 		'word joiner': '\u2060',
 		'byte order mark': '\ufeff',
+		// The ones the first version of this list missed. Each renders as nothing
+		// and each makes two module names look identical while comparing unequal,
+		// which is the failure the list exists to close.
+		'soft hyphen': '\u00ad',
+		'mongolian vowel separator': '\u180e',
+		'hangul choseong filler': '\u115f',
+		'hangul jungseong filler': '\u1160',
+		'hangul filler': '\u3164',
+		'halfwidth hangul filler': '\uffa0',
+		'invisible plus': '\u2064',
+		'reserved format character': '\u2065',
+		// Variation selectors are deliberately not in this list: they modify the
+		// character before them rather than standing in for one, so stripping them
+		// would break a grapheme rather than close an impersonation.
 	};
 	for (const [name, character] of Object.entries(deceptive)) {
 		const [entry] = bridge.sanitizeActionLog({

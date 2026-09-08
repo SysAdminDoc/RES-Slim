@@ -48,6 +48,12 @@ test('a vote below the cap asks how many there are, and reads nothing', async ()
 	const types = sent.map(message => message.type);
 	assert.deepEqual(types, ['featureDb-count'], `a prune under the cap sent ${JSON.stringify(types)}`);
 	assert.equal(sent[0].data.store, 'voteHistory');
+	// Counted over the index the trim walks. IndexedDB leaves a record out of an
+	// index when its key path yields an invalid key, and the legacy migration
+	// copies old records in verbatim -- so counting the store and trimming the
+	// index disagree, the trim finds fewer than the count promised and deletes
+	// nothing, and this runs again on every vote for the life of the profile.
+	assert.equal(sent[0].data.index, 'timestamp', 'the count asks a different question from the trim');
 });
 
 test('over the cap, the overflow is deleted where it lives', async () => {
@@ -89,4 +95,23 @@ test('the cap has a floor, whatever is typed into the box', async () => {
 		assert.ok(trim, `"${typed}" never got as far as a trim`);
 		assert.equal(trim.data.keep, expected, `"${typed}" kept ${trim.data.keep}`);
 	}
+});
+
+test('the count and the trim ask the same question', async () => {
+	// Not just that both name an index -- that they name the same one. Two
+	// different indexes is the same bug with more steps.
+	const sent = watchBridge({ 'featureDb-count': 5000, 'featureDb-trim': 1000 });
+	try {
+		Vote.module.options.maxRecords.value = '4000';
+		await Vote._pruneIfNeeded();
+		await settle();
+	} finally {
+		delete globalThis.__runtimeMessageResponder;
+	}
+
+	const count = sent.find(message => message.type === 'featureDb-count');
+	const trim = sent.find(message => message.type === 'featureDb-trim');
+	assert.ok(count && trim);
+	assert.equal(count.data.index, trim.data.index);
+	assert.equal(count.data.store, trim.data.store);
 });

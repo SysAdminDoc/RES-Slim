@@ -102,6 +102,14 @@ test('a streamed node with no things in it costs almost nothing', async () => {
 	const calls = { queries: 0, matches: 0 };
 	const root = document.querySelector('shreddit-app');
 
+	// The ten selectors the extension really registers. Without them this
+	// measures a document with no page watchers in it at all, where the widened
+	// version and the fixed one cost exactly the same -- which is how the first
+	// version of this test passed against the code it was written to catch.
+	for (const selector of ['time', 'a[href]', '.md pre', '.usertext-body > .md', '.md', 'a.author', 'a.subreddit', '.comment.collapsed', 'a[href*="search"]', '[data-fullname]']) {
+		Watcher.watchers.watchForElements(['page'], selector, () => {});
+	}
+
 	const nativeQuery = Element.prototype.querySelectorAll;
 	const nativeMatches = Element.prototype.matches;
 	Element.prototype.querySelectorAll = function querySelectorAll(...args) {
@@ -129,7 +137,10 @@ test('a streamed node with no things in it costs almost nothing', async () => {
 
 	// Generous, and still an order of magnitude below sweeping ten page-watcher
 	// selectors over the document twenty times.
-	assert.ok(calls.queries < 200, `twenty thing-free nodes cost ${calls.queries} subtree queries`);
+	// Ten page watchers over twenty nodes is 200 subtree queries if each node
+	// sweeps the document for all of them. Nothing here should: there is no Thing
+	// in any of these nodes, so there is nothing for a page watcher to visit.
+	assert.ok(calls.queries < 100, `twenty thing-free nodes cost ${calls.queries} subtree queries`);
 });
 
 test('a page watcher sees what is inside a Thing, and not the whole document', async () => {

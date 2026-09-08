@@ -58,7 +58,10 @@ const stableJson = value => {
 	if (Array.isArray(value)) return '[' + value.map(stableJson).join(',') + ']';
 	return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stableJson(value[k])).join(',') + '}';
 };
-const backgroundDefaults = {
+// Prototype-less: a message whose type is "constructor" resolves against
+// Object.prototype on an ordinary object and gets called as a handler. No
+// backticks in here -- this block is injected as a template literal.
+const backgroundDefaults = Object.assign(Object.create(null), {
 	'storage-cas': msg => new Promise(resolve => {
 		const [key, defaultValue, oldValue, newValue] = msg.data;
 		globalThis.chrome.storage.local.get({ [key]: defaultValue }, got => {
@@ -66,7 +69,7 @@ const backgroundDefaults = {
 			globalThis.chrome.storage.local.set({ [key]: newValue }, () => resolve(true));
 		});
 	}),
-};
+});
 
 globalThis.chrome = globalThis.chrome || {
 	runtime: {

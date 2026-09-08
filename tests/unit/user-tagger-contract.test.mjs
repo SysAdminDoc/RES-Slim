@@ -575,3 +575,83 @@ test('undo refuses when the tags already match the snapshot', async () => {
 		Date.now = realNow;
 	}
 });
+
+test('a losing import does not arm undo to delete the winner', async () => {
+	// The snapshot used to be taken before the write. A window that lost the race
+	// wrote nothing and still replaced the rollback with a copy of a map that was
+	// no longer stored -- so "Undo last import" would then write that back and
+	// silently delete the import that had won, and the real previous snapshot was
+	// gone with it. An undo of an import that never happened is worse than none.
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const theirs = { dave: { tag: 'theirs', color: '', ignore: false, ts: 9 } };
+	const mine = { erin: { tag: 'mine', color: '', ignore: false, ts: 8 } };
+	const store = sharedTagStore(theirs);
+	const snapshots = [];
+
+	await assert.rejects(commitTagImport({
+		original,
+		storedOriginal: original,
+		next: mine,
+		saveRollback: value => { snapshots.push(value); return Promise.resolve(); },
+		compareAndSetMap: store.compareAndSet,
+		readMap: store.read,
+		clearPayload: () => Promise.resolve(),
+	}), /preview it again/i);
+
+	assert.deepEqual(snapshots, [], 'a losing import overwrote the undo snapshot');
+	assert.deepEqual(store.value, theirs);
+});
+
+test('a winning import takes its snapshot, and takes it after the write', async () => {
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const next = { ...original, bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
+	const store = sharedTagStore(original);
+	const order = [];
+
+	await commitTagImport({
+		original,
+		storedOriginal: original,
+		next,
+		saveRollback: value => { order.push(['snapshot', value]); return Promise.resolve(); },
+		compareAndSetMap: (expected, value) => {
+			order.push(['write', value]);
+			return store.compareAndSet(expected, value);
+		},
+		readMap: store.read,
+		clearPayload: () => Promise.resolve(),
+	});
+
+	assert.deepEqual(order.map(([what]) => what), ['write', 'snapshot'], 'the snapshot has to follow the write that made it worth having');
+	assert.deepEqual(order[1][1], original, 'the snapshot is the map from before the import');
+});
+
+test('a snapshot that cannot be saved says the import happened anyway', async () => {
+	// The tags the reader asked for are stored and correct. The only thing missing
+	// is the ability to change their mind, and saying "import failed" would send
+	// them to re-import something that is already there.
+	const original = { alice: { tag: 'old', color: '', ignore: false, ts: 1 } };
+	const next = { ...original, bob: { tag: 'new', color: '', ignore: false, ts: 2 } };
+	const store = sharedTagStore(original);
+
+	await assert.rejects(commitTagImport({
+		original,
+		storedOriginal: original,
+		next,
+		saveRollback: () => Promise.reject(new Error('quota exceeded')),
+		compareAndSetMap: store.compareAndSet,
+		readMap: store.read,
+		clearPayload: () => Promise.resolve(),
+	}), /tags were imported[\s\S]*Undo will not put this import back/);
+
+	assert.deepEqual(store.value, next, 'the import was undone by a failed snapshot');
+});
+
+test('the panel does not tell a losing window its tags were put back', () => {
+	// The message the conflict carries is the one the reader needs -- preview
+	// again against what is there now. Prefixing it with "the previous tag map was
+	// restored" is false, and points them at the wrong thing.
+	const source = fs.readFileSync(path.join(repoRoot, 'lib/modules/userTagger.js'), 'utf8');
+	const commit = source.slice(source.indexOf('async function commitPreviewedTagImport'), source.indexOf('async function undoLastTagImport'));
+	assert.match(commit, /error instanceof TagImportConflict \? message :/, 'every failure still claims a restore');
+	assert.match(source, /\tTagImportConflict,/, 'the module does not import the class it branches on');
+});
