@@ -1,0 +1,23 @@
+// Flow 0.84 ships the 2018 DOM, which predates `HTMLFormElement.requestSubmit`.
+// It is Chrome 76 (2019-07-30) and Firefox 75 (2020-04-07), measured against
+// webstatus.dev on 2026-09-08, against a floor of chrome 125 / firefox 130 in
+// `browserslist` -- so it clears both by years, and the checker having never
+// heard of it is a fact about the checker.
+//
+// Declared here rather than cast at the call site for the reason `abort.js.flow`
+// gives next door: the libs directory is where a browser-support decision is
+// enforceable. A cast asserts the same thing and checks nothing.
+//
+// This is the only method the DOM offers that carries the *submitter* into the
+// submission, and on old Reddit's `/over18` page the submitter is the entire
+// answer.
+declare class HTMLFormElement extends HTMLElement {
+	requestSubmit(submitter?: ?HTMLElement): void;
+	submit(): void;
+	reset(): void;
+	action: string;
+	method: string;
+	name: string;
+	elements: HTMLCollection<HTMLElement>;
+	length: number;
+}

@@ -6,6 +6,14 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- "Skip the over-18 confirmation" actually skips it. The extension submitted
+  the form without saying which button it meant, and Reddit reads a missing
+  answer as "no", so you were sent back where you came from. The quarantined
+  community version of the same setting had never worked at all, because it was
+  looking for a form that does not exist on the page.
+
+### Fixed
+
 - Importing user tags works again when your saved tags predate the timestamp
   field. Preview and Import compared the stored tags two different ways, and
   the comparison included a timestamp that gets filled in fresh each time it is
