@@ -6870,20 +6870,60 @@ test('a table row can be reordered from the keyboard, not only by dragging', asy
 		};
 	});
 
+	const initial = await state();
+	assert.ok(initial.labels.length >= 2, `the macros table needs rows to reorder, saw ${initial.labels.length}`);
+	assert.equal(initial.saveDisabled, true, 'nothing should be staged before the reorder');
+
+	// Enough rows that a row moving two or four places at a time is visible. Two
+	// is not: at the bottom the extra moves find no sibling and do nothing, which
+	// looks exactly like moving one row.
+	const addRow = '#optionContainer-commentTools-macros .addRowButton';
+	for (const nth of [1, 2, 3, 4]) {
+		// eslint-disable-next-line no-await-in-loop
+		await page.click(addRow);
+		// eslint-disable-next-line no-await-in-loop
+		await page.waitForFunction(
+			count => document.querySelectorAll('#tbody_macros tr').length === count,
+			initial.labels.length + nth,
+			{ timeout: 30000 },
+		);
+	}
 	const before = await state();
-	assert.ok(before.labels.length >= 2, `the macros table needs rows to reorder, saw ${before.labels.length}`);
-	assert.equal(before.saveDisabled, true, 'nothing should be staged before the reorder');
+	// Row indices, so the walks below read as positions rather than as counters.
+	const positions = before.labels.map((_label, index) => index);
 
 	// The name is short, because it is read on every row, and what the control
 	// does is the description.
 	const naming = await page.evaluate(() => {
 		const handle = document.querySelector('#tbody_macros tr .handle');
-		return { label: handle.getAttribute('aria-label'), title: handle.getAttribute('title') };
+		return {
+			label: handle.getAttribute('aria-label'),
+			title: handle.getAttribute('title'),
+			keyshortcuts: handle.getAttribute('aria-keyshortcuts'),
+		};
 	});
 	assert.equal(naming.label, 'Move row');
 	assert.match(naming.title, /arrow keys/i, `the handle does not say how to use it: "${naming.title}"`);
+	// Enter and Space do nothing on this control, so the keys that work are named
+	// where assistive technology reads them.
+	assert.equal(naming.keyshortcuts, 'ArrowUp ArrowDown');
+
+	// Every move is a remove and an insert, which the container's own
+	// MutationObserver sees. One count per press, or a duplicated listener is
+	// moving the row several rows at a time and sweeping the panel once each.
+	await page.evaluate(() => {
+		window.__rsmChangeCount = 0;
+		document.querySelector('#tbody_macros').addEventListener('change', () => { window.__rsmChangeCount += 1; });
+	});
+	const changeCount = () => page.evaluate(() => window.__rsmChangeCount);
 
 	await page.locator('#tbody_macros tr:nth-child(1) .handle').focus();
+	// The add-row button focuses its new row's first field on a timer, so the focus
+	// above can be taken back a tick later.
+	await page.waitForFunction(() => {
+		const active = document.activeElement;
+		return active && active.classList.contains('handle') && active.closest('tr') === document.querySelector('#tbody_macros tr');
+	}, null, { timeout: 30000 });
 	assert.equal((await state()).focusedRow, 0);
 
 	await page.keyboard.press('ArrowDown');
@@ -6895,11 +6935,38 @@ test('a table row can be reordered from the keyboard, not only by dragging', asy
 	assert.equal(moved.focusedRow, 1, 'focus did not follow the row it moved');
 	assert.equal(moved.focusedIsHandle, true, 'focus left the handle');
 	assert.equal(moved.saveDisabled, false, 'the reorder was not staged');
+	assert.equal(await changeCount(), 1, 'one press reported more than one move');
 
-	await page.keyboard.press('ArrowUp');
+	// Down the rest of the table one row at a time, which is where a second
+	// listener shows itself: the row travels 2, then 4, then 8.
+	for (const target of positions.slice(2)) {
+		// eslint-disable-next-line no-await-in-loop
+		await page.keyboard.press('ArrowDown');
+		// eslint-disable-next-line no-await-in-loop
+		const step = await state();
+		assert.equal(step.focusedRow, target, `one ArrowDown moved the row ${step.focusedRow - target + 1} places`);
+		// eslint-disable-next-line no-await-in-loop
+		assert.equal(await changeCount(), target, `press ${target} reported more moves than presses`);
+	}
+
+	// And all the way back, one at a time.
+	for (const target of [...positions.slice(0, -1)].reverse()) {
+		// eslint-disable-next-line no-await-in-loop
+		await page.keyboard.press('ArrowUp');
+		// eslint-disable-next-line no-await-in-loop
+		assert.equal((await state()).focusedRow, target, 'an ArrowUp did not move exactly one row');
+	}
 	const back = await state();
-	assert.deepEqual(back.labels, before.labels, 'ArrowUp did not undo the move');
+	assert.deepEqual(back.labels, before.labels, 'ArrowUp did not undo the moves');
 	assert.equal(back.focusedRow, 0);
+
+	// A modified arrow belongs to the browser or the platform.
+	for (const modifier of ['Control', 'Shift', 'Alt']) {
+		// eslint-disable-next-line no-await-in-loop
+		await page.keyboard.press(`${modifier}+ArrowDown`);
+		// eslint-disable-next-line no-await-in-loop
+		assert.deepEqual((await state()).labels, before.labels, `${modifier}+ArrowDown moved the row`);
+	}
 
 	// At the top there is nowhere to go, and swallowing the key there would take
 	// the arrow away from whatever else would have used it -- scrolling the panel,
@@ -7037,6 +7104,135 @@ test('an immediate undo puts the row back where it was, not at the end', async t
 	await page.waitForFunction(count => document.querySelectorAll('#tbody_macros tr').length === count, before.length, { timeout: 30000 });
 
 	assert.deepEqual(await labelsOf(), ['edited in place', ...before.slice(1)], 'the row did not go back where it was');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
+test('a delete that is followed straight away by leaving the module is still staged', async t => {
+	// Staging runs on a frame-debounced sweep of the panel. Leave the module in
+	// the same frame as the delete and that sweep never sees the table it was
+	// queued for -- it runs against whatever panel is on screen by then. The undo
+	// would then read an option that still has the row in it and put a second copy
+	// back. The delete stages itself synchronously for exactly this window.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows to delete, saw ${before.length}`);
+
+	// One turn: delete, then leave. No frame in between, so the debounce never
+	// fires against the macros panel.
+	await page.evaluate(() => {
+		document.querySelector('#tbody_macros tr:nth-child(1) .deleteButton').click();
+		document.querySelector('.moduleButton[data-module="commentDepth"]').click();
+	});
+	await page.waitForFunction(() => {
+		const panel = document.querySelector('#RESConfigPanelOptions');
+		return panel && panel.dataset.module === 'commentDepth';
+	}, null, { timeout: 30000 });
+
+	await page.click('button.res-button-undo');
+	await page.click('.moduleButton[data-module="commentTools"]');
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	assert.deepEqual(await labelsOf(), before, 'the undo put a second copy of the row back');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
+test('an undo does not throw away what was edited after the delete, or lose a second deleted row', async t => {
+	// The undo button lives five seconds, which is long enough to fix a typo in
+	// another row or to delete a second one. Restoring a snapshot of the whole
+	// table taken at delete time discarded the first and dropped a row in the
+	// second, so the row goes back into what the option holds now.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows, saw ${before.length}`);
+
+	// Delete the first row, then edit a row that is still there, then leave.
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	await page.fill('#tbody_macros tr:nth-child(1) td.hasTableOption input', 'edited after the delete');
+	await page.click('.moduleButton[data-module="commentDepth"]');
+	await page.waitForFunction(() => {
+		const panel = document.querySelector('#RESConfigPanelOptions');
+		return panel && panel.dataset.module === 'commentDepth';
+	}, null, { timeout: 30000 });
+
+	await page.click('button.res-button-undo');
+	await page.click('.moduleButton[data-module="commentTools"]');
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	assert.deepEqual(
+		await labelsOf(),
+		[before[0], 'edited after the delete', ...before.slice(2)],
+		'the undo wrote back a stale copy of the table',
+	);
+
+	// Two deletes, then both undone. Neither row may go missing.
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	assert.equal((await labelsOf()).length, before.length - 2, 'the two deletes did not both take');
+
+	// Both buttons sit at the same spot on `document.body`, so the newer one
+	// intercepts pointer events for the older. Clicked through the DOM, oldest
+	// first, which is the order that used to lose a row.
+	const clickOldestUndo = async remaining => {
+		await page.evaluate(() => {
+			const button = document.querySelector('button.res-button-undo');
+			if (button) button.click();
+		});
+		// The button removes itself a microtask later, so the count is read after
+		// the click rather than in the same turn.
+		await page.waitForFunction(
+			count => document.querySelectorAll('button.res-button-undo').length === count,
+			remaining,
+			{ timeout: 30000 },
+		);
+	};
+	await clickOldestUndo(1);
+	await clickOldestUndo(0);
+
+	const restored = await labelsOf();
+	assert.equal(restored.length, before.length, `undoing both deletes left ${restored.length} of ${before.length} rows`);
+	assert.deepEqual(
+		[...restored].sort(),
+		[before[0], 'edited after the delete', ...before.slice(2)].sort(),
+		'a row went missing between the two undos',
+	);
+
+	// And focus is somewhere in the table, not on `<body>`: the undo button
+	// removes itself before the restore runs.
+	const focused = await page.evaluate(() => {
+		const el = document.activeElement;
+		return { tag: el && el.tagName, inTable: !!(el && el.closest && el.closest('#tbody_macros')) };
+	});
+	assert.equal(focused.inTable, true, `focus landed on ${focused.tag} after an undo`);
 
 	assert.deepEqual(pageErrors, []);
 	await page.close();

@@ -821,6 +821,9 @@
     "settingsConsoleSavedJustNow": {
         "message": "Saved just now"
     },
+    "settingsSaveRollbackFailed": {
+        "message": "Saving failed and the settings could not be put back automatically. Some of the changes may be stored even though this page is showing the old values. The error was: $1"
+    },
     "settingsConsoleSaving": {
         "message": "Saving changes…"
     },
