@@ -1,25 +1,25 @@
 {
 	"chrome": {
-		"foreground.entry.js": 697174,
+		"foreground.entry.js": 709237,
 		"snudown.entry.js": 61985,
-		"options.entry.js": 416551,
-		"background.entry.js": 104530,
+		"options.entry.js": 425262,
+		"background.entry.js": 105316,
 		"trackingSabotage.entry.js": 2008,
 		"shredditReveal.entry.js": 1594,
-		"res.css": 398010,
-		"options.css": 86496,
+		"res.css": 398145,
+		"options.css": 87507,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630
 	},
 	"firefox": {
-		"foreground.entry.js": 697297,
+		"foreground.entry.js": 709360,
 		"snudown.entry.js": 61985,
-		"options.entry.js": 416551,
-		"background.entry.js": 104652,
+		"options.entry.js": 425262,
+		"background.entry.js": 105442,
 		"trackingSabotage.entry.js": 2008,
 		"shredditReveal.entry.js": 1594,
-		"res.css": 398010,
-		"options.css": 86496,
+		"res.css": 398145,
+		"options.css": 87507,
 		"dash.mediaplayer.min.js": 731494,
 		"jszip.min.js": 97630
 	}

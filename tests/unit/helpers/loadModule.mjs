@@ -217,7 +217,7 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	const dom = new JSDOM(html, { url, pretendToBeVisual: true });
 	const { window } = dom;
 
-	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'HTMLDialogElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL', 'customElements']) {
+	for (const key of ['window', 'document', 'location', 'navigator', 'history', 'localStorage', 'sessionStorage', 'HTMLElement', 'HTMLAnchorElement', 'HTMLLIElement', 'HTMLInputElement', 'HTMLLinkElement', 'HTMLStyleElement', 'HTMLScriptElement', 'HTMLFormElement', 'HTMLImageElement', 'HTMLVideoElement', 'HTMLTextAreaElement', 'HTMLSelectElement', 'HTMLButtonElement', 'HTMLIFrameElement', 'HTMLDialogElement', 'Node', 'Element', 'Event', 'CustomEvent', 'MutationObserver', 'IntersectionObserver', 'getComputedStyle', 'DOMParser', 'XMLSerializer', 'requestAnimationFrame', 'cancelAnimationFrame', 'Blob', 'File', 'FileReader', 'URL', 'customElements', 'AbortController', 'AbortSignal']) {
 		if (!(key in window)) continue;
 		// Node 24 defines `navigator` (and friends) as getter-only on globalThis, so
 		// a plain assignment throws. defineProperty replaces them outright.
@@ -244,6 +244,12 @@ export function installDom({ url = 'https://old.reddit.com/', html = '<!doctype 
 	// no subtest to point at. It only shows up when the file runs long enough for
 	// the timer to outlive its test, so it read as an unrelated contract failing
 	// about one run in three under parallel load.
+	// `AbortController` above is not a convenience. jsdom type-checks the `signal`
+	// it is handed against its *own* AbortSignal, so a controller constructed from
+	// Node's global -- which is what `lib/` code gets without this -- makes every
+	// `addEventListener(..., { signal })` in the product throw a TypeError inside
+	// jsdom. The product only ever meets the browser's pair, so a contract must
+	// too.
 	if (!window.URL.createObjectURL) window.URL.createObjectURL = () => 'blob:res-slim-test';
 	if (!window.URL.revokeObjectURL) window.URL.revokeObjectURL = () => {};
 

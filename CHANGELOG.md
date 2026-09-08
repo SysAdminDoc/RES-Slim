@@ -64,6 +64,12 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Hover cards over a pinned toolbar stop misplacing themselves. Hovering a
+  username in a fixed header once left the card stuck to the viewport for the
+  rest of the page, so every later hover appeared somewhere unrelated to what
+  you pointed at. The scroll watch those cards need is also released when the
+  card closes now, rather than only when a scroll happens to come along.
+
 - Flickr, DeviantArt and Gyazo links expand again. The permission the extension
   asks for did not cover the address it actually requests, and those three sites
   send no header that would let the request through without it.
