@@ -13,7 +13,7 @@ fs.mkdirSync(tmpDir, { recursive: true });
 const stripped = flowRemoveTypes(read('lib/environment/background/urlGuard.js'), { all: true }).toString();
 const modulePath = path.join(tmpDir, 'urlGuard.mjs');
 fs.writeFileSync(modulePath, stripped);
-const { isProxyableUrl, isInjectableScript, injectableScripts } = await import(pathToFileURL(modulePath).href);
+const { isProxyableUrl, isOpenableTabUrl, isInjectableScript, injectableScripts } = await import(pathToFileURL(modulePath).href);
 
 // The tabs handler is executed rather than read, so `loadFlowModule` does the
 // stripping for that one.
@@ -44,7 +44,7 @@ test('every background proxy that takes a URL gates on one', () => {
 	const gated = {
 		'lib/environment/background/ajax.js': /if \(!isProxyableUrl\(url\)\)/,
 		'lib/environment/background/download.js': /if \(!isProxyableUrl\(url\)\)/,
-		'lib/environment/background/tabs.js': /if \(!isProxyableUrl\(url\)\) return;/,
+		'lib/environment/background/tabs.js': /if \(!isOpenableTabUrl\(url\)\) return;/,
 		'lib/environment/background/loadScript.js': /if \(!isInjectableScript\(url\)\) throw/,
 	};
 	for (const [file, pattern] of Object.entries(gated)) {
@@ -92,6 +92,11 @@ test('openNewTabs refuses what it should not open', async () => {
 	};
 	globalThis.__guardListeners = {};
 
+	// `isOpenableTabUrl` asks the browser what this extension's own origin is, so
+	// the stub has to answer -- and has to answer with an id that is not the one
+	// the refused row uses.
+	globalThis.chrome.runtime = { ...globalThis.chrome.runtime, getURL: path => `chrome-extension://res-slim-test/${path}` };
+
 	await loadFlowModule('lib/environment/background/tabs.js', `tabs-guard-${Math.random().toString(36).slice(2)}`, {
 		deps: ['lib/environment/background/urlGuard.js'],
 		stubs: { './messaging': 'export function addListener(type, cb) { globalThis.__guardListeners[type] = cb; }\n' },
@@ -105,20 +110,31 @@ test('openNewTabs refuses what it should not open', async () => {
 			'https://old.reddit.com/r/pics',
 			// eslint-disable-next-line no-script-url
 			'javascript:alert(1)',
-			'chrome-extension://abc/options.html',
+			// Another extension's page is not ours to open.
+			'chrome-extension://someone-else/options.html',
 			'data:text/html,<script>',
 			'http://example.com/',
+			// This extension's own settings console. Refusing it took away the
+			// recovery path from a reader whose embedded console had already failed
+			// to load, which is the only time that code runs.
+			'chrome-extension://res-slim-test/options.html#!settings/showImages',
 			null,
 			'',
 		],
 		focusIndex: 1,
 	}, { tab: { index: 0, id: 7, cookieStoreId: 'x' } });
 
-	assert.deepEqual(opened, ['https://old.reddit.com/r/pics', 'http://example.com/']);
+	assert.deepEqual(opened, [
+		'https://old.reddit.com/r/pics',
+		'http://example.com/',
+		'chrome-extension://res-slim-test/options.html#!settings/showImages',
+	]);
 
-	// And a payload that is not a list at all does not throw out of the handler.
+	// And a payload that is not a list at all does not throw out of the handler,
+	// nor open anything.
+	const before = [...opened];
 	assert.doesNotThrow(() => openNewTabs({ urls: 'https://example.com/', focusIndex: 0 }, { tab: { index: 0, id: 7 } }));
-	assert.deepEqual(opened, ['https://old.reddit.com/r/pics', 'http://example.com/']);
+	assert.deepEqual(opened, before);
 });
 
 test('loadScript injects only the three bundles that are asked for', () => {
@@ -149,4 +165,21 @@ test('loadScript injects only the three bundles that are asked for', () => {
 		for (const match of read(file).matchAll(/loadScript\('([^']+)'\)/g)) callers.add(match[1]);
 	}
 	assert.deepEqual([...callers].sort(), injectableScripts().sort());
+});
+
+test('a tab may be opened at this extension, and at no other', () => {
+	// The scheme check is right for the fetch proxies and wrong for a tab: the
+	// settings console's own recovery path opens `options.html` in one.
+	globalThis.chrome = {
+		...globalThis.chrome,
+		runtime: { getURL: path => `chrome-extension://res-slim-test/${path}` },
+	};
+
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html'), true);
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html#!settings/showImages'), true);
+	assert.equal(isOpenableTabUrl('moz-extension://res-slim-test/options.html'), false, 'a different scheme is a different origin');
+	assert.equal(isOpenableTabUrl('chrome-extension://someone-else/options.html'), false, 'another extension page was openable');
+	assert.equal(isOpenableTabUrl('https://old.reddit.com/'), true);
+	assert.equal(isOpenableTabUrl('file:///etc/passwd'), false);
+	assert.equal(isOpenableTabUrl(null), false);
 });

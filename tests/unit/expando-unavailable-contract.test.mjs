@@ -42,22 +42,23 @@ test('a Mastodon post that cannot be fetched gets a panel, not a thrown scanner'
 	const unparseable = await mastodon.handleLink('https://mastodon.social/not-a-post');
 	usableByScanner(unparseable);
 
-	globalThis.__fetchHook = () => Promise.reject(new Error('403'));
+	// A 4xx is an answer about the post: private, deleted, or behind a login.
+	globalThis.__resSlimAjax = () => Promise.reject(Object.assign(new Error('Forbidden'), { status: 403 }));
 	try {
 		const refused = await mastodon.handleLink('https://mastodon.social/@someone/109999999999999999');
 		const element = usableByScanner(refused);
 		assert.match(element.className, /unavailable/);
 		assert.ok(element.textContent, 'the panel says nothing to the reader');
 	} finally {
-		delete globalThis.__fetchHook;
+		delete globalThis.__resSlimAjax;
 	}
 
-	globalThis.__fetchHook = () => Promise.resolve({ json: () => Promise.resolve({ nothing: true }), ok: true, status: 200 });
+	globalThis.__resSlimAjax = () => Promise.resolve({ nothing: true });
 	try {
 		const empty = await mastodon.handleLink('https://mastodon.social/@someone/109999999999999999');
 		usableByScanner(empty);
 	} finally {
-		delete globalThis.__fetchHook;
+		delete globalThis.__resSlimAjax;
 	}
 });
 
@@ -69,12 +70,12 @@ test('a Threads link it cannot parse gets a panel too', async () => {
 });
 
 test('Bluesky answers the same way for a reply with no embed in it', async () => {
-	globalThis.__fetchHook = () => Promise.resolve({ json: () => Promise.resolve({}), ok: true, status: 200 });
+	globalThis.__resSlimAjax = () => Promise.resolve({});
 	try {
 		const media = await bluesky.handleLink('https://bsky.app/profile/someone.bsky.social/post/abc123');
 		usableByScanner(media);
 	} finally {
-		delete globalThis.__fetchHook;
+		delete globalThis.__resSlimAjax;
 	}
 });
 
@@ -97,3 +98,52 @@ test('no social handler answers with undefined any more', () => {
 	}
 });
 
+test('an instance that is down is still reported as a host that is down', async () => {
+	// A panel counts as success, so answering one for every failure hides an
+	// outage from the penalty box -- and the penalty box exists because a host
+	// that is down otherwise costs one dead round trip per link, on every page,
+	// indefinitely. It also tells the reader the post is unavailable when what is
+	// unavailable is the instance.
+	const hostLevel = [
+		Object.assign(new Error('Internal Server Error'), { status: 500 }),
+		Object.assign(new Error('Bad Gateway'), { status: 502 }),
+		new Error('NetworkError when attempting to fetch resource.'),
+		Object.assign(new Error('nonsense'), { status: 'teapot' }),
+	];
+
+	for (const failure of hostLevel) {
+		globalThis.__resSlimAjax = () => Promise.reject(failure);
+		try {
+			// eslint-disable-next-line no-await-in-loop
+			await assert.rejects(
+				() => mastodon.handleLink('https://mastodon.social/@someone/109999999999999999'),
+				`a ${String(failure.status || 'network')} failure was answered with a panel`,
+			);
+			// eslint-disable-next-line no-await-in-loop
+			await assert.rejects(() => bluesky.handleLink('https://bsky.app/profile/someone.bsky.social/post/abc123'));
+		} finally {
+			delete globalThis.__resSlimAjax;
+		}
+	}
+
+	// And every 4xx is still the post rather than the host.
+	for (const status of [400, 403, 404, 410, 451, 499]) {
+		globalThis.__resSlimAjax = () => Promise.reject(Object.assign(new Error(String(status)), { status }));
+		try {
+			// eslint-disable-next-line no-await-in-loop
+			const media = await mastodon.handleLink('https://mastodon.social/@someone/109999999999999999');
+			usableByScanner(media);
+		} finally {
+			delete globalThis.__resSlimAjax;
+		}
+	}
+});
+
+test('the panel a link gets is the button that link would have had', () => {
+	// The same link showing a video icon when it plays and a text icon when it
+	// does not is a difference the reader has to explain to themselves.
+	const threadsSource = readRepoFile('lib/modules/hosts/threads.js');
+	assert.match(threadsSource, /expandoClass: 'video-classic-expando-button'/);
+	// Twice: once on the working embed, once on the panel that replaces it.
+	assert.equal((threadsSource.match(/video-classic-expando-button/g) || []).length, 2);
+});

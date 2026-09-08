@@ -59,7 +59,16 @@ const card = hover.infocard('fixed-parent-contract');
 // `persistent: false` keeps this off the module's options table -- the instance
 // list is a stored preference and a test has no business writing to it.
 card.options({ enabled: true, openDelay: 0, fadeDelay: 0, fadeSpeed: 0, closeOnMouseOut: false, width: 300 }, false);
-card.populateWith(() => ['a title', 'a body']);
+// Elements, not strings: `populate` no longer takes a string, because the branch
+// that did assigned it to `innerHTML` raw.
+const contents = () => {
+	const title = document.createElement('h3');
+	title.textContent = 'a title';
+	const body = document.createElement('div');
+	body.textContent = 'a body';
+	return [title, body];
+};
+card.populateWith(contents);
 
 async function openOn(element) {
 	card.target(element);

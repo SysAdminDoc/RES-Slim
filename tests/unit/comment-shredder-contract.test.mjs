@@ -1109,5 +1109,15 @@ test('the panel says the number was discarded, above everything else', () => {
 	// And the option is read through the helper rather than parsed a second time
 	// somewhere else, which is how the two would drift.
 	const options = source.slice(source.indexOf('function shredOptions('), source.indexOf('function summarise('));
-	assert.match(options, /keepScoreUnreadable: unreadableKeepScore\(module\.options\.keepScoreAtOrAbove\.value\)/);
+	assert.match(options, /keepScoreUnreadable: unreadableKeepScore\(stored\)/);
+	// Read once, from the same place the numeric parse reads. `|| ''` used to turn
+	// a numeric 0 into "no threshold", which widens a destructive selection with
+	// nothing said -- a typed "0" is the string and was safe; a 0 arriving from a
+	// settings import was not.
+	assert.match(options, /const stored = module\.options\.keepScoreAtOrAbove\.value;/);
+	assert.match(options, /String\(stored === null \|\| stored === undefined \? '' : stored\)/);
+	// `|| ''` in either spelling is the bug: it makes a numeric 0 mean "no
+	// threshold" rather than "keep anything at or above zero".
+	assert.ok(!/stored \|\| ''/.test(options), 'a numeric zero is still discarded');
+	assert.ok(!/keepScoreAtOrAbove\.value \|\| ''/.test(options), 'a numeric zero is still discarded');
 });

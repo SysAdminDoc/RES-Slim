@@ -34,8 +34,19 @@ test('Bluesky accepts trailing-slash posts and degrades private oEmbeds safely',
 	const href = 'https://bsky.app/profile/did:plc:abc123/post/3kabc123/';
 	assert.ok(bluesky.detect(new URL(href)), 'a valid trailing slash must not suppress the expando');
 
-	// The stubbed oEmbed boundary rejects, matching a private/login-required post.
-	const media = await bluesky.handleLink(href);
+	// A 403, which is what a private or login-required post answers.
+	//
+	// This used to rely on the harness's own "ajax is not stubbed" error being
+	// swallowed by the catch, which is not the failure it claims to model -- and
+	// stopped working the moment that catch learned to tell a dead host from a
+	// missing post. The assertions below are unchanged.
+	globalThis.__resSlimAjax = () => Promise.reject(Object.assign(new Error('Forbidden'), { status: 403 }));
+	let media;
+	try {
+		media = await bluesky.handleLink(href);
+	} finally {
+		delete globalThis.__resSlimAjax;
+	}
 	assert.equal(media.type, 'GENERIC_EXPANDO');
 	const element = media.generate();
 	media.onAttach();

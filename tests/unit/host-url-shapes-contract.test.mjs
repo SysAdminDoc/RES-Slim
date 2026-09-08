@@ -265,6 +265,14 @@ test('a video id that is not a video id gets no expando', () => {
 		// one segment inside `/embed/` -- rather than a list of spellings.
 		'https://www.youtube.com/shorts/..%2F..%2Fredirect',
 		'https://www.youtube.com/embed/../account',
+		// The short-link route, which has its own gate. Every other hostile case
+		// here carries a slash or a query that `new URL` would have removed, so
+		// without one of these the gate on this route is unproven.
+		'https://youtu.be/a',
+		`https://youtu.be/${'z'.repeat(60)}`,
+		'https://youtu.be/what%20is%20this',
+		'https://www.youtube.com/live/a',
+		`https://www.youtube.com/shorts/${'q'.repeat(60)}`,
 	];
 	for (const href of hostile) {
 		assert.equal(youtubeEmbed(href), null, `${href} produced an embed`);
@@ -281,6 +289,10 @@ test('an embed built from a real id stays inside /embed/', () => {
 		'https://www.youtube.com/embed/dQw4w9WgXcQ',
 		'https://www.youtube.com/v/dQw4w9WgXcQ',
 		'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s',
+		// The route the old unanchored pattern was carrying by accident, because
+		// "li-v-e" contains a `v`. It is YouTube's current canonical share URL for
+		// a livestream or a premiere.
+		'https://www.youtube.com/live/jfKfPfyJRdk',
 	]) {
 		const media = youtubeEmbed(href);
 		assert.ok(media, `${href} lost its expando`);
@@ -305,6 +317,8 @@ test('a path segment that merely contains a v is not a video page', () => {
 		'https://www.youtube.com/vi/dQw4w9WgXcQ',
 		'https://www.youtube.com/videos',
 		'https://www.youtube.com/about',
+		'https://www.youtube.com/verify',
+		'https://www.youtube.com/oops',
 	]) {
 		assert.equal(youtubeEmbed(href), null, `${href} produced an embed`);
 	}
