@@ -222,9 +222,25 @@ test('linkScanner consults the penalty box before doing any work, and reports bo
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.split(/\r?\n/).map(line => line.replace(/(^|\s)\/\/[^\r\n]*/, '$1')).join('\n');
 
-	assert.match(stripped, /PenaltyBox\.isHostSuspended\(siteModule\.moduleID\)/, 'the check must key on the handler, not the URL');
-	assert.match(stripped, /PenaltyBox\.noteSuccess\(siteModule\.moduleID\)/);
-	assert.match(stripped, /PenaltyBox\.noteFailure\(siteModule\.moduleID\)/);
+	// The three sites read one key, so a success and a failure can never be
+	// counted against different things.
+	//
+	// This asserted the literal `siteModule.moduleID` at all three, which pinned
+	// the wrong invariant: what it was defending is that the key comes from the
+	// handler rather than from the link, and the module id is only the default
+	// spelling of that. A federated handler serves many independent servers, so
+	// the literal made three dead links to one Mastodon instance suspend the
+	// embeds for every other instance too.
+	assert.match(stripped, /const penaltyKey = siteModule\.penaltyKey \?\n\s*siteModule\.penaltyKey\(mediaUrl, detectResult\) :\n\s*siteModule\.moduleID;/);
+	assert.match(stripped, /PenaltyBox\.isHostSuspended\(penaltyKey\)/, 'the check must key on the handler, not the link');
+	assert.match(stripped, /PenaltyBox\.noteSuccess\(penaltyKey\)/);
+	assert.match(stripped, /PenaltyBox\.noteFailure\(penaltyKey\)/);
+	// And nothing keys on the link's hostname, which would let one bad URL on a
+	// working host stand it down.
+	assert.ok(
+		!/(isHostSuspended|noteSuccess|noteFailure)\(mediaUrl/.test(stripped),
+		'the penalty box is keyed on the link rather than the handler',
+	);
 
 	// The skip has to come before the expando is built and the lock awaited,
 	// otherwise a suspended host still costs the DOM work and the wait — which is

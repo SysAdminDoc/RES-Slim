@@ -57,46 +57,50 @@ test('a settings link that will not decode still names its module', () => {
 	}
 });
 
-test('the console renders a dropped value from a copy, not from the module', () => {
-	// Both renderers do the same thing for the same reason, so both are checked.
+test('both renderers draw from the copy and nothing writes to the module array', () => {
+	// The two renderers are the two call sites, and the assertion that matters is
+	// that neither of them still builds the list itself.
 	const source = codeOnly(readRepoFile('lib/options/settingsConsole.js'));
 
 	for (const [kind, local] of [['enum', 'enumValues'], ['select', 'selectValues']]) {
-		const block = source.slice(source.indexOf(`const ${local} = [...optionObject.values];`));
-		assert.ok(block, `the ${kind} renderer does not take a copy`);
-		const head = block.slice(0, block.indexOf('forEach') + 40);
-		assert.ok(head.includes(`${local}.push({ name:`), `the ${kind} placeholder is pushed somewhere else`);
-		assert.ok(head.includes(`${local}.forEach`), `the ${kind} renderer iterates the wrong list`);
+		assert.ok(
+			source.includes(`const ${local} = renderableValues(optionObject);`),
+			`the ${kind} renderer does not use the shared copy`,
+		);
+		const block = source.slice(source.indexOf(`const ${local} = renderableValues`));
+		assert.ok(block.slice(0, 200).includes(`${local}.forEach`), `the ${kind} renderer iterates the wrong list`);
 	}
 
-	// And nothing pushes into the module's array any more.
 	assert.ok(
 		!/optionObject\.values\.push\(/.test(source),
 		'the placeholder is still pushed into the array the module owns',
 	);
 });
 
-test('rendering one stale row does not add a choice to the next', () => {
-	// The behaviour, executed: the placeholder must not survive into a second
-	// render of the same option.
-	const render = values => {
-		const optionObject = { value: 'gone', values };
-		const local = [...optionObject.values];
-		if (optionObject.value && !local.some(({ value }) => value === optionObject.value)) {
-			local.push({ name: `${optionObject.value} (not available)`, value: optionObject.value });
-		}
-		return local;
-	};
+test('rendering one stale row does not add a choice to the next', async () => {
+	// The real function, not a copy of it written into the test. The previous
+	// version of this test defined its own `render` closure and passed against a
+	// reverted `settingsConsole.js`, which is the failure mode it existed to stop.
+	const { renderableValues } = await loadFlowModule('lib/options/optionValues.js', 'settings-console-render-values');
 
 	const moduleValues = [{ name: 'One', value: 'one' }, { name: 'Two', value: 'two' }];
-	const first = render(moduleValues);
+	const stale = { value: 'gone', values: moduleValues };
+
+	const first = renderableValues(stale);
 	assert.equal(first.length, 3, 'the reader cannot see what they had');
+	assert.deepEqual(first[2], { name: 'gone (not available)', value: 'gone' });
 	assert.equal(moduleValues.length, 2, 'the module array grew');
 
-	const second = render(moduleValues);
-	assert.equal(second.length, 3);
+	const second = renderableValues(stale);
 	assert.equal(second.filter(entry => entry.value === 'gone').length, 1, 'the placeholder was added twice');
 	assert.equal(moduleValues.length, 2, 'the module array grew on the second render');
+	assert.notEqual(first, second, 'both renders share one array');
+
+	// A value that is still on offer adds nothing, and neither does no value at
+	// all: without this the function could return a placeholder unconditionally.
+	assert.deepEqual(renderableValues({ value: 'two', values: moduleValues }), moduleValues);
+	assert.deepEqual(renderableValues({ value: '', values: moduleValues }), moduleValues);
+	assert.deepEqual(renderableValues({ value: null, values: moduleValues }), moduleValues);
 });
 
 test('the hover card builds its contents rather than parsing them', () => {
@@ -108,7 +112,13 @@ test('the hover card builds its contents rather than parsing them', () => {
 	// asserted away: every assignment to it comes from `this.template`.
 	const assignments = [...source.matchAll(/(\w+)\.innerHTML = ([^;]+);/g)].map(match => match[2].trim());
 	assert.deepEqual(assignments, ['this.template.trim()'], `hover.js assigns innerHTML from ${assignments.join(', ')}`);
-	for (const template of source.matchAll(/template(?::? ?string)? = `/g)) assert.ok(template);
+	// And `this.template` is a literal in this file rather than anything assigned
+	// from outside it. A `matchAll` loop stood here and asserted nothing: a match
+	// object is always truthy, and with no matches the body never ran.
+	const assigned = [...source.matchAll(/\btemplate(?::\s*string)?\s*=\s*/g)];
+	const literals = [...source.matchAll(/\btemplate(?::\s*string)?\s*=\s*`/g)];
+	assert.ok(literals.length > 0, 'hover.js declares no template at all');
+	assert.equal(literals.length, assigned.length, `${assigned.length - literals.length} hover template(s) come from somewhere else`);
 
 	assert.match(source, /type HoverContents = HTMLElement \| DocumentFragment \| null;/);
 	// The load indicator was the only thing using the branch, so it has to be the

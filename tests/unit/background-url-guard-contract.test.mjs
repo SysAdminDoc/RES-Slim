@@ -167,7 +167,7 @@ test('loadScript injects only the three bundles that are asked for', () => {
 	assert.deepEqual([...callers].sort(), injectableScripts().sort());
 });
 
-test('a tab may be opened at this extension, and at no other', () => {
+test('a tab may be opened at the settings page, and at nothing else of ours', () => {
 	// The scheme check is right for the fetch proxies and wrong for a tab: the
 	// settings console's own recovery path opens `options.html` in one.
 	globalThis.chrome = {
@@ -177,8 +177,23 @@ test('a tab may be opened at this extension, and at no other', () => {
 
 	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html'), true);
 	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html#!settings/showImages'), true);
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html?theme=dark'), true);
 	assert.equal(isOpenableTabUrl('moz-extension://res-slim-test/options.html'), false, 'a different scheme is a different origin');
 	assert.equal(isOpenableTabUrl('chrome-extension://someone-else/options.html'), false, 'another extension page was openable');
+
+	// The whole package was allowed for a while, which let a content-script XSS
+	// open the permission prompt with permissions of its choosing in the query
+	// string: an extension-branded "Requested access" list and a Grant access
+	// button, one click from the browser's own dialog. The escape hatch needs one
+	// page, so it gets one page.
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/prompt.html?permissions=%5B%22history%22%5D'), false, 'the permission prompt was openable');
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/'), false);
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/snudown.entry.js'), false);
+	// And the prefix ends at the page: a sibling whose name merely starts the
+	// same way is a different file.
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.html.evil'), false);
+	assert.equal(isOpenableTabUrl('chrome-extension://res-slim-test/options.htmlx'), false);
+
 	assert.equal(isOpenableTabUrl('https://old.reddit.com/'), true);
 	assert.equal(isOpenableTabUrl('file:///etc/passwd'), false);
 	assert.equal(isOpenableTabUrl(null), false);

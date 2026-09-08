@@ -139,6 +139,27 @@ test('an instance that is down is still reported as a host that is down', async 
 	}
 });
 
+test('a dead instance stands down that instance and not the whole host', async () => {
+	// Mastodon is not one host, it is every server in the list and any other one a
+	// reader has granted. The rethrow above is what puts a dead instance in the
+	// penalty box, and with a key of `mastodon` it put all of them there.
+	const url = href => new URL(href);
+	assert.equal(typeof mastodon.penaltyKey, 'function', 'mastodon counts failures against the whole host');
+
+	const fosstodon = mastodon.penaltyKey(url('https://fosstodon.org/@a/1'));
+	const social = mastodon.penaltyKey(url('https://mastodon.social/@a/1'));
+	assert.notEqual(fosstodon, social, 'two instances share one suspension');
+	assert.equal(fosstodon, mastodon.penaltyKey(url('https://fosstodon.org/@b/2')), 'two links to one instance are counted apart');
+	// Namespaced, so an instance can never collide with another handler's id.
+	assert.match(fosstodon, /^mastodon:/);
+
+	// A host that is one server says nothing, and the scanner falls back to the
+	// module id. Checked on a real host rather than asserted about the default.
+	const bluesky2 = await host('lib/modules/hosts/bluesky.js', 'bluesky-penalty-default');
+	assert.equal(bluesky2.penaltyKey, undefined, 'a single-server host opted into a per-link key');
+	assert.equal(bluesky2.moduleID, 'bluesky');
+});
+
 test('the panel a link gets is the button that link would have had', () => {
 	// The same link showing a video icon when it plays and a text icon when it
 	// does not is a difference the reader has to explain to themselves.
