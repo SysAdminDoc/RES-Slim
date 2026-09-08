@@ -437,3 +437,54 @@ test('an import from a different build says so, and an identical one stays quiet
 	const unknown = { ...older, appVersion: '' };
 	assert.equal(describeSnapshotOrigin(unknown, '0.39.0'), null, 'nothing to say about a version the file did not record');
 });
+
+test('an option key named after an Object.prototype member is refused, and the import says so', () => {
+	// `JSON.parse` produces an *own* enumerable `__proto__` key, so this arrives
+	// from a file intact. `_loadModuleOptions` walked stored blobs with
+	// `Object.entries` and guarded with `if (!module.options[key])`, and
+	// `module.options['__proto__']` is `Object.prototype` — truthy — so the next
+	// line assigned through it onto the prototype of every object on the page.
+	// Written as raw JSON on purpose. In a JS object literal `__proto__:` sets the
+	// prototype rather than creating an own property, so building this with an
+	// object literal and `JSON.stringify` produces a payload with no hostile key
+	// in it at all — a fixture that tests nothing.
+	const payload = `{
+		"app": ${JSON.stringify(SNAPSHOT_APP)},
+		"appVersion": "0.56.0",
+		"formatVersion": ${SNAPSHOT_FORMAT_VERSION},
+		"exportedAt": "",
+		"modules": {
+			"hover": { "__proto__": { "value": "poisoned" }, "instances": { "value": 3 } },
+			"constructor": { "anything": { "value": 1 } }
+		}
+	}`;
+
+	// The fixture has to carry the attack, so prove it does before using it.
+	assert.ok(Object.hasOwn(JSON.parse(payload).modules.hover, '__proto__'), 'the fixture must carry an own __proto__ key');
+
+	const parsed = parseSnapshot(payload);
+
+	// The module named after a prototype member was already refused; the option
+	// key inside a legitimate module is the half that was not.
+	assert.ok(!Object.hasOwn(parsed.modules, 'constructor'), 'a reserved module id is refused');
+	assert.ok(Object.hasOwn(parsed.modules, 'hover'), 'the rest of the file still imports');
+	assert.ok(!Object.hasOwn(parsed.modules.hover, '__proto__'), 'a reserved option key is refused');
+	assert.deepEqual(parsed.modules.hover.instances, { value: 3 }, 'the ordinary options survive');
+
+	// And nothing was written onto the prototype on the way through.
+	assert.equal({}.value, undefined, 'Object.prototype must be untouched');
+
+	// Refusing silently would leave the reader believing the file imported whole.
+	assert.deepEqual(parsed.droppedKeys.sort(), ['constructor', 'hover.__proto__']);
+	assert.match(
+		describeSnapshotOrigin(parsed, '0.56.0') || '',
+		/ignored 2 reserved names: constructor, hover\.__proto__/,
+	);
+});
+
+test('a snapshot written before droppedKeys existed still describes its origin', () => {
+	// Restore points are deserialised straight back into this shape, so one
+	// written by an earlier build arrives without the field.
+	const legacy = { app: SNAPSHOT_APP, appVersion: '0.31.0', formatVersion: SNAPSHOT_FORMAT_VERSION, exportedAt: '', modules: {} };
+	assert.equal(describeSnapshotOrigin(legacy, '0.56.0'), 'exported by v0.31.0');
+});
