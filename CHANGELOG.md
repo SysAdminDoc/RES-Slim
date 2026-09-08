@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Scrolling past a lot of expanded videos no longer leaves the tab busy. An
+  expando that scrolls out of range is destroyed, and destroying one dropped its
+  media without telling it, so a video stayed in the list of things checked ten
+  times a second and kept its element, its player and its manifest alive for the
+  rest of the session. Media is now told to release what it holds, and the two
+  visibility observers let go of the boxes they were watching.
+
 - A video the browser cannot play says so. Matroska and 3GP links were given a
   media type no engine recognises, built from the file extension, so nothing
   survived the playability check. The player wrote "No playable sources were
