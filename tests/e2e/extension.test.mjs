@@ -3408,6 +3408,153 @@ test('ads inside a discussion are removed by the ad remover, with the theme opti
 	assert.equal(hidden.badge, '3', 'nested markers and the plural layout wrapper must not inflate the placement count');
 });
 
+test('every packaged rule matches what it should and nothing beside it', async t => {
+	// The other DNR e2e loads one image and watches it fail, which proves the
+	// ruleset is enabled but says nothing about the other rules. This asks the
+	// browser directly, per rule, with a URL that must match and one that must
+	// not -- so deleting any single rule reddens exactly one pair, and a rule
+	// written too broadly reddens its own negative case.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+
+	// `initiator` is what scopes these rules; without it a request that a reddit
+	// page made looks like one from anywhere.
+	const INITIATOR = 'https://www.reddit.com';
+	const CASES = [
+		{
+			rule: 'event beacon hosts',
+			match: { url: 'https://events.reddit.com/v1', type: 'xmlhttprequest' },
+			miss: { url: 'https://oauth.reddit.com/api/v1/me', type: 'xmlhttprequest' },
+			expect: 'block',
+		},
+		{
+			rule: 'the event and page_view API paths',
+			match: { url: 'https://www.reddit.com/api/v1/page_view', type: 'xmlhttprequest' },
+			miss: { url: 'https://www.reddit.com/api/v1/me', type: 'xmlhttprequest' },
+			expect: 'block',
+		},
+		{
+			rule: 'the packaged ad assets',
+			match: { url: 'https://www.redditstatic.com/shreddit/assets/pix/ads/x.png', type: 'image' },
+			miss: { url: 'https://www.redditstatic.com/shreddit/assets/icon.png', type: 'image' },
+			expect: 'block',
+		},
+		{
+			rule: 'the about-this-ad assets',
+			match: { url: 'https://www.redditstatic.com/shreddit/about-this-ad.js', type: 'script' },
+			miss: { url: 'https://www.redditstatic.com/shreddit/about-this-community.js', type: 'script' },
+			expect: 'block',
+		},
+		{
+			rule: 'the tracking pixel image',
+			match: { url: 'https://www.reddit.com/static/pixel.png', type: 'image' },
+			miss: { url: 'https://www.reddit.com/static/logo.png', type: 'image' },
+			expect: 'block',
+		},
+		{
+			rule: 'the ads host',
+			match: { url: 'https://ads.reddit.com/x.js', type: 'script' },
+			miss: { url: 'https://www.reddit.com/x.js', type: 'script' },
+			expect: 'block',
+		},
+		{
+			rule: 'the measurement pixel host',
+			match: { url: 'https://pi.reddit.com/collect', type: 'image' },
+			miss: { url: 'https://i.reddit.com/collect', type: 'image' },
+			expect: 'block',
+		},
+		{
+			rule: 'the ad metrics host',
+			match: { url: 'https://redditpagematrics.com/dads/x.js', type: 'script' },
+			miss: { url: 'https://redditmedia.com/dads/x.js', type: 'script' },
+			expect: 'block',
+		},
+		{
+			rule: 'the push-notification script',
+			match: { url: 'https://www.redditstatic.com/desktop2x/PushNotifications.abc.js', type: 'script' },
+			miss: { url: 'https://www.redditstatic.com/desktop2x/Reddit.abc.js', type: 'script' },
+			expect: 'block',
+		},
+		{
+			rule: 'the desktop API allowance',
+			match: { url: 'https://gateway.reddit.com/desktopapi/v1/morecomments', type: 'xmlhttprequest' },
+			miss: { url: 'https://gateway.reddit.com/somethingelse', type: 'xmlhttprequest' },
+			expect: 'allow',
+		},
+		{
+			rule: 'the tracking-parameter stripper',
+			match: { url: 'https://www.reddit.com/r/pics/?correlation_id=x&ref=share&sort=new', type: 'main_frame' },
+			miss: { url: 'https://www.reddit.com/r/pics/?sort=new', type: 'main_frame' },
+			expect: 'redirect',
+		},
+	];
+
+	const outcomes = await page.evaluate(async ([cases, initiator]) => {
+		const ask = request => chrome.declarativeNetRequest.testMatchOutcome({
+			url: request.url,
+			type: request.type,
+			method: 'get',
+			// A top-level navigation has no initiator; a subresource does, and that
+			// is what `initiatorDomains` reads.
+			...(request.type === 'main_frame' ? {} : { initiator }),
+		});
+		const results = [];
+		for (const entry of cases) {
+			// eslint-disable-next-line no-await-in-loop
+			const matched = await ask(entry.match);
+			// eslint-disable-next-line no-await-in-loop
+			const missed = await ask(entry.miss);
+			results.push({
+				rule: entry.rule,
+				expect: entry.expect,
+				matched: matched.matchedRules.map(r => r.ruleId),
+				missed: missed.matchedRules.map(r => r.ruleId),
+			});
+		}
+		return results;
+	}, [CASES, INITIATOR]);
+
+	const failures = [];
+	for (const outcome of outcomes) {
+		if (!outcome.matched.length) failures.push(`${outcome.rule}: nothing matched the URL it exists for`);
+		if (outcome.missed.length) failures.push(`${outcome.rule}: also matched the URL it must leave alone (rules ${outcome.missed.join(', ')})`);
+	}
+	assert.deepEqual(failures, [], `packaged rules did not behave as declared:\n  ${failures.join('\n  ')}`);
+
+	// And the parameter stripper, driven rather than asked about. `testMatchOutcome`
+	// says a redirect rule matched; only a navigation shows what the address bar
+	// ends up saying, which is the thing the reader sees.
+	const listing = await context.newPage();
+	await listing.route('**/*', route => {
+		const url = route.request().url();
+		if (route.request().resourceType() === 'document' && url.includes('reddit.com')) {
+			return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: '<!doctype html><html><body>listing</body></html>' });
+		}
+		return route.fulfill({ status: 200, contentType: 'text/plain', body: '' });
+	});
+	await listing.goto('https://www.reddit.com/r/pics/?correlation_id=abc&ref=share&utm_content=1&sort=new', { waitUntil: 'domcontentloaded' });
+	assert.equal(listing.url(), 'https://www.reddit.com/r/pics/?sort=new',
+		`the tracking parameters survived the navigation: ${listing.url()}`);
+
+	// A URL carrying none of them is not touched, so nothing is redirecting every
+	// reddit page load to itself.
+	await listing.goto('https://www.reddit.com/r/pics/?sort=top', { waitUntil: 'domcontentloaded' });
+	assert.equal(listing.url(), 'https://www.reddit.com/r/pics/?sort=top');
+	await listing.close();
+
+	// Every rule in the file is exercised, or a rule could be deleted with
+	// nothing to notice.
+	const ruleIds = await page.evaluate(() => fetch(chrome.runtime.getURL('ad-block.json'))
+		.then(response => response.json())
+		.then(rules => rules.map(rule => rule.id)));
+	const exercised = new Set(outcomes.flatMap(outcome => outcome.matched));
+	const unexercised = ruleIds.filter(id => !exercised.has(id));
+	assert.deepEqual(unexercised, [], `packaged rules nothing in this test reaches: ${unexercised.join(', ')}`);
+});
+
 test('the packaged ruleset blocks Reddit ad and measurement requests', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);

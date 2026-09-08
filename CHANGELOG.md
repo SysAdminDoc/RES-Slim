@@ -6,6 +6,16 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- Reddit's tracking parameters are stripped off a link before the page loads.
+  Opening a shared post no longer puts `correlation_id`, `ref`, `utm_content`
+  and the rest in your address bar or your history. The parameters Reddit needs
+  to render the page are left alone, and a link carrying none of them is not
+  touched at all.
+
+- Three more measurement endpoints are blocked: Reddit's pixel host, its ad
+  metrics host, and the push-notification script. All three are on the lists
+  uBlock Origin and AdGuard maintain for reddit.com and none of them were here.
+
 - Undo last import, for user tags. The importer has always saved a copy of your
   tags from just before an import, and said so, but nothing could put it back.
   There is a button for it now, next to Preview and Import. It restores the tags
