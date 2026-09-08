@@ -2,6 +2,16 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- Threads links expand. The handler returned the embed address wrapped in an
+  object where both the media builder and the URL guard want the address itself,
+  so the guard refused every Threads post and the expand handler quietly put the
+  box away again. The symptom was a button that did nothing, on every click,
+  since the handler shipped.
+
 ## v0.56.0, 2026-09-05
 
 ### Added

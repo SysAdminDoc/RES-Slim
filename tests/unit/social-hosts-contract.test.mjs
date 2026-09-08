@@ -3,9 +3,22 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { loadModule } from './helpers/loadModule.mjs';
+import { loadFlowModule } from './helpers/loadFlowModule.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const indexSource = fs.readFileSync(path.join(repoRoot, 'lib/modules/hosts/index.js'), 'utf8');
 const readHost = host => fs.readFileSync(path.join(repoRoot, `lib/modules/hosts/${host}.js`), 'utf8');
+
+async function loadHost(name, label) {
+	const { __targetDefault } = await loadModule(`lib/modules/hosts/${name}.js`, label, {
+		stubEnvironment: true,
+		exportDefault: true,
+	});
+	return __targetDefault;
+}
+
+const { assertSafeMediaUrls } = await loadFlowModule('lib/utils/mediaUrl.js', 'social-hosts-media-url');
 
 test('mastodon host is registered', () => {
 	assert.match(indexSource, /import mastodon from '\.\/mastodon';/);
@@ -41,6 +54,43 @@ test('threads embed builds the documented /embed suffix URL', () => {
 	assert.match(src, /\/post\/\$\{id\}\/embed/);
 	assert.match(src, /threads\.com/);
 	assert.match(src, /threads\.net/);
+});
+
+// The source assertion above passed for this handler's whole life while every
+// Threads link refused to render: `embed` was a nested media object, and both
+// consumers want the URL string. `assertSafeMediaUrls` rejects a non-string
+// `embed`, and the expand handler swallows that throw, so the only symptom was a
+// button that did nothing. Run the handler and put its result through the guard.
+test('a threads link produces an embed URL the media scheme guard accepts', async () => {
+	const threads = await loadHost('threads', 'threads-embed-shape');
+
+	const cases = [
+		['https://www.threads.com/@zuck/post/C1abc', 'https://www.threads.com/@zuck/post/C1abc/embed'],
+		['https://threads.net/@someone/post/XyZ_9-8', 'https://www.threads.net/@someone/post/XyZ_9-8/embed'],
+	];
+	const built = await Promise.all(cases.map(([href]) => threads.handleLink(href)));
+
+	cases.forEach(([href, expected], i) => {
+		const media = built[i];
+		assert.equal(media.type, 'IFRAME', href);
+		assert.equal(typeof media.embed, 'string', 'embed must be the URL itself, not a wrapper object');
+		assert.equal(media.embed, expected);
+		// `iframeTemplate` writes these into a `style` attribute, so they have to
+		// carry units rather than be bare numbers.
+		assert.equal(media.width, '540px');
+		assert.equal(media.height, '720px');
+		assert.doesNotThrow(() => assertSafeMediaUrls(media, 'https://www.reddit.com/'));
+	});
+
+	// Positive control for the assertion above: the shape this handler used to
+	// return really is refused, so a regression cannot pass this test quietly.
+	assert.throws(
+		() => assertSafeMediaUrls(
+			{ type: 'IFRAME', embed: { type: 'IFRAME', src: 'https://www.threads.com/@zuck/post/C1abc/embed' } },
+			'https://www.reddit.com/',
+		),
+		/unsupported URL scheme/,
+	);
 });
 
 test('threads ships permissions for both threads.com and threads.net', () => {
