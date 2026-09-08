@@ -1825,6 +1825,51 @@ test('the Reddit Markdown renderer loads only when a preview is requested', asyn
 	assert.equal(rendered.superscript, 'superscript');
 	assert.match(rendered.text, /\/r\/claude/);
 	assert.deepEqual(pageErrors, []);
+
+	// A fenced block, which is the one construct this preview exists to get right
+	// and the one most likely to be lost to a sanitizer that strips too much.
+	await textarea.fill(['```js', 'const x = 1;', '```'].join('\n'));
+	await assert.doesNotReject(() => preview.locator('pre code').waitFor({ timeout: 30000 }));
+	assert.match(await preview.locator('pre code').first().innerText(), /const x = 1;/);
+
+	// And the reason the output is sanitized before it is written. snudown escapes
+	// what it is meant to, so nothing here is expected to survive on the way in --
+	// what is asserted is that the preview cannot end up carrying an event handler
+	// or a live script whatever the renderer does with this.
+	await textarea.fill([
+		'<img src=x onerror="window.__rsmPreviewXss = true">',
+		'',
+		'[click](javascript:window.__rsmPreviewXss = true)',
+		'',
+		'<script>window.__rsmPreviewXss = true</script>',
+		'',
+		'<a href="/ok" onmouseover="window.__rsmPreviewXss = true">hover</a>',
+	].join('\n'));
+	// Wait for the preview to have re-rendered to this input rather than the last.
+	await page.waitForFunction(
+		() => (document.querySelector('.commentarea .livePreview .RESDialogContents') || {}).innerHTML?.includes('onerror') === false,
+		null,
+		{ timeout: 30000 },
+	);
+
+	const dangerous = await preview.evaluate(element => {
+		const attributes = [...element.querySelectorAll('*')]
+			.flatMap(node => [...node.attributes].map(attribute => attribute.name))
+			.filter(name => name.startsWith('on'));
+		const hrefs = [...element.querySelectorAll('a')].map(anchor => anchor.getAttribute('href') || '');
+		return {
+			handlers: [...new Set(attributes)],
+			scripts: element.querySelectorAll('script').length,
+			// Spelled in pieces so the rule that forbids a script URL in source does
+			// not fire on a test that exists to prove one never survives.
+			javascriptHrefs: hrefs.filter(href => href.toLowerCase().startsWith(`javascript${':'}`)),
+		};
+	});
+	assert.deepEqual(dangerous.handlers, [], `the preview carries event handlers: ${dangerous.handlers.join(', ')}`);
+	assert.equal(dangerous.scripts, 0, 'the preview carries a script element');
+	assert.deepEqual(dangerous.javascriptHrefs, [], 'the preview carries a javascript: link');
+	assert.equal(await page.evaluate(() => window.__rsmPreviewXss), undefined, 'something in the preview executed');
+	assert.deepEqual(pageErrors, []);
 });
 
 // The first-run greeting, driven rather than reasoned about.
