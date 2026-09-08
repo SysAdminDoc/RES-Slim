@@ -3,6 +3,8 @@ import path from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { codeOnly } from './helpers/loadFlowModule.mjs';
+
 const repoRoot = path.resolve(import.meta.dirname, '..', '..');
 const libRoot = path.join(repoRoot, 'lib');
 const snapshotPath = path.join(repoRoot, 'tests', 'fixtures', 'privacy', 'outbound-url-snapshot.json');
@@ -26,10 +28,19 @@ function listJavaScriptFiles(dir) {
 	});
 }
 
+// Comments are not outbound references.
+//
+// This scanned raw source, so a URL named in a header -- the endpoint a module
+// replaced, the shape of an attack a guard exists to stop -- landed in a
+// snapshot that is supposed to be the reviewed list of what this extension can
+// talk to. That is noise in a list whose whole value is that a reviewer reads
+// every line of it, and noise is where a real entry hides. `codeOnly` requires
+// whitespace before a `//` to treat it as a comment, so a URL inside a string
+// survives it.
 function outboundUrlEntries() {
 	return listJavaScriptFiles(libRoot).flatMap(file => {
 		const relativePath = path.relative(repoRoot, file).replace(/\\/g, '/');
-		const source = fs.readFileSync(file, 'utf8');
+		const source = codeOnly(fs.readFileSync(file, 'utf8'));
 		return [...source.matchAll(urlPattern)].map(match => ({
 			file: relativePath,
 			url: match[0],

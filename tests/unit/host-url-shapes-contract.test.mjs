@@ -32,6 +32,7 @@ async function host(file, label) {
 const strawpoll = await host('lib/modules/hosts/strawpollcom.js', 'strawpoll-url-shapes');
 const redgifs = await host('lib/modules/hosts/redgifs.js', 'redgifs-url-shapes');
 const soundcloud = await host('lib/modules/hosts/soundcloud.js', 'soundcloud-url-shapes');
+const youtube = await host('lib/modules/hosts/youtube.js', 'youtube-url-shapes');
 
 function embedFor(site, href) {
 	const detected = site.detect(new URL(href));
@@ -234,4 +235,87 @@ test('derpibooru still recognises the CDN and legacy link shapes', () => {
 		assert.ok(derpibooru.detect(new URL(href)), `${href} should expand`);
 	}
 	assert.equal(Boolean(derpibooru.detect(new URL('https://derpibooru.org/search?q=safe'))), false);
+});
+
+// The id `detect` returns goes straight into `https://www.youtube.com/embed/${id}`,
+// and a query parameter arrives percent-decoded -- so a `v` carrying `../..` walked
+// out of `/embed/` and framed an arbitrary youtube.com page inside the Reddit
+// page. The origin is pinned, so this is not script execution; it is a page the
+// reader believes is a video, in a frame, chosen by whoever posted the link.
+
+function youtubeEmbed(href) {
+	const detected = youtube.detect(new URL(href));
+	if (!detected) return null;
+	return youtube.handleLink(href, detected);
+}
+
+test('a video id that is not a video id gets no expando', () => {
+	const hostile = [
+		'https://www.youtube.com/watch?v=..%2F..%2Fredirect%3Fq%3Dhttps://evil.example',
+		'https://www.youtube.com/watch?v=../../redirect?q=https://evil.example',
+		'https://www.youtube.com/watch?v=%2F%2Fevil.example%2F',
+		'https://www.youtube.com/watch?v=a/b',
+		'https://www.youtube.com/watch?v=abc?x=1',
+		`https://www.youtube.com/watch?v=${'a'.repeat(40)}`,
+		'https://www.youtube.com/watch?v=ab',
+		// `youtu.be/../../redirect` is deliberately absent: `new URL` normalises the
+		// traversal away before `detect` ever sees it, so it arrives as the ordinary
+		// single segment `redirect` and produces an ordinary `/embed/redirect`. The
+		// property that matters is the one asserted below -- whatever comes back is
+		// one segment inside `/embed/` -- rather than a list of spellings.
+		'https://www.youtube.com/shorts/..%2F..%2Fredirect',
+		'https://www.youtube.com/embed/../account',
+	];
+	for (const href of hostile) {
+		assert.equal(youtubeEmbed(href), null, `${href} produced an embed`);
+	}
+});
+
+test('an embed built from a real id stays inside /embed/', () => {
+	// The property, not just the examples: whatever comes back is an embed URL on
+	// youtube.com with exactly one path segment after `/embed/`.
+	for (const href of [
+		'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+		'https://youtu.be/dQw4w9WgXcQ',
+		'https://www.youtube.com/shorts/dQw4w9WgXcQ',
+		'https://www.youtube.com/embed/dQw4w9WgXcQ',
+		'https://www.youtube.com/v/dQw4w9WgXcQ',
+		'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s',
+	]) {
+		const media = youtubeEmbed(href);
+		assert.ok(media, `${href} lost its expando`);
+		const url = new URL(media.embed || media.src || media.href || String(media));
+		assert.equal(url.hostname, 'www.youtube.com', href);
+		assert.match(url.pathname, /^\/embed\/[\w-]+$/, `${href} embedded ${url.pathname}`);
+	}
+});
+
+test('the timestamp still survives, because that is what the id gate must not break', () => {
+	const media = youtubeEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s');
+	const url = new URL(media.embed || media.src || media.href || String(media));
+	assert.equal(url.searchParams.get('start'), '90');
+});
+
+test('a path segment that merely contains a v is not a video page', () => {
+	// `/watch|embed|v/` matched anything with a `v` in the first segment, so
+	// `youtube.com/vanced` was read as a video page and produced `embed/undefined`.
+	for (const href of [
+		'https://www.youtube.com/vanced',
+		'https://www.youtube.com/vanced/downloads',
+		'https://www.youtube.com/vi/dQw4w9WgXcQ',
+		'https://www.youtube.com/videos',
+		'https://www.youtube.com/about',
+	]) {
+		assert.equal(youtubeEmbed(href), null, `${href} produced an embed`);
+	}
+});
+
+test('a live channel link still works, and a hostile channel id does not', () => {
+	const live = youtubeEmbed('https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw/live');
+	assert.ok(live, 'a live channel link lost its expando');
+	const url = new URL(live.embed || live.src || live.href || String(live));
+	assert.equal(url.pathname, '/embed/live_stream');
+	assert.equal(url.searchParams.get('channel'), 'UCuAXFkgsw1L7xaCfnd5JJOw');
+
+	assert.equal(youtubeEmbed('https://www.youtube.com/channel/..%2F..%2Fredirect/live'), null);
 });

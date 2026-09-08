@@ -13,7 +13,11 @@ fs.mkdirSync(tmpDir, { recursive: true });
 const stripped = flowRemoveTypes(read('lib/environment/background/urlGuard.js'), { all: true }).toString();
 const modulePath = path.join(tmpDir, 'urlGuard.mjs');
 fs.writeFileSync(modulePath, stripped);
-const { isProxyableUrl } = await import(pathToFileURL(modulePath).href);
+const { isProxyableUrl, isInjectableScript, injectableScripts } = await import(pathToFileURL(modulePath).href);
+
+// The tabs handler is executed rather than read, so `loadFlowModule` does the
+// stripping for that one.
+const { loadFlowModule } = await import('./helpers/loadFlowModule.mjs');
 
 test('isProxyableUrl allows absolute http(s) only', () => {
 	assert.equal(isProxyableUrl('https://api.pullpush.io/x'), true);
@@ -32,9 +36,117 @@ test('isProxyableUrl rejects non-http(s) schemes and junk', () => {
 	assert.equal(isProxyableUrl(null), false);
 });
 
-test('both background proxies gate on isProxyableUrl', () => {
-	const ajax = read('lib/environment/background/ajax.js');
-	const download = read('lib/environment/background/download.js');
-	assert.match(ajax, /if \(!isProxyableUrl\(url\)\)/);
-	assert.match(download, /if \(!isProxyableUrl\(url\)\)/);
+test('every background proxy that takes a URL gates on one', () => {
+	// Four handlers take something URL-shaped from a content script and act on it.
+	// Two of them checked. The header of `urlGuard.js` names the threat -- a
+	// content-script XSS using the background as a confused deputy -- and it
+	// applies to all four or to none.
+	const gated = {
+		'lib/environment/background/ajax.js': /if \(!isProxyableUrl\(url\)\)/,
+		'lib/environment/background/download.js': /if \(!isProxyableUrl\(url\)\)/,
+		'lib/environment/background/tabs.js': /if \(!isProxyableUrl\(url\)\) return;/,
+		'lib/environment/background/loadScript.js': /if \(!isInjectableScript\(url\)\) throw/,
+	};
+	for (const [file, pattern] of Object.entries(gated)) {
+		assert.match(read(file), pattern, `${file} acts on a URL from a content script without checking it`);
+	}
+
+	// And every background file that registers a handler is accounted for, so a
+	// fifth one that takes a URL cannot be added without someone deciding which
+	// of these two lists it belongs in. Textual detection of "takes a URL from
+	// the caller" is not reliable enough to be the gate -- `permissions.js`
+	// builds its own -- so the decision is written down instead.
+	const takesNoCallerUrl = {
+		'featureDb.js': 'store ids and records',
+		'firstRun.js': 'nothing',
+		'i18n.js': 'message keys',
+		'localePersistor.js': 'a locale name',
+		'messaging.js': 'the bridge itself',
+		'multicast.js': 'a message to rebroadcast',
+		'oldRedditRedirect.js': 'a boolean; the rules are built here',
+		'pageAction.js': 'a state flag',
+		'permissions.js': 'permission and origin names; the prompt URL is built from location.origin',
+		'session.js': 'session keys and values',
+		'shredLease.js': 'an account and a lease token',
+		'storage.js': 'storage keys and values',
+		'xhrCache.js': 'cache keys',
+	};
+	const registered = fs.readdirSync(path.join(repoRoot, 'lib/environment/background'))
+		.filter(name => name.endsWith('.js'))
+		.filter(name => /addListener\(/.test(read(`lib/environment/background/${name}`)));
+	const accounted = new Set([
+		...Object.keys(gated).map(file => file.split('/').pop()),
+		...Object.keys(takesNoCallerUrl),
+	]);
+	const unaccounted = registered.filter(name => !accounted.has(name));
+	assert.deepEqual(unaccounted, [], `a background handler is in neither list: ${unaccounted.join(', ')}`);
+});
+
+test('openNewTabs refuses what it should not open', async () => {
+	// `file:///` is the one the browser does not refuse on its own, and it reads
+	// the local disk into a tab.
+	const opened = [];
+	globalThis.chrome = {
+		tabs: { create: options => { opened.push(options.url); } },
+		runtime: { lastError: undefined },
+	};
+	globalThis.__guardListeners = {};
+
+	await loadFlowModule('lib/environment/background/tabs.js', `tabs-guard-${Math.random().toString(36).slice(2)}`, {
+		deps: ['lib/environment/background/urlGuard.js'],
+		stubs: { './messaging': 'export function addListener(type, cb) { globalThis.__guardListeners[type] = cb; }\n' },
+	});
+	const openNewTabs = globalThis.__guardListeners.openNewTabs;
+	assert.ok(openNewTabs, 'the handler was never registered');
+
+	openNewTabs({
+		urls: [
+			'file:///etc/passwd',
+			'https://old.reddit.com/r/pics',
+			// eslint-disable-next-line no-script-url
+			'javascript:alert(1)',
+			'chrome-extension://abc/options.html',
+			'data:text/html,<script>',
+			'http://example.com/',
+			null,
+			'',
+		],
+		focusIndex: 1,
+	}, { tab: { index: 0, id: 7, cookieStoreId: 'x' } });
+
+	assert.deepEqual(opened, ['https://old.reddit.com/r/pics', 'http://example.com/']);
+
+	// And a payload that is not a list at all does not throw out of the handler.
+	assert.doesNotThrow(() => openNewTabs({ urls: 'https://example.com/', focusIndex: 0 }, { tab: { index: 0, id: 7 } }));
+	assert.deepEqual(opened, ['https://old.reddit.com/r/pics', 'http://example.com/']);
+});
+
+test('loadScript injects only the three bundles that are asked for', () => {
+	// `files` resolves inside the package, so this cannot reach the web. What it
+	// can do, handed a name from a content-script XSS, is put one of this
+	// extension's own bundles into the frame that asked.
+	for (const allowed of injectableScripts()) assert.equal(isInjectableScript(allowed), true, allowed);
+
+	for (const refused of [
+		'/foreground.entry.js',
+		'/background.entry.js',
+		'/options.entry.js',
+		'jszip.min.js',
+		'/jszip.min.js?x',
+		'../jszip.min.js',
+		'https://evil.example/x.js',
+		'',
+		null,
+		undefined,
+		42,
+	]) {
+		assert.equal(isInjectableScript(refused), false, `${String(refused)} was allowed`);
+	}
+
+	// The list is what the callers actually ask for -- no more, and no fewer.
+	const callers = new Set();
+	for (const file of ['lib/modules/galleryZip.js', 'lib/modules/showImages/mediaTypes.js', 'lib/utils/snudown.js']) {
+		for (const match of read(file).matchAll(/loadScript\('([^']+)'\)/g)) callers.add(match[1]);
+	}
+	assert.deepEqual([...callers].sort(), injectableScripts().sort());
 });
