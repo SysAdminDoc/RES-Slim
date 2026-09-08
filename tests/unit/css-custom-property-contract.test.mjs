@@ -187,7 +187,6 @@ const DELIBERATELY_UNREFERENCED = new Map([
 	['--rsm-scrim', 'the shared overlay scrim; overlayViewer paints its own ::backdrop now'],
 	['--prompt-border-strong', 'pairs with --prompt-border, which is used five times'],
 	['--prompt-warning', 'status trio in the permission prompt: success / warning / danger'],
-	['--options-shadow', 'pairs with --options-shadow-soft; both are zeroed under forced colours'],
 ]);
 
 // These names belong to Reddit's Web3X design system. RES-Slim defines them on

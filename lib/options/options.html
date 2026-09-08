@@ -8,7 +8,23 @@
 		<link rel="stylesheet" href="res.css">
 		<link rel="stylesheet" href="options.css">
 	</head>
-	<body></body>
+	<body>
+		<!--
+			The page shipped with an empty body, so a storage or i18n failure left a
+			white tab with the reason in devtools and nowhere else, and a slow start
+			looked exactly the same. This is what stands in until the console renders.
+
+			Static English rather than a locale key: failing to load the locale is one
+			of the things this has to be able to report.
+		-->
+		<div id="RESOptionsBoot" role="status" aria-live="polite">
+			<div class="RESOptionsBootCard">
+				<p class="RESOptionsBootTitle" id="RESOptionsBootTitle">Loading your settings</p>
+				<p class="RESOptionsBootDetail" id="RESOptionsBootDetail">This takes a moment the first time.</p>
+				<button type="button" class="RESOptionsBootReload" id="RESOptionsBootReload" hidden>Try again</button>
+			</div>
+		</div>
+	</body>
 	<script src="snudown.entry.js"></script>
 	<script src="options.entry.js"></script>
 </html>

@@ -6777,6 +6777,68 @@ for (const palette of ['classic', 'oled']) {
 // actually do. Driven end to end because the interesting half is the reload:
 // the reset writes storage, the page reloads, and the undo has to be offered
 // from the persisted restore point on the way back up.
+test('the standalone options page says why it could not load, instead of staying blank', async t => {
+	// The page shipped with an empty `<body>` and posted `failedToLoad` to
+	// `window.parent`, which standalone is itself. Nothing was listening, so a
+	// storage or locale failure left a white tab with the reason in devtools and
+	// nowhere a reader could see it.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+
+	// The happy path first, or the failure assertions below are satisfied by a
+	// page that never loads at all.
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	assert.equal(await page.locator('#RESOptionsBoot').count(), 0, 'the loading panel is still on the page behind the console');
+	await page.close();
+
+	const broken = await context.newPage();
+	await broken.addInitScript(() => {
+		// The failure a reader actually hits: storage refuses. Thrown from the call
+		// rather than reported through `chrome.runtime.lastError`, which cannot be
+		// assigned from a page script.
+		if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+			chrome.storage.local.get = () => { throw new Error('Resource::kQuotaBytes quota exceeded'); };
+		}
+	});
+	await broken.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await broken.waitForSelector('#RESOptionsBoot.is-error', { timeout: 30000 });
+
+	const shown = await broken.evaluate(() => {
+		const panel = document.querySelector('#RESOptionsBoot');
+		const reload = document.querySelector('#RESOptionsBootReload');
+		return {
+			role: panel.getAttribute('role'),
+			title: document.querySelector('#RESOptionsBootTitle').textContent,
+			detail: document.querySelector('#RESOptionsBootDetail').textContent,
+			reloadHidden: reload.hidden,
+			reloadText: reload.textContent.trim(),
+			visible: panel.getBoundingClientRect().height > 0,
+			consoleRendered: !!document.querySelector('#RESConsoleContainer'),
+		};
+	});
+
+	assert.equal(shown.consoleRendered, false, 'the console rendered, so this is not the failure path');
+	assert.equal(shown.visible, true, 'the message is on the page but not on screen');
+	assert.equal(shown.role, 'alert', 'a failure announced as a polite status');
+	assert.match(shown.title, /could not be loaded/i, `the page says "${shown.title}"`);
+	// The reason, not a shrug: it is what separates a full quota from a corrupt
+	// profile, and it is what a reader can act on or report.
+	assert.match(shown.detail, /quota exceeded/i, `the reason is missing: "${shown.detail}"`);
+	assert.equal(shown.reloadHidden, false, 'there is no way to try again');
+
+	// And the button reloads rather than merely existing.
+	await Promise.all([
+		broken.waitForNavigation({ timeout: 30000 }),
+		broken.click('#RESOptionsBootReload'),
+	]);
+	await broken.waitForSelector('#RESOptionsBoot.is-error', { timeout: 30000 });
+
+	await broken.close();
+});
+
 test('a table row can be reordered from the keyboard, not only by dragging', async t => {
 	// WCAG 2.2 SC 2.5.7 Dragging Movements. The handle is a focusable button with
 	// an accessible name, so assistive technology announced an action that nothing
