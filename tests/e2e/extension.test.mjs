@@ -6777,6 +6777,154 @@ for (const palette of ['classic', 'oled']) {
 // actually do. Driven end to end because the interesting half is the reload:
 // the reset writes storage, the page reloads, and the undo has to be offered
 // from the persisted restore point on the way back up.
+test('a deleted table row can be put back after the reader has left the module', async t => {
+	// The undo button lives on `document.body` for five seconds, which is long
+	// enough to click another module in the rail. Drawing one tears the options
+	// panel down, so the `tbody` the row came out of is detached by the time undo
+	// runs: the row was appended into nothing, nothing was staged, and the button
+	// went away as though it had worked.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	// The first cell is the move handle, so the first *option* cell is what the
+	// row is identified by.
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows to delete, saw ${before.length}`);
+
+	// Delete the first row, and look at where focus went before anything else.
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	const focused = await page.evaluate(() => {
+		const el = document.activeElement;
+		const row = el && el.closest && el.closest('tr');
+		const tbody = document.querySelector('#tbody_macros');
+		return {
+			tag: el && el.tagName,
+			isDelete: !!(el && el.classList && el.classList.contains('deleteButton')),
+			rowIndex: row && tbody ? [...tbody.children].indexOf(row) : -1,
+		};
+	});
+	assert.equal(focused.tag, 'BUTTON', `focus landed on ${focused.tag} after a delete`);
+	// The row that took the deleted one's place, so holding Enter walks down the
+	// table rather than dropping the reader on the page.
+	assert.ok(focused.isDelete, 'focus did not land on a delete button');
+	assert.equal(focused.rowIndex, 0, 'focus left the table the reader was editing');
+
+	assert.deepEqual(await labelsOf(), before.slice(1), 'the row was not removed');
+
+	// Now leave for another module, which is what tears the panel down.
+	await page.click('.moduleButton[data-module="commentDepth"]');
+	await page.waitForFunction(() => {
+		const panel = document.querySelector('#RESConfigPanelOptions');
+		return panel && panel.dataset.module === 'commentDepth';
+	}, null, { timeout: 30000 });
+	assert.equal(await page.locator('#tbody_macros').count(), 0, 'the panel was not torn down, so this proves nothing');
+
+	// The undo button is still there. It has to do something. Undo does not drag
+	// the reader back to the module they left, so what it has to leave behind is
+	// the staged value.
+	await page.click('button.res-button-undo');
+	const saveState = await page.evaluate(() => {
+		const button = document.querySelector('#RESGlobalSave');
+		return { disabled: button && button.disabled, text: button && button.textContent.trim() };
+	});
+	assert.equal(saveState.disabled, false, `the restored row was not staged (save button says "${saveState.text}")`);
+
+	await page.click('.moduleButton[data-module="commentTools"]');
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+	assert.deepEqual(await labelsOf(), before, 'the restored row did not come back where it was');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
+test('an immediate undo puts the row back where it was, not at the end', async t => {
+	// Undo with the table still on screen puts the element itself back, which
+	// keeps the row's own inputs and anything typed into them. It has to go back
+	// at its index: appending it reorders the table under the reader as the price
+	// of undoing.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows to delete, saw ${before.length}`);
+
+	// Something typed into the row first, so that putting the element back is
+	// distinguishable from redrawing the option.
+	await page.fill('#tbody_macros tr:nth-child(1) td.hasTableOption input', 'edited in place');
+	await page.click('#tbody_macros tr:nth-child(1) .deleteButton');
+	await page.click('button.res-button-undo');
+	await page.waitForFunction(count => document.querySelectorAll('#tbody_macros tr').length === count, before.length, { timeout: 30000 });
+
+	assert.deepEqual(await labelsOf(), ['edited in place', ...before.slice(1)], 'the row did not go back where it was');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
+test('a deleted table row is put back on screen when its module is the one showing', async t => {
+	// The other half: come back to the module first, then press undo. The table
+	// is a new one by then, so the row cannot simply be re-appended to the `tbody`
+	// it came out of, and the reader is looking at the panel that has to change.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	const labelsOf = () => page.$$eval('#tbody_macros tr', rows => rows.map(row => {
+		const field = row.querySelector('td.hasTableOption input, td.hasTableOption textarea');
+		return field ? field.value : null;
+	}));
+	const before = await labelsOf();
+	assert.ok(before.length >= 2, `the macros table needs rows to delete, saw ${before.length}`);
+
+	// The last row this time, so the restored index is not zero and putting it
+	// back at the front would be visible.
+	await page.click(`#tbody_macros tr:nth-child(${before.length}) .deleteButton`);
+	assert.deepEqual(await labelsOf(), before.slice(0, -1), 'the row was not removed');
+
+	await page.click('.moduleButton[data-module="commentDepth"]');
+	await page.waitForFunction(() => {
+		const panel = document.querySelector('#RESConfigPanelOptions');
+		return panel && panel.dataset.module === 'commentDepth';
+	}, null, { timeout: 30000 });
+	await page.click('.moduleButton[data-module="commentTools"]');
+	await page.waitForSelector('#tbody_macros tr', { timeout: 30000 });
+
+	await page.click('button.res-button-undo');
+	await page.waitForFunction(count => document.querySelectorAll('#tbody_macros tr').length === count, before.length, { timeout: 30000 });
+	assert.deepEqual(await labelsOf(), before, 'the row came back in the wrong place');
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
 test('resetting to defaults clears settings and can be undone afterwards', async t => {
 	const { context, extensionId, worker, dispose } = await launchWithExtension();
 	t.after(dispose);
