@@ -331,3 +331,65 @@ test('the comment navigator does not hold every comment the reader selected', ()
 	assert.match(mod, /const readComments = new WeakSet\(\)/);
 	assert.doesNotMatch(mod, /readComments\.(delete|clear|forEach|size)/, 'a WeakSet cannot answer any of those');
 });
+
+// The importer has written a pre-import snapshot since it shipped and nothing
+// ever read it back — a repo-wide grep found the declaration and the write and
+// no read at all — while the success message told the reader a rollback had
+// been saved. `subredditBlacklist` ships the same idea as a working button.
+test('the last import can actually be undone', async () => {
+	const { loadModule } = await import('./helpers/loadModule.mjs');
+	const UserTagger = await loadModule('lib/modules/userTagger.js', 'user-tagger-undo');
+	const { cache } = UserTagger._internal;
+
+	const action = name => {
+		const found = UserTagger.module.options.importActions.values.find(v => v.text === name);
+		assert.ok(found, `no "${name}" action`);
+		return found.callback;
+	};
+
+	const set = items => new Promise(resolve => { globalThis.chrome.storage.local.set(items, resolve); });
+	const get = key => new Promise(resolve => { globalThis.chrome.storage.local.get(key, r => resolve(r[key])); });
+
+	const before = { alice: { tag: 'friend' } };
+	const after = { alice: { tag: 'replaced' }, bob: { tag: 'imported' } };
+
+	await set({
+		'RESmodules.userTagger.tags': after,
+		'RESmodules.userTagger.tags.rollback': { createdAt: 1_700_000_000_000, tags: before },
+	});
+	for (const key of Object.keys(cache)) delete cache[key];
+	Object.assign(cache, after);
+
+	await action('Undo last import')();
+
+	// Compared by what the reader would see rather than by object identity: the
+	// map is normalised on the way back in, so it gains the usual defaults.
+	const restored = await get('RESmodules.userTagger.tags');
+	assert.deepEqual(Object.keys(restored).sort(), ['alice'], 'the imported record is gone');
+	assert.equal(restored.alice.tag, 'friend', 'and the tag it replaced is back');
+
+	// The page annotates from the cache, not from storage, so a restore that only
+	// writes leaves every tag on screen still showing the imported value.
+	assert.deepEqual(Object.keys({ ...cache }).sort(), ['alice'], 'the in-memory cache follows');
+	assert.equal(cache.alice.tag, 'friend');
+
+	// One snapshot, one undo: keeping it would let a second press overwrite work
+	// done since with a copy that is no longer "the state before the import".
+	assert.equal(await get('RESmodules.userTagger.tags.rollback'), null);
+	await assert.rejects(action('Undo last import')(), /nothing to undo/i);
+});
+
+test('undo refuses when the tags already match the snapshot', async () => {
+	const { loadModule } = await import('./helpers/loadModule.mjs');
+	const UserTagger = await loadModule('lib/modules/userTagger.js', 'user-tagger-undo-noop');
+	const set = items => new Promise(resolve => { globalThis.chrome.storage.local.set(items, resolve); });
+
+	const same = { alice: { tag: 'friend' } };
+	await set({
+		'RESmodules.userTagger.tags': same,
+		'RESmodules.userTagger.tags.rollback': { createdAt: 1_700_000_000_000, tags: same },
+	});
+
+	const undo = UserTagger.module.options.importActions.values.find(v => v.text === 'Undo last import').callback;
+	await assert.rejects(undo(), /nothing to undo/i);
+});

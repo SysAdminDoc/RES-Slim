@@ -4,6 +4,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Undo last import, for user tags. The importer has always saved a copy of your
+  tags from just before an import, and said so, but nothing could put it back.
+  There is a button for it now, next to Preview and Import. It restores the tags
+  on screen as well as in storage, and there is one undo per import.
+
 ### Fixed
 
 - After a partly failed "undo hide all", the link you are told to use is still
