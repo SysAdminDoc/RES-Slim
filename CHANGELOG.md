@@ -6,6 +6,13 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Added
 
+- A "This page" panel in the settings, listing what the extension actually did
+  to the page you opened it from: which filter hid which post and by which rule,
+  which promoted records were removed, which expandos were built or refused, and
+  which hosts were suspended after repeated failures. It is kept in memory for
+  that tab only and never saved anywhere, and the support report carries the
+  last fifty entries.
+
 - The comment shredder saves a copy of everything it is about to destroy,
   before it destroys any of it. Two files, one to read and one a script can use,
   with the body, the score, the date and the link back for every comment. It is

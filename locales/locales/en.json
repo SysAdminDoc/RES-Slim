@@ -896,6 +896,30 @@
     "settingsConsoleErrorsClearFailed": {
         "message": "Could not clear the local error log."
     },
+    "settingsConsoleActionLogTitle": {
+        "message": "This page"
+    },
+    "settingsConsoleActionLogMeta": {
+        "message": "What the extension did to the page you opened this from. Kept in memory for that tab only, never saved."
+    },
+    "settingsConsoleActionLogGroup": {
+        "message": "Page activity actions"
+    },
+    "settingsConsoleActionLogRefresh": {
+        "message": "Refresh"
+    },
+    "settingsConsoleActionLogFilterLabel": {
+        "message": "Module"
+    },
+    "settingsConsoleActionLogEmpty": {
+        "message": "Nothing recorded yet on that page."
+    },
+    "settingsConsoleActionLogNoPage": {
+        "message": "Open the settings from a Reddit page to see what happened on it."
+    },
+    "settingsConsoleActionLogCount": {
+        "message": "$1 of $2 recorded on that page."
+    },
     "settingsConsoleSupportTitle": {
         "message": "Support report"
     },

@@ -1183,6 +1183,53 @@ li {
 	border-top: 0;
 }
 
+// The page-activity table. Scrolls inside itself rather than growing the panel,
+// because five hundred entries is the cap and a reader who has been scrolling a
+// feed for an hour will have a lot of them.
+.actionLogList {
+	max-height: 320px;
+	overflow: auto;
+	border: 1px solid var(--options-border);
+	border-radius: var(--options-radius-sm);
+	background: var(--options-field);
+}
+
+.actionLogTable {
+	width: 100%;
+	border-collapse: collapse;
+	font: 11px/1.5 ui-monospace, sfmono-regular, consolas, monospace;
+
+	th,
+	td {
+		padding: 4px 8px;
+		border-bottom: 1px solid var(--options-border);
+		text-align: left;
+		// A rule id or a host can be long, and a table that scrolls sideways is
+		// worse than one that wraps.
+		overflow-wrap: anywhere;
+	}
+
+	th {
+		position: sticky;
+		top: 0;
+		background: var(--options-panel-alt);
+		color: var(--options-text);
+		font-weight: 600;
+	}
+
+	td { color: var(--options-text-muted); }
+
+	tbody tr:last-child td { border-bottom: 0; }
+}
+
+.utilityPanelFilter {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--options-text-muted);
+	font-size: 12px;
+}
+
 .moduleErrorLogOutput {
 	width: 100%;
 	min-height: 150px;

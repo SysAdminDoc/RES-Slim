@@ -916,6 +916,104 @@ test('the service worker CSP permits the origins the extension actually fetches'
 	assert.equal(intercepted, 1, 'the request has to actually leave the worker — a CSP refusal never reaches an interceptor');
 });
 
+test('the console lists what the extension did to the page it was opened from', async t => {
+	// A reader cannot otherwise tell which filter hid a post, or whether an
+	// expando was refused rather than simply absent. This drives the whole chain:
+	// decisions made in the page, asked for across the frame boundary, rendered
+	// in the console.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	await worker.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.set({
+			'RES.modulePrefs': { filterRules: true, removePromoted: true, pageTheme: false, nightMode: false },
+			'RESoptions.filterRules': {
+				rulesJson: {
+					value: JSON.stringify([
+						{ id: 'no-fixture', action: 'hide', field: 'subreddit', op: 'equals', value: 'fixture' },
+						{ id: 'dim-long', action: 'dim', field: 'title', op: 'contains', value: 'Fixture' },
+					]),
+				},
+			},
+		}, resolve);
+	}));
+
+	// One promoted post beside the fixture's own, so `removePromoted` has
+	// something to remove as well.
+	const html = servableCapture(FRONT_CAPTURE).replace(
+		'</body>',
+		'<div class="thing link promotedlink" data-fullname="t3_promoted1" data-promoted="true"><div class="entry"><p class="title"><a class="title" href="https://example.invalid/ad">an ad</a></p></div></div></body>',
+	);
+
+	const page = await context.newPage();
+	await servePalette(page, FRONT_CAPTURE, html);
+	await page.goto('https://old.reddit.com/', { waitUntil: 'domcontentloaded' });
+	await page.waitForFunction(() => document.documentElement.classList.contains('res'), null, { timeout: 30000 });
+	await page.waitForTimeout(800);
+
+	// The console asks the page it is embedded in, so it has to be opened from the
+	// page rather than as its own tab -- which is also the case the panel exists
+	// for.
+	await page.evaluate(() => { window.location.hash = '#res:settings/console'; });
+	await page.waitForSelector('#console-container', { timeout: 30000 });
+	const console_ = page.frameLocator('#console-container');
+	await console_.locator('#RESActionLogRefresh').waitFor({ state: 'visible', timeout: 30000 });
+	await console_.locator('#RESActionLogRefresh').click();
+	await console_.locator('#RESActionLogList tbody tr').first().waitFor({ timeout: 15000 });
+
+	const rows = await console_.locator('#RESActionLogList tbody tr').evaluateAll(items => items.map(row => (
+		[...row.children].map(cell => cell.textContent)
+	)));
+
+	assert.ok(rows.length > 0, 'the panel listed nothing at all');
+
+	const byModule = new Map();
+	for (const [, moduleID, outcome, target, reason] of rows) {
+		if (!byModule.has(moduleID)) byModule.set(moduleID, []);
+		byModule.get(moduleID).push({ outcome, target, reason });
+	}
+
+	// Each decision names the module that made it, what it did, what it did it to,
+	// and which rule decided.
+	const filters = byModule.get('filterRules') || [];
+	assert.ok(filters.length > 0, `no filter decisions were listed: ${JSON.stringify([...byModule.keys()])}`);
+	assert.ok(filters.every(row => row.target.startsWith('t3_')), `a filter row names no thing: ${JSON.stringify(filters)}`);
+	const ruleIds = new Set(filters.map(row => row.reason));
+	assert.ok(ruleIds.has('no-fixture') || ruleIds.has('dim-long'),
+		`no row names the rule that decided: ${JSON.stringify([...ruleIds])}`);
+	assert.ok(filters.every(row => ['hidden', 'dimmed', 'collapsed', 'badged'].includes(row.outcome)),
+		`a filter row has an outcome nothing produces: ${JSON.stringify(filters)}`);
+
+	const promoted = byModule.get('removePromoted') || [];
+	assert.ok(promoted.length > 0, 'the promoted post was removed and not recorded');
+	assert.ok(promoted.every(row => row.outcome === 'removed'));
+
+	// The module filter narrows to one module.
+	await console_.locator('#RESActionLogFilter').selectOption('filterRules');
+	const narrowed = await console_.locator('#RESActionLogList tbody tr').evaluateAll(items => items
+		.map(row => row.children[1].textContent));
+	assert.ok(narrowed.length > 0);
+	assert.deepEqual([...new Set(narrowed)], ['filterRules'], 'the module filter should show one module');
+
+	// And the report carries the same decisions, so a bug report says what
+	// happened rather than only what was configured.
+	await console_.locator('#RESSupportDumpBuild').click();
+	// Polled through the frame locator rather than by reaching into
+	// `contentDocument`: the console is served from the extension's origin and the
+	// page is reddit's, so the page cannot read into it at all.
+	const output = console_.locator('#RESSupportDumpOutput');
+	let report = '';
+	const deadline = Date.now() + 30000;
+	while (!report.includes('RES-Slim v') && Date.now() < deadline) {
+		// eslint-disable-next-line no-await-in-loop
+		report = await output.inputValue();
+		// eslint-disable-next-line no-await-in-loop
+		if (!report.includes('RES-Slim v')) await page.waitForTimeout(500);
+	}
+	assert.match(report, /Page activity \(\d+ of \d+\)/, `the report has no page activity section:\n${report.slice(0, 400)}`);
+	assert.match(report, /filterRules: (hidden|dimmed) t3_/);
+});
+
 test('the settings console renders in the options page', async t => {
 	const { context, extensionId, dispose } = await launchWithExtension();
 	t.after(dispose);
