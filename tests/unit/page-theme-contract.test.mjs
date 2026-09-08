@@ -103,6 +103,41 @@ test('pageTheme stylesheet is wired into res.css with a palette per theme id', (
 	assert.match(read('lib/css/res.scss'), /@use 'modules\/pageTheme';/);
 });
 
+test('the palette declares the colour scheme, and the layout toggle cannot take it away', () => {
+	// Every root-level `color-scheme` here used to be gated on
+	// `res-pageTheme--refined`, except the one gated on `shreddit-app`. Turn the
+	// refined layout off on old Reddit and the palette still painted the body --
+	// measured in headless Chromium on 2026-09-08, `res-pageTheme
+	// res-pageTheme--gruvbox` gave a body of `rgb(40, 40, 40)` -- while the root
+	// declared no scheme at all, so scrollbars, `<select>` popups and default
+	// form-control chrome went back to light on a dark page.
+	const scss = read('lib/css/modules/_pageTheme.scss');
+
+	// Declared by the class every palette carries, reading the token every
+	// palette defines.
+	const palette = scss.slice(scss.indexOf('html.res-pageTheme {'), scss.indexOf('--rsm-th-bg-elev'));
+	assert.match(palette, /color-scheme:\s*var\(--rsm-th-scheme\);/, 'the palette block has to declare the scheme');
+
+	// And not by the layout toggle, in either direction. The literal `dark` that
+	// used to sit under `html.res-pageTheme--refined` contradicted the token on
+	// the light palette; it was harmless only while a higher-specificity rule
+	// outranked it, which is not a property to rely on.
+	const refined = scss.slice(scss.indexOf('html.res-pageTheme--refined {'));
+	const refinedBlock = refined.slice(0, refined.indexOf('\n}'));
+	assert.ok(!/^\tcolor-scheme:/m.test(refinedBlock), `the refined layout must not declare a scheme:\n${refinedBlock}`);
+
+	// Every palette defines the token, or the declaration above resolves to
+	// nothing for whichever one forgot.
+	const missing = PAGE_THEME_IDS.filter(id => {
+		const start = scss.indexOf(`html.res-pageTheme--${id} {`);
+		if (start === -1) return false;
+		return !/--rsm-th-scheme:\s*(light|dark);/.test(scss.slice(start, scss.indexOf('\n}', start)));
+	});
+	// Classic is the `:root`-level default and states `light` there; the rest
+	// each state their own.
+	assert.deepEqual(missing, [], `a palette defines no --rsm-th-scheme: ${missing.join(', ')}`);
+});
+
 test('the night-mode skin claims a colour scheme, gated the way its ink is', () => {
 	// `color-scheme` is what the UA paints scrollbars, `<select>` popups, date
 	// pickers, default form controls and the canvas behind an unstyled iframe

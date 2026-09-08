@@ -2137,6 +2137,63 @@ test('a coloured comment score is readable on the palette behind it', async t =>
 	check('user, classic', await measure('user', 'classic'));
 });
 
+test('a palette declares its colour scheme with the refined layout off, on both renderers', async t => {
+	// Every root-level `color-scheme` in `_pageTheme.scss` was gated on
+	// `res-pageTheme--refined`, except the one gated on `shreddit-app`. Turn the
+	// refined layout off on old Reddit and the palette still painted the body
+	// while the root declared nothing, so scrollbars, `<select>` popups and the
+	// default form-control chrome went back to light on a dark page. Night mode
+	// is off throughout, because its own arm would otherwise cover the dark case
+	// and the light case is the one that cannot be covered that way at all.
+	const { context, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const oldReddit = await context.newPage();
+	await servePalette(oldReddit, CAPTURE);
+	const currentReddit = await context.newPage();
+	await currentReddit.route('**/*', route => fulfillShredditRequest(route, SHREDDIT_LISTING));
+
+	const measure = async (page, url, theme, refined) => {
+		await worker.evaluate(([palette, refinedLayout]) => new Promise(resolve => {
+			chrome.storage.local.set({
+				'RES.modulePrefs': { pageTheme: true, nightMode: false },
+				'RESoptions.pageTheme': { theme: { value: palette }, refinedLayout: { value: refinedLayout } },
+			}, resolve);
+		}), [theme, refined]);
+
+		await page.goto(url, { waitUntil: 'domcontentloaded' });
+		await page.waitForFunction(id => document.documentElement.classList.contains(`res-pageTheme--${id}`), theme, { timeout: 30000 });
+		await page.waitForTimeout(500);
+
+		return page.evaluate(() => ({
+			scheme: getComputedStyle(document.documentElement).colorScheme,
+			body: getComputedStyle(document.body).backgroundColor,
+			refined: document.documentElement.classList.contains('res-pageTheme--refined'),
+		}));
+	};
+
+	const OLD_URL = 'https://old.reddit.com/r/fixture/comments/thread000001/fixture-thread/';
+	const CURRENT_URL = 'https://www.reddit.com/r/example/';
+
+	const check = (label, expected, measured) => {
+		assert.equal(measured.refined, false, `${label}: the refined layout has to be off, or this measures the arm that worked`);
+		assert.equal(measured.scheme, expected, `${label}: page is ${measured.body} but the UA scheme is ${measured.scheme}`);
+	};
+
+	// Written out rather than looped: one storage area, two pages, each read
+	// before the next write.
+	check('old Reddit, gruvbox', 'dark', await measure(oldReddit, OLD_URL, 'gruvbox', false));
+	check('old Reddit, classic', 'light', await measure(oldReddit, OLD_URL, 'classic', false));
+	check('current Reddit, gruvbox', 'dark', await measure(currentReddit, CURRENT_URL, 'gruvbox', false));
+	check('current Reddit, classic', 'light', await measure(currentReddit, CURRENT_URL, 'classic', false));
+
+	// And the arm that always worked still does, so moving the declaration has
+	// not cost the refined layout its own scheme.
+	const refinedOn = await measure(oldReddit, OLD_URL, 'gruvbox', true);
+	assert.equal(refinedOn.refined, true);
+	assert.equal(refinedOn.scheme, 'dark');
+});
+
 test('the night skin claims a dark colour scheme, on both renderers', async t => {
 	// nightMode is on by default and, with pageTheme off, it is the whole of what
 	// paints the page. It declared no `color-scheme`, and that is the only thing

@@ -10,6 +10,17 @@
 // by the module from the user's accent option, falling back to the value here.
 
 html.res-pageTheme {
+	// The scheme belongs to the palette, not to the layout. Every root-level
+	// `color-scheme` in this file used to be gated on `--refined`, except the one
+	// gated on `shreddit-app`, so turning the refined layout off on old Reddit
+	// left the root declaring no scheme while the palette went on painting the
+	// body. Measured in headless Chromium on 2026-09-08: `res-pageTheme
+	// res-pageTheme--gruvbox` gave a body of `rgb(40, 40, 40)` and a computed
+	// scheme of `normal`, which puts light scrollbars, light `<select>` popups and
+	// light form-control chrome on a dark page. `--rsm-th-scheme` is declared per
+	// palette, so this is the class that should read it.
+	color-scheme: var(--rsm-th-scheme);
+
 	--rsm-th-bg: #0b0f14;
 	--rsm-th-bg-elev: #111821;
 	--rsm-th-bg-raise: #18212c;
@@ -435,7 +446,6 @@ html.res-pageTheme--collapse-sidebar .side:hover {
 // 300px information rail, and flat border-based comment nesting.
 
 html.res-pageTheme.res-pageTheme--refined {
-	color-scheme: var(--rsm-th-scheme);
 	background: var(--rsm-th-bg);
 	scrollbar-color: var(--rsm-th-muted) var(--rsm-th-bg);
 }
@@ -2458,7 +2468,11 @@ html.res-pageTheme--refined {
 	// The offset is written by pageTheme from the header's measured height; the
 	// fallback is the header's min-height, which is what an empty one renders at.
 	scroll-padding-block-start: calc(var(--rsm-th-header-height, 80px) + 8px);
-	color-scheme: dark;
+	// No `color-scheme` here. It said `dark`, which contradicts `--rsm-th-scheme`
+	// on the light palette, and it was harmless only because the rule above
+	// outranked it. With the scheme moved to bare `html.res-pageTheme` this rule
+	// is the same specificity and later in the file, so it would have started
+	// winning and forcing dark chrome onto Classic.
 	background: var(--rsm-th-bg);
 	scrollbar-color: var(--rsm-th-border) var(--rsm-th-bg);
 	scrollbar-width: thin;

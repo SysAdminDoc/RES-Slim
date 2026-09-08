@@ -33,6 +33,11 @@ All notable changes to RES-Slim will be documented in this file.
 
 ### Fixed
 
+- Turning the compact layout off no longer leaves the browser's own controls
+  light on a dark theme. The page theme told the browser which way round it was
+  only while the compact layout was on, so with it off you got white scrollbars
+  and white dropdown menus on a dark page.
+
 - Score numbers stay readable on a light page. With score colouring on, the
   number was painted in a colour picked purely from the score, so a post around
   150 points showed a yellow number on Reddit's white row. The colour now keeps
