@@ -121,7 +121,11 @@ body.res-console-open {
 	animation: fadeIn 0.5s ease-out 7 alternate;
 
 	.important {
-		animation: pop 1s ease-out infinite alternate;
+		// Bounded. WCAG 2.2.2 asks that anything moving for more than five seconds
+		// can be stopped, and this pulsed from scale(0) to scale(1.5) forever on an
+		// announcement that stays on screen until it is dismissed. Six alternating
+		// half-seconds is the same attention-getting gesture, finished.
+		animation: pop 1s ease-out 6 alternate;
 	}
 }
 

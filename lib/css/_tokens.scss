@@ -221,13 +221,37 @@ html.res-pageTheme {
 // ---- Reduced motion ---------------------------------------------------------
 // One global honour of the OS preference, replacing the per-module blocks that
 // each covered only their own selectors and drifted out of sync.
+// Three root shapes, because this fork inherited two of them. `rsm-` is what new
+// work uses; `res-` and `RES` are upstream's, and everything animated in
+// `res.scss` and the module sheets carries one of those, so the gate reached
+// none of it -- a spinner, two fades and an unbounded pulse all kept running for
+// a reader who had asked the operating system for none of that.
+
+// `.important` and `.csspinner` carry no root at all and are named directly.
+// They are the only two, and the e2e sweeps every animated element under the
+// preference rather than trusting this list to stay complete.
 @media (prefers-reduced-motion: reduce) {
 	[class*='rsm-'],
 	[class*='rsm-']::before,
 	[class*='rsm-']::after,
 	[id^='rsm-'],
 	[id^='rsm-']::before,
-	[id^='rsm-']::after {
+	[id^='rsm-']::after,
+	[class*='res-'],
+	[class*='res-']::before,
+	[class*='res-']::after,
+	[class*='RES'],
+	[class*='RES']::before,
+	[class*='RES']::after,
+	[id^='RES'],
+	[id^='RES']::before,
+	[id^='RES']::after,
+	.important,
+	.important::before,
+	.important::after,
+	.csspinner,
+	.csspinner::before,
+	.csspinner::after {
 		animation-duration: 1ms !important;
 		animation-iteration-count: 1 !important;
 		transition-duration: 1ms !important;

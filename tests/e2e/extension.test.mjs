@@ -7435,6 +7435,99 @@ test('Escape over a keycode prompt cancels it without binding Escape or closing 
 	await page.close();
 });
 
+test('reduced motion reaches every animation, not just the ones with a new class name', async t => {
+	// The global honour of the preference keyed on `rsm-` roots. This fork
+	// inherited two more -- `res-` and `RES` -- and every animation in `res.scss`
+	// carries one of those or no root at all, so the preference reached none of
+	// them: a spinner, an announcement fade and a pulse that never stopped.
+	//
+	// Two measurements. A sweep of everything actually animating on each surface,
+	// which is what catches drift; and a set of planted elements, because the four
+	// animated surfaces only exist in states these fixtures never reach and a
+	// sweep that finds nothing proves nothing.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const PLANTED = [
+		['#RESAnnouncementAlert', 'div', 'RESAnnouncementAlert', ''],
+		['.important inside the alert', 'span', '', 'important'],
+		['.RESLoadingSpinner', 'div', '', 'RESLoadingSpinner'],
+		['.csspinner', 'div', '', 'csspinner'],
+	];
+
+	for (const [label, url] of [['the reddit page', 'https://old.reddit.com/'], ['the options page', null]]) {
+		// eslint-disable-next-line no-await-in-loop
+		const page = await context.newPage();
+		// eslint-disable-next-line no-await-in-loop
+		await page.emulateMedia({ reducedMotion: 'reduce' });
+		// The browser launches with DNS blackholed, so the reddit surface is served
+		// from the committed capture like every other page here.
+		// eslint-disable-next-line no-await-in-loop
+		if (url) await servePalette(page, FRONT_CAPTURE);
+		// eslint-disable-next-line no-await-in-loop
+		await page.goto(url || extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+		// eslint-disable-next-line no-await-in-loop
+		await page.waitForTimeout(1200);
+
+		// eslint-disable-next-line no-await-in-loop
+		const measured = await page.evaluate(planted => {
+			const host = document.createElement('div');
+			host.id = 'rsm-motion-probe-host';
+			document.body.appendChild(host);
+
+			for (const [, tag, id, className] of planted) {
+				const element = document.createElement(tag);
+				if (id) element.id = id;
+				if (className) element.className = className;
+				// The pulse is declared as a child of the alert.
+				if (className === 'important') {
+					const alert = document.createElement('div');
+					alert.id = 'RESAnnouncementAlert';
+					alert.appendChild(element);
+					host.appendChild(alert);
+				} else {
+					host.appendChild(element);
+				}
+			}
+
+			const describe = (element, pseudo) => {
+				const classes = typeof element.className === 'string' && element.className.trim() ?
+					`.${element.className.trim().split(/\s+/).join('.')}` : '';
+				return `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${classes}${pseudo || ''}`;
+			};
+
+			const offenders = [];
+			let animated = 0;
+			for (const element of document.querySelectorAll('*')) {
+				for (const pseudo of [null, '::before', '::after']) {
+					const style = getComputedStyle(element, pseudo);
+					if (!style.animationName || style.animationName === 'none') continue;
+					animated += 1;
+					if (style.animationIterationCount !== '1') {
+						offenders.push(`${describe(element, pseudo)} runs ${style.animationName} ${style.animationIterationCount} times`);
+					}
+				}
+			}
+
+			host.remove();
+			return { offenders, animated };
+		}, PLANTED);
+
+		// The planted elements guarantee this, so a zero means the probe itself
+		// stopped working rather than that the page is calm.
+		assert.ok(measured.animated >= PLANTED.length, `${label}: only ${measured.animated} elements animate, so the probe planted nothing`);
+		assert.deepEqual(measured.offenders, [], `${label}: animations ignore the reduced-motion preference:\n  ${measured.offenders.join('\n  ')}`);
+
+		// eslint-disable-next-line no-await-in-loop
+		await page.close();
+	}
+
+	// And the announcement pulse is bounded whatever the preference says: WCAG
+	// 2.2.2 asks that anything moving for more than five seconds can be stopped.
+	const sheet = fs.readFileSync(path.join(repoRoot, 'lib', 'css', 'res.scss'), 'utf8');
+	assert.ok(!/animation:\s*pop[^;]*infinite/.test(sheet), 'the announcement pulse still runs forever');
+});
+
 test('the permission prompt answers once and stops, even with parameters it cannot read', async t => {
 	// The answer is handed back by putting it in the URL and navigating; the
 	// background watches for that and closes the tab. Reopened from history, or
