@@ -7328,6 +7328,105 @@ test('a deleted table row is put back on screen when its module is the one showi
 	await page.close();
 });
 
+test('flipping a boolean option arms Save, and saves what it flipped', async t => {
+	// The toggle dispatched its change on the console container, which worked only
+	// while the staging sweep listened there. Once the sweep moved to the options
+	// panel the event was being sent to an ancestor of the listener, so every
+	// boolean flipped on screen and was thrown away: Save stayed disabled, and
+	// nothing warned on the way out.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentDepth`, { waitUntil: 'domcontentloaded' });
+	// The switch, not the checkbox behind it: the input is `opacity: 0` and
+	// `pointer-events: none`, and the control the reader operates is the wrapper.
+	const toggle = '#optionContainer-commentDepth-commentPermalinks [role="switch"]';
+	await page.waitForSelector(toggle, { timeout: 30000 });
+
+	const state = () => page.evaluate(sel => ({
+		on: document.querySelector(sel).getAttribute('aria-checked'),
+		saveDisabled: document.querySelector('#RESGlobalSave').disabled,
+	}), toggle);
+
+	const before = await state();
+	assert.equal(before.saveDisabled, true, 'something was already staged');
+
+	await page.click(toggle);
+	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
+
+	const flipped = await state();
+	assert.notEqual(flipped.on, before.on, 'the toggle did not move');
+	assert.equal(flipped.saveDisabled, false, 'the flip never reached the stage');
+
+	// And it survives the save, which is the part the reader was promised.
+	await page.click('#RESGlobalSave');
+	await page.waitForFunction(expected => new Promise(resolve => {
+		chrome.storage.local.get(['RESoptions.commentDepth'], r => {
+			const blob = r['RESoptions.commentDepth'];
+			resolve(Boolean(blob && blob.commentPermalinks && String(blob.commentPermalinks.value) === expected));
+		});
+	}), flipped.on === 'true' ? 'true' : 'false', { timeout: 30000 });
+
+	assert.deepEqual(pageErrors, []);
+	await page.close();
+});
+
+test('Escape over a keycode prompt cancels it without binding Escape or closing the console', async t => {
+	// Escape used to be handled as a text edit, which cleared the half of the
+	// field the reader can see and left the half holding the value. Refusing that
+	// left the console closing instead, with the capture still live -- so Escape
+	// was recorded as the shortcut on the way out.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentTools`, { waitUntil: 'domcontentloaded' });
+	// The stored half is `display: none`; the half the reader focuses is the one
+	// beside it.
+	const field = '#tbody_macros tr:nth-child(1) .keycode';
+	const display = `${field} + input[displayonly]`;
+	await page.waitForSelector(display, { timeout: 30000 });
+	const values = () => page.evaluate(sel => ({
+		stored: document.querySelector(sel).value,
+		shown: document.querySelector(`${sel} + input[displayonly]`).value,
+		promptOpen: getComputedStyle(document.querySelector('#keyCodeModal')).display !== 'none',
+	}), field);
+
+	await page.click(display);
+	await page.waitForFunction(() => getComputedStyle(document.querySelector('#keyCodeModal')).display !== 'none', null, { timeout: 30000 });
+	const before = await values();
+
+	await page.keyboard.press('Escape');
+	await page.waitForFunction(() => getComputedStyle(document.querySelector('#keyCodeModal')).display === 'none', null, { timeout: 30000 });
+
+	const after = await values();
+	assert.equal(after.stored, before.stored, 'Escape bound itself as the shortcut');
+	assert.equal(after.shown, before.shown, 'Escape emptied the field it cannot edit');
+	assert.equal(after.promptOpen, false, 'the prompt is still asking for a key');
+	// Focus left the field, which is what ends the capture, and landed nowhere
+	// that would swallow the next keystroke.
+	assert.equal(
+		await page.evaluate(sel => document.activeElement === document.querySelector(sel), display),
+		false,
+		'the field is still focused, so the capture is still live',
+	);
+	// The console is still on screen: the reader was answering the prompt, not
+	// leaving the page. `close()` hides the container rather than removing it, so
+	// this asks whether it is visible.
+	assert.equal(await page.locator('#RESConsoleContainer').isVisible(), true, 'the console closed instead');
+
+	// A second Escape, with nothing capturing, is the one that closes.
+	await page.keyboard.press('Escape');
+	await page.waitForTimeout(300);
+	assert.equal(after.shown, (await values()).shown, 'the second Escape cleared the field');
+
+	await page.close();
+});
+
 test('a keystroke costs the panel it was typed into, and no more', async t => {
 	// `autostageDebounce` and `refreshOptionAdvice` were bound to the whole
 	// console, so typing in the data workspace's search box swept every table and
@@ -7496,12 +7595,83 @@ test('a keystroke costs the panel it was typed into, and no more', async t => {
 	assert.ok(expanded.rows > capped.rows, 'showing the rest showed nothing');
 	assert.equal(expanded.moreHidden, true, 'the button is still offering more');
 
+	// With advanced options hidden, the advanced matches are counted out of the
+	// total and hidden by a stylesheet rule. Slicing the raw list then capped rows
+	// the reader cannot see, so fewer than 50 were on screen under a count and a
+	// button that both claimed otherwise.
+	// The switch lives in the console-preferences panel, which is not open here.
+	// Its own `change` handler is driven directly: what this test is about is what
+	// the renderer does in that state, not how the switch is operated.
+	const setAdvanced = on => search.evaluate(enabled => {
+		const box = document.querySelector('#RESAllOptions');
+		box.checked = enabled;
+		box.dispatchEvent(new Event('change', { bubbles: true }));
+	}, on);
+
+	await setAdvanced(false);
+	await search.waitForFunction(() => !document.querySelector('#RESConsoleContainer').classList.contains('advanced-options-enabled'), null, { timeout: 30000 });
+	await search.fill('#SearchRES-input', '');
+	await search.fill('#SearchRES-input', 'e');
+	await search.waitForFunction(() => {
+		const list = document.querySelector('#SearchRES-results');
+		return Boolean(list && !list.hidden && list.children.length);
+	}, null, { timeout: 30000 });
+
+	const withoutAdvanced = await search.evaluate(() => {
+		const rows = [...document.querySelectorAll('#SearchRES-results > li')];
+		return {
+			rows: rows.length,
+			hidden: rows.filter(li => getComputedStyle(li).display === 'none').length,
+			noticeShown: !document.querySelector('#SearchRES-results-hidden').hidden,
+		};
+	});
+	assert.ok(withoutAdvanced.noticeShown, 'nothing was hidden, so this measures nothing');
+	assert.equal(withoutAdvanced.hidden, 0, 'the cap counted rows the reader cannot see');
+	assert.equal(withoutAdvanced.rows, 50, `${withoutAdvanced.rows} rows on screen where the cap says 50`);
+
+	await setAdvanced(true);
+	await search.waitForFunction(() => document.querySelector('#RESConsoleContainer').classList.contains('advanced-options-enabled'), null, { timeout: 30000 });
+	await search.fill('#SearchRES-input', '');
+	await search.fill('#SearchRES-input', 'e');
+	await search.waitForFunction(() => document.querySelectorAll('#SearchRES-results > li').length > 0, null, { timeout: 30000 });
+
 	// A new query collapses again, or the cap only ever applies once.
 	await search.fill('#SearchRES-input', 'a');
 	await search.waitForFunction(count => document.querySelectorAll('#SearchRES-results > li').length !== count, expanded.rows, { timeout: 30000 });
 	assert.ok(
 		(await search.evaluate(() => document.querySelectorAll('#SearchRES-results > li').length)) <= 50,
 		'the next query rendered everything',
+	);
+
+	// Clearing the box does not reach the renderer at all, so retyping the same
+	// query used to come back expanded.
+	await search.fill('#SearchRES-input', 'e');
+	await search.waitForFunction(() => document.querySelectorAll('#SearchRES-results > li').length > 0, null, { timeout: 30000 });
+	await search.click('#SearchRES-more');
+	await search.waitForFunction(() => document.querySelector('#SearchRES-more').hidden, null, { timeout: 30000 });
+	await search.fill('#SearchRES-input', '');
+	await search.waitForFunction(() => {
+		const list = document.querySelector('#SearchRES-results');
+		return !list || list.hidden || list.children.length === 0;
+	}, null, { timeout: 30000 });
+	await search.fill('#SearchRES-input', 'e');
+	await search.waitForFunction(() => document.querySelectorAll('#SearchRES-results > li').length > 0, null, { timeout: 30000 });
+	assert.ok(
+		(await search.evaluate(() => document.querySelectorAll('#SearchRES-results > li').length)) <= 50,
+		'the same query after a clear came back expanded',
+	);
+
+	// And a query that matches nothing does not leave the button offering rows
+	// from the query before it.
+	await search.fill('#SearchRES-input', 'zzzqqqxxx');
+	await search.waitForFunction(() => {
+		const empty = document.querySelector('#SearchRES-empty');
+		return Boolean(empty && !empty.hidden);
+	}, null, { timeout: 30000 });
+	assert.equal(
+		await search.evaluate(() => document.querySelector('#SearchRES-more').hidden),
+		true,
+		'a search with no results still offers to show more of them',
 	);
 
 	assert.deepEqual(pageErrors, []);
@@ -7576,6 +7746,10 @@ test('importing over a staged edit reloads without asking to leave the page', as
 
 	// Stage an edit and leave it unsaved. This is what arms the unload prompt.
 	await page.fill('#commentDepth-defaultCommentDepth', '7');
+	// A real click, because Chromium refuses to raise a beforeunload panel on a
+	// page the reader has not interacted with -- without it the assertion below
+	// passes whether the guard is disarmed or not.
+	await page.click('#commentDepth-defaultCommentDepth');
 	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
 
 	const snapshot = JSON.stringify({

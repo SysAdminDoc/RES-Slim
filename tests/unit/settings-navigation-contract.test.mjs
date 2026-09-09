@@ -124,20 +124,26 @@ test('opening and closing the console leaves no listeners behind', () => {
 
 // Escape in a keycode field cleared the half of it the reader can see and left
 // the half that holds the value, so the field read empty while still holding a
-// shortcut -- until something redrew it.
-test('Escape does not empty a keycode field it cannot edit', () => {
+// shortcut -- until something redrew it. Refusing it as text entry was the first
+// fix and was not enough: the console then closed instead, with the capture
+// still live, so Escape was recorded as the shortcut on the way out.
+//
+// What Escape means over a "press a key" prompt is cancel, and blurring is what
+// cancels. The behaviour is covered by an e2e; this pins the branch, because it
+// has to run before anything else decides what Escape means here.
+test('Escape over a keycode prompt cancels it rather than editing or closing', () => {
 	const source = codeOnly(readRepoFile('lib/options/settingsConsole.js'));
-	const start = source.indexOf('function isTextEntry');
+	const start = source.indexOf('function handleEscapeKey');
 	assert.ok(start > -1);
-	const isTextEntry = source.slice(start, source.indexOf('}', source.indexOf('return [', start)));
+	const handler = source.slice(start, source.indexOf('\n}', start));
 
-	// The display half is written by a keydown handler, never typed into.
-	assert.match(isTextEntry, /if \(target\.getAttribute\('displayonly'\) === 'true'\) return false;/);
-	// And it is refused before the type check, which would otherwise accept it:
-	// the visible half is an `input type="text"`.
+	assert.match(handler, /escapeTarget\.matches\('input\[displayonly\]'\)/);
+	assert.match(handler, /escapeTarget\.blur\(\);/);
+	// Before `isTextEntry`, which would otherwise clear the field, and before the
+	// close, which would leave the capture running.
 	assert.ok(
-		isTextEntry.indexOf('displayonly') < isTextEntry.indexOf('\'text\', \'search\''),
-		'the displayonly check runs after the type check, so it never decides anything',
+		handler.indexOf('displayonly') < handler.indexOf('isTextEntry'),
+		'something else decides what Escape means before the keycode prompt does',
 	);
 });
 
@@ -151,12 +157,38 @@ test('the Modified filter still means something after a save', () => {
 	// Both readers of the chip go through it.
 	assert.match(source, /if \(isModuleModified\(m\.moduleID\)\) modified\+\+;/);
 	assert.match(source, /const modified = isModuleModified\(moduleID\);/);
-	// And the stored half is re-read whenever the counts are, or a save would
-	// leave the chip showing what was true before it.
-	assert.match(source, /function updateFilterChipCounts\(\) \{\n\tforgetModifiedModules\(\);/);
+	// The stored half is re-read when stored values change, and only then.
+	// Clearing it on every chip update put a walk of all 116 modules back on the
+	// per-keystroke path -- `updateFilterChipCounts` is reached from the staging
+	// sweep -- which is the cost the perf pass had just taken off it.
+	assert.ok(
+		!/function updateFilterChipCounts\(\) \{\n\tforgetModifiedModules\(\);/.test(source),
+		'the modified set is re-read on every chip update, which is every keystroke',
+	);
+	// After a save, and after a profile write, which are the two things that
+	// change what is stored.
+	assert.match(source, /await Options\.stage\.commit\(\);\s*forgetModifiedModules\(\);/);
+	assert.match(source, /function scheduleReloadAfterProfileWrite\(\)[\s\S]*?forgetModifiedModules\(\);/);
 
 	// `getModified` has to be reachable, not just referenced.
 	assert.match(readRepoFile('lib/core/options/modified.js'), /export function getModified\(\)/);
+});
+
+// A throw between arming the guard-suppression flag and arming the reload leaves
+// the flag set with no reload coming, and the unsaved-changes guard then returns
+// early for the rest of the page's life. The order is the fix, and there is no
+// way to make a browser test throw between two adjacent statements, so the order
+// is what gets pinned.
+test('a profile write arms its reload before it stands the guard down', () => {
+	const source = codeOnly(readRepoFile('lib/options/settingsConsole.js'));
+	const start = source.indexOf('function scheduleReloadAfterProfileWrite');
+	assert.ok(start > -1);
+	const body = source.slice(start, source.indexOf('\n}', start));
+
+	const reloadAt = body.indexOf('setTimeout(() => { location.reload(); }, 600);');
+	const flagAt = body.indexOf('profileWriteReloadPending = true;');
+	assert.ok(reloadAt > -1 && flagAt > -1, 'the function no longer does both');
+	assert.ok(reloadAt < flagAt, 'the guard stands down before the reload is armed');
 });
 
 // The module workspace is a tabpanel with no name at all, while the other two
