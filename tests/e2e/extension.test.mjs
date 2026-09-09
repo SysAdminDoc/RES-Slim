@@ -7435,6 +7435,48 @@ test('Escape over a keycode prompt cancels it without binding Escape or closing 
 	await page.close();
 });
 
+test('every module in the rail reports its state in the same words', async t => {
+	// The always-on rows borrowed the filter chip's label, which is capitalised
+	// because it heads a filter. So "Remove promoted posts" read "On" beside "on"
+	// on every other row.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('.moduleRow', { timeout: 30000 });
+
+	const rail = await page.evaluate(() => {
+		const locks = [...document.querySelectorAll('.moduleRowLock')];
+		const toggles = [...document.querySelectorAll('.moduleRowToggleText')];
+		return {
+			lockCount: locks.length,
+			toggleCount: toggles.length,
+			lockTexts: [...new Set(locks.map(el => el.textContent.trim()))],
+			// The switch draws its word from these through a `content` rule, so the
+			// attributes are the text.
+			onTexts: [...new Set(toggles.map(el => el.dataset.enabledText))],
+			offTexts: [...new Set(toggles.map(el => el.dataset.disabledText))],
+			// The lock still says what it means where it is read out.
+			lockNames: [...new Set(locks.map(el => el.getAttribute('aria-label')))],
+			lockedRows: [...new Set(locks.map(el => el.closest('.moduleRow').classList.contains('is-locked')))],
+		};
+	});
+
+	assert.ok(rail.lockCount > 0, 'no always-on module is in the rail, so this measures nothing');
+	assert.ok(rail.toggleCount > 0, 'no switchable module is in the rail either');
+
+	assert.deepEqual(rail.lockTexts, rail.onTexts, 'the always-on rows use different words from the rest');
+	assert.deepEqual(rail.onTexts, ['on']);
+	assert.deepEqual(rail.offTexts, ['off']);
+
+	// And the thing the shared token no longer says is still said where it counts.
+	assert.deepEqual(rail.lockNames, ['Always On']);
+	assert.deepEqual(rail.lockedRows, [true], 'an always-on row lost its locked styling');
+
+	await page.close();
+});
+
 test('an empty data set is one box with the message in it', async t => {
 	// With nothing stored the panel drew a large empty bordered box and put
 	// "Nothing stored here yet." underneath it, which reads as two things, one of
