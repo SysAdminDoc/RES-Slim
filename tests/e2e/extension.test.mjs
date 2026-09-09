@@ -7435,6 +7435,53 @@ test('Escape over a keycode prompt cancels it without binding Escape or closing 
 	await page.close();
 });
 
+test('an empty data set is one box with the message in it', async t => {
+	// With nothing stored the panel drew a large empty bordered box and put
+	// "Nothing stored here yet." underneath it, which reads as two things, one of
+	// them broken.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	await page.goto(extensionUrl(extensionId, 'options.html#res:settings/data'), { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESDataWorkspaceEmpty:not([hidden])', { timeout: 30000 });
+
+	const box = await page.evaluate(() => {
+		const list = document.querySelector('#RESDataWorkspaceRows');
+		const empty = document.querySelector('#RESDataWorkspaceEmpty');
+		const listBox = list.getBoundingClientRect();
+		const emptyBox = empty.getBoundingClientRect();
+		const style = getComputedStyle(empty);
+		return {
+			inside: list.contains(empty),
+			// A `<ul>` may only hold `<li>`; a `<p>` moved into one is invalid markup
+			// even though it lands in the same place on screen.
+			tag: empty.tagName,
+			rows: list.querySelectorAll('.dataWorkspaceRow').length,
+			role: empty.getAttribute('role'),
+			// Contained by the bordered panel, not sitting under it.
+			within: emptyBox.top >= listBox.top - 1 && emptyBox.bottom <= listBox.bottom + 1,
+			textAlign: style.textAlign,
+			emptyHeight: Math.round(emptyBox.height),
+			listHeight: Math.round(listBox.height),
+			text: empty.textContent.trim(),
+		};
+	});
+
+	assert.equal(box.rows, 0, 'the set is not empty, so this measures nothing');
+	assert.ok(box.text.length > 0, 'the empty state says nothing');
+	assert.equal(box.inside, true, 'the message is still outside the box it describes');
+	assert.equal(box.tag, 'LI', `a ${box.tag} inside a list is not valid markup`);
+	assert.equal(box.within, true, 'the message is drawn outside the panel bounds');
+	assert.equal(box.textAlign, 'center', 'the message is not centred in the box');
+	assert.ok(box.emptyHeight >= 96, `the empty row is ${box.emptyHeight}px, so the panel collapses around it`);
+	assert.ok(box.listHeight >= box.emptyHeight, `the panel is ${box.listHeight}px around a ${box.emptyHeight}px row`);
+	// The live region survives the move, or the message stops being announced.
+	assert.equal(box.role, 'status');
+
+	await page.close();
+});
+
 test('a settings link to a module that is gone says so instead of showing another one', async t => {
 	// A stale link out of an old search result, or a module renamed in an upgrade.
 	// It rendered the first Appearance module with the dead id still in the URL

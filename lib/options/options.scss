@@ -1033,6 +1033,16 @@ li {
 	&[hidden] { display: none; }
 }
 
+// The one row an empty list has. Centred in the box, and tall enough that the
+// panel does not collapse to a line.
+.dataWorkspaceEmpty {
+	display: grid;
+	place-items: center;
+	min-height: 96px;
+	padding: 16px;
+	text-align: center;
+}
+
 .dataWorkspaceImport {
 	display: grid;
 	gap: 8px;
