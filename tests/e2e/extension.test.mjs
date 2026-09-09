@@ -7435,6 +7435,48 @@ test('Escape over a keycode prompt cancels it without binding Escape or closing 
 	await page.close();
 });
 
+test('the permission prompt answers once and stops, even with parameters it cannot read', async t => {
+	// The answer is handed back by putting it in the URL and navigating; the
+	// background watches for that and closes the tab. Reopened from history, or
+	// after the worker was torn down, nothing is listening -- so the navigation
+	// reloaded the same page with the same bad parameters, which reported again,
+	// which reloaded again. A `load` wait against this URL never settled.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const navigations = [];
+	page.on('framenavigated', frame => { if (frame === page.mainFrame()) navigations.push(frame.url()); });
+
+	await page.goto(`${extensionUrl(extensionId, 'prompt.html')}?permissions=notjson`, { waitUntil: 'domcontentloaded' });
+
+	// It reports once, which is a navigation to the same page carrying `result`.
+	await page.waitForFunction(() => location.search.includes('result='), null, { timeout: 30000 });
+	await page.waitForFunction(() => {
+		const status = document.querySelector('#permissionStatus');
+		return Boolean(status && !status.hidden && /already finished/i.test(status.textContent));
+	}, null, { timeout: 30000 });
+
+	const settled = navigations.length;
+	await page.waitForTimeout(2000);
+	assert.equal(navigations.length, settled, `the page navigated ${navigations.length - settled} more times after answering`);
+	assert.ok(settled <= 3, `it took ${settled} navigations to answer once: ${navigations.join(' -> ')}`);
+
+	// The reader is told there is nothing to do, and cannot be asked again.
+	const terminal = await page.evaluate(() => {
+		const button = document.querySelector('#request');
+		return {
+			status: document.querySelector('#permissionStatus').textContent,
+			buttonDisabled: button ? button.disabled : null,
+			buttonText: button ? button.textContent.trim() : null,
+		};
+	});
+	assert.match(terminal.status, /close this tab/i, `the terminal message does not say what to do: "${terminal.status}"`);
+	assert.equal(terminal.buttonDisabled, true, 'the request button is still offering to ask');
+
+	await page.close();
+});
+
 test('every module in the rail reports its state in the same words', async t => {
 	// The always-on rows borrowed the filter chip's label, which is capitalised
 	// because it heads a filter. So "Remove promoted posts" read "On" beside "on"
