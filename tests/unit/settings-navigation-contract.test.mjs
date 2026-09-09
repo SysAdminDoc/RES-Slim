@@ -13,6 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { loadModule } from './helpers/loadModule.mjs';
+import { codeOnly, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const SettingsNavigation = await loadModule('lib/modules/settingsNavigation.js', 'settings-navigation');
 
@@ -119,4 +120,49 @@ test('opening and closing the console leaves no listeners behind', () => {
 		window.addEventListener = originalAdd;
 		window.removeEventListener = originalRemove;
 	}
+});
+
+// Escape in a keycode field cleared the half of it the reader can see and left
+// the half that holds the value, so the field read empty while still holding a
+// shortcut -- until something redrew it.
+test('Escape does not empty a keycode field it cannot edit', () => {
+	const source = codeOnly(readRepoFile('lib/options/settingsConsole.js'));
+	const start = source.indexOf('function isTextEntry');
+	assert.ok(start > -1);
+	const isTextEntry = source.slice(start, source.indexOf('}', source.indexOf('return [', start)));
+
+	// The display half is written by a keydown handler, never typed into.
+	assert.match(isTextEntry, /if \(target\.getAttribute\('displayonly'\) === 'true'\) return false;/);
+	// And it is refused before the type check, which would otherwise accept it:
+	// the visible half is an `input type="text"`.
+	assert.ok(
+		isTextEntry.indexOf('displayonly') < isTextEntry.indexOf('\'text\', \'search\''),
+		'the displayonly check runs after the type check, so it never decides anything',
+	);
+});
+
+// "Modified" counted staged changes alone, so saving them emptied the filter
+// into "No modules match" at the exact moment a reader looks at it.
+test('the Modified filter still means something after a save', () => {
+	const source = codeOnly(readRepoFile('lib/options/settingsConsole.js'));
+
+	assert.match(source, /import \{ getModified \} from '\.\.\/core\/options\/modified';/);
+	assert.match(source, /function isModuleModified\(moduleID\) \{\n\treturn getModuleStageCount\(moduleID\) > 0 \|\| modifiedModuleIDs\(\)\.has\(moduleID\);/);
+	// Both readers of the chip go through it.
+	assert.match(source, /if \(isModuleModified\(m\.moduleID\)\) modified\+\+;/);
+	assert.match(source, /const modified = isModuleModified\(moduleID\);/);
+	// And the stored half is re-read whenever the counts are, or a save would
+	// leave the chip showing what was true before it.
+	assert.match(source, /function updateFilterChipCounts\(\) \{\n\tforgetModifiedModules\(\);/);
+
+	// `getModified` has to be reachable, not just referenced.
+	assert.match(readRepoFile('lib/core/options/modified.js'), /export function getModified\(\)/);
+});
+
+// The module workspace is a tabpanel with no name at all, while the other two
+// panels are named by the tab that opens them.
+test('the module workspace says which module it is showing', () => {
+	const templates = readRepoFile('lib/options/templates.js');
+	assert.match(templates, /<section id="RESModuleWorkspace" class="workspaceShell" role="tabpanel" aria-labelledby="RESModuleWorkspaceName">/);
+	assert.match(templates, /<h2 id="RESModuleWorkspaceName" class="moduleName">/);
 });

@@ -24,3 +24,16 @@ test('absoluteTimestamps decorates every time element (posts, comments, edits)',
 	assert.match(src, /document\.querySelectorAll\('time'\)/);
 	assert.match(src, /watchForElements\(\['page'\], 'time'/);
 });
+
+// A read that fails leaves the workspace showing the previous set's accounts
+// over an empty list, and the import panel wherever the last set left it.
+test('a failed read redraws the pickers the successful one redraws', () => {
+	const source = read('lib/options/dataWorkspace.js');
+	const start = source.indexOf('setStatus(i18n(\'dataWorkspaceReadFailed\'');
+	assert.ok(start > -1, 'the failure path moved');
+	const failurePath = source.slice(start, source.indexOf('return;', start));
+
+	for (const refresher of ['renderAccounts()', 'applyFilters()', 'syncImportVisibility()']) {
+		assert.ok(failurePath.includes(refresher), `the failure path skips ${refresher}`);
+	}
+});

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
+import { codeOnly, loadFlowModule, readRepoFile } from './helpers/loadFlowModule.mjs';
 
 const { isRedditOrigin, isTrustedConsoleOrigin, sanitizeContext } =
 	await loadFlowModule('lib/utils/trustedOrigin.js', 'trusted-origin');
@@ -134,4 +134,27 @@ test('the console handler still validates its sender, via the shared predicate',
 	// The local copy is gone, so both callers cannot drift apart again.
 	assert.doesNotMatch(console_, /function isTrustedConsoleOrigin\(/);
 	assert.match(console_, /import \{ isTrustedConsoleOrigin \} from '\.\.\/utils\/trustedOrigin'/);
+});
+
+// Every message this console *receives* is origin-checked. Three it sends were
+// addressed to `'*'`, which hands the payload to whatever document happens to be
+// on the other side -- and on the reddit page that is a document full of scripts
+// this extension did not write.
+test('the console addresses the messages it sends', () => {
+	const nav = readRepoFile('lib/modules/settingsNavigation.js');
+	const entry = readRepoFile('lib/options/options.entry.js');
+
+	// To the page the frame was opened from.
+	assert.match(nav, /window\.parent\.postMessage\(\{ hash \}, context\.origin\)/);
+	assert.match(nav, /window\.parent\.postMessage\(\{ closing: true \}, context\.origin\)/);
+	assert.match(entry, /window\.parent\.postMessage\(\{ loadSuccess: true \}, Context\.data\.origin\)/);
+	assert.match(entry, /window\.parent\.postMessage\(\{ failedToLoad: true \}, Context\.data\.origin\)/);
+	// And to the frame, which is the options page and nothing else.
+	assert.match(nav, /iframe\.contentWindow\.postMessage\(\{ close: true \}, getOptionsURL\(\)\.origin\)/);
+
+	// Nothing left in either file talks to everybody.
+	for (const [name, source] of [['settingsNavigation', nav], ['options.entry', entry]]) {
+		const wildcards = [...codeOnly(source).matchAll(/postMessage\([^;]*?,\s*'\*'\s*\)/g)];
+		assert.deepEqual(wildcards.map(m => m[0]), [], `${name} still posts to '*'`);
+	}
 });
