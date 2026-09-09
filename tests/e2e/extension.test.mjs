@@ -6917,9 +6917,17 @@ test('a table row can be reordered from the keyboard, not only by dragging', asy
 	});
 	const changeCount = () => page.evaluate(() => window.__rsmChangeCount);
 
+	// The add-row button focuses its new row's first field on a timer. Waiting for
+	// that to land *before* taking focus is what makes this deterministic: waiting
+	// afterwards only proves focus was right at the moment it was read, and a
+	// pending timer can still take it back on a loaded machine.
+	await page.waitForFunction(count => {
+		const rows = document.querySelectorAll('#tbody_macros tr');
+		const active = document.activeElement;
+		return rows.length === count && Boolean(active && active.closest('#tbody_macros tr') === rows[count - 1]);
+	}, before.labels.length, { timeout: 30000 });
+
 	await page.locator('#tbody_macros tr:nth-child(1) .handle').focus();
-	// The add-row button focuses its new row's first field on a timer, so the focus
-	// above can be taken back a tick later.
 	await page.waitForFunction(() => {
 		const active = document.activeElement;
 		return active && active.classList.contains('handle') && active.closest('tr') === document.querySelector('#tbody_macros tr');
@@ -7424,6 +7432,69 @@ test('Escape over a keycode prompt cancels it without binding Escape or closing 
 	await page.waitForTimeout(300);
 	assert.equal(after.shown, (await values()).shown, 'the second Escape cleared the field');
 
+	await page.close();
+});
+
+test('a settings link to a module that is gone says so instead of showing another one', async t => {
+	// A stale link out of an old search result, or a module renamed in an upgrade.
+	// It rendered the first Appearance module with the dead id still in the URL
+	// and nothing said, so the reader is looking at Night Mode believing it is
+	// what they asked for.
+	const { context, extensionId, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/doesNotExist/optionNope`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+
+	// The name is said out loud, not just implied by landing somewhere else.
+	await page.waitForFunction(() => {
+		const chip = document.querySelector('#RESConsoleStatus');
+		return Boolean(chip && !chip.hidden && chip.textContent.includes('doesNotExist'));
+	}, null, { timeout: 30000 });
+	const chip = await page.evaluate(() => ({
+		text: document.querySelector('#RESConsoleStatus').textContent,
+		isError: document.querySelector('#RESConsoleStatus').classList.contains('is-error'),
+	}));
+	assert.match(chip.text, /no setting called/i, `the message does not say what happened: "${chip.text}"`);
+	assert.equal(chip.isError, true, 'a dead link is reported as an ordinary status');
+
+	// And it searched for the name rather than dropping the reader on an
+	// unrelated module.
+	assert.equal(
+		await page.evaluate(() => document.querySelector('#SearchRES-input').value),
+		'doesNotExist',
+		'the console did not look for what was asked for',
+	);
+	assert.notEqual(
+		await page.evaluate(() => document.querySelector('#RESConfigPanelOptions').dataset.module),
+		'nightMode',
+		'the reader was left on the first Appearance module',
+	);
+
+	// The URL no longer claims a module that is not there.
+	assert.ok(
+		!(await page.evaluate(() => location.hash)).includes('doesNotExist/optionNope'),
+		`the stale hash survived: ${await page.evaluate(() => location.hash)}`,
+	);
+
+	// A module that does exist is unaffected. On its own page: changing only the
+	// hash is a same-document navigation, so the chip from above would still be
+	// counting down its eight seconds on this one.
+	const known = await context.newPage();
+	await known.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentDepth`, { waitUntil: 'domcontentloaded' });
+	await known.waitForSelector('#commentDepth-defaultCommentDepth', { timeout: 30000 });
+	const knownChip = await known.evaluate(() => {
+		const status = document.querySelector('#RESConsoleStatus');
+		return status && !status.hidden ? status.textContent.trim() : '';
+	});
+	assert.ok(!/no setting called/i.test(knownChip), `a module that exists was reported as missing: "${knownChip}"`);
+
+	assert.deepEqual(pageErrors, []);
+	await known.close();
 	await page.close();
 });
 

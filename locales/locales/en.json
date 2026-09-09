@@ -1373,6 +1373,9 @@
     "settingsConsoleAbandonChangesConfirmation": {
         "message": "Abandon your changes to RES-Slim settings?"
     },
+    "settingsConsoleUnknownModule": {
+        "message": "There is no setting called $1. It may have been renamed or removed, so here is what matches that name."
+    },
     "settingsConsoleUnsavedCloseBlocked": {
         "message": "Save or revert changes before closing."
     },
