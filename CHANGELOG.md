@@ -2,7 +2,7 @@
 
 All notable changes to RES-Slim will be documented in this file.
 
-## Unreleased
+## v0.57.0, 2026-09-09
 
 ### Added
 
@@ -68,6 +68,60 @@ All notable changes to RES-Slim will be documented in this file.
   by the redirect rules.
 
 ### Fixed
+
+- Turning a checkbox setting on or off is saved again. The switch moved on
+  screen and the change went nowhere: Save stayed greyed out, closing the page
+  warned about nothing, and the setting was gone. Text fields, dropdowns and
+  tables were never affected.
+
+- The settings page warns you before you leave with unsaved changes. It was
+  meant to, and never once did, so closing the tab mid-edit lost the edits
+  without a word.
+
+- Importing settings, resetting to defaults and undoing either of those no
+  longer leave your unsaved edits sitting on top of the profile they just
+  replaced.
+
+- A save that fails partway no longer leaves your settings half-written. The
+  values that had already landed stayed in storage while the page showed the old
+  ones, and Discard then reported putting back something it had not touched.
+
+- Deleting a row from a settings table and then pressing "Restore deleted row"
+  works after you have moved to another module. It used to do nothing at all
+  while looking like it had worked. Deleting a row also no longer throws your
+  keyboard focus to the top of the page, and undoing two deletions puts both
+  rows back where they were.
+
+- Settings tables can be reordered from the keyboard. The move handle announced
+  itself to a screen reader and then did nothing without a mouse. Arrow keys
+  move the row, and the handle says so. The filter builder's move, remove and
+  share controls could not be reached from a keyboard at all, and now can.
+
+- Per-subreddit comment depth honours every subreddit in the list. "askreddit,
+  pics" applied to askreddit only, because of the space. A trailing comma
+  matched nothing, and the field now shows the format it wants.
+
+- Reduced motion is honoured. If your system asks for less animation, the
+  spinners and the announcement fade were ignoring it. The announcement's pulse
+  also no longer runs forever.
+
+- A settings link to a module that no longer exists says so and searches for the
+  name, instead of quietly showing you a different module.
+
+- Reset to defaults asks in the extension's own dialog rather than the browser's,
+  which inside Reddit was titled "an embedded page on this page says".
+
+- Typing in the settings search or the data workspace is faster: every keystroke
+  used to sweep all 116 modules. A one-character search showed the first 50
+  matches with a button for the rest, rather than rendering 561 rows.
+
+- Escape in a shortcut field cancels the prompt instead of emptying the field.
+
+- The permission page can no longer get stuck reloading itself.
+
+- The data workspace shows "nothing stored here yet" inside the panel rather
+  than under an empty box, keeps its account picker in step when a read fails,
+  and always says "on" or "off" for a module's state in the same words.
 
 - Hover cards over a pinned toolbar stop misplacing themselves. Hovering a
   username in a fixed header once left the card stuck to the viewport for the
