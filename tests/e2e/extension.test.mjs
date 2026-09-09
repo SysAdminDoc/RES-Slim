@@ -7635,7 +7635,12 @@ test('resetting to defaults clears settings and can be undone afterwards', async
 	}));
 
 	const page = await context.newPage();
-	page.on('dialog', dialog => { dialog.accept(); });
+	// No dialog handler. The confirmation is the console's own modal now, so a
+	// native dialog reaching this page is the failure -- and with nothing
+	// registered Playwright dismisses one, which would leave the reset unrun and
+	// the assertions below timing out rather than passing quietly.
+	const dialogs = [];
+	page.on('dialog', dialog => { dialogs.push(dialog.type()); dialog.dismiss().catch(() => {}); });
 	await page.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
 	// The data panel lives under the console-preferences tab, alongside export and
 	// import — the reset belongs with the other whole-profile operations rather
@@ -7644,6 +7649,32 @@ test('resetting to defaults clears settings and can be undone afterwards', async
 	await page.waitForSelector('#RESSettingsReset', { timeout: 30000 });
 
 	await page.click('#RESSettingsReset');
+
+	// Cancelling first: the guard has to be able to say no, or it is a delay
+	// rather than a confirmation.
+	await page.waitForSelector('dialog[aria-modal="true"]', { timeout: 30000 });
+	await page.click('dialog[aria-modal="true"] input[value="cancel"]');
+	await page.waitForSelector('dialog[aria-modal="true"]', { state: 'detached', timeout: 30000 });
+	const stillThere = await page.evaluate(() => new Promise(resolve => {
+		chrome.storage.local.get(['RESoptions.karmaHide'], r => { resolve(r['RESoptions.karmaHide']); });
+	}));
+	assert.deepEqual(stillThere, { hideCommentCounts: { value: true } }, 'cancelling the reset reset anyway');
+
+	await page.click('#RESSettingsReset');
+	await page.waitForSelector('dialog[aria-modal="true"]', { timeout: 30000 });
+	// The locale string itself, so the modal is proven to be showing the message
+	// the console means rather than any modal at all. Its two sentences are two
+	// paragraphs: the string was written for `confirm()`, which honours the blank
+	// line between them.
+	const resetPrompt = JSON.parse(fs.readFileSync(path.join(repoRoot, 'locales', 'locales', 'en.json'), 'utf8')).settingsConsoleResetConfirm.message;
+	const paragraphs = resetPrompt.split(/\n{2,}/).map(part => part.trim());
+	assert.ok(paragraphs.length > 1, 'the prompt is one paragraph, so this checks nothing');
+	assert.deepEqual(
+		await page.locator('dialog[aria-modal="true"] p').allInnerTexts(),
+		paragraphs,
+		'the modal does not say what it is asking about',
+	);
+	await page.click('dialog[aria-modal="true"] input[value="confirm"]');
 	// The reset reloads the page, so wait on the storage rather than the DOM.
 	await page.waitForFunction(() => new Promise(resolve => {
 		chrome.storage.local.get(['RESoptions.karmaHide', 'RES.modulePrefs'], r => {
@@ -7658,6 +7689,7 @@ test('resetting to defaults clears settings and can be undone afterwards', async
 	}));
 	assert.deepEqual(afterReset['RESoptions.karmaHide'], {}, 'the stored option must be cleared');
 	assert.deepEqual(afterReset['RES.modulePrefs'], {}, 'and the enablement override with it');
+	assert.deepEqual(dialogs, [], `the reset raised a native ${dialogs.join(', ')} dialog`);
 
 	// The restore point is what makes this safe to offer at all.
 	const restorePoint = afterReset['RES.settingsRestorePoint'];
