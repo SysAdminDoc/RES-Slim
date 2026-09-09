@@ -7328,6 +7328,186 @@ test('a deleted table row is put back on screen when its module is the one showi
 	await page.close();
 });
 
+test('a keystroke costs the panel it was typed into, and no more', async t => {
+	// `autostageDebounce` and `refreshOptionAdvice` were bound to the whole
+	// console, so typing in the data workspace's search box swept every table and
+	// builder on the module panel and then walked all 116 module buttons -- once
+	// per character, to stage nothing, because the sweep only ever reads the
+	// module panel. And a one-character settings search rendered every match it
+	// had: 561 list items, each with a description, a module link and a copy
+	// button.
+	const { context, extensionId, worker, dispose } = await launchWithExtension();
+	t.after(dispose);
+
+	// Three saved rows, so the workspace has something to re-render. With an
+	// empty list every render is a no-op and the debounce below is invisible.
+	await worker.evaluate(() => new Promise((resolve, reject) => {
+		const request = indexedDB.open('rsm-featureData', 1);
+		request.onupgradeneeded = () => {
+			const db = request.result;
+			const saved = db.createObjectStore('savedContent', { keyPath: ['username', 'fullname'] });
+			saved.createIndex('username', 'username');
+			saved.createIndex('usernameCreatedUtc', ['username', 'createdUtc']);
+			const votes = db.createObjectStore('voteHistory', { keyPath: 'id' });
+			votes.createIndex('timestamp', 'timestamp');
+			votes.createIndex('subreddit', 'subreddit');
+			votes.createIndex('author', 'author');
+			const media = db.createObjectStore('mediaManifest', { keyPath: 'id' });
+			media.createIndex('timestamp', 'timestamp');
+			media.createIndex('source', 'source');
+			media.createIndex('subreddit', 'subreddit');
+			const emotes = db.createObjectStore('subredditEmotes', { keyPath: 'subreddit' });
+			emotes.createIndex('fetchedAt', 'fetchedAt');
+		};
+		request.onsuccess = () => {
+			const db = request.result;
+			const transaction = db.transaction(['savedContent'], 'readwrite');
+			const store = transaction.objectStore('savedContent');
+			const base = {
+				kind: 't3',
+				id: 'x',
+				subreddit: 'fixture',
+				author: 'someone',
+				permalink: '/r/fixture/comments/x/',
+				createdUtc: 10,
+				body: '',
+				url: '',
+				score: 1,
+				tags: [],
+				savedAt: 1,
+				lastSeenAt: 1,
+				username: 'alice',
+			};
+			store.put({ ...base, fullname: 't3_a', title: 'Alice keeps a kettle' });
+			store.put({ ...base, fullname: 't3_b', title: 'Alice keeps a lamp' });
+			store.put({ ...base, fullname: 't3_c', title: 'Alice keeps a map' });
+			transaction.oncomplete = () => { db.close(); resolve(); };
+			transaction.onerror = () => { db.close(); reject(transaction.error); };
+		};
+		request.onerror = () => reject(request.error);
+	}));
+
+	const page = await context.newPage();
+	const pageErrors = [];
+	page.on('pageerror', e => pageErrors.push(String(e)));
+
+	// `pageTheme` is the one module carrying option advice, so opening it first is
+	// what puts entries in the advice list. Without them `refreshOptionAdvice`
+	// returns immediately and scoping it changes nothing observable.
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/pageTheme`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#RESConsoleContainer', { timeout: 30000 });
+	await page.waitForSelector('.optionAdviceText, #allOptionsContainer .optionContainer', { timeout: 30000 });
+
+	// Count the two sweeps by the selectors only they use: `.moduleButton` for the
+	// stage markers and chip counts, `data-option-key` for the advice pass reading
+	// the live form.
+	await page.evaluate(() => {
+		window.__moduleButtonQueries = 0;
+		window.__optionKeyQueries = 0;
+		for (const proto of [Document.prototype, Element.prototype, DocumentFragment.prototype]) {
+			for (const name of ['querySelector', 'querySelectorAll']) {
+				const original = proto[name];
+				proto[name] = function patched(selector) {
+					if (typeof selector === 'string' && selector.includes('moduleButton')) window.__moduleButtonQueries += 1;
+					if (typeof selector === 'string' && selector.includes('data-option-key')) window.__optionKeyQueries += 1;
+					return Reflect.apply(original, this, [selector]);
+				};
+			}
+		}
+	});
+	const queryCount = () => page.evaluate(() => window.__moduleButtonQueries);
+	const adviceCount = () => page.evaluate(() => window.__optionKeyQueries);
+
+	await page.click('[data-category="__data"]');
+	await page.waitForSelector('#RESDataWorkspaceSearch', { timeout: 30000 });
+	// Whatever opening the panel cost is not what is being measured.
+	await page.evaluate(() => new Promise(resolve => { requestAnimationFrame(() => { requestAnimationFrame(() => { resolve(); }); }); }));
+	await page.evaluate(() => { window.__moduleButtonQueries = 0; window.__optionKeyQueries = 0; });
+
+	await page.type('#RESDataWorkspaceSearch', 'abcdef', { delay: 20 });
+	// Two frames, so a frame-debounced sweep has had every chance to run.
+	await page.evaluate(() => new Promise(resolve => { requestAnimationFrame(() => { requestAnimationFrame(() => { resolve(); }); }); }));
+
+	assert.equal(await queryCount(), 0, 'typing in the data workspace still sweeps the module rail');
+	assert.equal(await adviceCount(), 0, 'typing in the data workspace still re-reads the module form');
+
+
+	// And the rows are rebuilt once for the burst rather than once per character.
+	// On the panel's own route, where the records are already loaded.
+	const workspace = await context.newPage();
+	await workspace.goto(extensionUrl(extensionId, 'options.html#res:settings/data'), { waitUntil: 'domcontentloaded' });
+	await workspace.waitForSelector('#RESDataWorkspace:not([hidden])', { timeout: 30000 });
+	await workspace.waitForFunction(() => document.querySelectorAll('#RESDataWorkspaceRows .dataWorkspaceRow').length === 3, null, { timeout: 30000 });
+	await workspace.evaluate(() => {
+		window.__rowRebuilds = 0;
+		new MutationObserver(records => {
+			for (const record of records) if (record.type === 'childList') window.__rowRebuilds += 1;
+		}).observe(document.querySelector('#RESDataWorkspaceRows'), { childList: true });
+	});
+
+	// Every prefix of this matches all three rows, so the list is rebuilt on every
+	// render and a skipped render is the only thing that changes the count.
+	await workspace.type('#RESDataWorkspaceSearch', 'alice ', { delay: 5 });
+	await workspace.evaluate(() => new Promise(resolve => { requestAnimationFrame(() => { requestAnimationFrame(() => { resolve(); }); }); }));
+
+	const rebuilds = await workspace.evaluate(() => window.__rowRebuilds);
+	assert.ok(rebuilds > 0, 'the rows were never rebuilt, so this measures nothing');
+	assert.ok(rebuilds <= 4, `six characters rebuilt the row list ${rebuilds} times`);
+	assert.equal(
+		await workspace.evaluate(() => document.querySelectorAll('#RESDataWorkspaceRows .dataWorkspaceRow').length),
+		3,
+		'the filter dropped rows it should have kept',
+	);
+	await workspace.close();
+
+	// The module panel still stages its own edits, or the scoping went too far.
+	await page.goto(`${extensionUrl(extensionId, 'options.html')}#res:settings/commentDepth`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#commentDepth-defaultCommentDepth', { timeout: 30000 });
+	await page.fill('#commentDepth-defaultCommentDepth', '7');
+	await page.waitForFunction(() => !document.querySelector('#RESGlobalSave').disabled, null, { timeout: 30000 });
+
+	await page.close();
+
+	const search = await context.newPage();
+	await search.goto(extensionUrl(extensionId, 'options.html'), { waitUntil: 'domcontentloaded' });
+	await search.waitForSelector('#SearchRES-input', { timeout: 30000 });
+	await search.fill('#SearchRES-input', 'e');
+	await search.waitForFunction(() => {
+		const list = document.querySelector('#SearchRES-results');
+		return Boolean(list && !list.hidden && list.children.length);
+	}, null, { timeout: 30000 });
+
+	const capped = await search.evaluate(() => ({
+		rows: document.querySelectorAll('#SearchRES-results > li').length,
+		moreHidden: document.querySelector('#SearchRES-more').hidden,
+		moreText: document.querySelector('#SearchRES-more').textContent,
+	}));
+	assert.ok(capped.rows > 0, 'the search found nothing, so this measures nothing');
+	assert.ok(capped.rows <= 50, `a one-character search rendered ${capped.rows} rows`);
+	assert.equal(capped.moreHidden, false, 'there is no way to see the rest');
+	assert.match(capped.moreText, /\d/, `the button does not say how many are left: "${capped.moreText}"`);
+
+	// And the rest are one click away.
+	await search.click('#SearchRES-more');
+	const expanded = await search.evaluate(() => ({
+		rows: document.querySelectorAll('#SearchRES-results > li').length,
+		moreHidden: document.querySelector('#SearchRES-more').hidden,
+	}));
+	assert.ok(expanded.rows > capped.rows, 'showing the rest showed nothing');
+	assert.equal(expanded.moreHidden, true, 'the button is still offering more');
+
+	// A new query collapses again, or the cap only ever applies once.
+	await search.fill('#SearchRES-input', 'a');
+	await search.waitForFunction(count => document.querySelectorAll('#SearchRES-results > li').length !== count, expanded.rows, { timeout: 30000 });
+	assert.ok(
+		(await search.evaluate(() => document.querySelectorAll('#SearchRES-results > li').length)) <= 50,
+		'the next query rendered everything',
+	);
+
+	assert.deepEqual(pageErrors, []);
+	await search.close();
+});
+
 test('leaving the console with unsaved edits is actually stopped', async t => {
 	// The guard returned its confirmation string from an `addEventListener`
 	// listener, which arms nothing: only the `onbeforeunload` property ever

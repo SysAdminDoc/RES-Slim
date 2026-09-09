@@ -65,6 +65,12 @@
     "searchSettingsBoilerplateExamples": {
         "message": "Examples: <code>timestamps</code>, <code>favicon</code>, or <code>subreddit styles</code>"
     },
+    "searchShowMoreResults": {
+        "message": "Show more results"
+    },
+    "searchShowRemainingResults": {
+        "message": "Show the remaining $1"
+    },
     "searchSettingsBoilerplateAdvanced": {
         "message": "Turn on advanced options from the left rail to include expert settings in the results."
     },

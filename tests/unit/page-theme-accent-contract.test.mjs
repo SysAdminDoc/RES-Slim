@@ -185,6 +185,10 @@ test('the module writes all three accent roles, and clears all three', () => {
 test('the settings console tells the user, and offers the fix rather than applying it', () => {
 	assert.match(moduleSource, /advise\(value: mixed, values: \{ \[string\]: mixed \}\)/, 'the accent option must declare advice');
 	assert.match(consoleSource, /typeof option\.advise !== 'function'/, 'the console must render it');
-	assert.match(consoleSource, /RESConsoleContainer\.addEventListener\('input', refreshOptionAdvice\)/, 'advice must track unsaved edits — the palette above it is what changes the verdict');
+	// The container this is bound to used to be the whole console, which meant a
+	// keystroke in the data workspace re-read the module form. What the assertion
+	// defends is that advice tracks unsaved edits, and the options panel is where
+	// the form is, so it names that instead.
+	assert.match(consoleSource, /RESConfigPanelOptions\.addEventListener\('input', refreshOptionAdvice\)/, 'advice must track unsaved edits, and the palette above it is what changes the verdict');
 	assert.match(consoleSource, /optionAdviceEntries\.length = 0;/, 'the notes belong to the rows being torn down');
 });
